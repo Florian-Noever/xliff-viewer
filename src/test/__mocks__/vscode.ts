@@ -30,6 +30,9 @@ let fileWrites: { path: string; content: string }[] = [];
 let configOverrides: Record<string, unknown> = {};
 let virtualFiles: Record<string, string> = {};
 let messageResult: string | undefined;
+let clipboardWrites: string[] = [];
+let logLines: string[] = [];
+let configurationListeners: ((event: ConfigurationChangeEvent) => void)[] = [];
 
 // ── classes ──────────────────────────────────────────────────────────────────
 export class Position {
@@ -167,11 +170,11 @@ export const window = {
         return Promise.resolve(messageResult);
     },
     createOutputChannel: (_name: string, _options?: unknown) => ({
-        trace: () => { },
-        debug: () => { },
-        info: () => { },
-        warn: () => { },
-        error: () => { },
+        trace: (message: string) => logLines.push(`trace ${message}`),
+        debug: (message: string) => logLines.push(`debug ${message}`),
+        info: (message: string) => logLines.push(`info ${message}`),
+        warn: (message: string) => logLines.push(`warn ${message}`),
+        error: (message: string) => logLines.push(`error ${message}`),
         dispose: () => { },
     }),
 };
@@ -240,6 +243,28 @@ export const workspace = {
         appliedEdits.push(...edit.entries);
         return Promise.resolve(true);
     },
+    onDidChangeConfiguration: (listener: (event: ConfigurationChangeEvent) => void): Disposable => {
+        configurationListeners.push(listener);
+        return new Disposable(() => {
+            const index = configurationListeners.indexOf(listener);
+            if (index >= 0) {
+                configurationListeners.splice(index, 1);
+            }
+        });
+    },
+};
+
+export interface ConfigurationChangeEvent {
+    affectsConfiguration(section: string, scope?: unknown): boolean;
+}
+
+export const env = {
+    clipboard: {
+        writeText: (text: string): Promise<void> => {
+            clipboardWrites.push(text);
+            return Promise.resolve();
+        },
+    },
 };
 
 export const commands = {
@@ -257,6 +282,16 @@ export function setVirtualFile(path: string, content: string): void {
 /** Overrides a configuration value, by bare key or fully qualified `section.key`. */
 export function setConfigOverride(key: string, value: unknown): void {
     configOverrides[key] = value;
+}
+
+/** Fires `onDidChangeConfiguration`; `affectsConfiguration` is true for any prefix of one of `sections`. */
+export function fireConfigurationChange(...sections: string[]): void {
+    const event: ConfigurationChangeEvent = {
+        affectsConfiguration: (section: string) => sections.some(changed => changed === section || changed.startsWith(`${section}.`)),
+    };
+    for (const listener of [...configurationListeners]) {
+        listener(event);
+    }
 }
 
 /** Sets what the next `show*Message` call resolves to. */
@@ -293,6 +328,15 @@ export function flushFileWrites(): { path: string; content: string }[] {
     return fileWrites.splice(0);
 }
 
+export function flushClipboardWrites(): string[] {
+    return clipboardWrites.splice(0);
+}
+
+/** Everything written to the `LogOutputChannel`, each line prefixed with its level. */
+export function flushLogs(): string[] {
+    return logLines.splice(0);
+}
+
 // ── reset ────────────────────────────────────────────────────────────────────
 export function resetMocks(): void {
     errorMessages = [];
@@ -305,4 +349,7 @@ export function resetMocks(): void {
     configOverrides = {};
     virtualFiles = {};
     messageResult = undefined;
+    clipboardWrites = [];
+    configurationListeners = [];
+    logLines = [];
 }

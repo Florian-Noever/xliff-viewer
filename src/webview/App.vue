@@ -2,15 +2,17 @@
     <main class="shell">
         <h1 class="title">XLIFF Viewer</h1>
         <p class="note">
-            Toolchain smoke test. The real UI arrives with UI-01 … UI-04.
+            Protocol smoke test. The real UI arrives with UI-01 … UI-04.
         </p>
         <dl class="facts">
             <dt>Host</dt>
             <dd>{{ isVscode ? 'VS Code webview' : 'browser (Vite dev server)' }}</dd>
-            <dt>Document</dt>
-            <dd>{{ document?.fileName ?? '—' }}</dd>
-            <dt>Characters</dt>
-            <dd>{{ document ? document.characters.toLocaleString() : '—' }}</dd>
+            <dt>Status</dt>
+            <dd>{{ status }}</dd>
+            <dt>Edit mode</dt>
+            <dd>{{ settings.editMode ? 'on' : 'off' }}</dd>
+            <dt>Expand depth</dt>
+            <dd>{{ settings.defaultExpandDepth }}</dd>
         </dl>
     </main>
 </template>
@@ -21,18 +23,35 @@ import { onMounted, onUnmounted, ref } from 'vue';
 import { useDesignTokens } from './composables/useDesignTokens';
 import { isVscode, postMessage } from './vscode';
 
-import { type DocumentInfo, isExtensionMessage, ExtensionMessageType, WebviewMessageType } from '@shared/messages';
+import { ExtensionMessageType, isExtensionMessage, WebviewMessageType } from '@shared/messages';
+import { DEFAULT_WEBVIEW_SETTINGS } from '@shared/settings';
+
+import type { WebviewSettings } from '@shared/settings';
 
 useDesignTokens();
 
-const document = ref<DocumentInfo | undefined>(undefined);
+const status = ref('—');
+const settings = ref<WebviewSettings>(DEFAULT_WEBVIEW_SETTINGS);
 
 function onMessage(event: MessageEvent): void {
     if (!isExtensionMessage(event.data)) {
         return;
     }
-    if (event.data.type === ExtensionMessageType.documentInfo) {
-        document.value = event.data.payload;
+    switch (event.data.type) {
+        case ExtensionMessageType.loading:
+            status.value = event.data.payload.message;
+            break;
+        case ExtensionMessageType.error:
+            status.value = event.data.payload.message;
+            break;
+        case ExtensionMessageType.settings:
+            settings.value = event.data.payload;
+            break;
+        case ExtensionMessageType.setDocument:
+            status.value = `${event.data.payload.fileName} — ${event.data.payload.files.length} file(s)`;
+            break;
+        default:
+            break;
     }
 }
 

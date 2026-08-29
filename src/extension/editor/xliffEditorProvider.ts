@@ -1,16 +1,23 @@
 import * as vscode from 'vscode';
 
+import { createPendingSession } from './documentSession';
 import { getWebviewHtml, localResourceRoots } from './webviewHtml';
+import { dispatch } from '../handlers';
 import { Logger } from '../services/logger';
+import { affectsSettings, readSettings, toWebviewSettings } from '../services/settings';
 
-import { ExtensionMessageType, isWebviewMessage, WebviewMessageType } from '../../shared/messages';
+import { ExtensionMessageType, isWebviewMessage } from '../../shared/messages';
+
+import type { HandlerContext } from '../handlers/handlerContext';
+import type { ExtensionMessage } from '../../shared/messages';
 
 /**
  * Wraps a `TextDocument` rather than owning its own model (`DEC-001`), so dirty state,
  * undo/redo, save, hot exit and "Reopen with Text Editor" all come from VS Code.
  *
- * TOOL-05 stops at the plumbing: it reports the document's size and nothing else.
- * Parsing, the tree and the real message protocol arrive with HOST-01 / HOST-02.
+ * `HOST-01` wires the protocol, the dispatch and the settings. The document session it
+ * hands the handlers is still the pending one — parsing and the change pipeline are
+ * `HOST-02`.
  */
 export class XliffEditorProvider implements vscode.CustomTextEditorProvider {
     public static readonly viewType = 'xliff-viewer.editor';
@@ -40,28 +47,34 @@ export class XliffEditorProvider implements vscode.CustomTextEditorProvider {
         };
         webviewPanel.webview.html = await getWebviewHtml(webviewPanel.webview, this.extensionUri);
 
-        const post = (): void => {
-            void webviewPanel.webview.postMessage({
-                type: ExtensionMessageType.documentInfo,
-                payload: {
-                    fileName: document.uri.path.split('/').pop() ?? document.uri.path,
-                    characters: document.getText().length,
-                },
-            });
+        const post = (message: ExtensionMessage): void => {
+            void webviewPanel.webview.postMessage(message);
+        };
+        const context: HandlerContext = {
+            post,
+            session: createPendingSession(post),
+            settings: () => toWebviewSettings(readSettings(document.uri)),
         };
 
-        const subscription = webviewPanel.webview.onDidReceiveMessage((message: unknown) => {
-            if (!isWebviewMessage(message)) {
-                Logger.warn(`Ignored unrecognised webview message: ${JSON.stringify(message)}`);
-                return;
-            }
-            if (message.type === WebviewMessageType.ready) {
-                post();
-            }
-        });
+        const subscriptions = [
+            webviewPanel.webview.onDidReceiveMessage((message: unknown) => {
+                if (!isWebviewMessage(message)) {
+                    Logger.warn(`Ignored unrecognised webview message: ${JSON.stringify(message)}`);
+                    return;
+                }
+                void dispatch(message, context);
+            }),
+            vscode.workspace.onDidChangeConfiguration((event) => {
+                if (affectsSettings(event, document.uri)) {
+                    post({ type: ExtensionMessageType.settings, payload: context.settings() });
+                }
+            }),
+        ];
 
         webviewPanel.onDidDispose(() => {
-            subscription.dispose();
+            for (const subscription of subscriptions) {
+                subscription.dispose();
+            }
         });
 
         Logger.info(`Opened ${document.uri.toString()} in the XLIFF editor.`);

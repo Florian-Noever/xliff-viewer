@@ -37,7 +37,67 @@
                 ],
                 "priority": "default"
             }
-        ]
+        ],
+        "configuration": {
+            "title": "XLIFF Viewer",
+            "properties": {
+                "xliffViewer.baseFile": {
+                    "type": "string",
+                    "default": "",
+                    "markdownDescription": "Path or glob of the base `.g.xlf` file, absolute or relative to the workspace. Leave empty to resolve it automatically: XLIFF Sync and NAB AL Tools settings first, then a sibling `<name>.g.xlf`, then any `*.g.xlf` nearby.",
+                    "scope": "resource"
+                },
+                "xliffViewer.editMode": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "Open translation files with editing enabled instead of read-only. Base `.g.xlf` files stay read-only either way.",
+                    "scope": "resource"
+                },
+                "xliffViewer.stateOnEdit": {
+                    "type": "string",
+                    "default": "translated",
+                    "enum": [
+                        "new",
+                        "needs-translation",
+                        "needs-l10n",
+                        "needs-adaptation",
+                        "needs-review-translation",
+                        "needs-review-l10n",
+                        "needs-review-adaptation",
+                        "translated",
+                        "signed-off",
+                        "final"
+                    ],
+                    "markdownDescription": "The `state` written to a target when you edit its text.",
+                    "scope": "resource"
+                },
+                "xliffViewer.showDeveloperNotes": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "Show `Developer` notes — the AL developer's comment or suggested translation.",
+                    "scope": "resource"
+                },
+                "xliffViewer.showGeneratorNotes": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "Show the raw `Xliff Generator` note. The names it contains are always shown on the tree, so this is only the full symbol path.",
+                    "scope": "resource"
+                },
+                "xliffViewer.defaultExpandDepth": {
+                    "type": "number",
+                    "default": 1,
+                    "minimum": 0,
+                    "markdownDescription": "How many levels of the object tree are expanded when a file opens. `0` collapses everything.",
+                    "scope": "resource"
+                },
+                "xliffViewer.validation.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "Flag `maxwidth` overruns, placeholder mismatches between source and target, and empty targets that claim a finished state. These are hints, never blocks.",
+                    "scope": "resource"
+                }
+            }
+        }
     },
     "scripts": {
         "vscode:prepublish": "bun run compile",
