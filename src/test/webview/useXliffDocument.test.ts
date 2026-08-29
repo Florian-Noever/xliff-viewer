@@ -1,0 +1,248 @@
+import { mount } from '@vue/test-utils';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { defineComponent, nextTick } from 'vue';
+
+import { useXliffDocument } from '../../webview/composables/useXliffDocument';
+import { ExtensionMessageType, WebviewMessageType } from '../../shared/messages';
+import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
+import { clearPostedMessages, postedMessages } from '../setup/webview';
+
+import type { XliffDocumentDto } from '../../shared/dto';
+import type { ExtensionMessage } from '../../shared/messages';
+import type { XliffDocument } from '../../webview/composables/useXliffDocument';
+
+const DOCUMENT: XliffDocumentDto = {
+    uri: 'file:///w/App.de-DE.xlf',
+    fileName: 'App.de-DE.xlf',
+    isBaseFile: false,
+    readOnly: false,
+    files: [
+        {
+            index: 0,
+            sourceLanguage: 'en-US',
+            targetLanguage: 'de-DE',
+            original: 'App',
+            tree: [{ key: 'Table 1', type: 'Table', name: 'Customer', children: [] }],
+            units: [
+                { id: 'Table 1', source: 'Customer', target: 'Kunde', state: 'translated', translate: true, notes: [] },
+                { id: 'Table 2', source: 'Vendor', state: 'missing', translate: true, notes: [] },
+            ],
+            hasAlIds: true,
+        },
+        {
+            index: 1,
+            sourceLanguage: 'en-US',
+            targetLanguage: 'fr-FR',
+            tree: [],
+            units: [{ id: 'Table 1', source: 'Customer', target: 'Client', state: 'translated', translate: true, notes: [] }],
+            hasAlIds: true,
+        },
+    ],
+};
+
+/**
+ * Mounts the composable inside a throwaway component — `onMounted` means it can only run
+ * in a real setup scope — and hands back what it returned.
+ */
+function host(render: (state: XliffDocument) => unknown) {
+    let captured: XliffDocument | undefined;
+    const wrapper = mount(defineComponent({
+        setup() {
+            captured = useXliffDocument();
+            const state = captured;
+            return () => render(state);
+        },
+    }));
+    if (captured === undefined) {
+        throw new Error('composable did not run');
+    }
+    return { state: captured, wrapper };
+}
+
+const useIt = (): XliffDocument => host(() => null).state;
+
+const send = (message: ExtensionMessage): void => {
+    window.dispatchEvent(new MessageEvent('message', { data: message }));
+};
+
+const sendDocument = (): void => {
+    send({ type: ExtensionMessageType.setDocument, payload: DOCUMENT });
+};
+
+beforeEach(() => {
+    clearPostedMessages();
+});
+
+afterEach(() => {
+    clearPostedMessages();
+});
+
+describe('mounting', () => {
+    it('posts exactly one ready', () => {
+        useIt();
+        expect(postedMessages).toEqual([{ type: WebviewMessageType.ready }]);
+    });
+
+    it('starts with nothing, and does not block on nothing', () => {
+        const state = useIt();
+
+        expect(state.document.value).toBeUndefined();
+        expect(state.blocking.value).toBe(false);
+        expect(state.settings.value).toEqual(DEFAULT_WEBVIEW_SETTINGS);
+        expect(state.unitCount.value).toBe(0);
+    });
+
+    it('stops listening once unmounted', async () => {
+        const { wrapper } = host(state => state.document.value?.fileName ?? '');
+
+        wrapper.unmount();
+        sendDocument();
+        await nextTick();
+
+        expect(wrapper.text()).toBe('');
+    });
+});
+
+describe('applying messages', () => {
+    it('holds the document it is sent', () => {
+        const state = useIt();
+
+        sendDocument();
+
+        expect(state.document.value?.fileName).toBe('App.de-DE.xlf');
+        expect(state.unitCount.value).toBe(3);
+    });
+
+    it('ignores anything that is not part of the contract', () => {
+        const state = useIt();
+
+        window.dispatchEvent(new MessageEvent('message', { data: { type: 'not-ours' } }));
+        window.dispatchEvent(new MessageEvent('message', { data: 'garbage' }));
+
+        expect(state.document.value).toBeUndefined();
+    });
+
+    it('tracks loading and clears it when the document lands', () => {
+        const state = useIt();
+
+        send({ type: ExtensionMessageType.loading, payload: { message: 'Parsing…' } });
+        expect(state.loading.value).toBe('Parsing…');
+        expect(state.blocking.value).toBe(true);
+
+        sendDocument();
+        expect(state.loading.value).toBeUndefined();
+        expect(state.blocking.value).toBe(false);
+    });
+
+    it('keeps the document when a later parse fails, and stops blocking', () => {
+        const state = useIt();
+
+        sendDocument();
+        send({ type: ExtensionMessageType.error, payload: { message: 'Unclosed tag', line: 4 } });
+
+        expect(state.document.value).toBeDefined();
+        expect(state.error.value?.message).toBe('Unclosed tag');
+        expect(state.blocking.value).toBe(false);
+    });
+
+    it('blocks on a failure that has nothing behind it', () => {
+        const state = useIt();
+
+        send({ type: ExtensionMessageType.error, payload: { message: 'Unclosed tag' } });
+
+        expect(state.blocking.value).toBe(true);
+    });
+
+    it('clears the error when a parse succeeds', () => {
+        const state = useIt();
+
+        send({ type: ExtensionMessageType.error, payload: { message: 'Unclosed tag' } });
+        sendDocument();
+
+        expect(state.error.value).toBeUndefined();
+    });
+
+    it('applies settings without touching the document', () => {
+        const state = useIt();
+
+        sendDocument();
+        send({ type: ExtensionMessageType.settings, payload: { ...DEFAULT_WEBVIEW_SETTINGS, editMode: true } });
+
+        expect(state.settings.value.editMode).toBe(true);
+        expect(state.document.value?.fileName).toBe('App.de-DE.xlf');
+    });
+});
+
+describe('the active file', () => {
+    it('is the first one until something says otherwise (DEC-020)', () => {
+        const state = useIt();
+
+        sendDocument();
+
+        expect(state.activeFile.value?.targetLanguage).toBe('de-DE');
+    });
+
+    it('follows activeFileIndex', () => {
+        const state = useIt();
+
+        sendDocument();
+        state.activeFileIndex.value = 1;
+
+        expect(state.activeFile.value?.targetLanguage).toBe('fr-FR');
+    });
+
+    it('falls back to the first file rather than nothing when the index is out of range', () => {
+        const state = useIt();
+
+        sendDocument();
+        state.activeFileIndex.value = 9;
+
+        expect(state.activeFile.value?.targetLanguage).toBe('de-DE');
+    });
+
+    it('goes back to the first file when a new document arrives', () => {
+        const state = useIt();
+
+        sendDocument();
+        state.activeFileIndex.value = 1;
+        sendDocument();
+
+        expect(state.activeFileIndex.value).toBe(0);
+    });
+});
+
+describe('unitsById', () => {
+    it('indexes the active file, which is what nodes are looked up through (DEC-028)', () => {
+        const state = useIt();
+
+        sendDocument();
+
+        expect(state.unitsById.value.size).toBe(2);
+        expect(state.unitsById.value.get('Table 1')?.target).toBe('Kunde');
+    });
+
+    it('re-indexes when the active file changes, so two files cannot bleed into each other', () => {
+        const state = useIt();
+
+        sendDocument();
+        state.activeFileIndex.value = 1;
+
+        expect(state.unitsById.value.size).toBe(1);
+        expect(state.unitsById.value.get('Table 1')?.target).toBe('Client');
+    });
+
+    it('is empty before a document arrives', () => {
+        expect(useIt().unitsById.value.size).toBe(0);
+    });
+});
+
+describe('openAsText', () => {
+    it('asks the host for the raw file, with no unit — there may not be one', () => {
+        const state = useIt();
+        clearPostedMessages();
+
+        state.openAsText();
+
+        expect(postedMessages).toEqual([{ type: WebviewMessageType.openSource, target: 'text' }]);
+    });
+});
