@@ -6,10 +6,8 @@ import { parseXliff } from '../xliff/parser';
 import { validateStructure } from '../xliff/validate';
 import { Logger } from '../services/logger';
 
-import { ExtensionMessageType, NavigationTarget } from '../../shared/messages';
-
 import type { XliffDocumentDto } from '../../shared/dto';
-import type { ErrorPayload, ExtensionMessage } from '../../shared/messages';
+import type { ErrorPayload, NavigationTarget } from '../../shared/messages';
 import type { XliffDocument } from '../../shared/model';
 import type { XliffState } from '../../shared/state';
 
@@ -24,10 +22,6 @@ import type { XliffState } from '../../shared/state';
 
 /** Long enough to swallow a burst of typing, short enough that a paste feels immediate. */
 const REPARSE_DEBOUNCE_MS = 150;
-
-const OPEN_WITH_COMMAND = 'vscode.openWith';
-/** VS Code's built-in text editor, which `priority: "default"` keeps reachable (§8.1). */
-const DEFAULT_EDITOR = 'default';
 
 /** A unit is identified by its `<file>` **and** its id — XLIFF scopes ids per file (`DEC-028`). */
 export interface UnitReference {
@@ -175,53 +169,4 @@ function toErrorPayload(error: unknown): ErrorPayload {
         return { message: error.displayMessage, line: error.line, col: error.col };
     }
     return { message: error instanceof Error ? error.message : 'The document could not be read.' };
-}
-
-/**
- * The per-view face of a session: the same parsed document, posted to one webview.
- *
- * Edits and navigation are not wired yet — `EDIT-01` and `NAV-02` own them. They throw
- * rather than doing nothing, so a wired-up button that should not exist yet says so
- * instead of failing silently (§12.5).
- */
-export function createDocumentSession(session: XliffDocumentSession, post: (message: ExtensionMessage) => void): DocumentSession {
-    const notYet = (what: string, task: string): never => {
-        throw new Error(`${what} arrives with ${task}.`);
-    };
-
-    return {
-        sendDocument: () => {
-            post({ type: ExtensionMessageType.loading, payload: { message: 'Reading the translation file…' } });
-            postState(session.current(), session, post);
-        },
-        updateTarget: () => notYet('Editing a target', 'EDIT-01'),
-        updateState: () => notYet('Changing a state', 'EDIT-01'),
-        openSource: (target, unit) => {
-            if (target !== NavigationTarget.text || unit !== undefined) {
-                // Revealing a unit needs the id search of §10.2, and `al` / `base` need a
-                // resolved base file — both are NAV-02's, not this task's.
-                return notYet('Navigating to a unit', 'NAV-02');
-            }
-            return Promise.resolve(vscode.commands.executeCommand<void>(OPEN_WITH_COMMAND, session.uri, DEFAULT_EDITOR));
-        },
-    };
-}
-
-/**
- * Posts one state to one view.
- *
- * On a failure that follows a good parse the last good document goes first, so a view
- * that opened mid-error still has something to show behind the error pane (§7.7).
- */
-export function postState(state: SessionState, session: XliffDocumentSession, post: (message: ExtensionMessage) => void): void {
-    if (state.kind === 'document') {
-        post({ type: ExtensionMessageType.setDocument, payload: state.dto });
-        return;
-    }
-
-    const lastGood = session.lastGoodState();
-    if (lastGood !== undefined) {
-        post({ type: ExtensionMessageType.setDocument, payload: lastGood.dto });
-    }
-    post({ type: ExtensionMessageType.error, payload: state.error });
 }

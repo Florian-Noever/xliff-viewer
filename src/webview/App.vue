@@ -9,7 +9,7 @@
         />
         <template v-else>
             <StatusPane
-                :loading="document === undefined ? loading : undefined"
+                :loading="xliff === undefined ? loading : undefined"
                 :error="error"
                 variant="banner"
                 @open-as-text="openAsText"
@@ -23,7 +23,7 @@
                     <dt>Host</dt>
                     <dd>{{ isVscode ? 'VS Code webview' : 'browser (Vite dev server)' }}</dd>
                     <dt>Document</dt>
-                    <dd>{{ document === undefined ? '—' : describe(document) }}</dd>
+                    <dd>{{ xliff === undefined ? '—' : describe(xliff) }}</dd>
                     <dt>Edit mode</dt>
                     <dd>{{ settings.editMode ? 'on' : 'off' }}</dd>
                     <dt>Expand depth</dt>
@@ -50,7 +50,9 @@ import type { WebviewSettings } from '@shared/settings';
 
 useDesignTokens();
 
-const document = ref<XliffDocumentDto | undefined>(undefined);
+// Not `document`: inside a component that would shadow the DOM global, and this file
+// is where the real shell gets built.
+const xliff = ref<XliffDocumentDto | undefined>(undefined);
 const loading = ref<string | undefined>(undefined);
 const error = ref<ErrorPayload | undefined>(undefined);
 const settings = ref<WebviewSettings>(DEFAULT_WEBVIEW_SETTINGS);
@@ -60,7 +62,7 @@ const settings = ref<WebviewSettings>(DEFAULT_WEBVIEW_SETTINGS);
  * last good document ahead of an `error`, so a file broken mid-edit keeps its content and
  * gets a banner instead.
  */
-const blocking = computed(() => document.value === undefined && (loading.value !== undefined || error.value !== undefined));
+const blocking = computed(() => xliff.value === undefined && (loading.value !== undefined || error.value !== undefined));
 
 function describe(dto: XliffDocumentDto): string {
     const units = dto.files.reduce((total, file) => total + file.units.length, 0);
@@ -82,7 +84,7 @@ function onMessage(event: MessageEvent): void {
             break;
         case ExtensionMessageType.setDocument:
             // Always ahead of an `error` that follows it, so clearing here is safe.
-            document.value = event.data.payload;
+            xliff.value = event.data.payload;
             loading.value = undefined;
             error.value = undefined;
             break;

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
-import { createDocumentSession, postState } from './documentSession';
 import { DocumentSessionRegistry } from './documentSessionRegistry';
+import { createDocumentSession, postUpdate } from './documentView';
 import { getWebviewHtml, localResourceRoots } from './webviewHtml';
 import { dispatch } from '../handlers';
 import { Logger } from '../services/logger';
@@ -51,28 +51,47 @@ export class XliffEditorProvider implements vscode.CustomTextEditorProvider {
         webviewPanel: vscode.WebviewPanel,
         _token: vscode.CancellationToken,
     ): Promise<void> {
+        const session = this.registry.acquire(document);
+        const subscriptions: vscode.Disposable[] = [];
+        let closed = false;
+
+        // Registered before the first await: a panel closed while the template is still
+        // being read would otherwise never release its session, and the session's change
+        // subscription would outlive the editor.
+        webviewPanel.onDidDispose(() => {
+            closed = true;
+            for (const subscription of subscriptions) {
+                subscription.dispose();
+            }
+            subscriptions.length = 0;
+            this.registry.release(session);
+        });
+
         webviewPanel.webview.options = {
             enableScripts: true,
             localResourceRoots: localResourceRoots(this.extensionUri),
         };
         webviewPanel.webview.html = await getWebviewHtml(webviewPanel.webview, this.extensionUri);
 
+        if (closed) {
+            return;
+        }
+
         const post = (message: ExtensionMessage): void => {
             void webviewPanel.webview.postMessage(message);
         };
-
-        const session = this.registry.acquire(document);
         const context: HandlerContext = {
             post,
             session: createDocumentSession(session, post),
             settings: () => toWebviewSettings(readSettings(document.uri)),
         };
 
-        const subscriptions = [
-            // A re-parse reaches every view of this document, including the ones that did
-            // not trigger it.
+        subscriptions.push(
+            // A re-parse reaches every view of this document, including the ones that
+            // did not trigger it. `postUpdate`, not the initial send: these panels are
+            // already showing the document, so a failure sends only the failure.
             session.attach((state) => {
-                postState(state, session, post);
+                postUpdate(state, post);
             }),
             webviewPanel.webview.onDidReceiveMessage((message: unknown) => {
                 if (!isWebviewMessage(message)) {
@@ -86,14 +105,7 @@ export class XliffEditorProvider implements vscode.CustomTextEditorProvider {
                     post({ type: ExtensionMessageType.settings, payload: context.settings() });
                 }
             }),
-        ];
-
-        webviewPanel.onDidDispose(() => {
-            for (const subscription of subscriptions) {
-                subscription.dispose();
-            }
-            this.registry.release(session);
-        });
+        );
 
         Logger.info(`Opened ${document.uri.toString()} in the XLIFF editor.`);
     }

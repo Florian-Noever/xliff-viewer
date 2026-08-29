@@ -335,3 +335,41 @@ describe('budget', () => {
         expect(best).toBeLessThan(50);
     });
 });
+
+describe('base-file detection across several files', () => {
+    const twoFilesXml = (secondTarget: string) => `<?xml version="1.0" encoding="utf-8"?>
+<xliff version="1.2">
+  <file source-language="en-US" target-language="en-US"><body>
+    <trans-unit id="Table 1 - Property 1"><source>One</source></trans-unit>
+  </body></file>
+  <file source-language="en-US" target-language="en-US"><body>
+    <trans-unit id="Table 2 - Property 1"><source>Two</source>${secondTarget}</trans-unit>
+  </body></file>
+</xliff>`;
+
+    it('is a base file only when no file anywhere carries a target', () => {
+        expect(projectXml(twoFilesXml('')).isBaseFile).toBe(true);
+    });
+
+    it('is not a base file when one of several files has a target', () => {
+        // A single translated unit anywhere means somebody is translating this document.
+        expect(projectXml(twoFilesXml('<target state="translated">Zwei</target>')).isBaseFile).toBe(false);
+    });
+
+    it('is not a base file when one file translates into another language', () => {
+        const mixed = `<?xml version="1.0" encoding="utf-8"?>
+<xliff version="1.2">
+  <file source-language="en-US" target-language="en-US"><body>
+    <trans-unit id="Table 1 - Property 1"><source>One</source></trans-unit>
+  </body></file>
+  <file source-language="en-US" target-language="de-DE"><body>
+    <trans-unit id="Table 2 - Property 1"><source>Two</source></trans-unit>
+  </body></file>
+</xliff>`;
+        expect(projectXml(mixed).isBaseFile).toBe(false);
+    });
+
+    it('trusts the .g.xlf name over the contents', () => {
+        expect(projectXml(twoFilesXml('<target state="translated">Zwei</target>'), 'App.g.xlf').isBaseFile).toBe(true);
+    });
+});
