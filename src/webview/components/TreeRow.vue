@@ -35,6 +35,7 @@
             :generator-note="generatorNote"
         />
         <span class="spacer" />
+        <span v-if="pairing !== undefined" class="pairing" :class="pairing.tone" :title="pairing.title">{{ pairing.label }}</span>
         <StateBadge
             v-if="row.unit !== undefined"
             :state="row.unit.state"
@@ -77,6 +78,21 @@ const emit = defineEmits<{
  * a search of the raw file will match.
  */
 const label = computed(() => props.row.name ?? props.row.key.split(' - ').pop() ?? props.row.key);
+
+/**
+ * A drifted unit is worth seeing without opening anything (§9.3). Informational only — it
+ * never changes a state and never blocks an edit.
+ */
+const pairing = computed(() => {
+    const unit = props.row.unit;
+    if (unit?.orphaned === true) {
+        return { label: 'orphaned', tone: 'orphaned', title: 'The base file no longer has this unit.' };
+    }
+    if (unit?.baseSource !== undefined) {
+        return { label: 'source changed', tone: 'changed', title: 'The base file’s source differs from this one.' };
+    }
+    return undefined;
+});
 </script>
 
 <style scoped>
@@ -138,6 +154,22 @@ const label = computed(() => props.row.name ?? props.row.key.split(' - ').pop() 
     display: inline-flex;
     width: 16px;
     height: 16px;
+}
+
+.pairing {
+    flex: none;
+    padding: 0 5px;
+    border: 1px solid currentColor;
+    border-radius: var(--radius-sm);
+    font-size: calc(var(--font) * 0.85);
+}
+
+.pairing.orphaned {
+    color: var(--vscode-errorForeground);
+}
+
+.pairing.changed {
+    color: var(--vscode-editorWarning-foreground);
 }
 
 .type {

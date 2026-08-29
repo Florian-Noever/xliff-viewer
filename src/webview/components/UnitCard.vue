@@ -13,6 +13,14 @@
             <p v-if="whitespace !== undefined" class="whitespace-note">{{ explanation }}</p>
         </div>
 
+        <p v-if="unit.orphaned === true" class="pairing orphaned">
+            The base file no longer has this unit. It was probably removed from the AL source.
+        </p>
+        <div v-else-if="unit.baseSource !== undefined" class="pairing changed">
+            <p class="pairing-note">The source has changed since this was translated. The base file now says:</p>
+            <p class="base-source">{{ unit.baseSource === '' ? '(empty)' : unit.baseSource }}</p>
+        </div>
+
         <p v-if="hint !== undefined" class="hint">
             <span class="hint-label">suggested</span>
             <span>{{ hint }}</span>
@@ -25,7 +33,7 @@
             <button
                 type="button"
                 class="action"
-                :disabled="baseFile === null || baseFile === undefined"
+                :disabled="baseFile === null || baseFile === undefined || unit.orphaned === true"
                 :title="baseFileTitle"
                 @click="actions.open(NavigationTarget.base, unit.id)"
             >
@@ -86,6 +94,9 @@ const baseFileTitle = computed(() => {
     }
     if (baseFile.value === null) {
         return 'No base file was found for this translation file.';
+    }
+    if (props.unit.orphaned === true) {
+        return `${baseFile.value} does not contain this unit any more.`;
     }
     return `Show ${props.unit.id} in ${baseFile.value}`;
 });
@@ -182,6 +193,37 @@ const hint = computed(() => {
 .hint-label {
     flex: none;
     color: var(--vscode-descriptionForeground);
+}
+
+.pairing {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 3px 7px;
+    border-inline-start: 2px solid currentColor;
+    border-radius: var(--radius-sm);
+    background: var(--vscode-editorWidget-background);
+    font-size: calc(var(--font) * 0.9);
+}
+
+.pairing.orphaned {
+    color: var(--vscode-errorForeground);
+}
+
+.pairing.changed {
+    color: var(--vscode-editorWarning-foreground);
+}
+
+.pairing-note,
+.base-source {
+    margin: 0;
+}
+
+.base-source {
+    color: var(--vscode-foreground);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
 }
 
 .actions {

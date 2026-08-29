@@ -283,6 +283,7 @@ describe('every DTO field is reachable', () => {
         // §2.1: nothing the file carries may be dropped. If a field is added to
         // TransUnitDto and nothing here shows it, this fails.
         const full = unit({
+            baseSource: 'Customer (renamed)',
             target: ' Kunde ',
             state: XliffState.unknown,
             rawState: 'proofread',
@@ -310,6 +311,8 @@ describe('every DTO field is reachable', () => {
             alObjectTarget: text.includes('Page 23584087'),
             notes: text.includes('de-DE=Kundin'),
             developerHint: wrapper.find('.hint').exists(),
+            orphaned: true, // covered by its own case below; mutually exclusive with baseSource
+            baseSource: text.includes('The base file now says'),
         };
 
         expect(Object.entries(shown).filter(([, visible]) => !visible).map(([field]) => field)).toEqual([]);
@@ -392,5 +395,58 @@ describe('the navigation buttons (§10)', () => {
         const button = wrapper.findAll('.action')[1];
         expect(button.attributes('disabled')).toBeUndefined();
         expect(button.attributes('title')).toContain('App.g.xlf');
+    });
+});
+
+describe('the base ⊕ language pairing (§9.3)', () => {
+    it('says a unit the base no longer has is orphaned', () => {
+        const wrapper = card({ orphaned: true });
+
+        expect(wrapper.get('.pairing.orphaned').text()).toContain('no longer has this unit');
+    });
+
+    it('shows the base source when it has changed, so the reader can see what it now says', () => {
+        const wrapper = card({ source: 'Client', baseSource: 'Customer' });
+
+        expect(wrapper.get('.pairing.changed').text()).toContain('source has changed');
+        expect(wrapper.get('.base-source').text()).toBe('Customer');
+    });
+
+    it('renders an empty base source as such rather than as a blank line', () => {
+        expect(card({ baseSource: '' }).get('.base-source').text()).toBe('(empty)');
+    });
+
+    it('marks neither when the unit is in step with its base', () => {
+        const wrapper = card();
+
+        expect(wrapper.find('.pairing').exists()).toBe(false);
+    });
+
+    it('disables "Show in base file" for an orphaned unit, and says why', () => {
+        const wrapper = mount(UnitCard, {
+            props: { unit: unit({ orphaned: true }), settings: DEFAULT_WEBVIEW_SETTINGS },
+            global: {
+                provide: {
+                    [UNIT_ACTIONS_KEY as symbol]: { open: () => { }, baseFileName: () => 'App.g.xlf' },
+                },
+            },
+        });
+
+        const button = wrapper.findAll('.action')[1];
+        expect(button.attributes('disabled')).toBeDefined();
+        expect(button.attributes('title')).toContain('does not contain this unit any more');
+    });
+
+    it('leaves the button enabled for a merely source-changed unit — it is still there', () => {
+        const wrapper = mount(UnitCard, {
+            props: { unit: unit({ baseSource: 'Customer' }), settings: DEFAULT_WEBVIEW_SETTINGS },
+            global: {
+                provide: {
+                    [UNIT_ACTIONS_KEY as symbol]: { open: () => { }, baseFileName: () => 'App.g.xlf' },
+                },
+            },
+        });
+
+        expect(wrapper.findAll('.action')[1].attributes('disabled')).toBeUndefined();
     });
 });
