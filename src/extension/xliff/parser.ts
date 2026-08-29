@@ -1,0 +1,259 @@
+import { XMLParser } from 'fast-xml-parser';
+
+import { XliffParseError } from './errors';
+import { validateXml } from './validate';
+
+import type {
+    DocumentFormat,
+    Eol,
+    XliffAttributes,
+    XliffBody,
+    XliffDocument,
+    XliffFile,
+    XliffGroup,
+    XliffNote,
+    XliffTarget,
+    XliffTransUnit,
+} from '../../shared/model';
+
+/**
+ * Options per MASTER_PLAN §7.3. Each is load-bearing:
+ *
+ * - `preserveOrder` keeps element **and** attribute order, which is what makes the
+ *   byte-faithful serialiser possible (§7.2).
+ * - `trimValues: false` honours `xml:space="preserve"` (§3.6). A target of `'   '` is
+ *   three spaces, not an empty string.
+ * - `parseTagValue` / `parseAttributeValue: false` stop `"00123"` becoming a number.
+ * - `processEntities: true` decodes the five predefined entities. It deliberately does
+ *   **not** decode numeric character references — see the note below.
+ *
+ * `attributesGroupName` is *not* set: under `preserveOrder` fast-xml-parser always uses
+ * `:@` and ignores that option. §7.3 lists it, but it is inert.
+ *
+ * ## Entities and the round-trip
+ *
+ * `processEntities: true` decodes `&amp; &lt; &gt; &quot; &apos;` but leaves numeric
+ * references (`&#233;`) verbatim. That asymmetry is deliberate and load-bearing:
+ * a numeric reference survives into the model unchanged and therefore round-trips
+ * byte-identically. Adding `htmlEntities: true` would decode it to `é`, which the
+ * serialiser would then write as a literal character — valid XML, same meaning, but a
+ * byte change, breaking §15.2. Do not add it.
+ *
+ * The residual gap: `&quot;` or `&apos;` in *text* decodes to `"` / `'`, and the
+ * serialiser writes those literally rather than re-encoding them, so such a file is
+ * normalised on first save. No corpus file contains either (verified), and this falls
+ * under the normalisation `DEC-017` already accepts.
+ */
+const PARSER_OPTIONS = {
+    preserveOrder: true,
+    ignoreAttributes: false,
+    attributeNamePrefix: '',
+    trimValues: false,
+    parseTagValue: false,
+    parseAttributeValue: false,
+    processEntities: true,
+    alwaysCreateTextNode: true,
+} as const;
+
+const ATTRIBUTES_KEY = ':@';
+const TEXT_KEY = '#text';
+
+/** One node of fast-xml-parser's `preserveOrder` output: a single tag key, plus `:@`. */
+interface FxpNode {
+    readonly [key: string]: unknown;
+}
+
+const parser = new XMLParser(PARSER_OPTIONS);
+
+// ── adapter over the preserveOrder shape ─────────────────────────────────────
+
+function tagOf(node: FxpNode): string | undefined {
+    return Object.keys(node).find(key => key !== ATTRIBUTES_KEY);
+}
+
+function attributesOf(node: FxpNode): XliffAttributes {
+    const raw = node[ATTRIBUTES_KEY];
+    if (raw === undefined || raw === null || typeof raw !== 'object') {
+        return {};
+    }
+    const result: Record<string, string> = {};
+    for (const [name, value] of Object.entries(raw as Record<string, unknown>)) {
+        result[name] = String(value);
+    }
+    return result;
+}
+
+function childrenOf(node: FxpNode): FxpNode[] {
+    const tag = tagOf(node);
+    const value = tag === undefined ? undefined : node[tag];
+    return Array.isArray(value) ? (value as FxpNode[]) : [];
+}
+
+/** Child elements with the given tag, skipping whitespace text nodes. */
+function elementsNamed(node: FxpNode, tag: string): FxpNode[] {
+    return childrenOf(node).filter(child => tagOf(child) === tag);
+}
+
+/**
+ * Concatenated text of a leaf element. An empty element parses to `[]` rather than a
+ * `#text` node, which is how `<source/>` and `<target …/>` arrive (§3.4).
+ */
+function textOf(node: FxpNode): string {
+    let text = '';
+    for (const child of childrenOf(node)) {
+        const value = child[TEXT_KEY];
+        if (typeof value === 'string') {
+            text += value;
+        }
+    }
+    return text;
+}
+
+function optional(attributes: XliffAttributes, name: string): string | undefined {
+    return Object.prototype.hasOwnProperty.call(attributes, name) ? attributes[name] : undefined;
+}
+
+// ── document format ──────────────────────────────────────────────────────────
+
+function detectFormat(raw: string): { format: DocumentFormat; body: string } {
+    const hasBom = raw.charCodeAt(0) === 0xfeff;
+    const body = hasBom ? raw.slice(1) : raw;
+
+    return {
+        body,
+        format: {
+            hasBom,
+            declaration: /^<\?xml[^>]*\?>/.exec(body)?.[0] ?? '',
+            eol: (body.includes('\r\n') ? '\r\n' : '\n') satisfies Eol,
+            hasTrailingNewline: /\r?\n$/.test(body),
+        },
+    };
+}
+
+// ── mapping ──────────────────────────────────────────────────────────────────
+
+function toNote(node: FxpNode): XliffNote {
+    const attributes = attributesOf(node);
+    const priority = optional(attributes, 'priority');
+    const parsed = priority === undefined ? undefined : Number.parseInt(priority, 10);
+
+    return {
+        attributes,
+        from: optional(attributes, 'from'),
+        annotates: optional(attributes, 'annotates'),
+        priority: parsed === undefined || Number.isNaN(parsed) ? undefined : parsed,
+        value: textOf(node),
+    };
+}
+
+function toTarget(node: FxpNode): XliffTarget {
+    const attributes = attributesOf(node);
+    return {
+        attributes,
+        // Kept verbatim: a value the spec does not define is resolved to `unknown` by
+        // the state layer, not rejected here (§5.1).
+        state: optional(attributes, 'state'),
+        stateQualifier: optional(attributes, 'state-qualifier'),
+        value: textOf(node),
+    };
+}
+
+function toTransUnit(node: FxpNode): XliffTransUnit {
+    const attributes = attributesOf(node);
+    const id = optional(attributes, 'id') ?? '';
+
+    // DATA-02 cannot check this: XliffTransUnit holds one source and one target by
+    // construction, so a violation would produce a model that looks correct.
+    const sources = elementsNamed(node, 'source');
+    const targets = elementsNamed(node, 'target');
+    if (sources.length !== 1) {
+        throw new XliffParseError(
+            `<trans-unit id="${id}"> has ${sources.length} <source> elements; exactly one is required.`
+        );
+    }
+    if (targets.length > 1) {
+        throw new XliffParseError(
+            `<trans-unit id="${id}"> has ${targets.length} <target> elements; at most one is allowed.`
+        );
+    }
+
+    const maxwidth = optional(attributes, 'maxwidth');
+    const parsedMaxwidth = maxwidth === undefined ? undefined : Number.parseInt(maxwidth, 10);
+
+    return {
+        attributes,
+        id,
+        translate: optional(attributes, 'translate') !== 'no',
+        sizeUnit: optional(attributes, 'size-unit'),
+        xmlSpace: optional(attributes, 'xml:space'),
+        maxwidth: parsedMaxwidth === undefined || Number.isNaN(parsedMaxwidth) ? undefined : parsedMaxwidth,
+        alObjectTarget: optional(attributes, 'al-object-target'),
+        source: textOf(sources[0]),
+        target: targets.length === 1 ? toTarget(targets[0]) : undefined,
+        notes: elementsNamed(node, 'note').map(toNote),
+    };
+}
+
+function toGroup(node: FxpNode): XliffGroup {
+    const attributes = attributesOf(node);
+    return {
+        attributes,
+        id: optional(attributes, 'id'),
+        groups: elementsNamed(node, 'group').map(toGroup),
+        units: elementsNamed(node, 'trans-unit').map(toTransUnit),
+    };
+}
+
+function toBody(node: FxpNode): XliffBody {
+    return {
+        attributes: attributesOf(node),
+        groups: elementsNamed(node, 'group').map(toGroup),
+        // Units may sit directly in <body> without a group (§3.4).
+        units: elementsNamed(node, 'trans-unit').map(toTransUnit),
+    };
+}
+
+function toFile(node: FxpNode): XliffFile {
+    const attributes = attributesOf(node);
+    const bodies = elementsNamed(node, 'body');
+    if (bodies.length !== 1) {
+        throw new XliffParseError(`<file> has ${bodies.length} <body> elements; exactly one is required.`);
+    }
+
+    return {
+        attributes,
+        sourceLanguage: optional(attributes, 'source-language') ?? '',
+        targetLanguage: optional(attributes, 'target-language'),
+        original: optional(attributes, 'original'),
+        datatype: optional(attributes, 'datatype'),
+        body: toBody(bodies[0]),
+    };
+}
+
+/**
+ * Parses document text into the model. Validation runs first and its error propagates —
+ * a document that is not well-formed is never turned into a model, because a whole-file
+ * writer would then rewrite the file from a misreading of it (§7.7, `DEC-017`).
+ *
+ * @throws {XliffParseError}
+ */
+export function parseXliff(raw: string): XliffDocument {
+    validateXml(raw);
+
+    const { body, format } = detectFormat(raw);
+    const nodes = parser.parse(body) as FxpNode[];
+
+    const root = nodes.find(node => tagOf(node) === 'xliff');
+    if (root === undefined) {
+        throw new XliffParseError('The document has no <xliff> root element.');
+    }
+
+    const attributes = attributesOf(root);
+    return {
+        attributes,
+        version: optional(attributes, 'version') ?? '',
+        xmlns: optional(attributes, 'xmlns'),
+        files: elementsNamed(root, 'file').map(toFile),
+        format,
+    };
+}
