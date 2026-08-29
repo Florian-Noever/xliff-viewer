@@ -4,12 +4,24 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { XliffEditorProvider } from '../../extension/editor/xliffEditorProvider';
 import { Logger } from '../../extension/services/logger';
 import { ExtensionMessageType, WebviewMessageType } from '../../shared/messages';
-import { fireConfigurationChange, flushLogs, resetMocks, setConfigOverride, setVirtualFile } from '../__mocks__/vscode';
+import {
+    documentChangeListenerCount,
+    FakeTextDocument,
+    fireConfigurationChange,
+    flushLogs,
+    resetMocks,
+    setConfigOverride,
+    setVirtualFile,
+} from '../__mocks__/vscode';
 
 import type { ExtensionMessage } from '../../shared/messages';
 
 const EXTENSION_URI = vscode.Uri.file('/ext');
 const TEMPLATE = '<script nonce="%NONCE%" src="%SCRIPT_URI%"></script><link href="%CSS_URI%"><meta content="%CSP_SOURCE%">';
+const FIXTURE = `<?xml version="1.0" encoding="utf-8"?>
+<xliff version="1.2"><file source-language="en-US" target-language="de-DE" original="App"><body>
+  <trans-unit id="Table 1 - Property 2"><source>Customer</source><target state="translated">Kunde</target></trans-unit>
+</body></file></xliff>`;
 
 interface Harness {
     readonly posted: ExtensionMessage[];
@@ -44,7 +56,7 @@ async function openEditor(): Promise<Harness> {
         },
     } as unknown as vscode.WebviewPanel;
 
-    const document = { uri: vscode.Uri.file('/w/App.de-DE.xlf') } as unknown as vscode.TextDocument;
+    const document = new FakeTextDocument('/w/App.de-DE.xlf', FIXTURE) as unknown as vscode.TextDocument;
     const provider = new XliffEditorProvider(EXTENSION_URI);
     await provider.resolveCustomTextEditor(document, panel, {} as vscode.CancellationToken);
 
@@ -79,17 +91,25 @@ describe('the editor provider', () => {
         expect(harness.posted).toEqual([]);
     });
 
-    it('answers ready with settings and the pending session\'s notice', async () => {
+    it('answers ready with the settings, then the parsed document', async () => {
         setConfigOverride('xliffViewer.defaultExpandDepth', 4);
         const harness = await openEditor();
 
         harness.send({ type: WebviewMessageType.ready });
 
-        expect(harness.posted.map(message => message.type)).toEqual([ExtensionMessageType.settings, ExtensionMessageType.loading]);
+        expect(harness.posted.map(message => message.type)).toEqual([
+            ExtensionMessageType.settings,
+            ExtensionMessageType.loading,
+            ExtensionMessageType.setDocument,
+        ]);
         expect(harness.posted[0]).toEqual({
             type: ExtensionMessageType.settings,
             payload: { editMode: false, showDeveloperNotes: true, showGeneratorNotes: false, defaultExpandDepth: 4, validationEnabled: true },
         });
+
+        const document = harness.posted[2];
+        expect(document.type === ExtensionMessageType.setDocument && document.payload.fileName).toBe('App.de-DE.xlf');
+        expect(document.type === ExtensionMessageType.setDocument && document.payload.files[0].units).toHaveLength(1);
     });
 
     it('logs and ignores a message that is not in the contract, rather than throwing', async () => {
@@ -125,6 +145,15 @@ describe('the editor provider', () => {
         fireConfigurationChange('editor.fontSize', 'xliffSync.baseFile');
 
         expect(harness.posted).toEqual([]);
+    });
+
+    it('releases the document session when the panel closes', async () => {
+        const harness = await openEditor();
+        expect(documentChangeListenerCount()).toBe(1);
+
+        harness.dispose();
+
+        expect(documentChangeListenerCount()).toBe(0);
     });
 
     it('stops listening for configuration changes once the panel is disposed', async () => {

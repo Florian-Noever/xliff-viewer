@@ -26,12 +26,19 @@ import { isVscode, postMessage } from './vscode';
 import { ExtensionMessageType, isExtensionMessage, WebviewMessageType } from '@shared/messages';
 import { DEFAULT_WEBVIEW_SETTINGS } from '@shared/settings';
 
+import type { XliffDocumentDto } from '@shared/dto';
 import type { WebviewSettings } from '@shared/settings';
 
 useDesignTokens();
 
 const status = ref('—');
 const settings = ref<WebviewSettings>(DEFAULT_WEBVIEW_SETTINGS);
+
+function describe(document: XliffDocumentDto): string {
+    const units = document.files.reduce((total, file) => total + file.units.length, 0);
+    const readOnly = document.readOnly ? ', read-only' : '';
+    return `${document.fileName} — ${units} units in ${document.files.length} file(s)${readOnly}`;
+}
 
 function onMessage(event: MessageEvent): void {
     if (!isExtensionMessage(event.data)) {
@@ -48,7 +55,7 @@ function onMessage(event: MessageEvent): void {
             settings.value = event.data.payload;
             break;
         case ExtensionMessageType.setDocument:
-            status.value = `${event.data.payload.fileName} — ${event.data.payload.files.length} file(s)`;
+            status.value = describe(event.data.payload);
             break;
         default:
             break;

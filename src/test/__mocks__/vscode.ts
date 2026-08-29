@@ -33,6 +33,8 @@ let messageResult: string | undefined;
 let clipboardWrites: string[] = [];
 let logLines: string[] = [];
 let configurationListeners: ((event: ConfigurationChangeEvent) => void)[] = [];
+let documentChangeListeners: ((event: TextDocumentChangeEvent) => void)[] = [];
+let writableFileSystems: Record<string, boolean> = {};
 
 // ── classes ──────────────────────────────────────────────────────────────────
 export class Position {
@@ -207,6 +209,7 @@ export const workspace = {
             fileWrites.push({ path: uri.path, content: text });
             return Promise.resolve();
         },
+        isWritableFileSystem: (scheme: string): boolean | undefined => writableFileSystems[scheme],
         stat: (uri: Uri): Promise<{ type: number; size: number }> => {
             const content = virtualFiles[uri.path];
             if (content === undefined) {
@@ -243,6 +246,15 @@ export const workspace = {
         appliedEdits.push(...edit.entries);
         return Promise.resolve(true);
     },
+    onDidChangeTextDocument: (listener: (event: TextDocumentChangeEvent) => void): Disposable => {
+        documentChangeListeners.push(listener);
+        return new Disposable(() => {
+            const index = documentChangeListeners.indexOf(listener);
+            if (index >= 0) {
+                documentChangeListeners.splice(index, 1);
+            }
+        });
+    },
     onDidChangeConfiguration: (listener: (event: ConfigurationChangeEvent) => void): Disposable => {
         configurationListeners.push(listener);
         return new Disposable(() => {
@@ -256,6 +268,30 @@ export const workspace = {
 
 export interface ConfigurationChangeEvent {
     affectsConfiguration(section: string, scope?: unknown): boolean;
+}
+
+export interface TextDocumentChangeEvent {
+    readonly document: { readonly uri: Uri };
+    readonly contentChanges: readonly unknown[];
+}
+
+/** Enough of a `TextDocument` for a session: an identity and its text. */
+export class FakeTextDocument {
+    public readonly uri: Uri;
+    private text: string;
+
+    public constructor(path: string, text: string) {
+        this.uri = Uri.file(path);
+        this.text = text;
+    }
+
+    public getText(): string {
+        return this.text;
+    }
+
+    public setText(text: string): void {
+        this.text = text;
+    }
 }
 
 export const env = {
@@ -292,6 +328,24 @@ export function fireConfigurationChange(...sections: string[]): void {
     for (const listener of [...configurationListeners]) {
         listener(event);
     }
+}
+
+/** Fires `onDidChangeTextDocument`. `changes` defaults to one entry — zero means "no content changed". */
+export function fireTextDocumentChange(document: { readonly uri: Uri }, changes = 1): void {
+    const event: TextDocumentChangeEvent = { document, contentChanges: Array.from({ length: changes }, () => ({})) };
+    for (const listener of [...documentChangeListeners]) {
+        listener(event);
+    }
+}
+
+/** Declares a scheme's file system read-only, as VS Code does for e.g. `git:`. */
+export function setWritableFileSystem(scheme: string, writable: boolean): void {
+    writableFileSystems[scheme] = writable;
+}
+
+/** How many listeners `onDidChangeTextDocument` currently has — a disposal spy. */
+export function documentChangeListenerCount(): number {
+    return documentChangeListeners.length;
 }
 
 /** Sets what the next `show*Message` call resolves to. */
@@ -351,5 +405,7 @@ export function resetMocks(): void {
     messageResult = undefined;
     clipboardWrites = [];
     configurationListeners = [];
+    documentChangeListeners = [];
+    writableFileSystems = {};
     logLines = [];
 }
