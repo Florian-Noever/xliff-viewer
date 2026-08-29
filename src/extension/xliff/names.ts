@@ -1,4 +1,4 @@
-import type { XliffNote, XliffTransUnit } from '../../shared/model';
+import type { AlSegment, XliffNote, XliffTransUnit } from '../../shared/model';
 
 /**
  * Display names for the AL hierarchy (MASTER_PLAN §4.3, §4.4).
@@ -14,13 +14,6 @@ const DEVELOPER_NOTE_FROM = 'Developer';
 
 /** `de-DE=…`, `en-US=…`. Deliberately anchored: `%1 = Document No.` must not match. */
 const LANGUAGE_PREFIX = /^([a-z]{2}(?:-[A-Za-z0-9]{2,8})?)=([\s\S]*)$/;
-
-export interface AlSegment {
-    /** `Table`, `Field`, `Property` … an open string, never an enum (§4.2). */
-    readonly type: string;
-    /** The numeric hash. Stable, language-independent, and what the tree groups by. */
-    readonly hash: string;
-}
 
 /**
  * Splits a trans-unit id into its `<SymbolType> <hash>` segments.

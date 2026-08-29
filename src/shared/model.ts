@@ -108,6 +108,36 @@ export interface XliffDocument {
     readonly format: DocumentFormat;
 }
 
+// ── The derived AL view model (§7.4) ─────────────────────────────────────────
+// Everything above mirrors the XML. What follows is derived from trans-unit ids and
+// is what the GUI renders; the raw model stays the thing that gets written back.
+
+/** One `<SymbolType> <hash>` step of a trans-unit id. `name` is display text only. */
+export interface AlSegment {
+    /** An open string — never an enum of allowed AL kinds (§4.2). */
+    readonly type: string;
+    /** The numeric hash. Stable and language-independent; the tree groups by it. */
+    readonly hash: string;
+    /** From the generator note, absent when it could not be parsed (§4.4). */
+    readonly name?: string;
+}
+
+/**
+ * A node of the object → member → unit hierarchy.
+ *
+ * No `summary`: the roll-up runs in the webview (`DEC-016`), so this carries structure
+ * only.
+ */
+export interface AlNode {
+    /** The joined id prefix, e.g. `Table 3783554337 - Field 4264183382`. Stable identity for expansion state. */
+    readonly key: string;
+    readonly segment: AlSegment;
+    readonly depth: number;
+    readonly children: readonly AlNode[];
+    /** Set on the node a unit lands on — usually a leaf, but an id can also be another's prefix. */
+    readonly unitId?: string;
+}
+
 /** Walks every unit in the document, in file order, across files and nested groups. */
 export function* iterateUnits(document: XliffDocument): Generator<XliffTransUnit> {
     for (const file of document.files) {
