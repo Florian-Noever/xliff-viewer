@@ -2,5 +2,6 @@
 // evaluation time. Static imports evaluate in source order.
 import './web';
 import './editor.test';
+import './navigation.test';
 
 export { run } from './web';

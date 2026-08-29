@@ -19,6 +19,16 @@ import { iterateUnits } from '../../shared/model';
 export class BaseFileIndex implements vscode.Disposable {
     private readonly cache = new Map<string, ReadonlyMap<string, string>>();
     private readonly subscriptions: vscode.Disposable[] = [];
+    private readonly changed = new vscode.EventEmitter<vscode.Uri>();
+
+    /**
+     * A base file appeared, changed or went away.
+     *
+     * Regenerating `App.g.xlf` while a translator has `App.de-DE.xlf` open is the normal
+     * workflow, not an edge case — dropping the cache is not enough, because the markers
+     * already on screen were computed from the old one (§9.3).
+     */
+    public readonly onDidChange: vscode.Event<vscode.Uri> = this.changed.event;
 
     public constructor() {
         const watcher = vscode.workspace.createFileSystemWatcher('**/*.g.xlf');
@@ -52,10 +62,12 @@ export class BaseFileIndex implements vscode.Disposable {
         }
         this.subscriptions.length = 0;
         this.cache.clear();
+        this.changed.dispose();
     }
 
     private forget(uri: vscode.Uri): void {
         this.cache.delete(uri.toString());
+        this.changed.fire(uri);
     }
 
     private async read(baseUri: vscode.Uri): Promise<ReadonlyMap<string, string>> {

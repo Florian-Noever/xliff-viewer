@@ -200,12 +200,34 @@ describe('the active file', () => {
         expect(state.activeFile.value?.targetLanguage).toBe('de-DE');
     });
 
-    it('goes back to the first file when a new document arrives', () => {
+    it('keeps the selected file across a re-parse of the same document', () => {
+        // REVIEW-02a: an edit re-sends the document; snapping back to the first <file>
+        // would undo the switcher on every keystroke, the way it undid the base file.
         const state = useIt();
 
         sendDocument();
         state.activeFileIndex.value = 1;
         sendDocument();
+
+        expect(state.activeFileIndex.value).toBe(1);
+    });
+
+    it('goes back to the first file when a different document arrives', () => {
+        const state = useIt();
+
+        sendDocument();
+        state.activeFileIndex.value = 1;
+        send({ type: ExtensionMessageType.setDocument, payload: { ...DOCUMENT, uri: 'file:///w/Other.de-DE.xlf' } });
+
+        expect(state.activeFileIndex.value).toBe(0);
+    });
+
+    it('falls back to the first file when the re-parse dropped the one on screen', () => {
+        const state = useIt();
+
+        sendDocument();
+        state.activeFileIndex.value = 1;
+        send({ type: ExtensionMessageType.setDocument, payload: { ...DOCUMENT, files: [DOCUMENT.files[0]] } });
 
         expect(state.activeFileIndex.value).toBe(0);
     });

@@ -42,7 +42,9 @@ export default defineConfig({
             },
             {
                 resolve: {
-                    alias: { vscode: VSCODE_MOCK },
+                    // `@shared` too: the keystroke budget measures the webview's own
+                    // search and flatten code, which is pure and runs fine in node.
+                    alias: { vscode: VSCODE_MOCK, '@shared': SHARED },
                 },
                 test: {
                     name: 'perf',

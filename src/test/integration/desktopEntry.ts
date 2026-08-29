@@ -2,5 +2,6 @@
 // need at evaluation time. Static imports evaluate in source order.
 import './desktop';
 import './editor.test';
+import './navigation.test';
 
 export { run } from './desktop';

@@ -11,6 +11,9 @@ import { parseXliff } from '../../extension/xliff/parser';
 import { serialiseXliff } from '../../extension/xliff/serialise';
 import { validateXml } from '../../extension/xliff/validate';
 import { Logger } from '../../extension/services/logger';
+import { visibleNodes } from '../../webview/ancestorFilter';
+import { buildSearchIndex, toMatcher } from '../../webview/composables/useSearch';
+import { flattenTree, expandableKeys } from '../../webview/composables/useTreeFlatten';
 import { iterateUnits } from '../../shared/model';
 import { effectiveState, summariseTree } from '../../shared/state';
 import { FakeTextDocument } from '../__mocks__/vscode';
@@ -82,6 +85,33 @@ describe('§16, measured on the realistic worst case', () => {
         const context = { uri: 'file:///x', fileName: LARGE };
 
         expect(fastest(3, () => JSON.stringify(projectDocument(document, context)))).toBeLessThan(50);
+    });
+
+    it('turns a keystroke into a filtered tree in under 50 ms', () => {
+        // §11.5's budget, measured over the webview's own pure code: the index is built
+        // once per document, so a keystroke is the matcher, the ancestor walk and the
+        // re-flatten — not the index.
+        const file = projectDocument(parseXliff(text), { uri: 'file:///x', fileName: LARGE }).files[0];
+        const unitsById = new Map(file.units.map(unit => [unit.id, unit]));
+        const index = buildSearchIndex(file.tree, unitsById);
+        const expanded = new Set(expandableKeys(file.tree));
+
+        const measured = fastest(5, () => {
+            const matcher = toMatcher('kunde');
+            const result = visibleNodes(file.tree, [node => matcher(index.get(node.key) ?? '')]);
+            flattenTree(file.tree, expanded, unitsById, result?.visible);
+        });
+        expect(measured).toBeLessThan(50);
+    });
+
+    it('builds the search index once per document in under 100 ms', () => {
+        // Not a §16 row: the number that matters is the keystroke above, and this is the
+        // work that would land on it if the index were ever rebuilt per character.
+        const file = projectDocument(parseXliff(text), { uri: 'file:///x', fileName: LARGE }).files[0];
+        const unitsById = new Map(file.units.map(unit => [unit.id, unit]));
+
+        const measured = fastest(3, () => buildSearchIndex(file.tree, unitsById));
+        expect(measured).toBeLessThan(100);
     });
 
     it('answers ready with the whole document in under 250 ms', () => {

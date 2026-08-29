@@ -8,14 +8,18 @@ import {
     documentChangeListenerCount,
     FakeTextDocument,
     fireConfigurationChange,
+    fireFileWatcher,
+    fireTextDocumentChange,
     flushInfoMessages,
     flushLogs,
     flushRevealedPositions,
+    removeVirtualFile,
     resetMocks,
     setConfigOverride,
     setVirtualFile,
 } from '../__mocks__/vscode';
 
+import type { TransUnitDto } from '../../shared/dto';
 import type { ExtensionMessage } from '../../shared/messages';
 
 const EXTENSION_URI = vscode.Uri.file('/ext');
@@ -32,7 +36,7 @@ interface Harness {
     dispose(): void;
 }
 
-async function openEditor(): Promise<Harness> {
+async function openEditor(supplied?: FakeTextDocument): Promise<Harness> {
     const posted: ExtensionMessage[] = [];
     const listeners: ((message: unknown) => void)[] = [];
     const disposeHandlers: (() => void)[] = [];
@@ -59,9 +63,9 @@ async function openEditor(): Promise<Harness> {
         },
     } as unknown as vscode.WebviewPanel;
 
-    const document = new FakeTextDocument('/w/App.de-DE.xlf', FIXTURE) as unknown as vscode.TextDocument;
+    const document = supplied ?? new FakeTextDocument('/w/App.de-DE.xlf', FIXTURE);
     const provider = new XliffEditorProvider(EXTENSION_URI);
-    await provider.resolveCustomTextEditor(document, panel, {} as vscode.CancellationToken);
+    await provider.resolveCustomTextEditor(document as unknown as vscode.TextDocument, panel, {} as vscode.CancellationToken);
 
     return {
         posted,
@@ -275,5 +279,194 @@ describe('going to the AL source', () => {
         await settle();
 
         expect(flushInfoMessages()[0]).toContain('no AL source files');
+    });
+});
+
+describe('what survives a re-parse (REVIEW-02a)', () => {
+    const BASE = `<?xml version="1.0" encoding="utf-8"?>
+<xliff version="1.2"><file source-language="en-US" target-language="en-US" original="App"><body>
+  <trans-unit id="Table 1 - Property 2"><source>Customer (renamed)</source></trans-unit>
+</body></file></xliff>`;
+
+    const language = (source: string): string => `<?xml version="1.0" encoding="utf-8"?>
+<xliff version="1.2"><file source-language="en-US" target-language="de-DE" original="App"><body>
+  <trans-unit id="Table 1 - Property 2"><source>${source}</source><target state="translated">Kunde</target></trans-unit>
+</body></file></xliff>`;
+
+    const afterDebounce = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 250));
+
+    const patchedUnits = (posted: readonly ExtensionMessage[]): readonly TransUnitDto[] => {
+        const patch = posted.find(message => message.type === ExtensionMessageType.patchUnits);
+        return patch?.type === ExtensionMessageType.patchUnits ? patch.payload.units : [];
+    };
+
+    it('re-announces the base file and the pairing markers, which a setDocument replaces', async () => {
+        setVirtualFile('/w/App.g.xlf', BASE);
+        const document = new FakeTextDocument('/w/App.de-DE.xlf', language('Customer'));
+        const harness = await openEditor(document);
+
+        harness.send({ type: WebviewMessageType.ready });
+        await settle();
+        expect(harness.posted.map(message => message.type)).toEqual([
+            ExtensionMessageType.settings,
+            ExtensionMessageType.loading,
+            ExtensionMessageType.setDocument,
+            ExtensionMessageType.alSource,
+            ExtensionMessageType.baseFile,
+            ExtensionMessageType.patchUnits,
+        ]);
+
+        harness.posted.length = 0;
+        document.setText(language('Customer edited'));
+        fireTextDocumentChange(document);
+        await afterDebounce();
+        await settle();
+
+        // Without this the panel keeps a document whose baseFile is gone and whose
+        // orphaned/source-changed markers were dropped with the payload they rode on.
+        expect(harness.posted.map(message => message.type)).toEqual([
+            ExtensionMessageType.setDocument,
+            ExtensionMessageType.baseFile,
+            ExtensionMessageType.patchUnits,
+        ]);
+    });
+
+    it('re-marks the units when the compiler rewrites the base file underneath', async () => {
+        setVirtualFile('/w/App.g.xlf', BASE);
+        const document = new FakeTextDocument('/w/App.de-DE.xlf', language('Customer'));
+        const harness = await openEditor(document);
+        harness.send({ type: WebviewMessageType.ready });
+        await settle();
+
+        harness.posted.length = 0;
+        setVirtualFile('/w/App.g.xlf', BASE.replace('Customer (renamed)', 'Customer'));
+        fireFileWatcher('changed', '/w/App.g.xlf');
+        await settle();
+
+        // The document did not change; the file it is paired against did (§9.3). The unit
+        // now agrees with its base, so the marker has to come *off* — which `patchUnits`
+        // can only do by sending the unit again without one.
+        const cleared = patchedUnits(harness.posted);
+        expect(cleared).toHaveLength(1);
+        expect(cleared[0].id).toBe('Table 1 - Property 2');
+        expect(cleared[0].baseSource).toBeUndefined();
+        expect(cleared[0].orphaned).toBeUndefined();
+    });
+
+    it('marks units the compiler has just changed under an untouched translation', async () => {
+        setVirtualFile('/w/App.g.xlf', BASE.replace('Customer (renamed)', 'Customer'));
+        const document = new FakeTextDocument('/w/App.de-DE.xlf', language('Customer'));
+        const harness = await openEditor(document);
+        harness.send({ type: WebviewMessageType.ready });
+        await settle();
+        expect(harness.posted.some(message => message.type === ExtensionMessageType.patchUnits)).toBe(false);
+
+        harness.posted.length = 0;
+        setVirtualFile('/w/App.g.xlf', BASE);
+        fireFileWatcher('changed', '/w/App.g.xlf');
+        await settle();
+
+        expect(patchedUnits(harness.posted)[0].baseSource).toBe('Customer (renamed)');
+    });
+
+    it('takes the markers off when the base file goes away entirely', async () => {
+        setVirtualFile('/w/App.g.xlf', BASE);
+        const document = new FakeTextDocument('/w/App.de-DE.xlf', language('Customer'));
+        const harness = await openEditor(document);
+        harness.send({ type: WebviewMessageType.ready });
+        await settle();
+
+        harness.posted.length = 0;
+        removeVirtualFile('/w/App.g.xlf');
+        fireFileWatcher('deleted', '/w/App.g.xlf');
+        await settle();
+
+        expect(harness.posted.find(message => message.type === ExtensionMessageType.baseFile)?.payload).toBeNull();
+        const cleared = patchedUnits(harness.posted);
+        expect(cleared).toHaveLength(1);
+        expect(cleared[0].baseSource).toBeUndefined();
+    });
+
+    it('stops listening for base-file changes once the panel is gone', async () => {
+        setVirtualFile('/w/App.g.xlf', BASE);
+        const document = new FakeTextDocument('/w/App.de-DE.xlf', language('Customer'));
+        const harness = await openEditor(document);
+        harness.send({ type: WebviewMessageType.ready });
+        await settle();
+
+        harness.dispose();
+        harness.posted.length = 0;
+        fireFileWatcher('changed', '/w/App.g.xlf');
+        await settle();
+
+        expect(harness.posted).toEqual([]);
+    });
+
+    it('does not re-ask whether the workspace has AL source \u2014 that cannot change with the document', async () => {
+        const document = new FakeTextDocument('/w/App.de-DE.xlf', language('Customer'));
+        const harness = await openEditor(document);
+        harness.send({ type: WebviewMessageType.ready });
+        await settle();
+
+        harness.posted.length = 0;
+        document.setText(language('Customer edited'));
+        fireTextDocumentChange(document);
+        await afterDebounce();
+        await settle();
+
+        expect(harness.posted.some(message => message.type === ExtensionMessageType.alSource)).toBe(false);
+    });
+
+    it('sends only the failure when the re-parse fails, and no stale pairing with it', async () => {
+        setVirtualFile('/w/App.g.xlf', BASE);
+        const document = new FakeTextDocument('/w/App.de-DE.xlf', language('Customer'));
+        const harness = await openEditor(document);
+        harness.send({ type: WebviewMessageType.ready });
+        await settle();
+
+        harness.posted.length = 0;
+        document.setText('<xliff version="1.2"><file>');
+        fireTextDocumentChange(document);
+        await afterDebounce();
+        await settle();
+
+        expect(harness.posted.map(message => message.type)).toEqual([ExtensionMessageType.error]);
+    });
+});
+
+describe('navigation that cannot go anywhere still says so (\u00a712.5)', () => {
+    it('refuses to look for a base file\'s own base file', async () => {
+        const document = new FakeTextDocument('/w/App.g.xlf', `<?xml version="1.0" encoding="utf-8"?>
+<xliff version="1.2"><file source-language="en-US" target-language="en-US" original="App"><body>
+  <trans-unit id="Table 1 - Property 2"><source>Customer</source></trans-unit>
+</body></file></xliff>`);
+        const harness = await openEditor(document);
+        harness.send({ type: WebviewMessageType.ready });
+        await settle();
+
+        harness.send({
+            type: WebviewMessageType.openSource,
+            target: 'base',
+            fileIndex: 0,
+            unitId: 'Table 1 - Property 2',
+        });
+        await settle();
+
+        expect(flushInfoMessages()).toEqual(['This file is the base file.']);
+    });
+
+    it('names the missing unit rather than opening nothing quietly', async () => {
+        const harness = await openEditor();
+        harness.send({ type: WebviewMessageType.ready });
+        await settle();
+
+        harness.send({ type: WebviewMessageType.openSource, target: 'base' });
+        harness.send({ type: WebviewMessageType.openSource, target: 'al' });
+        await settle();
+
+        expect(flushInfoMessages()).toEqual([
+            'Choose a unit to show in the base file.',
+            'Choose a unit to show in the AL source.',
+        ]);
     });
 });

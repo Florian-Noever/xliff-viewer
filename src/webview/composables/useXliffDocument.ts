@@ -96,14 +96,22 @@ export function useXliffDocument(): XliffDocument {
                 loading.value = message.payload.message;
                 error.value = undefined;
                 break;
-            case ExtensionMessageType.setDocument:
+            case ExtensionMessageType.setDocument: {
                 // The host posts the last good document *ahead* of an error, so clearing
                 // the error here is safe and a later `error` still lands (§7.7).
+                //
+                // A re-parse of the *same* document keeps the selected `<file>`, the way
+                // the tree keeps its expansion: an edit must not snap a multi-file
+                // document back to the first one.
+                const sameDocument = document.value?.uri === message.payload.uri;
                 document.value = message.payload;
-                activeFileIndex.value = 0;
+                if (!sameDocument || activeFileIndex.value >= message.payload.files.length) {
+                    activeFileIndex.value = 0;
+                }
                 loading.value = undefined;
                 error.value = undefined;
                 break;
+            }
             case ExtensionMessageType.error:
                 error.value = message.payload;
                 loading.value = undefined;
