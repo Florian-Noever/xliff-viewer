@@ -1,7 +1,7 @@
 <template>
     <div
         class="tree-row"
-        :class="{ 'is-focused': focused, 'is-unit': row.unit !== undefined }"
+        :class="{ 'is-focused': focused, 'is-container': row.hasChildren }"
         role="treeitem"
         :aria-level="row.depth + 1"
         :aria-posinset="row.position"
@@ -10,7 +10,7 @@
         :aria-selected="focused"
         :tabindex="focused ? 0 : -1"
         :style="{ paddingInlineStart: `calc(var(--row-indent) * ${row.depth})` }"
-        @click="emit('focus', row.key)"
+        @click="onClick"
     >
         <button
             v-if="row.hasChildren"
@@ -73,6 +73,35 @@ const emit = defineEmits<{
 }>();
 
 /**
+ * A whole container row is its own chevron: clicking it opens or closes it, and the
+ * chevron stays as the affordance that says so.
+ *
+ * A row with no children does nothing at all — no cursor, no hover, no focus change. There
+ * is nothing to toggle, and a unit row is content to read rather than a control to press.
+ */
+function onClick(event: MouseEvent): void {
+    if (!props.row.hasChildren || !isPlainClick(event)) {
+        return;
+    }
+    emit('focus', props.row.key);
+    emit('toggle', props.row.key);
+}
+
+/**
+ * A click that means what it looks like.
+ *
+ * Two do not: the end of a drag that selected text, and one that landed inside a unit card
+ * — an id can be another unit's prefix, so a row can carry both children and a card, and
+ * the card's text is what the reader came for.
+ */
+function isPlainClick(event: MouseEvent): boolean {
+    if (event.target instanceof Element && event.target.closest('.card') !== null) {
+        return false;
+    }
+    return window.getSelection()?.isCollapsed !== false;
+}
+
+/**
  * The generator note could not be parsed for this node, so there is no name (§4.4).
  * Showing the hash is better than showing nothing: it is what the id says, and it is what
  * a search of the raw file will match.
@@ -107,6 +136,10 @@ const pairing = computed(() => {
     white-space: nowrap;
 }
 
+.tree-row.is-container {
+    cursor: pointer;
+}
+
 /* Everything on a container row sits on one line; a unit's card is the exception. */
 .tree-row > :not(.card) {
     margin-block: calc((var(--row-height) - 1.4em) / 2);
@@ -117,14 +150,18 @@ const pairing = computed(() => {
     min-width: 0;
     white-space: normal;
     margin-block: 0;
+    cursor: text;
 }
 
-.tree-row:hover {
+.tree-row.is-container:hover {
     background: var(--vscode-list-hoverBackground);
 }
 
+/* Keyboard position, not selection: the row the arrow keys are on is outlined rather than
+   filled, so the tree never looks like a list with a selected item. */
 .tree-row.is-focused {
-    background: var(--vscode-list-activeSelectionBackground);
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: -1px;
 }
 
 .tree-row:focus-visible {
