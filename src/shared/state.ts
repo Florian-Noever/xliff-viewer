@@ -133,11 +133,16 @@ export interface UnitState {
     readonly translate: boolean;
 }
 
-/** The structure a roll-up walks. Both `AlNode` and the DTO tree satisfy it. */
+/**
+ * The structure a roll-up walks. Both `AlNode` and `AlNodeDto` satisfy it.
+ *
+ * A node carries a unit exactly when its `key` is that unit's id — the tree is built from
+ * the ids, so the node a unit lands on has the whole id as its key. That is why the lookup
+ * below needs no separate `unitId` field, and why the DTO does not ship one.
+ */
 export interface SummaryNode {
     readonly key: string;
     readonly children: readonly SummaryNode[];
-    readonly unitId?: string;
 }
 
 /** §5.4. Every node carries one, including the file root. */
@@ -235,12 +240,13 @@ export function summariseUnits(units: Iterable<UnitState>): StateSummary {
 /**
  * Summarises every node of a tree, bottom-up, in one pass.
  *
+ * `states` is keyed by trans-unit id, which is also the key of the node that carries it.
+ * A node whose key is not in `states` contributes nothing of its own, which is what makes
+ * the same function usable over a filtered view.
+ *
  * Returns a `key → summary` map rather than writing onto the nodes: `AlNode` is readonly,
  * and a map is what "computed once per load and cached" (§5.3, rule 5) means for an
  * immutable tree. Keys are stable, so the map survives re-renders.
- *
- * A `unitId` missing from `states` contributes nothing, which is what makes the same
- * function usable over a filtered view.
  */
 export function summariseTree(nodes: readonly SummaryNode[], states: ReadonlyMap<string, UnitState>): ReadonlyMap<string, StateSummary> {
     const summaries = new Map<string, StateSummary>();
@@ -257,7 +263,7 @@ function summariseNode(node: SummaryNode, states: ReadonlyMap<string, UnitState>
         addSummary(accumulator, summariseNode(child, states, summaries));
     }
 
-    const own = node.unitId === undefined ? undefined : states.get(node.unitId);
+    const own = states.get(node.key);
     if (own !== undefined) {
         addUnit(accumulator, own);
     }
