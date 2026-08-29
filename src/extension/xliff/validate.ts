@@ -1,8 +1,9 @@
 import { XMLValidator } from 'fast-xml-parser';
 
 import { XliffParseError } from './errors';
+import { iterateFileUnits } from '../../shared/model';
 
-import type { XliffBody, XliffDocument, XliffGroup, XliffTransUnit } from '../../shared/model';
+import type { XliffDocument } from '../../shared/model';
 
 /**
  * Validation is **mandatory, not advisory** (MASTER_PLAN §7.7, `DEC-017`).
@@ -35,21 +36,6 @@ export function validateXml(text: string): void {
     throw new XliffParseError(msg, { line, col });
 }
 
-function* iterateGroups(container: XliffBody | XliffGroup): Generator<XliffGroup> {
-    for (const group of container.groups) {
-        yield group;
-        yield* iterateGroups(group);
-    }
-}
-
-function unitsOfFile(body: XliffBody): XliffTransUnit[] {
-    const units = [...body.units];
-    for (const group of iterateGroups(body)) {
-        units.push(...group.units);
-    }
-    return units;
-}
-
 /**
  * Asserts the structure the model layer depends on, after a successful parse.
  *
@@ -70,7 +56,7 @@ export function validateStructure(document: XliffDocument): void {
         // uniqueness is checked per file.
         const seen = new Set<string>();
 
-        for (const unit of unitsOfFile(file.body)) {
+        for (const unit of iterateFileUnits(file)) {
             if (unit.id === '') {
                 throw new XliffParseError(`A <trans-unit> in <file> ${index + 1} has no id.`);
             }

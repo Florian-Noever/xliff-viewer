@@ -111,13 +111,23 @@ export interface XliffDocument {
 /** Walks every unit in the document, in file order, across files and nested groups. */
 export function* iterateUnits(document: XliffDocument): Generator<XliffTransUnit> {
     for (const file of document.files) {
-        yield* iterateBodyUnits(file.body);
+        yield* iterateFileUnits(file);
     }
 }
 
-function* iterateBodyUnits(container: XliffBody | XliffGroup): Generator<XliffTransUnit> {
+/**
+ * Walks one `<file>`'s units, in document order, through nested groups.
+ *
+ * Separate from `iterateUnits` because XLIFF scopes trans-unit ids to their `<file>`,
+ * so anything checking uniqueness has to work a file at a time.
+ */
+export function* iterateFileUnits(file: XliffFile): Generator<XliffTransUnit> {
+    yield* iterateContainerUnits(file.body);
+}
+
+function* iterateContainerUnits(container: XliffBody | XliffGroup): Generator<XliffTransUnit> {
     yield* container.units;
     for (const group of container.groups) {
-        yield* iterateBodyUnits(group);
+        yield* iterateContainerUnits(group);
     }
 }

@@ -1,0 +1,68 @@
+import { describe, expect, it } from 'vitest';
+
+import { parseXliff } from '../../extension/xliff/parser';
+import { serialiseXliff } from '../../extension/xliff/serialise';
+import { validateStructure } from '../../extension/xliff/validate';
+
+/**
+ * Behaviour on input the corpus does not contain, pinned by `REVIEW-01`.
+ *
+ * Some of these assert something we would rather not do. They are here so the loss is
+ * **visible and deliberate** rather than discovered by a user — every one is recorded in
+ * STATUS.md's Known Issues with the task that would change it.
+ */
+
+const wrap = (inner: string): string =>
+    `<?xml version="1.0"?>\n<xliff version="1.2">\n  <file source-language="en">\n    <body>\n${inner}\n    </body>\n  </file>\n</xliff>`;
+
+const roundTrip = (text: string): string => serialiseXliff(parseXliff(text));
+
+describe('shapes AL never emits but XLIFF allows', () => {
+    it('keeps state-qualifier through a round-trip', () => {
+        const text = wrap('      <trans-unit id="a">\n        <source>s</source>\n        <target state="needs-review-translation" state-qualifier="mt-suggestion">t</target>\n      </trans-unit>');
+        const unit = parseXliff(text).files[0].body.units[0];
+
+        expect(unit.target?.stateQualifier).toBe('mt-suggestion');
+        expect(roundTrip(text)).toContain('state-qualifier="mt-suggestion"');
+    });
+
+    it('keeps attributes on <body> and an id-less <group>', () => {
+        const text = wrap('      <trans-unit id="a">\n        <source>s</source>\n      </trans-unit>');
+        const withBodyAttrs = text.replace('<body>', '<body custom="x">');
+        expect(roundTrip(withBodyAttrs)).toContain('<body custom="x">');
+
+        const grouped = wrap('      <group>\n        <trans-unit id="a">\n          <source>s</source>\n        </trans-unit>\n      </group>');
+        const document = parseXliff(grouped);
+        expect(document.files[0].body.groups[0].id).toBeUndefined();
+        expect(roundTrip(grouped)).toContain('<group>');
+    });
+
+    it('accepts an empty <body>', () => {
+        const text = wrap('');
+        expect(() => validateStructure(parseXliff(text))).not.toThrow();
+    });
+
+    it('rejects a <file> with no <body> at parse time', () => {
+        const text = '<?xml version="1.0"?>\n<xliff version="1.2"><file source-language="en"></file></xliff>';
+        expect(() => parseXliff(text)).toThrow(/0 <body> elements/);
+    });
+});
+
+describe('known losses — deliberate, recorded, and not yet fixed', () => {
+    it('DROPS XML comments (see STATUS Known Issues; task DATA-03a)', () => {
+        const text = wrap('      <!-- reviewed by AB -->\n      <trans-unit id="a">\n        <source>s</source>\n      </trans-unit>');
+
+        // This is content loss, not formatting normalisation. Asserted so that the day
+        // someone fixes it, this test fails and tells them to update the record.
+        expect(roundTrip(text)).not.toContain('reviewed by AB');
+    });
+
+    it('converts CDATA to escaped text', () => {
+        const text = wrap('      <trans-unit id="a">\n        <source><![CDATA[<b>x</b>]]></source>\n      </trans-unit>');
+
+        // Same characters, different encoding — a byte change, not a meaning change.
+        // Falls under DEC-017's first-save normalisation.
+        expect(parseXliff(text).files[0].body.units[0].source).toBe('<b>x</b>');
+        expect(roundTrip(text)).toContain('<source>&lt;b&gt;x&lt;/b&gt;</source>');
+    });
+});
