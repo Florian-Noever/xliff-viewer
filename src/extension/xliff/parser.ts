@@ -239,7 +239,9 @@ function toFile(node: FxpNode): XliffFile {
  * a document that is not well-formed is never turned into a model, because a whole-file
  * writer would then rewrite the file from a misreading of it (§7.7, `DEC-017`).
  *
- * @throws {XliffParseError}
+ * @throws {XliffParseError} for anything this module rejects. `fast-xml-parser`'s own
+ * guards can also surface as a plain `Error` — its nested-tag limit is the reachable one —
+ * so a caller must treat any throw as "no model", not only this type.
  */
 export function parseXliff(raw: string): XliffDocument {
     validateXml(raw);

@@ -147,6 +147,38 @@ describe('the editor provider', () => {
         expect(harness.posted).toEqual([]);
     });
 
+    it('releases the session when the panel closes while the editor is still resolving', async () => {
+        // The template read is awaited before any listener is wired. A panel disposed in
+        // that window used to leave its session — and its change subscription — alive.
+        const disposeHandlers: (() => void)[] = [];
+        const panel = {
+            webview: {
+                options: {},
+                html: '',
+                cspSource: 'x',
+                asWebviewUri: (uri: vscode.Uri) => uri,
+                postMessage: () => Promise.resolve(true),
+                onDidReceiveMessage: () => new vscode.Disposable(() => { }),
+            },
+            onDidDispose: (handler: () => void) => {
+                disposeHandlers.push(handler);
+                return new vscode.Disposable(() => { });
+            },
+        } as unknown as vscode.WebviewPanel;
+
+        const document = new FakeTextDocument('/w/App.de-DE.xlf', FIXTURE) as unknown as vscode.TextDocument;
+        const resolving = new XliffEditorProvider(EXTENSION_URI)
+            .resolveCustomTextEditor(document, panel, {} as vscode.CancellationToken);
+
+        await Promise.resolve();
+        for (const handler of disposeHandlers) {
+            handler();
+        }
+        await resolving;
+
+        expect(documentChangeListenerCount()).toBe(0);
+    });
+
     it('releases the document session when the panel closes', async () => {
         const harness = await openEditor();
         expect(documentChangeListenerCount()).toBe(1);

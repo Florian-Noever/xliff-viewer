@@ -3,8 +3,9 @@ import { fileURLToPath, URL } from 'node:url';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createDocumentSession, XliffDocumentSession } from '../../extension/editor/documentSession';
+import { XliffDocumentSession } from '../../extension/editor/documentSession';
 import { DocumentSessionRegistry } from '../../extension/editor/documentSessionRegistry';
+import { createDocumentSession, postUpdate } from '../../extension/editor/documentView';
 import { Logger } from '../../extension/services/logger';
 import { ExtensionMessageType } from '../../shared/messages';
 import {
@@ -125,6 +126,24 @@ describe('a document that will not parse', () => {
         expect(documents(posted)).toHaveLength(0);
     });
 
+    it('survives a failure the parser did not raise itself', () => {
+        // fast-xml-parser has its own guards; the nested-tag limit is the reachable one,
+        // and it throws a plain Error with no line. The session must still report it
+        // rather than let it escape into the message handler.
+        const nested = '<group>'.repeat(200);
+        const closing = '</group>'.repeat(200);
+        const deep = `<?xml version="1.0"?><xliff version="1.2"><file source-language="en"><body>${nested}<trans-unit id="1"><source>a</source></trans-unit>${closing}</body></file></xliff>`;
+        const session = sessionFor(openDocument('deep.xlf', deep));
+        const { posted, send } = view(session);
+
+        send();
+
+        const [, second] = posted;
+        expect(second.type).toBe(ExtensionMessageType.error);
+        expect(second.type === ExtensionMessageType.error && second.payload.message).toContain('nested');
+        expect(second.type === ExtensionMessageType.error && second.payload.line).toBeUndefined();
+    });
+
     it('rejects a structurally invalid document that is well-formed XML', () => {
         const duplicate = `<?xml version="1.0"?>
 <xliff version="1.2"><file source-language="en" target-language="de"><body>
@@ -140,21 +159,38 @@ describe('a document that will not parse', () => {
         expect(second.type === ExtensionMessageType.error && second.payload.message).toContain('Duplicate');
     });
 
-    it('keeps the last good document visible behind the error (§7.7)', () => {
-        vi.useFakeTimers();
-        const document = openDocument('Contoso App.de-DE.xlf');
-        const session = sessionFor(document);
-        const { posted, send } = view(session);
-        session.attach(() => { /* a view is attached, so the change is delivered */ });
+});
 
-        send();
-        posted.length = 0;
+describe('what a failing re-parse puts on the wire', () => {
+    it('sends only the failure to a view that already has the document', () => {
+        // Re-sending the last good DTO here cost 1175 KB per failing keystroke burst on
+        // the large file, to redeliver what the panel was already displaying.
+        vi.useFakeTimers();
+        const document = openDocument('Fabrikam Base.de-DE.xlf');
+        const session = sessionFor(document);
+        const posted: ExtensionMessage[] = [];
+        session.attach(state => postUpdate(state, message => posted.push(message)));
+        session.current();
 
         document.setText('<xliff><file>');
         fireTextDocumentChange(document);
         vi.advanceTimersByTime(200);
 
-        // The re-parse reaches this view through its own attachment, not through sendDocument.
+        expect(posted.map(message => message.type)).toEqual([ExtensionMessageType.error]);
+        expect(JSON.stringify(posted).length).toBeLessThan(1024);
+    });
+
+    it('still gives a view that has nothing the last good document first (§7.7)', () => {
+        vi.useFakeTimers();
+        const document = openDocument('Contoso App.de-DE.xlf');
+        const session = sessionFor(document);
+        session.attach(() => { /* keeps the session live */ });
+        session.current();
+
+        document.setText('<xliff><file>');
+        fireTextDocumentChange(document);
+        vi.advanceTimersByTime(200);
+
         const fresh = view(session);
         fresh.send();
 
@@ -163,6 +199,21 @@ describe('a document that will not parse', () => {
             ExtensionMessageType.setDocument,
             ExtensionMessageType.error,
         ]);
+    });
+
+    it('sends the document again when a re-parse succeeds — the content really did change', () => {
+        vi.useFakeTimers();
+        const document = openDocument('Contoso App.de-DE.xlf');
+        const session = sessionFor(document);
+        const posted: ExtensionMessage[] = [];
+        session.attach(state => postUpdate(state, message => posted.push(message)));
+        session.current();
+
+        document.setText(read('Contoso App.en-US.xlf'));
+        fireTextDocumentChange(document);
+        vi.advanceTimersByTime(200);
+
+        expect(posted.map(message => message.type)).toEqual([ExtensionMessageType.setDocument]);
     });
 });
 

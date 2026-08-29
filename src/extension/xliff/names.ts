@@ -10,7 +10,7 @@ import type { AlSegment, XliffNote, XliffTransUnit } from '../../shared/model';
 export const SEGMENT_SEPARATOR = ' - ';
 
 export const GENERATOR_NOTE_FROM = 'Xliff Generator';
-export const DEVELOPER_NOTE_FROM = 'Developer';
+const DEVELOPER_NOTE_FROM = 'Developer';
 
 /** `de-DE=…`, `en-US=…`. Deliberately anchored: `%1 = Document No.` must not match. */
 const LANGUAGE_PREFIX = /^([a-z]{2}(?:-[A-Za-z0-9]{2,8})?)=([\s\S]*)$/;
