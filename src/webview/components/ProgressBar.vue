@@ -1,5 +1,6 @@
 <template>
     <span v-if="summary.worst !== undefined" class="progress" :title="title">
+        <span class="counts">{{ summary.translatedCount }}/{{ summary.translatable }}</span>
         <span
             class="track"
             role="progressbar"
@@ -10,7 +11,6 @@
         >
             <span class="fill" :class="`tone-${tone}`" :style="{ inlineSize: `${summary.percent}%` }" />
         </span>
-        <span class="counts">{{ summary.translatedCount }}/{{ summary.translatable }}</span>
     </span>
 </template>
 
@@ -30,6 +30,10 @@ import type { StateSummary } from '@shared/state';
  *
  * The bar is coloured by the *worst* descendant rather than by the percentage — 99 % done
  * with one missing target is a different thing from 99 % done with one needing review.
+ *
+ * **The counts come first and the bar last**, so the bar ends on the row's own right edge
+ * and every bar in the tree lines up. With the bar first, `120/122` and `8/8` pushed their
+ * bars to different places and a column of them read as ragged rather than comparable.
  */
 
 const props = defineProps<{ summary: StateSummary }>();

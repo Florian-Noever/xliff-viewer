@@ -104,6 +104,14 @@ describe('ProgressBar', () => {
         expect(bar.get('[role="progressbar"]').attributes('aria-label')).toBe('2 of 3 translated');
     });
 
+    it('puts the counts before the bar, so a column of bars lines up (UI-08b)', () => {
+        // With the bar first, `120/122` and `8/8` pushed their bars to different places.
+        // Nothing else would catch this being swapped back: it is pure order.
+        const bar = mount(ProgressBar, { props: { summary: summary([unit('a', XliffState.translated)]) } });
+
+        expect([...bar.element.children].map(child => child.className)).toEqual(['counts', 'track']);
+    });
+
     it('takes its colour from the worst descendant, not from the percentage', () => {
         // 2 of 3 either way; what differs is how bad the outstanding one is.
         const pending = mount(ProgressBar, {
