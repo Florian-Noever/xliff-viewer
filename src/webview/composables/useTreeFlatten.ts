@@ -60,18 +60,30 @@ export interface TreeView {
     dismissFlatNote(): void;
 }
 
-/** Pure: the same inputs always produce the same rows, in document order. */
+/**
+ * Pure: the same inputs always produce the same rows, in document order.
+ *
+ * `visible` is the search result (§11.5). When it is present the tree shows only those
+ * keys, and **expansion follows the filter rather than the user**: a node opens because a
+ * descendant matched, not because the user opened it. The user's own expansion set is
+ * untouched, which is what lets Escape put the tree back exactly as it was.
+ */
 export function flattenTree(
     nodes: readonly AlNodeDto[],
     expanded: ReadonlySet<string>,
     unitsById: ReadonlyMap<string, TransUnitDto>,
+    visible?: ReadonlySet<string>,
 ): TreeRow[] {
     const rows: TreeRow[] = [];
 
     const walk = (siblings: readonly AlNodeDto[], depth: number): void => {
-        siblings.forEach((node, index) => {
+        const shown = visible === undefined ? siblings : siblings.filter(node => visible.has(node.key));
+
+        shown.forEach((node, index) => {
             const hasChildren = node.children.length > 0;
-            const isExpanded = hasChildren && expanded.has(node.key);
+            const isExpanded = visible === undefined
+                ? hasChildren && expanded.has(node.key)
+                : node.children.some(child => visible.has(child.key));
 
             rows.push({
                 key: node.key,
@@ -82,7 +94,7 @@ export function flattenTree(
                 expanded: isExpanded,
                 unit: unitsById.get(node.key),
                 position: index + 1,
-                siblings: siblings.length,
+                siblings: shown.length,
             });
 
             if (isExpanded) {
@@ -116,6 +128,8 @@ export interface TreeSource {
     readonly defaultExpandDepth: ComputedRef<number>;
     /** Identifies the document, so a different one does not inherit this one's state. */
     readonly documentUri: ComputedRef<string | undefined>;
+    /** Keys the search is showing, or undefined when nothing is filtering (§11.5). */
+    readonly visible?: ComputedRef<ReadonlySet<string> | undefined>;
 }
 
 /** What one `<file>` remembers while the user is looking at another. */
@@ -135,7 +149,7 @@ export function useTreeFlatten(source: TreeSource): TreeView {
     const fileIndex = computed(() => source.file.value?.index ?? -1);
     const state = computed(() => byFile.value.get(fileIndex.value) ?? NOTHING_OPEN);
 
-    const rows = computed(() => flattenTree(tree.value, state.value.expanded, source.unitsById.value));
+    const rows = computed(() => flattenTree(tree.value, state.value.expanded, source.unitsById.value, source.visible?.value));
     const nodesByKey = computed(() => indexNodes(tree.value));
     const focusedKey = computed({
         get: () => state.value.focusedKey,

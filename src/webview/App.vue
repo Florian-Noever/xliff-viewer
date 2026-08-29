@@ -21,6 +21,7 @@
                 :summary="rollup.file.value"
                 @update:file-index="activeFileIndex = $event"
             />
+            <Toolbar v-if="activeFile !== undefined" :search="search" />
             <UnitTree
                 v-if="activeFile !== undefined"
                 :tree="tree"
@@ -37,9 +38,11 @@ import { computed } from 'vue';
 
 import FileHeader from './components/FileHeader.vue';
 import StatusPane from './components/StatusPane.vue';
+import Toolbar from './components/Toolbar.vue';
 import UnitTree from './components/UnitTree.vue';
 import { useDesignTokens } from './composables/useDesignTokens';
 import { useRollup } from './composables/useRollup';
+import { useSearch } from './composables/useSearch';
 import { useTreeFlatten } from './composables/useTreeFlatten';
 import { useXliffDocument } from './composables/useXliffDocument';
 
@@ -47,11 +50,14 @@ useDesignTokens();
 
 const { document, loading, error, settings, activeFile, activeFileIndex, unitsById, blocking, openAsText } = useXliffDocument();
 
+const search = useSearch({ file: activeFile, unitsById });
+
 const tree = useTreeFlatten({
     file: activeFile,
     unitsById,
     defaultExpandDepth: computed(() => settings.value.defaultExpandDepth),
     documentUri: computed(() => document.value?.uri),
+    visible: search.matches,
 });
 
 const rollup = useRollup({ file: activeFile, unitsById });
