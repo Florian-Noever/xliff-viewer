@@ -321,19 +321,6 @@ describe('budget', () => {
         expect(bytes).toBeLessThan(1250 * 1024);
     });
 
-    it('projects and serialises the large file within the §16 budget', () => {
-        const document = parseXliff(readFileSync(`${EXAMPLES}/Fabrikam Base.de-DE.xlf`, 'utf8'));
-        const context = { uri: 'file:///x', fileName: 'Fabrikam Base.de-DE.xlf' };
-        JSON.stringify(projectDocument(document, context));
-
-        let best = Number.POSITIVE_INFINITY;
-        for (let attempt = 0; attempt < 3; attempt++) {
-            const started = performance.now();
-            JSON.stringify(projectDocument(document, context));
-            best = Math.min(best, performance.now() - started);
-        }
-        expect(best).toBeLessThan(50);
-    });
 });
 
 describe('base-file detection across several files', () => {

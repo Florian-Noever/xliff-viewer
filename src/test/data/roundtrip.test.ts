@@ -76,18 +76,6 @@ describe('round-trip invariant', () => {
         }
     });
 
-    it('serialises the largest file within the §16 budget', () => {
-        const document = parseXliff(read('Fabrikam Base.de-DE.xlf'));
-        serialiseXliff(document); // warm up, so this measures the work and not the JIT
-
-        let best = Number.POSITIVE_INFINITY;
-        for (let attempt = 0; attempt < 3; attempt++) {
-            const started = performance.now();
-            serialiseXliff(document);
-            best = Math.min(best, performance.now() - started);
-        }
-        expect(best).toBeLessThan(60);
-    });
 });
 
 describe('a single edit changes only that target', () => {

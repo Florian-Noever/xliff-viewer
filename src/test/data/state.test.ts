@@ -353,18 +353,4 @@ describe('summariseTree', () => {
         expect(rootTranslated).toBe(2138);
     });
 
-    it('rolls the large file up within the MASTER_PLAN 16 budget', () => {
-        const units = unitsOf('Fabrikam Base.de-DE.xlf');
-        const map = new Map(units.map(each => [each.id, asUnitState(each)]));
-        const roots = buildAlTree(units);
-        summariseTree(roots, map);
-
-        let best = Number.POSITIVE_INFINITY;
-        for (let attempt = 0; attempt < 3; attempt++) {
-            const started = performance.now();
-            summariseTree(roots, map);
-            best = Math.min(best, performance.now() - started);
-        }
-        expect(best).toBeLessThan(40);
-    });
 });

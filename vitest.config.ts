@@ -15,6 +15,10 @@ const SHARED = resolvePath('./src/shared');
  *             src/extension/xliff/ and src/shared/ stay dependency-free (§6.1).
  *   host    — `vscode` aliased to the hand-written mock.
  *   webview — jsdom, the Vue plugin, and an `acquireVsCodeApi` stub.
+ *   perf    — the §16 wall-clock budgets, one file at a time and on their own. Run
+ *             beside the others they measured 65 ms against a 60 ms budget and 23 ms
+ *             alone; a timing assertion that depends on what else is running is not an
+ *             assertion. `bun run test` runs this project after the other three.
  */
 export default defineConfig({
     test: {
@@ -34,6 +38,17 @@ export default defineConfig({
                     name: 'host',
                     environment: 'node',
                     include: ['src/test/host/**/*.test.ts'],
+                },
+            },
+            {
+                resolve: {
+                    alias: { vscode: VSCODE_MOCK },
+                },
+                test: {
+                    name: 'perf',
+                    environment: 'node',
+                    include: ['src/test/perf/**/*.perf.test.ts'],
+                    fileParallelism: false,
                 },
             },
             {

@@ -405,21 +405,3 @@ describe('actions that are not wired yet', () => {
         expect(() => facade.openSource('text', { fileIndex: 0, unitId: '1' })).toThrow('NAV-02');
     });
 });
-
-describe('the §16 open budget', () => {
-    it('parses, projects and posts the large file well inside 250 ms', () => {
-        const document = openDocument('Fabrikam Base.de-DE.xlf');
-
-        let best = Number.POSITIVE_INFINITY;
-        for (let attempt = 0; attempt < 3; attempt++) {
-            const session = sessionFor(document);
-            const { send } = view(session);
-            const started = performance.now();
-            send();
-            best = Math.min(best, performance.now() - started);
-            session.dispose();
-        }
-
-        expect(best).toBeLessThan(250);
-    });
-});
