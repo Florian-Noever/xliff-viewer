@@ -32,14 +32,14 @@ const title = computed(() => (props.muted === true ? `translate="no" — ${state
 </script>
 
 <style scoped>
+/* No background, and so no padding or radius either: those existed only to sit inside one.
+   The toolbar's state chips read the same way, and a row that is already highlighted on
+   hover does not need a second filled surface on top of it. */
 .state-badge {
     display: inline-flex;
     align-items: center;
     gap: 5px;
     flex: none;
-    padding: 0 6px;
-    border-radius: var(--radius-sm);
-    background: var(--vscode-editorWidget-background);
     font-size: calc(var(--font) * 0.85);
     white-space: nowrap;
 }
