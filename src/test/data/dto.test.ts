@@ -127,6 +127,7 @@ describe('units', () => {
             rawState: undefined,
             translate: true,
             maxwidth: 50,
+            sizeUnit: 'char',
             alObjectTarget: undefined,
             notes: [{ from: 'Developer', value: 'de-DE=keine|en-US=none' }],
             developerHint: 'keine|en-US=none',

@@ -94,6 +94,7 @@ function projectUnit(unit: XliffTransUnit): TransUnitDto {
         rawState: declared !== undefined && !isSpecState(declared) ? declared : undefined,
         translate: unit.translate,
         maxwidth: unit.maxwidth,
+        sizeUnit: unit.sizeUnit,
         alObjectTarget: unit.alObjectTarget,
         notes: unit.notes
             .filter(note => note.from !== GENERATOR_NOTE_FROM)

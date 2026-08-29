@@ -27,7 +27,13 @@
 
         <span class="type">{{ row.type }}</span>
         <span class="name">{{ label }}</span>
-        <span v-if="row.unit !== undefined" class="source">{{ row.unit.source }}</span>
+        <UnitCard
+            v-if="row.unit !== undefined && settings !== undefined"
+            class="card"
+            :unit="row.unit"
+            :settings="settings"
+            :generator-note="generatorNote"
+        />
         <span class="spacer" />
         <StateBadge
             v-if="row.unit !== undefined"
@@ -43,16 +49,21 @@ import { computed } from 'vue';
 
 import ProgressBar from './ProgressBar.vue';
 import StateBadge from './StateBadge.vue';
+import UnitCard from './UnitCard.vue';
 import { Icon } from '../icons';
 
 import type { TreeRow } from '../composables/useTreeFlatten';
 import type { StateSummary } from '@shared/state';
+import type { WebviewSettings } from '@shared/settings';
 
 const props = defineProps<{
     row: TreeRow;
     focused: boolean;
     /** The roll-up for this node. Absent on a unit row, which shows its own state instead. */
     summary?: StateSummary;
+    settings?: WebviewSettings;
+    /** Rebuilt from the tree by the caller, since the payload does not carry it (§4.4). */
+    generatorNote?: string;
 }>();
 
 const emit = defineEmits<{
@@ -71,12 +82,25 @@ const label = computed(() => props.row.name ?? props.row.key.split(' - ').pop() 
 <style scoped>
 .tree-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 6px;
     min-height: var(--row-height);
+    padding-block: 2px;
     padding-inline-end: var(--pad);
     cursor: default;
     white-space: nowrap;
+}
+
+/* Everything on a container row sits on one line; a unit's card is the exception. */
+.tree-row > :not(.card) {
+    margin-block: calc((var(--row-height) - 1.4em) / 2);
+}
+
+.card {
+    flex: 1;
+    min-width: 0;
+    white-space: normal;
+    margin-block: 0;
 }
 
 .tree-row:hover {
@@ -129,13 +153,6 @@ const label = computed(() => props.row.name ?? props.row.key.split(' - ').pop() 
     flex: none;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-.source {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    color: var(--vscode-descriptionForeground);
 }
 
 .spacer {

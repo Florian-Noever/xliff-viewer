@@ -1,5 +1,7 @@
 import { computed, ref, watch } from 'vue';
 
+import { indexNodes } from '../generatorNote';
+
 import type { AlNodeDto, TransUnitDto, XliffFileDto } from '@shared/dto';
 import type { ComputedRef, WritableComputedRef } from 'vue';
 
@@ -38,6 +40,8 @@ export interface TreeRow {
 
 export interface TreeView {
     readonly rows: ComputedRef<readonly TreeRow[]>;
+    /** Every node of the active file by key — what rebuilds the generator note (§4.4). */
+    readonly nodesByKey: ComputedRef<ReadonlyMap<string, AlNodeDto>>;
     /** The row the keyboard is on. Undefined before anything is focused. */
     readonly focusedKey: WritableComputedRef<string | undefined>;
     readonly focusedIndex: ComputedRef<number>;
@@ -129,6 +133,7 @@ export function useTreeFlatten(source: TreeSource): TreeView {
     const state = computed(() => byFile.value.get(fileIndex.value) ?? NOTHING_OPEN);
 
     const rows = computed(() => flattenTree(tree.value, state.value.expanded, source.unitsById.value));
+    const nodesByKey = computed(() => indexNodes(tree.value));
     const focusedKey = computed({
         get: () => state.value.focusedKey,
         set: key => write({ focusedKey: key }),
@@ -233,6 +238,7 @@ export function useTreeFlatten(source: TreeSource): TreeView {
 
     return {
         rows,
+        nodesByKey,
         focusedKey,
         focusedIndex,
         showFlatNote,

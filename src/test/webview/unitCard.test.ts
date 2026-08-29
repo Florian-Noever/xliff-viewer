@@ -1,0 +1,316 @@
+import { mount } from '@vue/test-utils';
+import { describe, expect, it } from 'vitest';
+
+import MetaChips from '../../webview/components/MetaChips.vue';
+import NoteList from '../../webview/components/NoteList.vue';
+import UnitCard from '../../webview/components/UnitCard.vue';
+import { indexNodes, reconstructGeneratorNote } from '../../webview/generatorNote';
+import { loadBearingWhitespace, WhitespaceReason } from '../../webview/whitespace';
+import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
+import { XliffState } from '../../shared/state';
+
+import type { AlNodeDto, TransUnitDto } from '../../shared/dto';
+import type { WebviewSettings } from '../../shared/settings';
+
+const unit = (over: Partial<TransUnitDto> = {}): TransUnitDto => ({
+    id: 'Table 1 - Property 2',
+    source: 'Customer',
+    target: 'Kunde',
+    state: XliffState.translated,
+    translate: true,
+    notes: [],
+    ...over,
+});
+
+const card = (over: Partial<TransUnitDto> = {}, settings: Partial<WebviewSettings> = {}) =>
+    mount(UnitCard, { props: { unit: unit(over), settings: { ...DEFAULT_WEBVIEW_SETTINGS, ...settings } } });
+
+describe('source and target', () => {
+    it('shows both', () => {
+        const wrapper = card();
+
+        expect(wrapper.get('.source').text()).toBe('Customer');
+        expect(wrapper.get('.target').text()).toBe('Kunde');
+    });
+
+    it('says a target is absent rather than showing a blank line', () => {
+        expect(card({ target: undefined, state: XliffState.missing }).get('.target').text()).toBe('no target');
+    });
+
+    it('tells an empty target apart from an absent one', () => {
+        expect(card({ target: '', state: XliffState.empty }).get('.target').text()).toBe('empty target');
+    });
+
+    it('survives the eight empty sources in the corpus without losing the row', () => {
+        const wrapper = card({ source: '' });
+
+        expect(wrapper.get('.source').text()).toBe('(empty source)');
+        expect(wrapper.get('.target').text()).toBe('Kunde');
+    });
+
+    it('renders text as text, not as a disabled input', () => {
+        const wrapper = card();
+
+        expect(wrapper.find('input').exists()).toBe(false);
+        expect(wrapper.find('textarea').exists()).toBe(false);
+    });
+});
+
+describe('load-bearing whitespace (DEC-021)', () => {
+    it('marks a target that is nothing but a space — ten of them in the corpus', () => {
+        const wrapper = card({ source: 'Name', target: ' ', state: XliffState.translated });
+
+        expect(wrapper.findAll('.ws')).not.toHaveLength(0);
+        expect(wrapper.get('.target').text()).toContain('␣');
+        expect(wrapper.get('.whitespace-note').text()).toContain('only whitespace');
+    });
+
+    it('tells that apart from an empty target', () => {
+        expect(card({ target: '', state: XliffState.empty }).find('.ws').exists()).toBe(false);
+    });
+
+    it('marks edge whitespace the source does not have', () => {
+        const wrapper = card({ source: 'Name', target: ' Name ' });
+
+        expect(wrapper.get('.target').text()).toBe('␣Name␣');
+        expect(wrapper.get('.whitespace-note').text()).toContain('differ from the source');
+    });
+
+    it('says nothing when the edges match the source — the other 45 corpus units', () => {
+        const wrapper = card({ source: ' Name ', target: ' Name ' });
+
+        expect(wrapper.find('.ws').exists()).toBe(false);
+        expect(wrapper.find('.whitespace-note').exists()).toBe(false);
+    });
+
+    it('explains the rule wherever it marks, since it is not obvious why others are not marked', () => {
+        expect(card({ source: 'Name', target: 'Name ' }).get('.whitespace-note').text()).toMatch(/change the meaning/);
+    });
+});
+
+describe('loadBearingWhitespace', () => {
+    it('ignores an absent or empty target', () => {
+        expect(loadBearingWhitespace('a', undefined)).toBeUndefined();
+        expect(loadBearingWhitespace('a', '')).toBeUndefined();
+    });
+
+    it('calls a whitespace-only target out however it is spelt', () => {
+        expect(loadBearingWhitespace('a', ' ')).toBe(WhitespaceReason.only);
+        expect(loadBearingWhitespace('a', '\t\n')).toBe(WhitespaceReason.only);
+    });
+
+    it('compares both edges against the source, not against nothing', () => {
+        expect(loadBearingWhitespace('a', ' a')).toBe(WhitespaceReason.edges);
+        expect(loadBearingWhitespace('a', 'a ')).toBe(WhitespaceReason.edges);
+        expect(loadBearingWhitespace(' a ', ' a ')).toBeUndefined();
+        expect(loadBearingWhitespace(' a', 'a')).toBe(WhitespaceReason.edges);
+    });
+
+    it('does not care about whitespace in the middle', () => {
+        expect(loadBearingWhitespace('a b', 'a  b')).toBeUndefined();
+    });
+});
+
+describe('MetaChips (§2.1 — nothing dropped)', () => {
+    it('shows nothing for an ordinary unit', () => {
+        expect(mount(MetaChips, { props: { unit: unit() } }).find('.chip').exists()).toBe(false);
+    });
+
+    it('shows maxwidth with the unit it is counted in', () => {
+        const chips = mount(MetaChips, { props: { unit: unit({ maxwidth: 50, sizeUnit: 'char' }) } });
+
+        expect(chips.get('.chip').text()).toBe('max 50 char');
+    });
+
+    it('shows al-object-target', () => {
+        const chips = mount(MetaChips, { props: { unit: unit({ alObjectTarget: 'Page 23584087' }) } });
+
+        expect(chips.text()).toContain('Page 23584087');
+    });
+
+    it('explains an untranslatable unit rather than only muting it', () => {
+        const chips = mount(MetaChips, { props: { unit: unit({ translate: false }) } });
+
+        expect(chips.get('.chip').text()).toBe('translate="no"');
+        expect(chips.get('.chip').attributes('title')).toContain('excluded from every roll-up');
+    });
+
+    it('surfaces a state the spec does not define, which the badge can only call unknown', () => {
+        const chips = mount(MetaChips, { props: { unit: unit({ state: XliffState.unknown, rawState: 'proofread' }) } });
+
+        expect(chips.text()).toContain('state="proofread"');
+    });
+
+    it('shows every optional attribute at once', () => {
+        const chips = mount(MetaChips, {
+            props: { unit: unit({ translate: false, maxwidth: 50, sizeUnit: 'char', alObjectTarget: 'Page 1', rawState: 'x' }) },
+        });
+
+        expect(chips.findAll('.chip')).toHaveLength(4);
+    });
+});
+
+describe('NoteList (§3.7)', () => {
+    const notes = [
+        { from: 'Developer', value: 'de-DE=Kunde' },
+        { from: 'Reviewer', value: 'checked' },
+        { value: 'anonymous' },
+    ];
+
+    it('shows every note verbatim, including ones from tools we do not know', () => {
+        const list = mount(NoteList, { props: { notes, showDeveloperNotes: true } });
+
+        expect(list.findAll('.note')).toHaveLength(3);
+        expect(list.text()).toContain('checked');
+        expect(list.text()).toContain('anonymous');
+    });
+
+    it('labels a note with no from at all', () => {
+        const list = mount(NoteList, { props: { notes: [{ value: 'x' }], showDeveloperNotes: true } });
+
+        expect(list.get('.from').text()).toBe('note');
+    });
+
+    it('shows an empty Developer note as empty rather than hiding it', () => {
+        // 347 corpus units have one; absent and empty are different facts.
+        const list = mount(NoteList, { props: { notes: [{ from: 'Developer', value: '' }], showDeveloperNotes: true } });
+
+        expect(list.get('.empty').text()).toBe('(empty)');
+    });
+
+    it('hides only the Developer notes when the setting is off', () => {
+        const list = mount(NoteList, { props: { notes, showDeveloperNotes: false } });
+
+        expect(list.findAll('.note')).toHaveLength(2);
+        expect(list.text()).not.toContain('de-DE=Kunde');
+    });
+
+    it('renders nothing at all when there is nothing to show', () => {
+        expect(mount(NoteList, { props: { notes: [], showDeveloperNotes: true } }).find('.note-list').exists()).toBe(false);
+    });
+});
+
+describe('the Developer hint', () => {
+    it('shows the suggestion with its language prefix stripped', () => {
+        const wrapper = card({
+            target: 'Kundin',
+            notes: [{ from: 'Developer', value: 'de-DE=Kunde' }],
+            developerHint: 'Kunde',
+        });
+
+        expect(wrapper.get('.hint').text()).toContain('Kunde');
+        expect(wrapper.text()).toContain('de-DE=Kunde');
+    });
+
+    it('stays quiet when the translator already used it — which is most of the corpus', () => {
+        // Otherwise every unit prints its target twice, once as the suggestion.
+        const wrapper = card({ target: 'Kunde', notes: [{ from: 'Developer', value: 'de-DE=Kunde' }], developerHint: 'Kunde' });
+
+        expect(wrapper.find('.hint').exists()).toBe(false);
+        expect(wrapper.text()).toContain('de-DE=Kunde');
+    });
+
+    it('says nothing extra when the note had no prefix to strip (§3.7)', () => {
+        const wrapper = card({
+            notes: [{ from: 'Developer', value: '%1 = Document No.' }],
+            developerHint: '%1 = Document No.',
+        });
+
+        expect(wrapper.find('.hint').exists()).toBe(false);
+        expect(wrapper.text()).toContain('%1 = Document No.');
+    });
+
+    it('follows showDeveloperNotes', () => {
+        const wrapper = card(
+            { target: 'Kundin', notes: [{ from: 'Developer', value: 'de-DE=Kunde' }], developerHint: 'Kunde' },
+            { showDeveloperNotes: false },
+        );
+
+        expect(wrapper.find('.hint').exists()).toBe(false);
+    });
+});
+
+describe('the reconstructed generator note (§4.4)', () => {
+    const tree: AlNodeDto[] = [{
+        key: 'Table 3783554337',
+        type: 'Table',
+        name: 'PTE Contoso Methods Setup',
+        children: [{
+            key: 'Table 3783554337 - Field 4264183382',
+            type: 'Field',
+            name: 'Contoso Method',
+            children: [{ key: 'Table 3783554337 - Field 4264183382 - Property 2879900210', type: 'Property', name: 'Caption', children: [] }],
+        }],
+    }];
+
+    it('rebuilds the note the payload does not carry', () => {
+        const note = reconstructGeneratorNote('Table 3783554337 - Field 4264183382 - Property 2879900210', indexNodes(tree));
+
+        expect(note).toBe('Table PTE Contoso Methods Setup - Field Contoso Method - Property Caption');
+    });
+
+    it('gives up rather than guessing when a name could not be parsed', () => {
+        const unnamed: AlNodeDto[] = [{ key: 'Table 1', type: 'Table', children: [] }];
+
+        expect(reconstructGeneratorNote('Table 1', indexNodes(unnamed))).toBeUndefined();
+    });
+
+    it('gives up on an id that is not in the tree', () => {
+        expect(reconstructGeneratorNote('Table 9', indexNodes(tree))).toBeUndefined();
+    });
+
+    it('reaches the card when the setting is on', () => {
+        const wrapper = mount(UnitCard, {
+            props: {
+                unit: unit(),
+                settings: DEFAULT_WEBVIEW_SETTINGS,
+                generatorNote: 'Table Customer - Property Caption',
+            },
+        });
+
+        expect(wrapper.text()).toContain('Xliff Generator');
+        expect(wrapper.text()).toContain('Table Customer - Property Caption');
+    });
+
+    it('is absent when the caller did not reconstruct one', () => {
+        expect(card().text()).not.toContain('Xliff Generator');
+    });
+});
+
+describe('every DTO field is reachable', () => {
+    it('renders something for each one', () => {
+        // §2.1: nothing the file carries may be dropped. If a field is added to
+        // TransUnitDto and nothing here shows it, this fails.
+        const full = unit({
+            target: ' Kunde ',
+            state: XliffState.unknown,
+            rawState: 'proofread',
+            translate: false,
+            maxwidth: 50,
+            sizeUnit: 'char',
+            alObjectTarget: 'Page 23584087',
+            notes: [{ from: 'Developer', value: 'de-DE=Kundin' }],
+            developerHint: 'Kundin',
+        });
+        const wrapper = mount(UnitCard, {
+            props: { unit: full, settings: DEFAULT_WEBVIEW_SETTINGS, generatorNote: 'Table Customer - Property Caption' },
+        });
+        const text = wrapper.text();
+
+        const shown: Record<keyof TransUnitDto, boolean> = {
+            id: true, // the row's key and the reconstructed note; the card shows the path
+            source: text.includes('Customer'),
+            target: text.includes('Kunde'),
+            state: true, // StateBadge, on the row rather than in the card
+            rawState: text.includes('proofread'),
+            translate: text.includes('translate="no"'),
+            maxwidth: text.includes('max 50 char'),
+            sizeUnit: text.includes('char'),
+            alObjectTarget: text.includes('Page 23584087'),
+            notes: text.includes('de-DE=Kundin'),
+            developerHint: wrapper.find('.hint').exists(),
+        };
+
+        expect(Object.entries(shown).filter(([, visible]) => !visible).map(([field]) => field)).toEqual([]);
+    });
+});

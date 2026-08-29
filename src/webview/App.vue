@@ -21,7 +21,12 @@
                 :summary="rollup.file.value"
                 @update:file-index="activeFileIndex = $event"
             />
-            <UnitTree v-if="activeFile !== undefined" :tree="tree" :summaries="rollup.byKey.value" />
+            <UnitTree
+                v-if="activeFile !== undefined"
+                :tree="tree"
+                :summaries="rollup.byKey.value"
+                :settings="settings"
+            />
             <p v-else class="placeholder">Waiting for a document…</p>
         </template>
     </main>

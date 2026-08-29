@@ -131,13 +131,20 @@ describe('the rows it renders', () => {
         expect(child.attributes('aria-expanded')).toBeUndefined();
     });
 
-    it('shows the type, the name and a unit\'s source', async () => {
+    it('shows the type and the name on a container row', async () => {
         const { wrapper } = mountTree(...Object.values(bigTree(1, 1)) as [AlNodeDto[], Map<string, TransUnitDto>]);
         await nextTick();
 
         expect(wrapper.get('.tree-row .type').text()).toBe('Table');
         expect(wrapper.get('.tree-row .name').text()).toBe('Object 0');
-        expect(wrapper.findAll('.tree-row')[1].get('.source').text()).toBe('source 0');
+        expect(wrapper.get('.tree-row').find('.unit-card').exists()).toBe(false);
+    });
+
+    it('leaves a unit row without a card until it is given settings to render one with', async () => {
+        const { wrapper } = mountTree(...Object.values(bigTree(1, 1)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        await nextTick();
+
+        expect(wrapper.findAll('.tree-row')[1].find('.unit-card').exists()).toBe(false);
     });
 
     it('offers a chevron only where there is something to open', async () => {
