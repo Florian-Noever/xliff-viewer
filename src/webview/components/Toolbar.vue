@@ -9,30 +9,62 @@
                 type="search"
                 class="search-input"
                 placeholder="Search source, target, names and notes…"
-                :aria-describedby="active ? 'search-count' : undefined"
+                :aria-describedby="matchCount === undefined ? undefined : 'filter-count'"
                 @keydown.esc.prevent="clear()"
             >
         </label>
-        <span v-if="active" id="search-count" class="match-count" role="status">
+
+        <div class="chips" role="group" aria-label="Filter by translation state">
+            <button
+                v-for="chip in filter.chips.value"
+                :key="chip.state"
+                type="button"
+                class="chip"
+                :class="[`tone-${stateTone(chip.state)}`, { on: chip.selected }]"
+                :aria-pressed="chip.selected"
+                @click="filter.toggle(chip.state)"
+            >
+                <span class="dot" aria-hidden="true" />
+                {{ stateLabel(chip.state) }}
+                <span class="chip-count">{{ chip.count }}</span>
+            </button>
+        </div>
+
+        <span v-if="matchCount !== undefined" id="filter-count" class="match-count" role="status">
             {{ matchCount === 0 ? 'no matches' : `${matchCount} matching` }}
         </span>
+
+        <div class="actions">
+            <button type="button" class="action" @click="emit('expandAll')">Expand all</button>
+            <button type="button" class="action" @click="emit('collapseAll')">Collapse all</button>
+        </div>
     </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, useTemplateRef } from 'vue';
 
+import { stateLabel, stateTone } from '../stateTone';
+
 import type { Search } from '../composables/useSearch';
+import type { StateFilter } from '../composables/useStateFilter';
 
 /**
- * Search, and the shelf the rest of the controls land on (MASTER_PLAN §11.2).
+ * Search, the state chips, and expand/collapse (MASTER_PLAN §11.2).
  *
- * `FIND-02` adds the state chips and expand/collapse here; `EDIT-04` the edit toggle.
+ * `EDIT-04` adds the edit-mode toggle here.
  */
 
-const props = defineProps<{ search: Search }>();
+const props = defineProps<{
+    search: Search;
+    filter: StateFilter;
+    /** How many units satisfy every active filter. Undefined when nothing is filtering. */
+    matchCount?: number;
+}>();
 
-const { query, active, matchCount, clear } = props.search;
+const emit = defineEmits<{ expandAll: []; collapseAll: [] }>();
+
+const { query, clear } = props.search;
 const input = useTemplateRef<HTMLInputElement>('input');
 
 /** Ctrl+F focuses search, Escape clears it (§11.7). Escape is on the input; this is the reach for it. */
@@ -57,6 +89,7 @@ onUnmounted(() => {
 .toolbar {
     flex: none;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: var(--gap);
     padding: var(--pad) calc(var(--pad) * 2);
@@ -65,8 +98,8 @@ onUnmounted(() => {
 
 .search {
     flex: 1;
-    min-width: 0;
-    max-width: 420px;
+    min-width: 180px;
+    max-width: 360px;
     display: flex;
 }
 
@@ -85,9 +118,87 @@ onUnmounted(() => {
     color: var(--vscode-input-placeholderForeground);
 }
 
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 1px 7px;
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: var(--radius-sm);
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-size: calc(var(--font) * 0.85);
+    cursor: pointer;
+}
+
+.chip:hover {
+    background: var(--vscode-list-hoverBackground);
+}
+
+.chip.on {
+    border-color: var(--vscode-focusBorder);
+    background: var(--vscode-list-activeSelectionBackground);
+}
+
+.dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.chip-count {
+    color: var(--vscode-descriptionForeground);
+    font-variant-numeric: tabular-nums;
+}
+
+.tone-done {
+    color: var(--vscode-testing-iconPassed, var(--vscode-charts-green));
+}
+
+.tone-pending {
+    color: var(--vscode-editorWarning-foreground, var(--vscode-charts-yellow));
+}
+
+.tone-absent {
+    color: var(--vscode-errorForeground, var(--vscode-inputValidation-errorBorder));
+}
+
+.tone-muted {
+    color: var(--vscode-descriptionForeground);
+}
+
 .match-count {
     color: var(--vscode-descriptionForeground);
     font-size: calc(var(--font) * 0.9);
     white-space: nowrap;
+}
+
+.actions {
+    margin-inline-start: auto;
+    display: flex;
+    gap: 4px;
+}
+
+.action {
+    padding: 2px 8px;
+    border: 1px solid var(--vscode-button-border);
+    border-radius: var(--radius-sm);
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+    font: inherit;
+    font-size: calc(var(--font) * 0.9);
+    cursor: pointer;
+}
+
+.action:hover {
+    background: var(--vscode-button-secondaryHoverBackground);
 }
 </style>
