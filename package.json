@@ -32,10 +32,12 @@
     },
     "scripts": {
         "vscode:prepublish": "bun run compile",
-        "compile": "bun run check-types && bun run lint && node esbuild.mjs",
+        "compile": "bun run check-types && bun run lint && node esbuild.mjs && bun run build:webview",
         "watch": "npm-run-all -p watch:*",
         "watch:esbuild": "node esbuild.mjs --watch",
         "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+        "build:webview": "vite build",
+        "dev:webview": "vite",
         "check-types": "tsc --noEmit && vue-tsc --noEmit -p src/webview/tsconfig.json",
         "lint": "eslint src",
         "package": "vsce package",
