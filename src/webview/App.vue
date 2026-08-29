@@ -51,6 +51,7 @@ const tree = useTreeFlatten({
     file: activeFile,
     unitsById,
     defaultExpandDepth: computed(() => settings.value.defaultExpandDepth),
+    documentUri: computed(() => document.value?.uri),
 });
 
 const rollup = useRollup({ file: activeFile, unitsById });

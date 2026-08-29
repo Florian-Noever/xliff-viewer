@@ -51,6 +51,7 @@ function mountTree(
                 file: computed(() => file.value),
                 unitsById: computed(() => units),
                 defaultExpandDepth: computed(() => depth),
+                documentUri: computed(() => 'file:///w/one.xlf'),
             });
             view = created;
             return { tree: created, summaries };
