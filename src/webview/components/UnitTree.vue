@@ -24,6 +24,7 @@
                         :ref="measure(item.index)"
                         :data-index="item.index"
                         :row="rows[item.index]"
+                        :summary="summaries?.get(rows[item.index].key)"
                         :focused="rows[item.index].key === tree.focusedKey.value"
                         @toggle="tree.toggle($event)"
                         @focus="tree.focus($event)"
@@ -43,6 +44,7 @@ import { ROW_HEIGHT } from '../constants';
 import { Icon } from '../icons';
 
 import type { TreeView } from '../composables/useTreeFlatten';
+import type { StateSummary } from '@shared/state';
 import type { ComponentPublicInstance } from 'vue';
 
 /**
@@ -77,7 +79,11 @@ const KEY_ACTIONS: Readonly<Record<string, (tree: TreeView) => void>> = {
     },
 };
 
-const props = defineProps<{ tree: TreeView }>();
+const props = defineProps<{
+    tree: TreeView;
+    /** Node key → roll-up. Optional so the tree renders before `UI-03`'s summaries exist. */
+    summaries?: ReadonlyMap<string, StateSummary>;
+}>();
 
 const scroller = ref<HTMLElement | null>(null);
 const rows = computed(() => props.tree.rows.value);

@@ -5,7 +5,10 @@ import { computed, defineComponent, nextTick, ref } from 'vue';
 import UnitTree from '../../webview/components/UnitTree.vue';
 import { useTreeFlatten } from '../../webview/composables/useTreeFlatten';
 
+import { summariseTree } from '../../shared/state';
+
 import type { AlNodeDto, TransUnitDto, XliffFileDto } from '../../shared/dto';
+import type { StateSummary } from '../../shared/state';
 import type { TreeView } from '../../webview/composables/useTreeFlatten';
 
 const VIEWPORT = 600;
@@ -65,7 +68,13 @@ function bigTree(roots: number, members: number): { tree: AlNodeDto[]; units: Ma
     return { tree, units };
 }
 
-function mountTree(tree: AlNodeDto[], units: Map<string, TransUnitDto>, depth = 1, hasAlIds = true) {
+function mountTree(
+    tree: AlNodeDto[],
+    units: Map<string, TransUnitDto>,
+    depth = 1,
+    hasAlIds = true,
+    summaries?: ReadonlyMap<string, StateSummary>,
+) {
     const file = ref<XliffFileDto>({
         index: 0,
         sourceLanguage: 'en-US',
@@ -85,9 +94,9 @@ function mountTree(tree: AlNodeDto[], units: Map<string, TransUnitDto>, depth = 
                 defaultExpandDepth: computed(() => depth),
             });
             view = created;
-            return { tree: created };
+            return { tree: created, summaries };
         },
-        template: '<UnitTree :tree="tree" />',
+        template: '<UnitTree :tree="tree" :summaries="summaries" />',
     }), { attachTo: document.body });
 
     if (view === undefined) {
@@ -259,6 +268,30 @@ describe('keyboard (§11.7)', () => {
         await wrapper.get('[role="tree"]').trigger('keydown', { key: 'a' });
 
         expect(await focused(wrapper)).toBe('none');
+    });
+});
+
+describe('state on the rows (UI-03)', () => {
+    it('shows a unit its own state and a container its roll-up', async () => {
+        const { tree, units } = bigTree(1, 2);
+        const summaries = summariseTree(tree, units);
+        const { wrapper } = mountTree(tree, units, 1, true, summaries);
+        await nextTick();
+
+        const rows = wrapper.findAll('.tree-row');
+
+        expect(rows[0].find('.progress').exists()).toBe(true);
+        expect(rows[0].get('.counts').text()).toBe('2/2');
+        expect(rows[1].find('.progress').exists()).toBe(false);
+        expect(rows[1].get('.state-badge').text()).toBe('translated');
+    });
+
+    it('shows no bar on a container until its summary arrives', async () => {
+        const { tree, units } = bigTree(1, 2);
+        const { wrapper } = mountTree(tree, units);
+        await nextTick();
+
+        expect(wrapper.find('.progress').exists()).toBe(false);
     });
 });
 

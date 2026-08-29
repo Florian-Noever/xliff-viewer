@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { projectDocument } from '../../extension/xliff/dto';
 import { parseXliff } from '../../extension/xliff/parser';
 import { iterateUnits } from '../../shared/model';
-import { summariseTree, XliffState } from '../../shared/state';
+import { summariseTree, summariseUnits, XliffState } from '../../shared/state';
 
 import type { AlNodeDto, TransUnitDto, XliffDocumentDto, XliffFileDto } from '../../shared/dto';
 import type { UnitState } from '../../shared/state';
@@ -358,5 +358,35 @@ describe('base-file detection across several files', () => {
 
     it('trusts the .g.xlf name over the contents', () => {
         expect(projectXml(twoFilesXml('<target state="translated">Zwei</target>'), 'App.g.xlf').isBaseFile).toBe(true);
+    });
+});
+
+describe('what the header will show', () => {
+    // The DTO is the roll-up's only input in the webview, so the figures §5.4 promises
+    // have to survive the projection — not merely the model they were measured on.
+    const summaryOf = (name: string) => summariseUnits(project(name).files[0].units);
+
+    it('gives Fabrikam Base.de-DE.xlf 86 % and a worst state of empty', () => {
+        const summary = summaryOf('Fabrikam Base.de-DE.xlf');
+
+        expect(summary.percent).toBe(86);
+        expect(summary.worst).toBe(XliffState.empty);
+        expect(summary.total).toBe(2511);
+    });
+
+    it('gives a base file 0 % and a worst state of missing', () => {
+        const summary = summaryOf('Contoso App.g.xlf');
+
+        expect(summary.percent).toBe(0);
+        expect(summary.worst).toBe(XliffState.missing);
+    });
+
+    it('rolls the tree up to the same totals the flat summary reports', () => {
+        const [file] = project('Fabrikam Base.de-DE.xlf').files;
+        const summaries = summariseTree(file.tree, new Map(file.units.map(unit => [unit.id, unit])));
+
+        const roots = file.tree.reduce((sum, node) => sum + (summaries.get(node.key)?.translatedCount ?? 0), 0);
+
+        expect(roots).toBe(summariseUnits(file.units).translatedCount);
     });
 });

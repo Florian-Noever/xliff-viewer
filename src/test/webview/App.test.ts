@@ -64,7 +64,7 @@ describe('the file header', () => {
         expect(wrapper.text()).toContain('Fabrikam Base.de-DE.xlf');
         expect(wrapper.text()).toContain('en-US');
         expect(wrapper.text()).toContain('de-DE');
-        expect(wrapper.text()).toContain('2 translation units');
+        expect(wrapper.text()).toContain('2 units');
     });
 
     it('shows the original app name the file declares', async () => {
@@ -76,7 +76,20 @@ describe('the file header', () => {
     it('marks a read-only document, so nobody wonders why editing is absent (§12.5)', async () => {
         const wrapper = mountWithDocument({ ...DOCUMENT, isBaseFile: true, readOnly: true });
         await nextTick();
+        expect(wrapper.get('.tag').text()).toBe('base file · read-only');
+    });
+
+    it('says only "read-only" for a language file that cannot be written', async () => {
+        const wrapper = mountWithDocument({ ...DOCUMENT, readOnly: true });
+        await nextTick();
         expect(wrapper.get('.tag').text()).toBe('read-only');
+    });
+
+    it('shows the file-level percentage (§5.4)', async () => {
+        // One translated of two translatable is 50 %.
+        const wrapper = mountWithDocument();
+        await nextTick();
+        expect(wrapper.get('.percent').text()).toBe('50 %');
     });
 
     it('does not mark an editable one', async () => {

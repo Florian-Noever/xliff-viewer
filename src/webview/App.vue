@@ -14,18 +14,13 @@
                 variant="banner"
                 @open-as-text="openAsText"
             />
-            <header v-if="document !== undefined && activeFile !== undefined" class="file-header">
-                <h1 class="file-name">
-                    {{ document.fileName }}
-                    <span v-if="document.readOnly" class="tag">read-only</span>
-                </h1>
-                <p class="summary">
-                    <span class="languages">{{ activeFile.sourceLanguage }} → {{ activeFile.targetLanguage ?? '—' }}</span>
-                    <span class="count">{{ unitCount }} translation units</span>
-                    <span v-if="activeFile.original !== undefined" class="original">{{ activeFile.original }}</span>
-                </p>
-            </header>
-            <UnitTree v-if="activeFile !== undefined" :tree="tree" />
+            <FileHeader
+                v-if="document !== undefined && activeFile !== undefined"
+                :document="document"
+                :file="activeFile"
+                :summary="rollup.file.value"
+            />
+            <UnitTree v-if="activeFile !== undefined" :tree="tree" :summaries="rollup.byKey.value" />
             <p v-else class="placeholder">Waiting for a document…</p>
         </template>
     </main>
@@ -34,21 +29,25 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
+import FileHeader from './components/FileHeader.vue';
 import StatusPane from './components/StatusPane.vue';
 import UnitTree from './components/UnitTree.vue';
 import { useDesignTokens } from './composables/useDesignTokens';
+import { useRollup } from './composables/useRollup';
 import { useTreeFlatten } from './composables/useTreeFlatten';
 import { useXliffDocument } from './composables/useXliffDocument';
 
 useDesignTokens();
 
-const { document, loading, error, settings, activeFile, unitsById, blocking, unitCount, openAsText } = useXliffDocument();
+const { document, loading, error, settings, activeFile, unitsById, blocking, openAsText } = useXliffDocument();
 
 const tree = useTreeFlatten({
     file: activeFile,
     unitsById,
     defaultExpandDepth: computed(() => settings.value.defaultExpandDepth),
 });
+
+const rollup = useRollup({ file: activeFile, unitsById });
 </script>
 
 <style scoped>
@@ -56,42 +55,6 @@ const tree = useTreeFlatten({
     height: 100%;
     display: flex;
     flex-direction: column;
-}
-
-.file-header {
-    padding: calc(var(--pad) * 1.5) calc(var(--pad) * 2);
-    border-bottom: 1px solid var(--vscode-panel-border);
-}
-
-.file-name {
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: var(--gap);
-    font-size: calc(var(--font) * 1.3);
-    font-weight: 600;
-}
-
-.tag {
-    padding: 1px 6px;
-    border: 1px solid var(--vscode-panel-border);
-    border-radius: var(--radius-sm);
-    background: var(--vscode-editorWidget-background);
-    color: var(--vscode-descriptionForeground);
-    font-size: calc(var(--font) * 0.85);
-    font-weight: 400;
-}
-
-.summary {
-    margin: 4px 0 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--gap);
-    color: var(--vscode-descriptionForeground);
-}
-
-.languages {
-    color: var(--vscode-foreground);
 }
 
 .placeholder {
