@@ -2,6 +2,7 @@ import * as esbuild from 'esbuild';
 
 const watch = process.argv.includes('--watch');
 const production = process.argv.includes('--production');
+const tests = process.argv.includes('--tests');
 
 /**
  * Prints errors in the format VS Code's $esbuild-watch problem matcher understands.
@@ -48,7 +49,52 @@ const targets = [
     { ...shared, platform: 'browser', outfile: 'out/web/extension.js', define: { global: 'globalThis' } },
 ];
 
+/**
+ * Integration tests, built only with `--tests` so `compile` stays lean.
+ * Both hosts load a bundle exporting `run()`; the desktop runner itself is plain node.
+ */
+async function buildTests() {
+    /** @type {import('esbuild').BuildOptions} */
+    const base = {
+        bundle: true,
+        format: 'cjs',
+        sourcemap: true,
+        sourcesContent: false,
+        logLevel: 'silent',
+    };
+
+    await Promise.all([
+        esbuild.build({
+            ...base,
+            entryPoints: ['src/test/runIntegration.ts'],
+            outfile: 'out/test/runIntegration.js',
+            platform: 'node',
+            external: ['vscode', '@vscode/test-electron'],
+        }),
+        esbuild.build({
+            ...base,
+            entryPoints: ['src/test/integration/desktopEntry.ts'],
+            outfile: 'out/test/integration/index.js',
+            platform: 'node',
+            external: ['vscode'],
+        }),
+        esbuild.build({
+            ...base,
+            entryPoints: ['src/test/integration/webEntry.ts'],
+            outfile: 'out/web/test/integration/index.js',
+            platform: 'browser',
+            external: ['vscode'],
+            define: { global: 'globalThis' },
+        }),
+    ]);
+}
+
 async function main() {
+    if (tests) {
+        await buildTests();
+        return;
+    }
+
     const contexts = await Promise.all(
         targets.map(options => esbuild.context({ ...options, plugins: [esbuildProblemMatcherPlugin] }))
     );

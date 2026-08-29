@@ -10,8 +10,14 @@ import vue from '@vitejs/plugin-vue';
  *   index.html         — the Vite dev-server entry for `dev:webview`. No placeholders,
  *                        not shipped in the VSIX.
  */
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
     plugins: [vue()],
+    // Vue's bundler build reads process.env.NODE_ENV, which does not exist in a webview.
+    // Without this the built bundle throws "process is not defined" and renders nothing —
+    // invisible in dev and under Vitest, because both define it already. (gob does the same.)
+    define: {
+        'process.env.NODE_ENV': JSON.stringify(mode === 'development' ? 'development' : 'production'),
+    },
     resolve: {
         alias: {
             '@shared': fileURLToPath(new URL('./src/shared', import.meta.url)),
@@ -42,4 +48,4 @@ export default defineConfig({
             },
         },
     },
-});
+}));

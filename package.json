@@ -23,16 +23,26 @@
     "main": "./out/extension.js",
     "browser": "./out/web/extension.js",
     "contributes": {
-        "commands": [
+        "customEditors": [
             {
-                "command": "xliff-viewer.helloWorld",
-                "title": "Hello World"
+                "viewType": "xliff-viewer.editor",
+                "displayName": "XLIFF Viewer",
+                "selector": [
+                    {
+                        "filenamePattern": "*.xlf"
+                    },
+                    {
+                        "filenamePattern": "*.xliff"
+                    }
+                ],
+                "priority": "default"
             }
         ]
     },
     "scripts": {
         "vscode:prepublish": "bun run compile",
         "compile": "bun run check-types && bun run lint && node esbuild.mjs && bun run build:webview",
+        "compile-tests": "node esbuild.mjs --tests",
         "watch": "npm-run-all -p watch:*",
         "watch:esbuild": "node esbuild.mjs --watch",
         "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
@@ -45,6 +55,9 @@
         "test:data": "vitest run --project data",
         "test:host": "vitest run --project host",
         "test:webview": "vitest run --project webview",
+        "test:integration": "bun run compile-tests && bun run test:integration:desktop && bun run test:integration:web",
+        "test:integration:desktop": "node ./out/test/runIntegration.js",
+        "test:integration:web": "vscode-test-web --browserType=chromium --headless --extensionDevelopmentPath=. --extensionTestsPath=out/web/test/integration/index.js .",
         "package": "vsce package",
         "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. ."
     },

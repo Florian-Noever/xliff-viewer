@@ -2,6 +2,8 @@
 .vscode-test/**
 .vscode-test-web/**
 src/**
+out/test/**
+out/web/test/**
 docs/**
 Examples/**
 node_modules/**

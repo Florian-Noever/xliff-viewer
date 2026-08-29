@@ -1,11 +1,16 @@
-import * as vscode from 'vscode';
+import type * as vscode from 'vscode';
 
-export function activate(context: vscode.ExtensionContext) {
-    const disposable = vscode.commands.registerCommand('xliff-viewer.helloWorld', () => {
-        vscode.window.showInformationMessage('Hello World from XLIFF Viewer!');
-    });
+import { XliffEditorProvider } from './editor/xliffEditorProvider';
+import { Logger } from './services/logger';
 
-    context.subscriptions.push(disposable);
+const DISPLAY_NAME = 'XLIFF Viewer';
+
+export function activate(context: vscode.ExtensionContext): void {
+    Logger.initialize(context, DISPLAY_NAME);
+
+    context.subscriptions.push(XliffEditorProvider.register(context));
+
+    Logger.info(`Activated "${DISPLAY_NAME}".`);
 }
 
-export function deactivate() { }
+export function deactivate(): void { }
