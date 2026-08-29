@@ -28,19 +28,31 @@
         <span class="type">{{ row.type }}</span>
         <span class="name">{{ label }}</span>
         <span v-if="row.unit !== undefined" class="source">{{ row.unit.source }}</span>
+        <span class="spacer" />
+        <StateBadge
+            v-if="row.unit !== undefined"
+            :state="row.unit.state"
+            :muted="!row.unit.translate"
+        />
+        <ProgressBar v-else-if="summary !== undefined" :summary="summary" />
     </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
 
+import ProgressBar from './ProgressBar.vue';
+import StateBadge from './StateBadge.vue';
 import { Icon } from '../icons';
 
 import type { TreeRow } from '../composables/useTreeFlatten';
+import type { StateSummary } from '@shared/state';
 
 const props = defineProps<{
     row: TreeRow;
     focused: boolean;
+    /** The roll-up for this node. Absent on a unit row, which shows its own state instead. */
+    summary?: StateSummary;
 }>();
 
 const emit = defineEmits<{
@@ -120,10 +132,14 @@ const label = computed(() => props.row.name ?? props.row.key.split(' - ').pop() 
 }
 
 .source {
-    flex: 1;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     color: var(--vscode-descriptionForeground);
+}
+
+.spacer {
+    flex: 1;
+    min-width: var(--gap);
 }
 </style>
