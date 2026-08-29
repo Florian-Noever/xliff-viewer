@@ -1,0 +1,167 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath, URL } from 'node:url';
+
+import { describe, expect, it } from 'vitest';
+
+import {
+    developerHint,
+    developerNote,
+    generatorNote,
+    hasAlStructure,
+    namesFromNote,
+    segmentTypes,
+} from '../../extension/xliff/names';
+import { parseXliff } from '../../extension/xliff/parser';
+import { iterateUnits } from '../../shared/model';
+
+const EXAMPLES = fileURLToPath(new URL('../../../Examples', import.meta.url));
+const unitsOf = (name: string) => [...iterateUnits(parseXliff(readFileSync(`${EXAMPLES}/${name}`, 'utf8')))];
+
+describe('segmentTypes', () => {
+    it('splits an AL id into type and hash', () => {
+        expect(segmentTypes('Table 3783554337 - Field 4264183382 - Property 2879900210')).toEqual([
+            { type: 'Table', hash: '3783554337' },
+            { type: 'Field', hash: '4264183382' },
+            { type: 'Property', hash: '2879900210' },
+        ]);
+    });
+
+    it('keeps a segment with no hash rather than dropping it', () => {
+        // test.xlf uses id="1" — a legal XLIFF id carrying no AL structure.
+        expect(segmentTypes('1')).toEqual([{ type: '1', hash: '' }]);
+        expect(hasAlStructure('1')).toBe(false);
+        expect(hasAlStructure('Table 3783554337 - Property 2879900210')).toBe(true);
+    });
+});
+
+describe('namesFromNote', () => {
+    it('extracts one name per segment', () => {
+        expect(namesFromNote(
+            'Table 3783554337 - Field 4264183382 - Property 2879900210',
+            'Table PTE Contoso Methods Setup - Field Contoso Method - Property Caption',
+        )).toEqual(['PTE Contoso Methods Setup', 'Contoso Method', 'Caption']);
+    });
+
+    it('keeps an object name that itself contains the separator', () => {
+        // The whole reason for the anchored regex: splitting on " - " gives the wrong
+        // answer for ~15 % of the corpus.
+        expect(namesFromNote(
+            'Report 1614869194 - Property 2879900210',
+            'Report PTE Sales - Quote - Property Caption',
+        )).toEqual(['PTE Sales - Quote', 'Caption']);
+    });
+
+    it('handles a name with both a separator and dots', () => {
+        expect(namesFromNote(
+            'Report 2423768636 - NamedType 17661673',
+            'Report PTE Calc. Plan - Plan. Wksh. - NamedType Text011Lbl',
+        )).toEqual(['PTE Calc. Plan - Plan. Wksh.', 'Text011Lbl']);
+    });
+
+    it('handles a four-segment path', () => {
+        expect(namesFromNote(
+            'PageExtension 1 - Action 2 - Method 3 - NamedType 4',
+            'PageExtension Cust List - Action Approve - Method OnAction - NamedType Msg001',
+        )).toEqual(['Cust List', 'Approve', 'OnAction', 'Msg001']);
+    });
+
+    it('returns null rather than guessing when the note does not match', () => {
+        expect(namesFromNote('Table 1 - Property 2', 'Page Something - Property Caption')).toBeNull();
+        expect(namesFromNote('Table 1 - Property 2', 'nonsense')).toBeNull();
+    });
+
+    it('returns null for a missing or empty note, without throwing', () => {
+        expect(namesFromNote('Table 1 - Property 2', undefined)).toBeNull();
+        expect(namesFromNote('Table 1 - Property 2', '')).toBeNull();
+    });
+
+    it('escapes regex metacharacters in a segment type', () => {
+        // A type containing a dot must match literally, not as "any character".
+        expect(namesFromNote('Trans. 1 - Property 2', 'TransX Name - Property Caption')).toBeNull();
+        expect(namesFromNote('Trans. 1 - Property 2', 'Trans. Name - Property Caption'))
+            .toEqual(['Name', 'Caption']);
+    });
+});
+
+describe('the 100 % corpus guarantee', () => {
+    // This is the regression guard for the whole naming approach (§4.4). It is an exact
+    // count on purpose: a percentage threshold would let a regression hide.
+    it.each([
+        ['Contoso App.g.xlf', 1098],
+        ['Fabrikam Base.de-DE.xlf', 2511],
+    ])('%s: every one of %i units yields names', (file, expected) => {
+        const units = unitsOf(file);
+        expect(units).toHaveLength(expected);
+
+        const named = units.filter(unit => namesFromNote(unit.id, generatorNote(unit)) !== null);
+        expect(named).toHaveLength(expected);
+    });
+
+    it('produces one name per id segment, for every unit', () => {
+        for (const unit of unitsOf('Fabrikam Base.de-DE.xlf')) {
+            const names = namesFromNote(unit.id, generatorNote(unit));
+            expect(names, unit.id).not.toBeNull();
+            expect(names, unit.id).toHaveLength(segmentTypes(unit.id).length);
+        }
+    });
+
+    it('never yields an empty name', () => {
+        for (const unit of unitsOf('Contoso App.g.xlf')) {
+            for (const name of namesFromNote(unit.id, generatorNote(unit)) ?? []) {
+                expect(name.length, unit.id).toBeGreaterThan(0);
+            }
+        }
+    });
+});
+
+describe('note lookup', () => {
+    it('finds the generator and developer notes by their from attribute', () => {
+        const unit = unitsOf('Contoso App.de-DE.xlf')[0];
+        expect(generatorNote(unit)).toContain('Table PTE Contoso Methods Setup');
+        expect(developerNote(unit)).toContain('Contoso Methoden Einrichtung');
+    });
+
+    it('returns undefined when a note is absent', () => {
+        const unit = { attributes: {}, id: 'a', translate: true, source: 's', notes: [] };
+        expect(generatorNote(unit)).toBeUndefined();
+        expect(developerNote(unit)).toBeUndefined();
+    });
+});
+
+describe('developerHint', () => {
+    it('splits the usual lang=suggestion form', () => {
+        expect(developerHint('de-DE=Contoso Methoden Name')).toEqual({
+            language: 'de-DE',
+            text: 'Contoso Methoden Name',
+        });
+    });
+
+    it('accepts a bare two-letter language', () => {
+        expect(developerHint('de=Hallo')).toEqual({ language: 'de', text: 'Hallo' });
+    });
+
+    it('returns free text whole, without inventing a language', () => {
+        // The corpus contains this exact note. An unanchored prefix rule would read
+        // "%1 " as a language and mangle it (§3.7).
+        expect(developerHint('%1 = Document No.')).toEqual({ text: '%1 = Document No.' });
+        expect(developerHint('Erstellt am')).toEqual({ text: 'Erstellt am' });
+        expect(developerHint('Verkauf - Auftragsbestätigung %1')).toEqual({
+            text: 'Verkauf - Auftragsbestätigung %1',
+        });
+    });
+
+    it('returns undefined for an absent or empty note', () => {
+        expect(developerHint(undefined)).toBeUndefined();
+        expect(developerHint('')).toBeUndefined();
+    });
+
+    it('keeps an empty suggestion after a real prefix', () => {
+        expect(developerHint('de-DE=')).toEqual({ language: 'de-DE', text: '' });
+    });
+
+    it('parses every developer note in the corpus without throwing', () => {
+        for (const unit of unitsOf('Fabrikam Base.de-DE.xlf')) {
+            expect(() => developerHint(developerNote(unit)), unit.id).not.toThrow();
+        }
+    });
+});
