@@ -35,6 +35,10 @@ let logLines: string[] = [];
 let executedCommands: { command: string; args: readonly unknown[] }[] = [];
 let watcherListeners: { created: ((uri: Uri) => void)[]; deleted: ((uri: Uri) => void)[]; changed: ((uri: Uri) => void)[] } = { created: [], deleted: [], changed: [] };
 let workspaceRoot: Uri | undefined;
+let revealedPositions: { path: string; line: number }[] = [];
+let quickPickCalls: { label: string; description?: string }[][] = [];
+let quickPickChoice: number | undefined;
+let progressTitles: string[] = [];
 let configurationListeners: ((event: ConfigurationChangeEvent) => void)[] = [];
 let documentChangeListeners: ((event: TextDocumentChangeEvent) => void)[] = [];
 let writableFileSystems: Record<string, boolean> = {};
@@ -168,6 +172,8 @@ export class Selection {
     }
 }
 
+export const ProgressLocation = { SourceControl: 1, Window: 10, Notification: 15 } as const;
+
 export const TextEditorRevealType = { Default: 0, InCenter: 1, InCenterIfOutsideViewport: 2, AtTop: 3 } as const;
 
 export const window = {
@@ -188,6 +194,16 @@ export const window = {
         messageCalls.push({ message, args });
         return Promise.resolve(messageResult);
     },
+    withProgress: <T>(options: { title?: string }, task: () => Promise<T>): Promise<T> => {
+        progressTitles.push(options.title ?? '');
+        return task();
+    },
+    showTextDocument: (document: { uri: Uri; getText(): string }, _options?: unknown): Promise<FakeTextEditor> =>
+        Promise.resolve(new FakeTextEditor(document)),
+    showQuickPick: <T extends { label: string; description?: string }>(items: T[], _options?: unknown): Promise<T | undefined> => {
+        quickPickCalls.push(items.map(item => ({ label: item.label, description: item.description })));
+        return Promise.resolve(quickPickChoice === undefined ? undefined : items[quickPickChoice]);
+    },
     createOutputChannel: (_name: string, _options?: unknown) => ({
         trace: (message: string) => logLines.push(`trace ${message}`),
         debug: (message: string) => logLines.push(`debug ${message}`),
@@ -198,7 +214,29 @@ export const window = {
     }),
 };
 
+/** Records where navigation put the cursor, which is what the reveal tests assert on. */
+export class FakeTextEditor {
+    public readonly document: { uri: Uri; getText(): string };
+    public selection: Selection | undefined;
+
+    public constructor(document: { uri: Uri; getText(): string }) {
+        this.document = document;
+    }
+
+    public revealRange(range: Range, _type?: number): void {
+        revealedPositions.push({ path: this.document.uri.path, line: range.start.line });
+    }
+}
+
 export const workspace = {
+    openTextDocument: (uri: Uri): Promise<{ uri: Uri; getText(): string }> => {
+        const content = virtualFiles[uri.path];
+        if (content === undefined) {
+            return Promise.reject(new Error(`ENOENT: ${uri.path}`));
+        }
+        fileReads.push(uri.path);
+        return Promise.resolve({ uri, getText: () => content });
+    },
     getConfiguration: (section?: string) => ({
         get: <T>(key: string, defaultValue?: T): T | undefined => {
             const full = section === undefined ? key : `${section}.${key}`;
@@ -408,6 +446,11 @@ export function removeVirtualFile(path: string): void {
 }
 
 /** Sets the single workspace folder `getWorkspaceFolder` reports. */
+/** Which QuickPick entry the next `showQuickPick` returns; undefined means cancelled. */
+export function setQuickPickResult(index: number | undefined): void {
+    quickPickChoice = index;
+}
+
 export function setWorkspaceRoot(path: string | undefined): void {
     workspaceRoot = path === undefined ? undefined : Uri.file(path);
 }
@@ -472,6 +515,24 @@ export function flushClipboardWrites(): string[] {
     return clipboardWrites.splice(0);
 }
 
+export function flushRevealedPositions(): { path: string; line: number }[] {
+    const taken = revealedPositions;
+    revealedPositions = [];
+    return taken;
+}
+
+export function flushProgressTitles(): string[] {
+    const taken = progressTitles;
+    progressTitles = [];
+    return taken;
+}
+
+export function flushQuickPicks(): { label: string; description?: string }[][] {
+    const taken = quickPickCalls;
+    quickPickCalls = [];
+    return taken;
+}
+
 export function flushExecutedCommands(): { command: string; args: readonly unknown[] }[] {
     return executedCommands.splice(0);
 }
@@ -501,4 +562,8 @@ export function resetMocks(): void {
     executedCommands = [];
     watcherListeners = { created: [], deleted: [], changed: [] };
     workspaceRoot = undefined;
+    revealedPositions = [];
+    quickPickCalls = [];
+    quickPickChoice = undefined;
+    progressTitles = [];
 }

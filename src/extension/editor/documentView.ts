@@ -2,11 +2,12 @@ import * as vscode from 'vscode';
 
 import { Logger } from '../services/logger';
 import { compareToBase } from '../services/baseFileIndex';
-import { revealAsText, revealInBaseFile } from '../services/navigation';
+import { AlNavigationOutcome, alTargetFor, revealAlObject, revealAsText, revealInBaseFile } from '../services/navigation';
 
 import { ExtensionMessageType, NavigationTarget } from '../../shared/messages';
 
 import type { DocumentSession, SessionState, UnitReference, XliffDocumentSession } from './documentSession';
+import type { AlObjectIndex } from '../services/alObjectIndex';
 import type { BaseFileIndex } from '../services/baseFileIndex';
 import type { BaseFileResolver } from '../services/baseFileResolver';
 import type { XliffDocumentDto } from '../../shared/dto';
@@ -32,6 +33,7 @@ export function createDocumentSession(
     post: (message: ExtensionMessage) => void,
     baseFiles?: BaseFileResolver,
     baseIndex?: BaseFileIndex,
+    alObjects?: AlObjectIndex,
 ): DocumentSession {
     const notYet = (what: string, task: string): never => {
         throw new Error(`${what} arrives with ${task}.`);
@@ -45,8 +47,13 @@ export function createDocumentSession(
 
             // §9.2: resolution is async and must not hold up the document. The webview
             // shows the tree first and learns about the base file when it is known.
-            if (baseFiles !== undefined && state.kind === 'document') {
-                void announceBaseFile(baseFiles, baseIndex, session, state.dto, post);
+            if (state.kind === 'document') {
+                if (baseFiles !== undefined) {
+                    void announceBaseFile(baseFiles, baseIndex, session, state.dto, post);
+                }
+                if (alObjects !== undefined) {
+                    void announceAlSource(alObjects, post);
+                }
             }
         },
         updateTarget: () => notYet('Editing a target', 'EDIT-01'),
@@ -57,9 +64,10 @@ export function createDocumentSession(
                     return revealAsText(session.uri, unit?.unitId);
                 case NavigationTarget.base:
                     return showInBaseFile(baseFiles, session, unit);
+                case NavigationTarget.al:
+                    return showAlObject(alObjects, session, unit);
                 default:
-                    // `al` needs the AL-file search of §10.1, which is NAV-04's.
-                    return notYet('Navigating to the AL source', 'NAV-04');
+                    return notYet('This navigation target', 'a later task');
             }
         },
     };
@@ -117,6 +125,42 @@ async function announceBaseFile(
 
     if (resolved.uri !== undefined && baseIndex !== undefined) {
         await announceStaleUnits(baseIndex, resolved.uri, dto, post);
+    }
+}
+
+/** Whether the workspace has AL source at all, which decides whether the action is offered (§10.1). */
+async function announceAlSource(alObjects: AlObjectIndex, post: (message: ExtensionMessage) => void): Promise<void> {
+    post({ type: ExtensionMessageType.alSource, payload: { available: await alObjects.hasAlFiles() } });
+}
+
+/**
+ * §10.1, the primary "go to source" (`DEC-009`).
+ *
+ * Every way this can fail is a sentence rather than an error: the workspace may not hold
+ * the app source at all, and that is a normal way to use a translation file.
+ */
+async function showAlObject(
+    alObjects: AlObjectIndex | undefined,
+    session: XliffDocumentSession,
+    unit: UnitReference | undefined,
+): Promise<void> {
+    const state = session.current();
+    if (alObjects === undefined || unit === undefined || state.kind !== 'document') {
+        return;
+    }
+
+    const file = state.dto.files[unit.fileIndex] ?? state.dto.files[0];
+    const target = file === undefined ? undefined : alTargetFor(unit.unitId, file.tree);
+    if (target === undefined) {
+        void vscode.window.showInformationMessage('This unit\'s id carries no AL object name to look for.');
+        return;
+    }
+
+    const outcome = await revealAlObject(alObjects, target);
+    if (outcome === AlNavigationOutcome.notFound) {
+        void vscode.window.showInformationMessage(`No "${target.kind} ${target.name}" was found in this workspace.`);
+    } else if (outcome === AlNavigationOutcome.noAlFiles) {
+        void vscode.window.showInformationMessage('This workspace contains no AL source files to navigate to.');
     }
 }
 

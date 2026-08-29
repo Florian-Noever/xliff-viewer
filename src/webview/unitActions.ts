@@ -15,6 +15,8 @@ export interface UnitActions {
     open(target: NavigationTarget, unitId: string): void;
     /** Undefined while resolution has not run; null when it ran and found nothing (§9.2). */
     baseFileName(): string | null | undefined;
+    /** Undefined until the host has looked; false when the workspace holds no `.al` files (§10.1). */
+    alSourceAvailable(): boolean | undefined;
 }
 
 /** Exported so a test can provide a stand-in without mounting the whole app. */
@@ -26,5 +28,5 @@ export function provideUnitActions(actions: UnitActions): void {
 
 /** Falls back to doing nothing, so a card can be mounted on its own in a test. */
 export function useUnitActions(): UnitActions {
-    return inject(UNIT_ACTIONS_KEY, { open: () => { }, baseFileName: () => undefined });
+    return inject(UNIT_ACTIONS_KEY, { open: () => { }, baseFileName: () => undefined, alSourceAvailable: () => undefined });
 }

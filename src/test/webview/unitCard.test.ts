@@ -320,16 +320,25 @@ describe('every DTO field is reachable', () => {
 });
 
 describe('the navigation buttons (§10)', () => {
+    const button = (wrapper: ReturnType<typeof card>, label: string) => {
+        const found = wrapper.findAll('.action').find(each => each.text() === label);
+        if (found === undefined) {
+            throw new Error(`no "${label}" button`);
+        }
+        return found;
+    };
+
     const actions = () => {
         const calls: { target: string; unitId: string }[] = [];
         return {
             calls,
-            provide: (baseFileName: string | null | undefined) => ({
+            provide: (baseFileName: string | null | undefined, al: { available: boolean | undefined } = { available: true }) => ({
                 global: {
                     provide: {
                         [UNIT_ACTIONS_KEY as symbol]: {
                             open: (target: string, unitId: string) => calls.push({ target, unitId }),
                             baseFileName: () => baseFileName,
+                            alSourceAvailable: () => al.available,
                         },
                     },
                 },
@@ -343,9 +352,7 @@ describe('the navigation buttons (§10)', () => {
             ...actions().provide(undefined),
         });
 
-        const button = wrapper.findAll('.action')[0];
-        expect(button.text()).toBe('Open as text');
-        expect(button.attributes('disabled')).toBeUndefined();
+        expect(button(wrapper, 'Open as text').attributes('disabled')).toBeUndefined();
     });
 
     it('asks the host, naming the unit', async () => {
@@ -355,10 +362,12 @@ describe('the navigation buttons (§10)', () => {
             ...handle.provide('App.g.xlf'),
         });
 
-        await wrapper.findAll('.action')[0].trigger('click');
-        await wrapper.findAll('.action')[1].trigger('click');
+        await button(wrapper, 'Go to AL source').trigger('click');
+        await button(wrapper, 'Open as text').trigger('click');
+        await button(wrapper, 'Show in base file').trigger('click');
 
         expect(handle.calls).toEqual([
+            { target: 'al', unitId: 'Table 1 - Property 2' },
             { target: 'text', unitId: 'Table 1 - Property 2' },
             { target: 'base', unitId: 'Table 1 - Property 2' },
         ]);
@@ -370,9 +379,9 @@ describe('the navigation buttons (§10)', () => {
             ...actions().provide(undefined),
         });
 
-        const button = wrapper.findAll('.action')[1];
-        expect(button.attributes('disabled')).toBeDefined();
-        expect(button.attributes('title')).toBe('Looking for the base file…');
+        const target = button(wrapper, 'Show in base file');
+        expect(target.attributes('disabled')).toBeDefined();
+        expect(target.attributes('title')).toBe('Looking for the base file…');
     });
 
     it('gives a different reason when resolution ran and found nothing (§12.5)', () => {
@@ -381,9 +390,9 @@ describe('the navigation buttons (§10)', () => {
             ...actions().provide(null),
         });
 
-        const button = wrapper.findAll('.action')[1];
-        expect(button.attributes('disabled')).toBeDefined();
-        expect(button.attributes('title')).toBe('No base file was found for this translation file.');
+        const target = button(wrapper, 'Show in base file');
+        expect(target.attributes('disabled')).toBeDefined();
+        expect(target.attributes('title')).toBe('No base file was found for this translation file.');
     });
 
     it('names the base file it would open', () => {
@@ -392,9 +401,40 @@ describe('the navigation buttons (§10)', () => {
             ...actions().provide('App.g.xlf'),
         });
 
-        const button = wrapper.findAll('.action')[1];
-        expect(button.attributes('disabled')).toBeUndefined();
-        expect(button.attributes('title')).toContain('App.g.xlf');
+        const target = button(wrapper, 'Show in base file');
+        expect(target.attributes('disabled')).toBeUndefined();
+        expect(target.attributes('title')).toContain('App.g.xlf');
+    });
+
+    it('disables the AL action while the host has not looked yet (§10.1)', () => {
+        const wrapper = mount(UnitCard, {
+            props: { unit: unit(), settings: DEFAULT_WEBVIEW_SETTINGS },
+            ...actions().provide('App.g.xlf', { available: undefined }),
+        });
+
+        const target = button(wrapper, 'Go to AL source');
+        expect(target.attributes('disabled')).toBeDefined();
+        expect(target.attributes('title')).toBe('Looking for AL source files…');
+    });
+
+    it('disables it with a different reason when the workspace has no AL source', () => {
+        const wrapper = mount(UnitCard, {
+            props: { unit: unit(), settings: DEFAULT_WEBVIEW_SETTINGS },
+            ...actions().provide('App.g.xlf', { available: false }),
+        });
+
+        const target = button(wrapper, 'Go to AL source');
+        expect(target.attributes('disabled')).toBeDefined();
+        expect(target.attributes('title')).toBe('This workspace contains no AL source files.');
+    });
+
+    it('names the object it would open once there is source to open', () => {
+        const wrapper = mount(UnitCard, {
+            props: { unit: unit(), settings: DEFAULT_WEBVIEW_SETTINGS },
+            ...actions().provide('App.g.xlf', { available: true }),
+        });
+
+        expect(button(wrapper, 'Go to AL source').attributes('title')).toContain('Table 1');
     });
 });
 
@@ -427,14 +467,14 @@ describe('the base ⊕ language pairing (§9.3)', () => {
             props: { unit: unit({ orphaned: true }), settings: DEFAULT_WEBVIEW_SETTINGS },
             global: {
                 provide: {
-                    [UNIT_ACTIONS_KEY as symbol]: { open: () => { }, baseFileName: () => 'App.g.xlf' },
+                    [UNIT_ACTIONS_KEY as symbol]: { open: () => { }, baseFileName: () => 'App.g.xlf', alSourceAvailable: () => true },
                 },
             },
         });
 
-        const button = wrapper.findAll('.action')[1];
-        expect(button.attributes('disabled')).toBeDefined();
-        expect(button.attributes('title')).toContain('does not contain this unit any more');
+        const target = wrapper.findAll('.action').find(each => each.text() === 'Show in base file');
+        expect(target?.attributes('disabled')).toBeDefined();
+        expect(target?.attributes('title')).toContain('does not contain this unit any more');
     });
 
     it('leaves the button enabled for a merely source-changed unit — it is still there', () => {
@@ -442,11 +482,11 @@ describe('the base ⊕ language pairing (§9.3)', () => {
             props: { unit: unit({ baseSource: 'Customer' }), settings: DEFAULT_WEBVIEW_SETTINGS },
             global: {
                 provide: {
-                    [UNIT_ACTIONS_KEY as symbol]: { open: () => { }, baseFileName: () => 'App.g.xlf' },
+                    [UNIT_ACTIONS_KEY as symbol]: { open: () => { }, baseFileName: () => 'App.g.xlf', alSourceAvailable: () => true },
                 },
             },
         });
 
-        expect(wrapper.findAll('.action')[1].attributes('disabled')).toBeUndefined();
+        expect(wrapper.findAll('.action').find(each => each.text() === 'Show in base file')?.attributes('disabled')).toBeUndefined();
     });
 });

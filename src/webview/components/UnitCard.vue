@@ -27,6 +27,15 @@
         </p>
 
         <div class="actions">
+            <button
+                type="button"
+                class="action"
+                :disabled="alSource !== true"
+                :title="alSourceTitle"
+                @click="actions.open(NavigationTarget.al, unit.id)"
+            >
+                Go to AL source
+            </button>
             <button type="button" class="action" :title="`Open ${unit.id} in the built-in text editor`" @click="actions.open(NavigationTarget.text, unit.id)">
                 Open as text
             </button>
@@ -83,6 +92,20 @@ const props = defineProps<{
 
 const actions = useUnitActions();
 const baseFile = computed(() => actions.baseFileName());
+const alSource = computed(() => actions.alSourceAvailable());
+
+/** §10.1: the action is disabled with a stated reason when the workspace has no AL source. */
+const alSourceTitle = computed(() => {
+    if (alSource.value === undefined) {
+        return 'Looking for AL source files…';
+    }
+    if (!alSource.value) {
+        return 'This workspace contains no AL source files.';
+    }
+    return `Open the AL object that declares ${unitLabel.value}`;
+});
+
+const unitLabel = computed(() => props.unit.id.split(' - ')[0]);
 
 /**
  * Why the button is off, rather than only that it is (§12.5). "Not yet" and "there is

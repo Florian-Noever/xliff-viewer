@@ -8,7 +8,9 @@ import {
     documentChangeListenerCount,
     FakeTextDocument,
     fireConfigurationChange,
+    flushInfoMessages,
     flushLogs,
+    flushRevealedPositions,
     resetMocks,
     setConfigOverride,
     setVirtualFile,
@@ -20,7 +22,8 @@ const EXTENSION_URI = vscode.Uri.file('/ext');
 const TEMPLATE = '<script nonce="%NONCE%" src="%SCRIPT_URI%"></script><link href="%CSS_URI%"><meta content="%CSP_SOURCE%">';
 const FIXTURE = `<?xml version="1.0" encoding="utf-8"?>
 <xliff version="1.2"><file source-language="en-US" target-language="de-DE" original="App"><body>
-  <trans-unit id="Table 1 - Property 2"><source>Customer</source><target state="translated">Kunde</target></trans-unit>
+  <trans-unit id="Table 1 - Property 2"><source>Customer</source><target state="translated">Kunde</target>
+  <note from="Xliff Generator">Table Customer - Property Caption</note></trans-unit>
 </body></file></xliff>`;
 
 interface Harness {
@@ -74,6 +77,9 @@ async function openEditor(): Promise<Harness> {
         },
     };
 }
+
+/** The base-file and AL-source announcements are fire-and-forget; let them land. */
+const settle = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 0));
 
 beforeEach(() => {
     Logger.initialize({ subscriptions: [] } as unknown as vscode.ExtensionContext, 'test');
@@ -195,5 +201,79 @@ describe('the editor provider', () => {
         fireConfigurationChange('xliffViewer.editMode');
 
         expect(harness.posted).toEqual([]);
+    });
+});
+
+describe('the AL source announcement (§10.1)', () => {
+    const alSource = (posted: readonly ExtensionMessage[]) =>
+        posted.find(message => message.type === ExtensionMessageType.alSource);
+
+    it('tells the webview the workspace has AL source, so the action can be offered', async () => {
+        setVirtualFile('/w/src/Table.al', 'table 50100 Customer\n{\n}');
+        const harness = await openEditor();
+
+        harness.send({ type: WebviewMessageType.ready });
+        await settle();
+
+        expect(alSource(harness.posted)).toEqual({ type: ExtensionMessageType.alSource, payload: { available: true } });
+    });
+
+    it('says so when it does not, which is what disables the button', async () => {
+        const harness = await openEditor();
+
+        harness.send({ type: WebviewMessageType.ready });
+        await settle();
+
+        expect(alSource(harness.posted)).toEqual({ type: ExtensionMessageType.alSource, payload: { available: false } });
+    });
+});
+
+describe('going to the AL source', () => {
+    it('opens the declaring file at the object', async () => {
+        setVirtualFile('/w/src/Table.al', 'table 50100 Customer\n{\n}');
+        const harness = await openEditor();
+        harness.send({ type: WebviewMessageType.ready });
+
+        harness.send({
+            type: WebviewMessageType.openSource,
+            target: 'al',
+            fileIndex: 0,
+            unitId: 'Table 1 - Property 2',
+        });
+        await settle();
+
+        expect(flushRevealedPositions()).toEqual([{ path: '/w/src/Table.al', line: 0 }]);
+    });
+
+    it('says the object is not there rather than opening something close', async () => {
+        setVirtualFile('/w/src/Other.al', 'table 50100 Vendor\n{\n}');
+        const harness = await openEditor();
+        harness.send({ type: WebviewMessageType.ready });
+
+        harness.send({
+            type: WebviewMessageType.openSource,
+            target: 'al',
+            fileIndex: 0,
+            unitId: 'Table 1 - Property 2',
+        });
+        await settle();
+
+        expect(flushRevealedPositions()).toEqual([]);
+        expect(flushInfoMessages()[0]).toContain('Table Customer');
+    });
+
+    it('explains an empty workspace instead of failing silently', async () => {
+        const harness = await openEditor();
+        harness.send({ type: WebviewMessageType.ready });
+
+        harness.send({
+            type: WebviewMessageType.openSource,
+            target: 'al',
+            fileIndex: 0,
+            unitId: 'Table 1 - Property 2',
+        });
+        await settle();
+
+        expect(flushInfoMessages()[0]).toContain('no AL source files');
     });
 });
