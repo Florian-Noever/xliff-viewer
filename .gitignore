@@ -1,6 +1,8 @@
+node_modules
 out
 dist
-node_modules
+public
+.vscode-test
 .vscode-test-web/
 *.vsix
 .env
