@@ -16,6 +16,11 @@
  * `settings` is a sixth extension → webview message. §13 requires five settings to reach
  * the view and §8.3 gave them no way to travel; folding them into `setDocument` would mean
  * re-sending a megabyte to toggle a checkbox.
+ *
+ * `alSource` is a seventh, added by `NAV-04` for the same reason `baseFile` exists: whether
+ * the workspace holds any AL source is a fact about the workspace, discovered after the
+ * document is already on screen, and §10.1 requires the action to be disabled with a reason
+ * rather than fail on click.
  */
 
 import type { TransUnitDto, XliffDocumentDto, BaseFileDto } from './dto';
@@ -29,6 +34,7 @@ export const ExtensionMessageType = {
     setDocument: 'setDocument',
     patchUnits: 'patchUnits',
     baseFile: 'baseFile',
+    alSource: 'alSource',
     settings: 'settings',
     error: 'error',
 } as const;
@@ -43,6 +49,11 @@ export interface PatchUnitsPayload {
     readonly units: readonly TransUnitDto[];
 }
 
+export interface AlSourcePayload {
+    /** False when the workspace holds no `.al` files, which disables the AL action (§10.1). */
+    readonly available: boolean;
+}
+
 export interface ErrorPayload {
     readonly message: string;
     readonly line?: number;
@@ -55,6 +66,7 @@ export type ExtensionMessage =
     | { readonly type: typeof ExtensionMessageType.setDocument; readonly payload: XliffDocumentDto }
     | { readonly type: typeof ExtensionMessageType.patchUnits; readonly payload: PatchUnitsPayload }
     | { readonly type: typeof ExtensionMessageType.baseFile; readonly payload: BaseFileDto | null }
+    | { readonly type: typeof ExtensionMessageType.alSource; readonly payload: AlSourcePayload }
     | { readonly type: typeof ExtensionMessageType.settings; readonly payload: WebviewSettings }
     | { readonly type: typeof ExtensionMessageType.error; readonly payload: ErrorPayload };
 

@@ -1,6 +1,10 @@
 import * as vscode from 'vscode';
 
 import { Logger } from './logger';
+import { findMemberLine } from './alObjectIndex';
+
+import type { AlDeclaration, AlObjectIndex } from './alObjectIndex';
+import type { AlNodeDto } from '../../shared/dto';
 
 /**
  * Getting back to the file (MASTER_PLAN §10.2, §10.3).
@@ -122,4 +126,92 @@ function editorFor(uri: vscode.Uri): vscode.TextEditor | undefined {
     const wanted = uri.toString();
     return vscode.window.visibleTextEditors.find(editor => editor.document.uri.toString() === wanted)
         ?? (vscode.window.activeTextEditor?.document.uri.toString() === wanted ? vscode.window.activeTextEditor : undefined);
+}
+
+/** The object and, when the id has one, the member the reader wants to land on (§10.1). */
+export interface AlTarget {
+    readonly kind: string;
+    readonly name: string;
+    readonly memberName?: string;
+}
+
+/**
+ * Reads the target out of the tree the webview is already showing (§4.3, §10.1).
+ *
+ * The names come from the generator note, which `TREE-01` already parsed into the nodes —
+ * so this needs neither the note nor the model, only the id and the tree.
+ *
+ * The **root** segment names the object. The member is the segment after it, and only when
+ * the id goes deeper than object → property: in `Table X - Property Y` the property *is*
+ * the translated element, not a member to reveal.
+ */
+export function alTargetFor(unitId: string, tree: readonly AlNodeDto[]): AlTarget | undefined {
+    const segments = unitId.split(' - ');
+    const root = tree.find(node => node.key === segments[0]);
+    if (root?.name === undefined) {
+        return undefined;
+    }
+
+    if (segments.length < 3) {
+        return { kind: root.type, name: root.name };
+    }
+
+    const memberKey = `${segments[0]} - ${segments[1]}`;
+    const member = root.children.find(node => node.key === memberKey);
+    return { kind: root.type, name: root.name, memberName: member?.name };
+}
+
+export const AlNavigationOutcome = {
+    opened: 'opened',
+    noAlFiles: 'noAlFiles',
+    notFound: 'notFound',
+    cancelled: 'cancelled',
+} as const;
+export type AlNavigationOutcome = typeof AlNavigationOutcome[keyof typeof AlNavigationOutcome];
+
+/**
+ * Opens the `.al` file that declares the object, and reveals the member inside it when the
+ * id names one (§10.1).
+ *
+ * Several matches ask rather than guess; none says so rather than opening something close.
+ */
+export async function revealAlObject(index: AlObjectIndex, target: AlTarget): Promise<AlNavigationOutcome> {
+    const declarations = await index.find(target.kind, target.name);
+
+    if (declarations.length === 0) {
+        return (await index.hasAlFiles()) ? AlNavigationOutcome.notFound : AlNavigationOutcome.noAlFiles;
+    }
+
+    const chosen = declarations.length === 1 ? declarations[0] : await pick(declarations);
+    if (chosen === undefined) {
+        return AlNavigationOutcome.cancelled;
+    }
+
+    const document = await vscode.workspace.openTextDocument(chosen.uri);
+    const editor = await vscode.window.showTextDocument(document, { preview: false });
+
+    const line = target.memberName === undefined
+        ? chosen.line
+        : findMemberLine(document.getText(), target.memberName) ?? chosen.line;
+
+    const position = new vscode.Position(line, 0);
+    editor.selection = new vscode.Selection(position, position);
+    editor.revealRange(new vscode.Range(position, position), vscode.TextEditorRevealType.InCenter);
+
+    return AlNavigationOutcome.opened;
+}
+
+/** Two objects can share a name across apps in one workspace; the reader decides which. */
+async function pick(declarations: readonly AlDeclaration[]): Promise<AlDeclaration | undefined> {
+    const items = declarations.map(declaration => ({
+        label: `${declaration.kind} ${declaration.name}`,
+        description: `${declaration.uri.path}:${declaration.line + 1}`,
+        declaration,
+    }));
+
+    const chosen = await vscode.window.showQuickPick(items, {
+        title: 'Several objects have this name',
+        placeHolder: 'Choose the one to open',
+    });
+    return chosen?.declaration;
 }

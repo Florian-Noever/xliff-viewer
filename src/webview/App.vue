@@ -58,7 +58,19 @@ import { provideUnitActions } from './unitActions';
 
 useDesignTokens();
 
-const { document, loading, error, settings, activeFile, activeFileIndex, unitsById, blocking, openAsText, openSource } = useXliffDocument();
+const {
+    document,
+    loading,
+    error,
+    settings,
+    activeFile,
+    activeFileIndex,
+    unitsById,
+    blocking,
+    alSourceAvailable,
+    openAsText,
+    openSource,
+} = useXliffDocument();
 
 provideUnitActions({
     open: (target, unitId) => openSource(target, unitId),
@@ -66,6 +78,7 @@ provideUnitActions({
         const resolved = document.value?.baseFile;
         return resolved === undefined || resolved === null ? resolved : resolved.fileName;
     },
+    alSourceAvailable: () => alSourceAvailable.value,
 });
 
 const rollup = useRollup({ file: activeFile, unitsById });

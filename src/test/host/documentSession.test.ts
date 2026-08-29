@@ -392,14 +392,12 @@ describe('opening the raw file', () => {
     });
 });
 
-describe('actions that are not wired yet', () => {
-    it('say which task owns them instead of doing nothing', () => {
+describe('editing, which is not wired yet', () => {
+    it('says which task owns it instead of doing nothing', () => {
         const session = sessionFor(openDocument('test.xlf'));
         const { facade } = view(session);
 
         expect(() => facade.updateTarget({ fileIndex: 0, unitId: '1' }, 'x')).toThrow('EDIT-01');
         expect(() => facade.updateState({ fileIndex: 0, unitId: '1' }, 'translated')).toThrow('EDIT-01');
-        // `al` needs the AL-file search of §10.1; `text` and `base` are wired (NAV-02).
-        expect(() => facade.openSource('al')).toThrow('NAV-04');
     });
 });
