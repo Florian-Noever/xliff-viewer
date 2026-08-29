@@ -5,10 +5,12 @@ import { computed, defineComponent, nextTick, ref } from 'vue';
 import UnitTree from '../../webview/components/UnitTree.vue';
 import { useTreeFlatten } from '../../webview/composables/useTreeFlatten';
 
+import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { summariseTree } from '../../shared/state';
 import { stubLayout, STUB_ROW_HEIGHT as ROW } from './layoutStub';
 
 import type { AlNodeDto, TransUnitDto, XliffFileDto } from '../../shared/dto';
+import type { WebviewSettings } from '../../shared/settings';
 import type { StateSummary } from '../../shared/state';
 import type { TreeView } from '../../webview/composables/useTreeFlatten';
 
@@ -33,6 +35,7 @@ function mountTree(
     depth = 1,
     hasAlIds = true,
     summaries?: ReadonlyMap<string, StateSummary>,
+    settings?: WebviewSettings,
 ) {
     const file = ref<XliffFileDto>({
         index: 0,
@@ -54,9 +57,9 @@ function mountTree(
                 documentUri: computed(() => 'file:///w/one.xlf'),
             });
             view = created;
-            return { tree: created, summaries };
+            return { tree: created, summaries, settings };
         },
-        template: '<UnitTree :tree="tree" :summaries="summaries" />',
+        template: '<UnitTree :tree="tree" :summaries="summaries" :settings="settings" />',
     }), { attachTo: document.body });
 
     if (view === undefined) {
@@ -235,6 +238,111 @@ describe('keyboard (§11.7)', () => {
         await wrapper.get('[role="tree"]').trigger('keydown', { key: 'a' });
 
         expect(await focused(wrapper)).toBe('none');
+    });
+});
+
+describe('what a row click means (UI-05)', () => {
+    /** A node that carries a unit *and* children: an id can be another unit's prefix. */
+    function treeWithBoth(): { tree: AlNodeDto[]; units: Map<string, TransUnitDto> } {
+        const units = new Map<string, TransUnitDto>();
+        units.set('Table 0', { id: 'Table 0', source: 'Object source', state: 'translated', translate: true, notes: [] });
+        units.set('Table 0 - Property 0', { id: 'Table 0 - Property 0', source: 'Leaf source', state: 'translated', translate: true, notes: [] });
+        const tree: AlNodeDto[] = [{
+            key: 'Table 0',
+            type: 'Table',
+            name: 'Object 0',
+            children: [{ key: 'Table 0 - Property 0', type: 'Property', name: 'Caption 0', children: [] }],
+        }];
+        return { tree, units };
+    }
+
+    it('marks only the rows that have something to open', async () => {
+        const { wrapper } = mountTree(...Object.values(bigTree(1, 1)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        await nextTick();
+
+        const rows = wrapper.findAll('.tree-row');
+
+        expect(rows[0].classes()).toContain('is-container');
+        expect(rows[1].classes()).not.toContain('is-container');
+    });
+
+    it('collapses a container when the row itself is clicked, not only its chevron', async () => {
+        const { wrapper } = mountTree(...Object.values(bigTree(2, 3)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        await nextTick();
+        expect(wrapper.findAll('.tree-row').length).toBe(8);
+
+        await wrapper.findAll('.tree-row')[0].trigger('click');
+
+        expect(wrapper.findAll('.tree-row').length).toBe(5);
+    });
+
+    it('expands it again on the next click', async () => {
+        const { wrapper } = mountTree(...Object.values(bigTree(1, 3)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        await nextTick();
+
+        await wrapper.findAll('.tree-row')[0].trigger('click');
+        expect(wrapper.findAll('.tree-row').length).toBe(1);
+
+        await wrapper.findAll('.tree-row')[0].trigger('click');
+        expect(wrapper.findAll('.tree-row').length).toBe(4);
+    });
+
+    it('leaves the keyboard where the mouse put it, so the arrow keys carry on from there', async () => {
+        const { wrapper, view } = mountTree(...Object.values(bigTree(3, 1)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        await nextTick();
+
+        await wrapper.findAll('.tree-row')[2].trigger('click');
+
+        expect(view.focusedKey.value).toBe('Table 1');
+    });
+
+    it('does nothing at all when a unit row is clicked', async () => {
+        const { wrapper, view } = mountTree(...Object.values(bigTree(1, 2)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        await nextTick();
+        const before = wrapper.findAll('.tree-row').length;
+
+        await wrapper.findAll('.tree-row')[1].trigger('click');
+
+        expect(wrapper.findAll('.tree-row').length).toBe(before);
+        expect(view.focusedKey.value).toBeUndefined();
+    });
+
+    it('toggles once when the chevron is pressed, not twice', async () => {
+        // The chevron sits inside the row it toggles; without `.stop` the row handler runs too
+        // and puts it straight back.
+        const { wrapper } = mountTree(...Object.values(bigTree(1, 3)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        await nextTick();
+
+        await wrapper.get('.chevron').trigger('click');
+
+        expect(wrapper.findAll('.tree-row').length).toBe(1);
+    });
+
+    it('does not fold a row because the reader clicked inside its unit card', async () => {
+        const { tree, units } = treeWithBoth();
+        const { wrapper } = mountTree(tree, units, 1, true, undefined, DEFAULT_WEBVIEW_SETTINGS);
+        await nextTick();
+        expect(wrapper.findAll('.tree-row').length).toBe(2);
+
+        await wrapper.get('.tree-row .card .source').trigger('click');
+
+        expect(wrapper.findAll('.tree-row').length).toBe(2);
+    });
+
+    it('does not fold a row at the end of a drag that selected text', async () => {
+        const { wrapper } = mountTree(...Object.values(bigTree(1, 3)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        await nextTick();
+
+        const range = document.createRange();
+        range.selectNodeContents(wrapper.get('.tree-row .name').element);
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+
+        await wrapper.findAll('.tree-row')[0].trigger('click');
+
+        expect(wrapper.findAll('.tree-row').length).toBe(4);
+        selection?.removeAllRanges();
     });
 });
 
