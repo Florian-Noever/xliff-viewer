@@ -67,10 +67,25 @@ describe('the file header', () => {
         expect(wrapper.text()).toContain('2 units');
     });
 
-    it('shows the original app name the file declares', async () => {
+    it('titles the header with the app, and puts the file name beneath it', async () => {
         const wrapper = mountWithDocument();
         await nextTick();
-        expect(wrapper.get('.original').text()).toBe('Fabrikam Base');
+
+        expect(wrapper.get('.app-name').text()).toBe('Fabrikam Base');
+        expect(wrapper.get('.file-name').text()).toBe('Fabrikam Base.de-DE.xlf');
+    });
+
+    it('keeps the file name as the title when the file declares no app', async () => {
+        // `original` is optional in XLIFF, and `test.xlf` has none. A blank heading would
+        // be worse than a repeated name.
+        const wrapper = mountWithDocument({
+            ...DOCUMENT,
+            files: [{ ...DOCUMENT.files[0], original: undefined }],
+        });
+        await nextTick();
+
+        expect(wrapper.get('.app-name').text()).toBe('Fabrikam Base.de-DE.xlf');
+        expect(wrapper.find('.file-name').exists()).toBe(false);
     });
 
     it('marks a read-only document, so nobody wonders why editing is absent (§12.5)', async () => {

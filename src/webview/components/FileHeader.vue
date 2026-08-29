@@ -1,7 +1,7 @@
 <template>
     <header class="file-header">
         <div class="line">
-            <h1 class="file-name">{{ document.fileName }}</h1>
+            <h1 class="app-name">{{ title }}</h1>
             <label v-if="document.files.length > 1" class="switcher">
                 <span class="switcher-label">File</span>
                 <select
@@ -20,7 +20,7 @@
         </div>
         <p class="line meta">
             <span class="languages">{{ file.sourceLanguage }} → {{ file.targetLanguage ?? '—' }}</span>
-            <span v-if="file.original !== undefined" class="original">{{ file.original }}</span>
+            <span v-if="subtitle !== undefined" class="file-name">{{ subtitle }}</span>
             <span class="count">{{ summary.total }} units</span>
             <span v-if="baseFile !== undefined" class="base-file">{{ baseFile }}</span>
         </p>
@@ -49,6 +49,16 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{ 'update:fileIndex': [index: number] }>();
+
+/**
+ * The app the translation belongs to, which is what a translator is working on — the file
+ * name is where it happens to live, and goes in the smaller line beneath.
+ *
+ * `original` is optional in XLIFF and absent from `test.xlf`, so a file that does not
+ * declare one keeps its name as the title rather than showing a blank heading.
+ */
+const title = computed(() => props.file.original ?? props.document.fileName);
+const subtitle = computed(() => (props.file.original === undefined ? undefined : props.document.fileName));
 
 /**
  * XLIFF allows several `<file>` elements and `DEC-020` shows one at a time. AL emits
@@ -89,7 +99,7 @@ const baseFile = computed(() => {
     margin: 0;
 }
 
-.file-name {
+.app-name {
     margin: 0;
     font-size: calc(var(--font) * 1.3);
     font-weight: 600;
