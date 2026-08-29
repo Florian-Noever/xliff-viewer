@@ -12,6 +12,7 @@ vite.config.ts
 vitest.config.ts
 eslint.config.mjs
 vsc-extension-quickstart.md
+index.html
 bun.lock
 **/tsconfig.json
 **/*.ts

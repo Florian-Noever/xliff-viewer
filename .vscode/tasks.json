@@ -5,7 +5,8 @@
             "label": "watch",
             "dependsOn": [
                 "npm: watch:esbuild",
-                "npm: watch:tsc"
+                "npm: watch:tsc",
+                "npm: watch:vite"
             ],
             "dependsOrder": "parallel",
             "presentation": {
@@ -23,6 +24,18 @@
             "problemMatcher": "$esbuild-watch",
             "isBackground": true,
             "label": "npm: watch:esbuild",
+            "presentation": {
+                "group": "watch",
+                "reveal": "never"
+            }
+        },
+        {
+            "type": "npm",
+            "script": "watch:vite",
+            "group": "build",
+            "problemMatcher": [],
+            "isBackground": true,
+            "label": "npm: watch:vite",
             "presentation": {
                 "group": "watch",
                 "reveal": "never"

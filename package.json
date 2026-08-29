@@ -36,6 +36,7 @@
         "watch": "npm-run-all -p watch:*",
         "watch:esbuild": "node esbuild.mjs --watch",
         "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+        "watch:vite": "vite build --watch",
         "build:webview": "vite build",
         "dev:webview": "vite",
         "check-types": "tsc --noEmit && vue-tsc --noEmit -p src/webview/tsconfig.json",

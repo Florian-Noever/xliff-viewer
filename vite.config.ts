@@ -1,29 +1,17 @@
 import { fileURLToPath, URL } from 'node:url';
-import { defineConfig, type Plugin } from 'vite';
+import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 
 /**
- * `index.html` is the extension's webview shell: a static template whose placeholders
- * are filled in at runtime by the host (TOOL-05). `build.lib` does not process HTML at
- * all, so the file is never touched by the production build — but the dev server does
- * serve it, and would choke on the placeholders. This rewrites them for dev only.
+ * Two HTML files, each with one job:
+ *   media/webview.html — the host's template. Placeholders are filled in at runtime
+ *                        (TOOL-05), following gob-numberingtool-vscode. `build.lib`
+ *                        never processes HTML, so Vite does not touch it.
+ *   index.html         — the Vite dev-server entry for `dev:webview`. No placeholders,
+ *                        not shipped in the VSIX.
  */
-const devHtmlShell: Plugin = {
-    name: 'xliff-viewer-dev-html-shell',
-    apply: 'serve',
-    transformIndexHtml(html) {
-        return html
-            .replace(/^.*Content-Security-Policy.*$\n?/m, '')
-            .replace(/^.*%STYLE_URI%.*$\n?/m, '')
-            .replace(
-                /<script[^>]*%APP_URI%[^>]*><\/script>/,
-                '<script type="module" src="/src/webview/main.ts"></script>'
-            );
-    },
-};
-
 export default defineConfig({
-    plugins: [vue(), devHtmlShell],
+    plugins: [vue()],
     resolve: {
         alias: {
             '@shared': fileURLToPath(new URL('./src/shared', import.meta.url)),

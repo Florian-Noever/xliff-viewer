@@ -4,14 +4,12 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src %CSP_SOURCE% data:; style-src %CSP_SOURCE% 'unsafe-inline'; font-src %CSP_SOURCE%; script-src 'nonce-%NONCE%';" />
-    <link rel="stylesheet" href="%STYLE_URI%" />
-    <title>XLIFF Viewer</title>
+    <title>XLIFF Viewer — dev</title>
 </head>
 
 <body>
     <div id="app"></div>
-    <script nonce="%NONCE%" src="%APP_URI%"></script>
+    <script type="module" src="/src/webview/main.ts"></script>
 </body>
 
 </html>
