@@ -1,27 +1,236 @@
-import typescriptEslint from "typescript-eslint";
+import tseslint from 'typescript-eslint';
+import pluginVue from 'eslint-plugin-vue';
 
-export default [{
-    files: ["**/*.ts"],
-}, {
-    plugins: {
-        "@typescript-eslint": typescriptEslint.plugin,
+/**
+ * Rule set ported from gob-numberingtool-vscode; formatting from al-actionimage-viewer.
+ * Where the two disagree the stricter one wins (MASTER_PLAN §14.5).
+ */
+
+const NODE_BUILTINS = [
+    'fs', 'node:fs', 'fs/promises', 'node:fs/promises',
+    'path', 'node:path', 'os', 'node:os',
+    'child_process', 'node:child_process',
+    'crypto', 'node:crypto', 'buffer', 'node:buffer',
+    'stream', 'node:stream', 'util', 'node:util',
+];
+
+const BOUNDARY_MESSAGE =
+    'MASTER_PLAN §6.1: src/extension and src/webview must not import each other. Shared code belongs in src/shared.';
+
+export default tseslint.config(
+    {
+        ignores: ['out/**', 'dist/**', 'public/**', 'node_modules/**', '.vscode-test/**', '.vscode-test-web/**'],
     },
 
-    languageOptions: {
-        parser: typescriptEslint.parser,
-        ecmaVersion: 2022,
-        sourceType: "module",
+    // ── Base rules — every TypeScript and Vue file ───────────────────────────
+    {
+        files: ['**/*.ts', '**/*.vue'],
+        languageOptions: {
+            parser: tseslint.parser,
+            ecmaVersion: 2022,
+            sourceType: 'module',
+        },
+        plugins: {
+            '@typescript-eslint': tseslint.plugin,
+        },
+        rules: {
+            // ── Formatting (al-actionimage-viewer) ───────────────────────────
+            indent: ['warn', 4, { SwitchCase: 1 }],
+            quotes: ['warn', 'single', { avoidEscape: true }],
+            semi: 'warn',
+            'brace-style': ['warn', '1tbs'],
+            'linebreak-style': ['warn', 'unix'],
+            curly: 'warn',
+
+            // ── Core correctness ─────────────────────────────────────────────
+            eqeqeq: ['warn', 'always', { null: 'ignore' }],
+            'no-console': 'warn',
+            'no-eval': 'error',
+            'no-throw-literal': 'warn',
+            'no-useless-return': 'warn',
+            'no-var': 'error',
+            'object-shorthand': 'warn',
+            'prefer-const': 'warn',
+            'prefer-template': 'warn',
+
+            // ── Imports ──────────────────────────────────────────────────────
+            '@typescript-eslint/naming-convention': ['warn', {
+                selector: 'import',
+                format: ['camelCase', 'PascalCase'],
+            }],
+            '@typescript-eslint/consistent-type-imports': ['warn', {
+                prefer: 'type-imports',
+                fixStyle: 'inline-type-imports',
+            }],
+            '@typescript-eslint/no-require-imports': 'error',
+
+            // ── Class member conventions ─────────────────────────────────────
+            '@typescript-eslint/explicit-member-accessibility': ['error', {
+                accessibility: 'explicit',
+            }],
+            '@typescript-eslint/parameter-properties': ['error', {
+                prefer: 'class-property',
+            }],
+
+            // ── Type definitions ─────────────────────────────────────────────
+            '@typescript-eslint/no-wrapper-object-types': 'error',
+            '@typescript-eslint/no-unsafe-function-type': 'error',
+            '@typescript-eslint/no-empty-object-type': 'error',
+            '@typescript-eslint/no-array-constructor': 'error',
+            '@typescript-eslint/no-extra-non-null-assertion': 'error',
+            '@typescript-eslint/no-misused-new': 'error',
+            '@typescript-eslint/no-this-alias': 'warn',
+            '@typescript-eslint/prefer-as-const': 'warn',
+            '@typescript-eslint/no-unnecessary-type-constraint': 'warn',
+            '@typescript-eslint/triple-slash-reference': 'off',
+            '@typescript-eslint/no-duplicate-enum-values': 'error',
+
+            // ── Code quality ─────────────────────────────────────────────────
+            'no-shadow': 'off',
+            '@typescript-eslint/no-shadow': 'warn',
+            '@typescript-eslint/ban-ts-comment': ['warn', {
+                'ts-expect-error': 'allow-with-description',
+                'ts-ignore': 'allow-with-description',
+            }],
+            '@typescript-eslint/no-explicit-any': 'warn',
+            '@typescript-eslint/no-non-null-assertion': 'warn',
+            '@typescript-eslint/no-unused-vars': ['warn', {
+                argsIgnorePattern: '^_',
+                varsIgnorePattern: '^_',
+            }],
+        },
     },
 
-    rules: {
-        "@typescript-eslint/naming-convention": ["warn", {
-            selector: "import",
-            format: ["camelCase", "PascalCase"],
-        }],
+    // ── Type-aware rules — source covered by a tsconfig ──────────────────────
+    {
+        files: ['src/**/*.ts', 'src/**/*.vue'],
+        languageOptions: {
+            parserOptions: {
+                projectService: true,
+                tsconfigRootDir: import.meta.dirname,
+                // The project service does not recognise .vue without this (§14.5 risk note).
+                extraFileExtensions: ['.vue'],
+            },
+        },
+        plugins: {
+            '@typescript-eslint': tseslint.plugin,
+        },
+        rules: {
+            // ── Error handling ───────────────────────────────────────────────
+            '@typescript-eslint/only-throw-error': 'warn',
+            '@typescript-eslint/use-unknown-in-catch-callback-variable': 'error',
 
-        curly: "warn",
-        eqeqeq: "warn",
-        "no-throw-literal": "warn",
-        semi: "warn",
+            // ── Async / promise correctness ──────────────────────────────────
+            '@typescript-eslint/no-floating-promises': 'error',
+            '@typescript-eslint/no-misused-promises': 'error',
+            '@typescript-eslint/await-thenable': 'error',
+            '@typescript-eslint/require-await': 'warn',
+            '@typescript-eslint/return-await': 'error',
+
+            // ── Type correctness ─────────────────────────────────────────────
+            '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
+            '@typescript-eslint/no-for-in-array': 'error',
+            '@typescript-eslint/no-base-to-string': 'warn',
+            '@typescript-eslint/no-unsafe-enum-comparison': 'warn',
+
+            // ── Modern patterns ──────────────────────────────────────────────
+            '@typescript-eslint/prefer-nullish-coalescing': 'warn',
+            '@typescript-eslint/prefer-optional-chain': 'warn',
+            '@typescript-eslint/prefer-includes': 'warn',
+            '@typescript-eslint/prefer-string-starts-ends-with': 'warn',
+        },
     },
-}];
+
+    // ── Layer boundaries (MASTER_PLAN §6.1, DEC-014) ─────────────────────────
+    {
+        files: ['src/shared/**/*.ts'],
+        rules: {
+            'no-restricted-imports': ['error', {
+                paths: [
+                    ...NODE_BUILTINS.map(name => ({
+                        name,
+                        message: 'MASTER_PLAN §6.5: src/shared must load in both runtimes — no node builtins.',
+                    })),
+                    {
+                        name: 'vscode',
+                        message: 'MASTER_PLAN §6.1: src/shared must not import vscode — it is imported by the webview too.',
+                    },
+                ],
+                patterns: [
+                    { group: ['**/extension/**', '**/webview/**'], message: 'MASTER_PLAN §6.1: src/shared may not depend on either runtime.' },
+                ],
+            }],
+        },
+    },
+    {
+        files: ['src/extension/**/*.ts'],
+        rules: {
+            'no-restricted-imports': ['error', {
+                paths: NODE_BUILTINS.map(name => ({
+                    name,
+                    message: 'MASTER_PLAN §6.5: the extension ships for the web host — use vscode.workspace.fs, Uri.joinPath, findFiles, TextEncoder/TextDecoder.',
+                })),
+                patterns: [
+                    { group: ['**/webview/**'], message: BOUNDARY_MESSAGE },
+                ],
+            }],
+        },
+    },
+    {
+        files: ['src/extension/xliff/**/*.ts'],
+        rules: {
+            'no-restricted-imports': ['error', {
+                paths: [
+                    ...NODE_BUILTINS.map(name => ({ name, message: 'MASTER_PLAN §6.5: no node builtins.' })),
+                    {
+                        name: 'vscode',
+                        message: 'MASTER_PLAN §6.1: the data layer must stay pure so it is testable with no mocks.',
+                    },
+                ],
+                patterns: [
+                    { group: ['**/webview/**'], message: BOUNDARY_MESSAGE },
+                ],
+            }],
+        },
+    },
+    {
+        files: ['src/webview/**/*.ts', 'src/webview/**/*.vue'],
+        rules: {
+            'no-restricted-imports': ['error', {
+                paths: [
+                    ...NODE_BUILTINS.map(name => ({ name, message: 'MASTER_PLAN §6.5: no node builtins in the webview.' })),
+                    {
+                        name: 'vscode',
+                        message: 'MASTER_PLAN §11.3: the webview talks to the host only through src/webview/vscode.ts.',
+                    },
+                ],
+                patterns: [
+                    { group: ['**/extension/**'], message: BOUNDARY_MESSAGE },
+                ],
+            }],
+        },
+    },
+
+    // ── Vue SFCs ─────────────────────────────────────────────────────────────
+    ...pluginVue.configs['flat/recommended'],
+    {
+        files: ['**/*.vue'],
+        languageOptions: {
+            parserOptions: {
+                parser: tseslint.parser,
+                ecmaVersion: 2022,
+                sourceType: 'module',
+                projectService: true,
+                tsconfigRootDir: import.meta.dirname,
+                extraFileExtensions: ['.vue'],
+            },
+        },
+        rules: {
+            'vue/html-indent': ['warn', 4],
+            'vue/max-attributes-per-line': ['warn', { singleline: { max: 5 }, multiline: { max: 1 } }],
+            'vue/html-self-closing': ['warn', { html: { void: 'any', normal: 'always', component: 'always' } }],
+            'vue/singleline-html-element-content-newline': 'off',
+            'vue/no-v-html': 'off',
+        },
+    },
+);
