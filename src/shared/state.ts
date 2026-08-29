@@ -112,6 +112,9 @@ export function worstState(a: XliffState, b: XliffState): XliffState {
  *
  * Empty means exactly `''`. A target holding a single space is a translation, not an
  * empty one (§3.6) — the corpus has ten.
+ *
+ * A target that holds text but declares **no** state is `unknown`, not `translated`
+ * (`DEC-027`): the file never claimed the unit was done, so it must not look done.
  */
 export function effectiveState(unit: XliffTransUnit): XliffState {
     if (unit.target === undefined) {
