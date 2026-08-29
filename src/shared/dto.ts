@@ -40,6 +40,14 @@ export interface TransUnitDto {
     readonly rawState?: string;
     readonly translate: boolean;
     readonly maxwidth?: number;
+    /**
+     * What `maxwidth` counts. Present whenever the file says so — `char` on every AL unit.
+     *
+     * Shipping it costs 44 KB on the largest corpus file, which `UI-04` accepted rather
+     * than assume a default: XLIFF 1.2's own default is `pixel`, so guessing `char` from
+     * AL's habit would make `POLISH-01`'s width check silently wrong on a non-AL file.
+     */
+    readonly sizeUnit?: string;
     readonly alObjectTarget?: string;
     /** The `Xliff Generator` note is **not** here — its content is already the node names (§4.4). */
     readonly notes: readonly XliffNoteDto[];

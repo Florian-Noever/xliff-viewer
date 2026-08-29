@@ -24,6 +24,8 @@
                         :ref="measure(item.index)"
                         :data-index="item.index"
                         :row="rows[item.index]"
+                        :settings="settings"
+                        :generator-note="generatorNoteFor(rows[item.index])"
                         :summary="summaries?.get(rows[item.index].key)"
                         :focused="rows[item.index].key === tree.focusedKey.value"
                         @toggle="tree.toggle($event)"
@@ -41,10 +43,12 @@ import { computed, ref, watch } from 'vue';
 
 import TreeRow from './TreeRow.vue';
 import { ROW_HEIGHT } from '../constants';
+import { reconstructGeneratorNote } from '../generatorNote';
 import { Icon } from '../icons';
 
-import type { TreeView } from '../composables/useTreeFlatten';
+import type { TreeRow as Row, TreeView } from '../composables/useTreeFlatten';
 import type { StateSummary } from '@shared/state';
+import type { WebviewSettings } from '@shared/settings';
 import type { ComponentPublicInstance } from 'vue';
 
 /**
@@ -83,7 +87,19 @@ const props = defineProps<{
     tree: TreeView;
     /** Node key → roll-up. Optional so the tree renders before `UI-03`'s summaries exist. */
     summaries?: ReadonlyMap<string, StateSummary>;
+    settings?: WebviewSettings;
 }>();
+
+/**
+ * Rebuilt per rendered row rather than per unit: `showGeneratorNotes` is off by default,
+ * and only the rows on screen — some thirty of them — ever need it (§4.4).
+ */
+function generatorNoteFor(row: Row): string | undefined {
+    if (props.settings?.showGeneratorNotes !== true || row.unit === undefined) {
+        return undefined;
+    }
+    return reconstructGeneratorNote(row.key, props.tree.nodesByKey.value);
+}
 
 const scroller = ref<HTMLElement | null>(null);
 const rows = computed(() => props.tree.rows.value);

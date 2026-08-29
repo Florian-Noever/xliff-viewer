@@ -785,6 +785,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 1",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -799,6 +800,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Sample text 2 %1 %2",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -813,6 +815,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Sample text 3",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -827,6 +830,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 2",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -841,6 +845,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Sample text 5",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -855,6 +860,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Sample text 6",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -869,6 +875,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "",
                     "state": "empty",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -882,6 +889,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 3",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -896,6 +904,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 4",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -910,6 +919,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 6",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -924,6 +934,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 7 %1",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -938,6 +949,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 9",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -952,6 +964,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 10",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -966,6 +979,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 12",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -980,6 +994,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 13",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -994,6 +1009,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 15",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1008,6 +1024,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 16 %1",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1022,6 +1039,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 17 ",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1036,6 +1054,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 20 %1 %2",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1050,6 +1069,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 21",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1064,6 +1084,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 22",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1078,6 +1099,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 23 %1 %2",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1093,6 +1115,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "state": "translated",
                     "translate": true,
                     "maxwidth": 50,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1107,6 +1130,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 27",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1121,6 +1145,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 29",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1135,6 +1160,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 31",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1149,6 +1175,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 33 %1",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1163,6 +1190,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 35",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1177,6 +1205,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 36",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1191,6 +1220,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 38 %1 %3 %2",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1205,6 +1235,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 40 %1 %2",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1219,6 +1250,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 42 %1",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1233,6 +1265,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 44 %1",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1247,6 +1280,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 47 %1 %2",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1261,6 +1295,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 49",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1275,6 +1310,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 50 %1",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1289,6 +1325,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 52 %1",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1303,6 +1340,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 1",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1317,6 +1355,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 53",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1331,6 +1370,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 54",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1345,6 +1385,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 55",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1359,6 +1400,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 56",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1373,6 +1415,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 57",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1387,6 +1430,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "",
                     "state": "empty",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1401,6 +1445,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "",
                     "state": "empty",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1415,6 +1460,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 58",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1429,6 +1475,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 59",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1443,6 +1490,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 60",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1457,6 +1505,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 3",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1471,6 +1520,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 61",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1485,6 +1535,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 62",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1499,6 +1550,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "",
                     "state": "empty",
                     "translate": true,
+                    "sizeUnit": "char",
                     "alObjectTarget": "Page 1936673938",
                     "notes": [
                         {
@@ -1513,6 +1565,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 63",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "alObjectTarget": "Page 1936673938",
                     "notes": [
                         {
@@ -1528,6 +1581,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 64",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "alObjectTarget": "Page 1936673938",
                     "notes": [
                         {
@@ -1543,6 +1597,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 65",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "alObjectTarget": "Page 1936673938",
                     "notes": [
                         {
@@ -1558,6 +1613,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 66 %1 %2",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "alObjectTarget": "PageExtension 3644751763",
                     "notes": [
                         {
@@ -1573,6 +1629,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 67",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "alObjectTarget": "Page 1936673938",
                     "notes": [
                         {
@@ -1588,6 +1645,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 68",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "alObjectTarget": "Page 1936673938",
                     "notes": [
                         {
@@ -1603,6 +1661,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "",
                     "state": "empty",
                     "translate": true,
+                    "sizeUnit": "char",
                     "alObjectTarget": "Page 1434786627",
                     "notes": [
                         {
@@ -1617,6 +1676,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 69",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "alObjectTarget": "Page 1434786627",
                     "notes": [
                         {
@@ -1632,6 +1692,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 70",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "alObjectTarget": "Page 1434786627",
                     "notes": [
                         {
@@ -1647,6 +1708,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 71",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "alObjectTarget": "Page 1434786627",
                     "notes": [
                         {
@@ -1662,6 +1724,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 72",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "alObjectTarget": "Page 1434786627",
                     "notes": [
                         {
@@ -1677,6 +1740,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 73",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "alObjectTarget": "Page 1434786627",
                     "notes": [
                         {
@@ -1692,6 +1756,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 74",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "alObjectTarget": "Page 1434786627",
                     "notes": [
                         {
@@ -1707,6 +1772,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 75",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "alObjectTarget": "Page 1434786627",
                     "notes": [
                         {
@@ -1722,6 +1788,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 76",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "alObjectTarget": "Page 1434786627",
                     "notes": [
                         {
@@ -1737,6 +1804,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 77",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "alObjectTarget": "Page 1434786627",
                     "notes": [
                         {
@@ -1752,6 +1820,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "target": "Beispieltext 78",
                     "state": "translated",
                     "translate": true,
+                    "sizeUnit": "char",
                     "alObjectTarget": "Page 1434786627",
                     "notes": [
                         {
