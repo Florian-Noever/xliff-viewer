@@ -1,4 +1,5 @@
-import { buildAlTree } from './alTree';
+import { buildAlTree, groupByObjectType } from './alTree';
+import { OBJECT_TYPE_GROUP_PREFIX } from './alTree';
 import { developerHint, developerNote, GENERATOR_NOTE_FROM, hasAlStructure } from './names';
 
 import { iterateFileUnits } from '../../shared/model';
@@ -70,6 +71,8 @@ function looksLikeBaseFile(document: XliffDocument, fileName: string): boolean {
 
 function projectFile(file: XliffFile, index: number): XliffFileDto {
     const models = [...iterateFileUnits(file)];
+    const hasAlIds = models.some(unit => hasAlStructure(unit.id));
+    const roots = buildAlTree(models);
 
     return {
         index,
@@ -77,9 +80,11 @@ function projectFile(file: XliffFile, index: number): XliffFileDto {
         targetLanguage: file.targetLanguage,
         original: file.original,
         datatype: file.datatype,
-        tree: projectNodes(buildAlTree(models)),
+        // A file with no AL structure has no types to group by, and its flat list is
+        // already the right answer (`DEC-022`, `DEC-033`).
+        tree: projectNodes(hasAlIds ? groupByObjectType(roots) : roots),
         units: models.map(projectUnit),
-        hasAlIds: models.some(unit => hasAlStructure(unit.id)),
+        hasAlIds,
     };
 }
 
@@ -109,5 +114,6 @@ function projectNodes(nodes: readonly AlNode[]): AlNodeDto[] {
         type: node.segment.type,
         name: node.segment.name,
         children: projectNodes(node.children),
+        group: node.key.startsWith(OBJECT_TYPE_GROUP_PREFIX) ? true as const : undefined,
     }));
 }

@@ -43,9 +43,18 @@ describe('the dev-server fixture', () => {
         expect(DEV_DOCUMENT).toEqual(rebuild());
     });
 
-    it('carries every root it claims to', () => {
-        const roots = DEV_DOCUMENT.files[0].tree.map(node => node.key);
+    it('carries every root it claims to, one object-type level down (DEC-033)', () => {
+        const roots = DEV_DOCUMENT.files[0].tree.flatMap(group => group.children).map(node => node.key);
         expect(roots.sort()).toEqual([...DEV_FIXTURE_ROOTS].sort());
+    });
+
+    it('groups those roots by their object type, and says how many', () => {
+        const groups = DEV_DOCUMENT.files[0].tree;
+
+        expect(groups.every(group => group.group === true)).toBe(true);
+        expect(groups.reduce((sum, group) => sum + group.children.length, 0)).toBe(DEV_FIXTURE_ROOTS.length);
+        expect(groups.map(group => group.name)).toEqual(groups.map(group => `${group.type}s (${group.children.length})`));
+        expect(groups.map(group => group.name)).toContain('Codeunits (1)');
     });
 
     it('covers what UI work needs to see', () => {
@@ -61,7 +70,9 @@ describe('the dev-server fixture', () => {
     it('keeps the two objects that share a hash apart', () => {
         // Table 625177701 and Page 625177701 are the same name under two object types
         // (§4.5) — the case the tree must not merge, visible on the dev server.
-        const shared = DEV_DOCUMENT.files[0].tree.filter(node => node.key.endsWith('625177701'));
+        const shared = DEV_DOCUMENT.files[0].tree
+            .flatMap(group => group.children)
+            .filter(node => node.key.endsWith('625177701'));
 
         expect(shared).toHaveLength(2);
         expect(shared.map(node => node.type).sort()).toEqual(['Page', 'Table']);
@@ -73,7 +84,8 @@ describe('the dev-server fixture', () => {
         const depth = (nodes: readonly Nested[], level = 0): number =>
             nodes.length === 0 ? level : Math.max(...nodes.map((node: Nested) => depth(node.children, level + 1)));
 
-        expect(depth(DEV_DOCUMENT.files[0].tree)).toBe(4);
+        // Five with the object-type level above them (`DEC-033`).
+        expect(depth(DEV_DOCUMENT.files[0].tree)).toBe(5);
     });
 
     it('stays small enough to live in the repository', () => {

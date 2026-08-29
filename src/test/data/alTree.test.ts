@@ -3,13 +3,16 @@ import { fileURLToPath, URL } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { buildAlTree, iterateNodes, iterateUnitNodes } from '../../extension/xliff/alTree';
+import { buildAlTree, groupByObjectType, iterateNodes, iterateUnitNodes, OBJECT_TYPE_GROUP_PREFIX } from '../../extension/xliff/alTree';
 import { parseXliff } from '../../extension/xliff/parser';
 import { iterateUnits } from '../../shared/model';
 
 import type { XliffNote, XliffTransUnit } from '../../shared/model';
 
 const EXAMPLES = fileURLToPath(new URL('../../../Examples', import.meta.url));
+const CORPUS = ['Contoso App.g.xlf', 'Contoso App.en-US.xlf', 'Contoso App.de-DE.xlf', 'Fabrikam Base.de-DE.xlf', 'test.xlf'];
+/** Every corpus file but the hand-written one, whose single id has no AL structure. */
+const AL_CORPUS = CORPUS.filter(name => name !== 'test.xlf');
 const unitsOf = (name: string) => [...iterateUnits(parseXliff(readFileSync(`${EXAMPLES}/${name}`, 'utf8')))];
 
 function unit(id: string, generatorNote?: string): XliffTransUnit {
@@ -164,5 +167,95 @@ describe('shape', () => {
 
     it('returns an empty tree for no units', () => {
         expect(buildAlTree([])).toEqual([]);
+    });
+});
+
+
+describe('the object-type level (DEC-033)', () => {
+    const grouped = (...ids: string[]) => groupByObjectType(buildAlTree(ids.map(id => unit(id))));
+
+    it('wraps the roots in one node per type', () => {
+        const tree = grouped('Table 1 - Property 9', 'Page 2 - Property 9', 'Table 3 - Property 9');
+
+        expect(tree.map(node => node.key)).toEqual(['type:Table', 'type:Page']);
+        expect(tree[0].children.map(node => node.key)).toEqual(['Table 1', 'Table 3']);
+        expect(tree[1].children.map(node => node.key)).toEqual(['Page 2']);
+    });
+
+    it('labels each group with its plural and how many objects it holds', () => {
+        const tree = grouped('Table 1 - Property 9', 'Table 3 - Property 9', 'PageExtension 4 - Property 9');
+
+        expect(tree.map(node => node.segment.name)).toEqual(['Tables (2)', 'PageExtensions (1)']);
+    });
+
+    it('counts objects, not units — the progress bar already counts those', () => {
+        const tree = grouped('Table 1 - Property 1', 'Table 1 - Property 2', 'Table 1 - Field 3 - Property 4');
+
+        expect(tree[0].segment.name).toBe('Tables (1)');
+    });
+
+    it('keeps first-appearance order, at both levels', () => {
+        const tree = grouped('Page 9 - Property 1', 'Table 1 - Property 1', 'Page 2 - Property 1');
+
+        expect(tree.map(node => node.segment.type)).toEqual(['Page', 'Table']);
+        expect(tree[0].children.map(node => node.key)).toEqual(['Page 9', 'Page 2']);
+    });
+
+    it('carries no unit and no hash of its own', () => {
+        const [group] = grouped('Table 1 - Property 9');
+
+        expect(group.unitId).toBeUndefined();
+        expect(group.segment.hash).toBe('');
+    });
+
+    it('leaves a root alone when its id has no type to group by', () => {
+        // `test.xlf`'s only id is `1`; there is nothing to call the group.
+        const tree = grouped('Table 1 - Property 9', '1');
+
+        expect(tree.map(node => node.key)).toEqual(['type:Table', '1']);
+    });
+
+    it('does nothing to an empty tree', () => {
+        expect(groupByObjectType([])).toEqual([]);
+    });
+
+    it('keeps a Table and a Page of one name apart, in different groups', () => {
+        // §4.5: the hash is of the *name*, so those two collide on hash alone.
+        const tree = grouped('Table 69043486 - Property 1', 'Page 69043486 - Property 1');
+
+        expect(tree.map(node => node.key)).toEqual(['type:Table', 'type:Page']);
+        expect(tree.every(node => node.children.length === 1)).toBe(true);
+    });
+
+    it('groups the large corpus file into the nine types it actually has', () => {
+        const tree = groupByObjectType(buildAlTree(unitsOf('Fabrikam Base.de-DE.xlf')));
+
+        expect(tree).toHaveLength(9);
+        expect(tree.reduce((sum, group) => sum + group.children.length, 0)).toBe(227);
+    });
+});
+
+describe('a group key can never be a unit id', () => {
+    it('holds against every id in the corpus', () => {
+        // `DEC-028`'s invariant is that a node carries a unit exactly when its key IS that
+        // unit's id. A group carries none, so its key must be one no id can produce.
+        for (const name of CORPUS) {
+            for (const each of unitsOf(name)) {
+                expect(each.id.includes(':'), `${name}: ${each.id}`).toBe(false);
+            }
+        }
+    });
+
+    it('holds for every group the corpus actually produces', () => {
+        for (const name of AL_CORPUS) {
+            const all = unitsOf(name);
+            const ids = new Set(all.map(each => each.id));
+            const groups = groupByObjectType(buildAlTree(all)).filter(node => node.key.startsWith(OBJECT_TYPE_GROUP_PREFIX));
+
+            expect(groups.length, name).toBeGreaterThan(0);
+            for (const group of groups) {
+                expect(ids.has(group.key), `${name}: ${group.key}`).toBe(false);
+            }
+        }
     });
 });

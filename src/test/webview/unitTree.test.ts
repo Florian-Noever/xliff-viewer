@@ -457,6 +457,19 @@ describe('the one navigation action (UI-06, DEC-032)', () => {
         expect(wrapper.emitted('toggle')).toBeUndefined();
     });
 
+    it('shows a group row as a label, with no symbol-type badge (DEC-033)', () => {
+        const wrapper = mount(TreeRow, {
+            props: {
+                row: { key: 'type:Table', type: 'Table', name: 'Tables (12)', group: true, depth: 0, hasChildren: true, expanded: true, position: 1, siblings: 1 },
+                focused: false,
+            },
+        });
+
+        expect(wrapper.find('.type').exists()).toBe(false);
+        expect(wrapper.get('.name').text()).toBe('Tables (12)');
+        expect(wrapper.find('.chevron').exists()).toBe(true);
+    });
+
     it('offers nothing on a container row, which has no unit to open', () => {
         const wrapper = mount(TreeRow, {
             props: {

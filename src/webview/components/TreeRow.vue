@@ -25,7 +25,7 @@
         </button>
         <span v-else class="chevron-spacer" aria-hidden="true" />
 
-        <span class="type">{{ row.type }}</span>
+        <span v-if="row.group !== true" class="type">{{ row.type }}</span>
         <span class="name">{{ label }}</span>
         <UnitCard
             v-if="row.unit !== undefined && settings !== undefined"
