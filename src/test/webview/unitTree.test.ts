@@ -2,8 +2,10 @@ import { mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { computed, defineComponent, nextTick, ref } from 'vue';
 
+import TreeRow from '../../webview/components/TreeRow.vue';
 import UnitTree from '../../webview/components/UnitTree.vue';
 import { useTreeFlatten } from '../../webview/composables/useTreeFlatten';
+import { UNIT_ACTIONS_KEY } from '../../webview/unitActions';
 
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { summariseTree } from '../../shared/state';
@@ -343,6 +345,129 @@ describe('what a row click means (UI-05)', () => {
 
         expect(wrapper.findAll('.tree-row').length).toBe(4);
         selection?.removeAllRanges();
+    });
+});
+
+describe('the one navigation action (UI-06, DEC-032)', () => {
+    const unit = (over: Partial<TransUnitDto> = {}): TransUnitDto =>
+        ({ id: 'Table 0 - Property 0', source: 'Customer', target: 'Kunde', state: 'translated', translate: true, notes: [], ...over });
+
+    const row = (over: Partial<TransUnitDto> = {}) => ({
+        key: 'Table 0 - Property 0',
+        type: 'Property',
+        name: 'Caption 0',
+        depth: 1,
+        hasChildren: false,
+        expanded: false,
+        unit: unit(over),
+        position: 1,
+        siblings: 1,
+    });
+
+    function mountRow(baseFileName: string | null | undefined, over: Partial<TransUnitDto> = {}) {
+        const calls: { target: string; unitId: string }[] = [];
+        const wrapper = mount(TreeRow, {
+            props: { row: row(over), focused: false, settings: DEFAULT_WEBVIEW_SETTINGS },
+            global: {
+                provide: {
+                    [UNIT_ACTIONS_KEY as symbol]: {
+                        open: (target: string, unitId: string) => calls.push({ target, unitId }),
+                        baseFileName: () => baseFileName,
+                    },
+                },
+            },
+        });
+        return { wrapper, calls, button: wrapper.get('.action') };
+    }
+
+    it('offers exactly one action, and it sits with the state', () => {
+        const { wrapper, button } = mountRow('App.g.xlf');
+
+        expect(wrapper.findAll('.action')).toHaveLength(1);
+        expect(button.text()).toBe('Go to source');
+        expect(wrapper.get('.unit-side').findAll('.state-badge')).toHaveLength(1);
+    });
+
+    it('asks the host for the base file, naming the unit', async () => {
+        const { calls, button } = mountRow('App.g.xlf');
+
+        await button.trigger('click');
+
+        expect(calls).toEqual([{ target: 'base', unitId: 'Table 0 - Property 0' }]);
+    });
+
+    it('is disabled while resolution has not run, and says so', () => {
+        const { button } = mountRow(undefined);
+
+        expect(button.attributes('disabled')).toBeDefined();
+        expect(button.attributes('title')).toBe('Looking for the base file…');
+    });
+
+    it('gives a different reason once resolution ran and found nothing (§12.5)', () => {
+        const { button } = mountRow(null);
+
+        expect(button.attributes('disabled')).toBeDefined();
+        expect(button.attributes('title')).toBe('No base file was found for this translation file.');
+    });
+
+    it('names the base file it would open', () => {
+        const { button } = mountRow('App.g.xlf');
+
+        expect(button.attributes('disabled')).toBeUndefined();
+        expect(button.attributes('title')).toContain('App.g.xlf');
+    });
+
+    it('is disabled for a unit the base file no longer has, and says why (§9.3)', () => {
+        const { button } = mountRow('App.g.xlf', { orphaned: true });
+
+        expect(button.attributes('disabled')).toBeDefined();
+        expect(button.attributes('title')).toContain('does not contain this unit any more');
+    });
+
+    it('stays enabled for a merely source-changed unit — it is still there', () => {
+        const { button } = mountRow('App.g.xlf', { baseSource: 'Customer (renamed)' });
+
+        expect(button.attributes('disabled')).toBeUndefined();
+    });
+
+    it('does not fold the row it sits on', async () => {
+        // Only a row that has children *and* a unit can be folded by its own button, and an
+        // id can be another unit's prefix, so that row exists. Without `.stop` the row
+        // handler runs too and the press collapses what it was meant to navigate from.
+        const calls: { target: string; unitId: string }[] = [];
+        const wrapper = mount(TreeRow, {
+            props: {
+                row: { ...row(), hasChildren: true, expanded: true },
+                focused: false,
+                settings: DEFAULT_WEBVIEW_SETTINGS,
+            },
+            global: {
+                provide: {
+                    [UNIT_ACTIONS_KEY as symbol]: {
+                        open: (target: string, unitId: string) => calls.push({ target, unitId }),
+                        baseFileName: () => 'App.g.xlf',
+                    },
+                },
+            },
+        });
+
+        await wrapper.get('.action').trigger('click');
+
+        expect(calls).toHaveLength(1);
+        expect(wrapper.emitted('toggle')).toBeUndefined();
+    });
+
+    it('offers nothing on a container row, which has no unit to open', () => {
+        const wrapper = mount(TreeRow, {
+            props: {
+                row: { key: 'Table 0', type: 'Table', name: 'Object 0', depth: 0, hasChildren: true, expanded: true, position: 1, siblings: 1 },
+                focused: false,
+                settings: DEFAULT_WEBVIEW_SETTINGS,
+            },
+        });
+
+        expect(wrapper.find('.action').exists()).toBe(false);
+        expect(wrapper.find('.unit-side').exists()).toBe(false);
     });
 });
 

@@ -12,7 +12,6 @@ import {
     fireTextDocumentChange,
     flushInfoMessages,
     flushLogs,
-    flushRevealedPositions,
     removeVirtualFile,
     resetMocks,
     setConfigOverride,
@@ -208,80 +207,6 @@ describe('the editor provider', () => {
     });
 });
 
-describe('the AL source announcement (§10.1)', () => {
-    const alSource = (posted: readonly ExtensionMessage[]) =>
-        posted.find(message => message.type === ExtensionMessageType.alSource);
-
-    it('tells the webview the workspace has AL source, so the action can be offered', async () => {
-        setVirtualFile('/w/src/Table.al', 'table 50100 Customer\n{\n}');
-        const harness = await openEditor();
-
-        harness.send({ type: WebviewMessageType.ready });
-        await settle();
-
-        expect(alSource(harness.posted)).toEqual({ type: ExtensionMessageType.alSource, payload: { available: true } });
-    });
-
-    it('says so when it does not, which is what disables the button', async () => {
-        const harness = await openEditor();
-
-        harness.send({ type: WebviewMessageType.ready });
-        await settle();
-
-        expect(alSource(harness.posted)).toEqual({ type: ExtensionMessageType.alSource, payload: { available: false } });
-    });
-});
-
-describe('going to the AL source', () => {
-    it('opens the declaring file at the object', async () => {
-        setVirtualFile('/w/src/Table.al', 'table 50100 Customer\n{\n}');
-        const harness = await openEditor();
-        harness.send({ type: WebviewMessageType.ready });
-
-        harness.send({
-            type: WebviewMessageType.openSource,
-            target: 'al',
-            fileIndex: 0,
-            unitId: 'Table 1 - Property 2',
-        });
-        await settle();
-
-        expect(flushRevealedPositions()).toEqual([{ path: '/w/src/Table.al', line: 0 }]);
-    });
-
-    it('says the object is not there rather than opening something close', async () => {
-        setVirtualFile('/w/src/Other.al', 'table 50100 Vendor\n{\n}');
-        const harness = await openEditor();
-        harness.send({ type: WebviewMessageType.ready });
-
-        harness.send({
-            type: WebviewMessageType.openSource,
-            target: 'al',
-            fileIndex: 0,
-            unitId: 'Table 1 - Property 2',
-        });
-        await settle();
-
-        expect(flushRevealedPositions()).toEqual([]);
-        expect(flushInfoMessages()[0]).toContain('Table Customer');
-    });
-
-    it('explains an empty workspace instead of failing silently', async () => {
-        const harness = await openEditor();
-        harness.send({ type: WebviewMessageType.ready });
-
-        harness.send({
-            type: WebviewMessageType.openSource,
-            target: 'al',
-            fileIndex: 0,
-            unitId: 'Table 1 - Property 2',
-        });
-        await settle();
-
-        expect(flushInfoMessages()[0]).toContain('no AL source files');
-    });
-});
-
 describe('what survives a re-parse (REVIEW-02a)', () => {
     const BASE = `<?xml version="1.0" encoding="utf-8"?>
 <xliff version="1.2"><file source-language="en-US" target-language="en-US" original="App"><body>
@@ -311,7 +236,6 @@ describe('what survives a re-parse (REVIEW-02a)', () => {
             ExtensionMessageType.settings,
             ExtensionMessageType.loading,
             ExtensionMessageType.setDocument,
-            ExtensionMessageType.alSource,
             ExtensionMessageType.baseFile,
             ExtensionMessageType.patchUnits,
         ]);
@@ -402,21 +326,6 @@ describe('what survives a re-parse (REVIEW-02a)', () => {
         expect(harness.posted).toEqual([]);
     });
 
-    it('does not re-ask whether the workspace has AL source \u2014 that cannot change with the document', async () => {
-        const document = new FakeTextDocument('/w/App.de-DE.xlf', language('Customer'));
-        const harness = await openEditor(document);
-        harness.send({ type: WebviewMessageType.ready });
-        await settle();
-
-        harness.posted.length = 0;
-        document.setText(language('Customer edited'));
-        fireTextDocumentChange(document);
-        await afterDebounce();
-        await settle();
-
-        expect(harness.posted.some(message => message.type === ExtensionMessageType.alSource)).toBe(false);
-    });
-
     it('sends only the failure when the re-parse fails, and no stale pairing with it', async () => {
         setVirtualFile('/w/App.g.xlf', BASE);
         const document = new FakeTextDocument('/w/App.de-DE.xlf', language('Customer'));
@@ -461,12 +370,8 @@ describe('navigation that cannot go anywhere still says so (\u00a712.5)', () => 
         await settle();
 
         harness.send({ type: WebviewMessageType.openSource, target: 'base' });
-        harness.send({ type: WebviewMessageType.openSource, target: 'al' });
         await settle();
 
-        expect(flushInfoMessages()).toEqual([
-            'Choose a unit to show in the base file.',
-            'Choose a unit to show in the AL source.',
-        ]);
+        expect(flushInfoMessages()).toEqual(['Choose a unit to show in the base file.']);
     });
 });

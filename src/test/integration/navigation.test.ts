@@ -1,8 +1,7 @@
 import * as vscode from 'vscode';
 
-import { AlObjectIndex } from '../../extension/services/alObjectIndex';
 import { BaseFileResolver } from '../../extension/services/baseFileResolver';
-import { AlNavigationOutcome, findUnitLine, revealAlObject, revealAsText, revealInBaseFile } from '../../extension/services/navigation';
+import { findUnitLine, revealAsText, revealInBaseFile } from '../../extension/services/navigation';
 
 import { assertEqual, assertOk } from './assertions';
 
@@ -12,8 +11,8 @@ import { assertEqual, assertOk } from './assertions';
  * These are the first services that touch the workspace rather than one document, and
  * `workspace.fs`, `readDirectory` and `findFiles` are exactly where the web host differs
  * from the desktop one. Compiling for both proves nothing about either — so this suite
- * runs in both, and the repository itself is the fixture: it has `.g.xlf` files and no AL
- * source at all, which is the degraded case §10.1 must state a reason for.
+ * runs in both, and the repository itself is the fixture: a base file that pairs, a unit
+ * the base file does not carry, and a base file that is not there at all.
  */
 
 const KNOWN_UNIT = 'Table 3783554337 - Property 2879900210';
@@ -94,21 +93,5 @@ suite('navigation, in whichever host this is', () => {
         assertOk(editorFor(uri), 'the file did not open as text');
 
         await closeEverything();
-    });
-
-    test('reports a workspace with no AL source instead of failing silently', async () => {
-        const index = new AlObjectIndex();
-        try {
-            // This repository is a VS Code extension: it has translation files and no AL.
-            assertEqual(await index.hasAlFiles(), false, 'this workspace should contain no .al files');
-            assertEqual(
-                await revealAlObject(index, { kind: 'Table', name: '3S Sales Header' }),
-                AlNavigationOutcome.noAlFiles,
-                'an AL-less workspace must be told apart from a missing object',
-            );
-            assertEqual((await index.find('Table', '3S Sales Header')).length, 0, 'nothing should be indexed');
-        } finally {
-            index.dispose();
-        }
     });
 });

@@ -67,7 +67,6 @@ const {
     activeFileIndex,
     unitsById,
     blocking,
-    alSourceAvailable,
     openAsText,
     openSource,
 } = useXliffDocument();
@@ -78,7 +77,6 @@ provideUnitActions({
         const resolved = document.value?.baseFile;
         return resolved === undefined || resolved === null ? resolved : resolved.fileName;
     },
-    alSourceAvailable: () => alSourceAvailable.value,
 });
 
 const rollup = useRollup({ file: activeFile, unitsById });

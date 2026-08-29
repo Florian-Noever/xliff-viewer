@@ -6,7 +6,6 @@ import NoteList from '../../webview/components/NoteList.vue';
 import UnitCard from '../../webview/components/UnitCard.vue';
 import { indexNodes, reconstructGeneratorNote } from '../../webview/generatorNote';
 import { loadBearingWhitespace, WhitespaceReason } from '../../webview/whitespace';
-import { UNIT_ACTIONS_KEY } from '../../webview/unitActions';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { XliffState } from '../../shared/state';
 
@@ -319,125 +318,6 @@ describe('every DTO field is reachable', () => {
     });
 });
 
-describe('the navigation buttons (§10)', () => {
-    const button = (wrapper: ReturnType<typeof card>, label: string) => {
-        const found = wrapper.findAll('.action').find(each => each.text() === label);
-        if (found === undefined) {
-            throw new Error(`no "${label}" button`);
-        }
-        return found;
-    };
-
-    const actions = () => {
-        const calls: { target: string; unitId: string }[] = [];
-        return {
-            calls,
-            provide: (baseFileName: string | null | undefined, al: { available: boolean | undefined } = { available: true }) => ({
-                global: {
-                    provide: {
-                        [UNIT_ACTIONS_KEY as symbol]: {
-                            open: (target: string, unitId: string) => calls.push({ target, unitId }),
-                            baseFileName: () => baseFileName,
-                            alSourceAvailable: () => al.available,
-                        },
-                    },
-                },
-            }),
-        };
-    };
-
-    it('always offers "Open as text" — the escape hatch is never disabled (§10.3)', () => {
-        const wrapper = mount(UnitCard, {
-            props: { unit: unit(), settings: DEFAULT_WEBVIEW_SETTINGS },
-            ...actions().provide(undefined),
-        });
-
-        expect(button(wrapper, 'Open as text').attributes('disabled')).toBeUndefined();
-    });
-
-    it('asks the host, naming the unit', async () => {
-        const handle = actions();
-        const wrapper = mount(UnitCard, {
-            props: { unit: unit(), settings: DEFAULT_WEBVIEW_SETTINGS },
-            ...handle.provide('App.g.xlf'),
-        });
-
-        await button(wrapper, 'Go to AL source').trigger('click');
-        await button(wrapper, 'Open as text').trigger('click');
-        await button(wrapper, 'Show in base file').trigger('click');
-
-        expect(handle.calls).toEqual([
-            { target: 'al', unitId: 'Table 1 - Property 2' },
-            { target: 'text', unitId: 'Table 1 - Property 2' },
-            { target: 'base', unitId: 'Table 1 - Property 2' },
-        ]);
-    });
-
-    it('disables the base-file button while resolution has not run, and says so', () => {
-        const wrapper = mount(UnitCard, {
-            props: { unit: unit(), settings: DEFAULT_WEBVIEW_SETTINGS },
-            ...actions().provide(undefined),
-        });
-
-        const target = button(wrapper, 'Show in base file');
-        expect(target.attributes('disabled')).toBeDefined();
-        expect(target.attributes('title')).toBe('Looking for the base file…');
-    });
-
-    it('gives a different reason when resolution ran and found nothing (§12.5)', () => {
-        const wrapper = mount(UnitCard, {
-            props: { unit: unit(), settings: DEFAULT_WEBVIEW_SETTINGS },
-            ...actions().provide(null),
-        });
-
-        const target = button(wrapper, 'Show in base file');
-        expect(target.attributes('disabled')).toBeDefined();
-        expect(target.attributes('title')).toBe('No base file was found for this translation file.');
-    });
-
-    it('names the base file it would open', () => {
-        const wrapper = mount(UnitCard, {
-            props: { unit: unit(), settings: DEFAULT_WEBVIEW_SETTINGS },
-            ...actions().provide('App.g.xlf'),
-        });
-
-        const target = button(wrapper, 'Show in base file');
-        expect(target.attributes('disabled')).toBeUndefined();
-        expect(target.attributes('title')).toContain('App.g.xlf');
-    });
-
-    it('disables the AL action while the host has not looked yet (§10.1)', () => {
-        const wrapper = mount(UnitCard, {
-            props: { unit: unit(), settings: DEFAULT_WEBVIEW_SETTINGS },
-            ...actions().provide('App.g.xlf', { available: undefined }),
-        });
-
-        const target = button(wrapper, 'Go to AL source');
-        expect(target.attributes('disabled')).toBeDefined();
-        expect(target.attributes('title')).toBe('Looking for AL source files…');
-    });
-
-    it('disables it with a different reason when the workspace has no AL source', () => {
-        const wrapper = mount(UnitCard, {
-            props: { unit: unit(), settings: DEFAULT_WEBVIEW_SETTINGS },
-            ...actions().provide('App.g.xlf', { available: false }),
-        });
-
-        const target = button(wrapper, 'Go to AL source');
-        expect(target.attributes('disabled')).toBeDefined();
-        expect(target.attributes('title')).toBe('This workspace contains no AL source files.');
-    });
-
-    it('names the object it would open once there is source to open', () => {
-        const wrapper = mount(UnitCard, {
-            props: { unit: unit(), settings: DEFAULT_WEBVIEW_SETTINGS },
-            ...actions().provide('App.g.xlf', { available: true }),
-        });
-
-        expect(button(wrapper, 'Go to AL source').attributes('title')).toContain('Table 1');
-    });
-});
-
 describe('the base ⊕ language pairing (§9.3)', () => {
     it('says a unit the base no longer has is orphaned', () => {
         const wrapper = card({ orphaned: true });
@@ -460,33 +340,5 @@ describe('the base ⊕ language pairing (§9.3)', () => {
         const wrapper = card();
 
         expect(wrapper.find('.pairing').exists()).toBe(false);
-    });
-
-    it('disables "Show in base file" for an orphaned unit, and says why', () => {
-        const wrapper = mount(UnitCard, {
-            props: { unit: unit({ orphaned: true }), settings: DEFAULT_WEBVIEW_SETTINGS },
-            global: {
-                provide: {
-                    [UNIT_ACTIONS_KEY as symbol]: { open: () => { }, baseFileName: () => 'App.g.xlf', alSourceAvailable: () => true },
-                },
-            },
-        });
-
-        const target = wrapper.findAll('.action').find(each => each.text() === 'Show in base file');
-        expect(target?.attributes('disabled')).toBeDefined();
-        expect(target?.attributes('title')).toContain('does not contain this unit any more');
-    });
-
-    it('leaves the button enabled for a merely source-changed unit — it is still there', () => {
-        const wrapper = mount(UnitCard, {
-            props: { unit: unit({ baseSource: 'Customer' }), settings: DEFAULT_WEBVIEW_SETTINGS },
-            global: {
-                provide: {
-                    [UNIT_ACTIONS_KEY as symbol]: { open: () => { }, baseFileName: () => 'App.g.xlf', alSourceAvailable: () => true },
-                },
-            },
-        });
-
-        expect(wrapper.findAll('.action').find(each => each.text() === 'Show in base file')?.attributes('disabled')).toBeUndefined();
     });
 });

@@ -269,32 +269,6 @@ describe('openAsText', () => {
     });
 });
 
-describe('the AL source announcement (§10.1)', () => {
-    it('knows nothing until the host has looked, which is what the card shows as pending', () => {
-        expect(useIt().alSourceAvailable.value).toBeUndefined();
-    });
-
-    it('takes the answer either way', () => {
-        const state = useIt();
-
-        send({ type: ExtensionMessageType.alSource, payload: { available: false } });
-        expect(state.alSourceAvailable.value).toBe(false);
-
-        send({ type: ExtensionMessageType.alSource, payload: { available: true } });
-        expect(state.alSourceAvailable.value).toBe(true);
-    });
-
-    it('asks the host for the AL source of one unit', () => {
-        const state = useIt();
-        sendDocument();
-        clearPostedMessages();
-
-        state.openSource('al', 'Table 1');
-
-        expect(postedMessages).toEqual([{ type: WebviewMessageType.openSource, target: 'al', fileIndex: 0, unitId: 'Table 1' }]);
-    });
-});
-
 describe('patchUnits', () => {
     const patch = (fileIndex: number, units: unknown[]): void =>
         send({ type: ExtensionMessageType.patchUnits, payload: { fileIndex, units } } as ExtensionMessage);

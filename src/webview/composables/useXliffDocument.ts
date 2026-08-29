@@ -40,8 +40,6 @@ export interface XliffDocument {
     /** True when a failure has nothing behind it, so the error must take the whole view (§7.7). */
     readonly blocking: ComputedRef<boolean>;
     readonly unitCount: ComputedRef<number>;
-    /** Undefined until the host has looked; false when the workspace holds no `.al` files (§10.1). */
-    readonly alSourceAvailable: Ref<boolean | undefined>;
     /** Opens the raw XML in the built-in editor — the one action available while nothing parses. */
     openAsText(): void;
     /** Navigation for one unit (§10). The host decides what each target means. */
@@ -80,7 +78,6 @@ export function useXliffDocument(): XliffDocument {
     const error = ref<ErrorPayload | undefined>(undefined);
     const settings = ref<WebviewSettings>(DEFAULT_WEBVIEW_SETTINGS);
     const activeFileIndex = ref(0);
-    const alSourceAvailable = ref<boolean | undefined>(undefined);
 
     const activeFile = computed(() => document.value?.files[activeFileIndex.value] ?? document.value?.files[0]);
     const unitsById = computed(() => new Map((activeFile.value?.units ?? []).map(unit => [unit.id, unit])));
@@ -115,9 +112,6 @@ export function useXliffDocument(): XliffDocument {
             case ExtensionMessageType.error:
                 error.value = message.payload;
                 loading.value = undefined;
-                break;
-            case ExtensionMessageType.alSource:
-                alSourceAvailable.value = message.payload.available;
                 break;
             case ExtensionMessageType.patchUnits:
                 document.value = patchUnits(document.value, message.payload.fileIndex, message.payload.units);
@@ -179,7 +173,6 @@ export function useXliffDocument(): XliffDocument {
         unitsById,
         blocking,
         unitCount,
-        alSourceAvailable,
         openAsText,
         openSource,
     };
