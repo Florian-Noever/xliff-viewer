@@ -66,6 +66,16 @@ describe('StateBadge', () => {
         expect(toneOf(XliffState.missing)).toBe('tone-absent');
     });
 
+    it('is a dot and a word, and nothing else to draw (UI-08)', () => {
+        // The background went so the badge reads like the toolbar's state chips. jsdom
+        // cannot see a colour, but it can see that nothing was left needing one.
+        const badge = mount(StateBadge, { props: { state: XliffState.translated } });
+
+        expect(badge.get('.dot').attributes('aria-hidden')).toBe('true');
+        expect(badge.get('.label').text()).toBe('translated');
+        expect(badge.element.children).toHaveLength(2);
+    });
+
     it('mutes an untranslatable unit and says why (§5.3)', () => {
         const badge = mount(StateBadge, { props: { state: XliffState.missing, muted: true } });
 
