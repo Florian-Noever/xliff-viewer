@@ -274,15 +274,25 @@ describe('entities', () => {
         expect(unit?.source).not.toContain('&amp;');
     });
 
-    it('leaves numeric character references verbatim, so they round-trip', () => {
+    it('decodes numeric character references (DEC-026)', () => {
         const doc = parseXliff(
             '<?xml version="1.0"?>\n<xliff version="1.2"><file source-language="en"><body>'
             + '<trans-unit id="a"><source>caf&#233;</source></trans-unit>'
             + '</body></file></xliff>'
         );
-        // Decoding this to "é" would make the serialiser emit a literal character —
-        // valid XML, but a byte change. See the note in parser.ts.
-        expect(doc.files[0].body.units[0].source).toBe('caf&#233;');
+        expect(doc.files[0].body.units[0].source).toBe('café');
+    });
+
+    it('distinguishes a numeric reference from an escaped ampersand', () => {
+        // The heart of DEC-026: without htmlEntities these two produce the *same* model
+        // value, so the serialiser cannot tell them apart and corrupts one of them.
+        const wrap = (source: string): string =>
+            '<?xml version="1.0"?>\n<xliff version="1.2"><file source-language="en"><body>'
+            + `<trans-unit id="a"><source>${source}</source></trans-unit>`
+            + '</body></file></xliff>';
+
+        expect(parseXliff(wrap('caf&#233;')).files[0].body.units[0].source).toBe('café');
+        expect(parseXliff(wrap('caf&amp;#233;')).files[0].body.units[0].source).toBe('caf&#233;');
     });
 });
 

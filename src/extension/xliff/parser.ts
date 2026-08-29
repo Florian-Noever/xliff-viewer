@@ -24,25 +24,28 @@ import type {
  * - `trimValues: false` honours `xml:space="preserve"` (§3.6). A target of `'   '` is
  *   three spaces, not an empty string.
  * - `parseTagValue` / `parseAttributeValue: false` stop `"00123"` becoming a number.
- * - `processEntities: true` decodes the five predefined entities. It deliberately does
- *   **not** decode numeric character references — see the note below.
+ * - `processEntities` + `htmlEntities` together decode both named entities and numeric
+ *   character references — see the note below, which is load-bearing.
  *
  * `attributesGroupName` is *not* set: under `preserveOrder` fast-xml-parser always uses
  * `:@` and ignores that option. §7.3 lists it, but it is inert.
  *
- * ## Entities and the round-trip
+ * ## Why `htmlEntities` is required, not optional (`DEC-026`)
  *
- * `processEntities: true` decodes `&amp; &lt; &gt; &quot; &apos;` but leaves numeric
- * references (`&#233;`) verbatim. That asymmetry is deliberate and load-bearing:
- * a numeric reference survives into the model unchanged and therefore round-trips
- * byte-identically. Adding `htmlEntities: true` would decode it to `é`, which the
- * serialiser would then write as a literal character — valid XML, same meaning, but a
- * byte change, breaking §15.2. Do not add it.
+ * `processEntities` alone decodes `&amp;` but leaves `&#233;` verbatim. That makes the
+ * model **ambiguous**: `caf&#233;` and `caf&amp;#233;` both produce the text
+ * `caf&#233;`, so the serialiser cannot tell an é from the literal characters `&#233;`.
+ * It escapes the `&`, and the é is silently corrupted into visible `&#233;`.
  *
- * The residual gap: `&quot;` or `&apos;` in *text* decodes to `"` / `'`, and the
- * serialiser writes those literally rather than re-encoding them, so such a file is
- * normalised on first save. No corpus file contains either (verified), and this falls
- * under the normalisation `DEC-017` already accepts.
+ * With `htmlEntities` the two become distinct — `café` and `caf&#233;` — and each
+ * serialises correctly. The cost is that a numeric reference is written back as the
+ * literal character: valid XML, identical meaning, different bytes. Correctness beats
+ * byte-identity here, and no corpus file contains one.
+ *
+ * Residual gaps, both accepted under `DEC-017`'s first-save normalisation:
+ * - `&quot;` / `&apos;` in *text* decode and are written literally. No corpus file has either.
+ * - An **undefined** entity (`&bogus;`) cannot round-trip — it is indistinguishable from
+ *   `&amp;bogus;` — but such a document is not well-formed XML in the first place.
  */
 const PARSER_OPTIONS = {
     preserveOrder: true,
@@ -52,6 +55,7 @@ const PARSER_OPTIONS = {
     parseTagValue: false,
     parseAttributeValue: false,
     processEntities: true,
+    htmlEntities: true,
     alwaysCreateTextNode: true,
 } as const;
 
