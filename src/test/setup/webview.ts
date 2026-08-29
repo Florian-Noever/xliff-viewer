@@ -1,9 +1,19 @@
-import { vi } from 'vitest';
+/**
+ * Installs `acquireVsCodeApi` before any webview module loads, so `src/webview/vscode.ts`
+ * caches a real handle rather than undefined.
+ *
+ * The stub records what the webview posts. Tests import `postedMessages` from here — the
+ * setup file and the test share one module instance, so it is the same array.
+ */
 
-// Provide acquireVsCodeApi as a global before any webview module loads, so
-// src/webview/vscode.ts caches a stub rather than undefined.
+export const postedMessages: unknown[] = [];
+
+export function clearPostedMessages(): void {
+    postedMessages.length = 0;
+}
+
 (globalThis as Record<string, unknown>).acquireVsCodeApi = () => ({
-    postMessage: vi.fn(),
-    getState: vi.fn(() => undefined),
-    setState: vi.fn(),
+    postMessage: (message: unknown) => postedMessages.push(message),
+    getState: () => undefined,
+    setState: () => { },
 });

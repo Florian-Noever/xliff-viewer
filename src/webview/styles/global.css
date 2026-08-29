@@ -31,6 +31,8 @@
     --vscode-errorForeground: #f48771;
     --vscode-editorWarning-foreground: #cca700;
     --vscode-inputValidation-errorBorder: #be1100;
+    --vscode-inputValidation-errorBackground: #5a1d1d;
+    --vscode-inputValidation-errorForeground: #cccccc;
     --vscode-charts-green: #89d185;
     --vscode-charts-yellow: #cca700;
     --vscode-testing-iconPassed: #73c991;
@@ -53,6 +55,7 @@
 
     --duration-fast: 0.15s;
     --duration-base: 0.25s;
+    --duration-spin: 0.8s;
 }
 
 html,

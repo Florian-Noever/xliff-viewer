@@ -19,6 +19,7 @@ const VALID: readonly WebviewMessage[] = [
     { type: WebviewMessageType.updateTarget, fileIndex: 1, unitId: 'x', value: '', state: XliffState.signedOff },
     { type: WebviewMessageType.updateState, fileIndex: 0, unitId: 'x', state: XliffState.translated },
     { type: WebviewMessageType.openSource, fileIndex: 0, unitId: 'x', target: NavigationTarget.al },
+    { type: WebviewMessageType.openSource, target: NavigationTarget.text },
     { type: WebviewMessageType.copyToClipboard, text: 'anything' },
     { type: WebviewMessageType.notify, kind: NotifyKind.warning, message: 'careful' },
 ];
@@ -52,6 +53,8 @@ describe('isWebviewMessage', () => {
             { type: 'updateTarget', fileIndex: 0, unitId: 42, value: 'v' },
             { type: 'updateState', fileIndex: 0, unitId: 'x' },
             { type: 'openSource', fileIndex: 0, unitId: 'x', target: 'elsewhere' },
+            { type: 'openSource', target: 'text', fileIndex: 0 },
+            { type: 'openSource', target: 'text', unitId: 'x' },
             { type: 'copyToClipboard' },
             { type: 'notify', kind: 'shout', message: 'hi' },
             { type: 'notify', kind: 'info' },
