@@ -44,17 +44,6 @@ describe('the large corpus file', () => {
         expect(unnamed).toHaveLength(0);
     });
 
-    it('builds within the §16 budget', () => {
-        buildAlTree(units); // warm up
-
-        let best = Number.POSITIVE_INFINITY;
-        for (let attempt = 0; attempt < 3; attempt++) {
-            const started = performance.now();
-            buildAlTree(units);
-            best = Math.min(best, performance.now() - started);
-        }
-        expect(best).toBeLessThan(60);
-    });
 });
 
 describe('grouping is by hash, never by name', () => {

@@ -25,19 +25,30 @@
                     <span v-if="activeFile.original !== undefined" class="original">{{ activeFile.original }}</span>
                 </p>
             </header>
+            <UnitTree v-if="activeFile !== undefined" :tree="tree" />
             <p v-else class="placeholder">Waiting for a document…</p>
         </template>
     </main>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+
 import StatusPane from './components/StatusPane.vue';
+import UnitTree from './components/UnitTree.vue';
 import { useDesignTokens } from './composables/useDesignTokens';
+import { useTreeFlatten } from './composables/useTreeFlatten';
 import { useXliffDocument } from './composables/useXliffDocument';
 
 useDesignTokens();
 
-const { document, loading, error, activeFile, blocking, unitCount, openAsText } = useXliffDocument();
+const { document, loading, error, settings, activeFile, unitsById, blocking, unitCount, openAsText } = useXliffDocument();
+
+const tree = useTreeFlatten({
+    file: activeFile,
+    unitsById,
+    defaultExpandDepth: computed(() => settings.value.defaultExpandDepth),
+});
 </script>
 
 <style scoped>

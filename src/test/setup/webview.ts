@@ -17,3 +17,16 @@ export function clearPostedMessages(): void {
     getState: () => undefined,
     setState: () => { },
 });
+
+/**
+ * jsdom has no `ResizeObserver`, and `@tanstack/vue-virtual` observes the scroll element
+ * with one. Without this the virtualiser never learns the viewport size and renders
+ * nothing, which would make every tree test pass for the wrong reason.
+ */
+class StubResizeObserver {
+    public observe(): void { }
+    public unobserve(): void { }
+    public disconnect(): void { }
+}
+
+(globalThis as Record<string, unknown>).ResizeObserver ??= StubResizeObserver;

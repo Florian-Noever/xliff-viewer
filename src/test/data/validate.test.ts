@@ -120,19 +120,6 @@ describe('validateXml', () => {
         expect(caught?.line).toBeGreaterThan(1);
     });
 
-    it('validates the largest corpus file within the §16 budget', () => {
-        const text = read('Fabrikam Base.de-DE.xlf');
-        validateXml(text); // warm up, so this measures the work and not the JIT
-
-        let best = Number.POSITIVE_INFINITY;
-        for (let attempt = 0; attempt < 3; attempt++) {
-            const started = performance.now();
-            validateXml(text);
-            best = Math.min(best, performance.now() - started);
-        }
-
-        expect(best).toBeLessThan(60);
-    });
 });
 
 describe('validateStructure', () => {

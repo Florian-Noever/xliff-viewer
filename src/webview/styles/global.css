@@ -59,9 +59,17 @@
 }
 
 html,
-body {
+body,
+#app {
     height: 100%;
     margin: 0;
+}
+
+/* The tree scrolls inside the shell, so the shell needs a real height to fill (§11.4). */
+#app {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 body {

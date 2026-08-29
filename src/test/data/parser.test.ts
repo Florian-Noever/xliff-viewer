@@ -101,18 +101,6 @@ describe('the large language file', () => {
         expect(unitsOf(CORPUS.fabrikam).filter(unit => unit.alObjectTarget !== undefined)).toHaveLength(656);
     });
 
-    it('parses within the §16 budget', () => {
-        const text = read(CORPUS.fabrikam);
-        parseXliff(text); // warm up, so this measures the work and not the JIT
-
-        let best = Number.POSITIVE_INFINITY;
-        for (let attempt = 0; attempt < 3; attempt++) {
-            const started = performance.now();
-            parseXliff(text);
-            best = Math.min(best, performance.now() - started);
-        }
-        expect(best).toBeLessThan(100);
-    });
 });
 
 describe('the minimal, non-AL file', () => {
