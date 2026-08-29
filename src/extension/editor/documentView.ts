@@ -2,13 +2,12 @@ import * as vscode from 'vscode';
 
 import { Logger } from '../services/logger';
 import { compareToBase } from '../services/baseFileIndex';
-import { AlNavigationOutcome, alTargetFor, revealAlObject, revealAsText, revealInBaseFile } from '../services/navigation';
+import { revealAsText, revealInBaseFile } from '../services/navigation';
 import { fileNameOf } from '../services/uriNames';
 
 import { ExtensionMessageType, NavigationTarget } from '../../shared/messages';
 
 import type { DocumentSession, SessionState, UnitReference, XliffDocumentSession } from './documentSession';
-import type { AlObjectIndex } from '../services/alObjectIndex';
 import type { BaseFileIndex } from '../services/baseFileIndex';
 import type { BaseFileResolver } from '../services/baseFileResolver';
 import type { XliffDocumentDto } from '../../shared/dto';
@@ -45,7 +44,6 @@ export function createDocumentSession(
     post: (message: ExtensionMessage) => void,
     baseFiles?: BaseFileResolver,
     baseIndex?: BaseFileIndex,
-    alObjects?: AlObjectIndex,
 ): DocumentView {
     const subscriptions: vscode.Disposable[] = [];
 
@@ -87,9 +85,6 @@ export function createDocumentSession(
             // shows the tree first and learns about the base file when it is known.
             if (state.kind === 'document') {
                 announcePairing(state.dto);
-                if (alObjects !== undefined) {
-                    void announceAlSource(alObjects, post);
-                }
             }
         },
         dispose: () => {
@@ -100,27 +95,17 @@ export function createDocumentSession(
         },
         update: (state) => {
             postUpdate(state, post);
-            // Not the AL-source answer: it is a fact about the workspace, the webview
-            // keeps it across a `setDocument`, and re-asking would cost a `findFiles`
-            // on every keystroke.
             if (state.kind === 'document') {
                 announcePairing(state.dto);
             }
         },
         updateTarget: () => notYet('Editing a target', 'EDIT-01'),
         updateState: () => notYet('Changing a state', 'EDIT-01'),
-        openSource: (target, unit) => {
-            switch (target) {
-                case NavigationTarget.text:
-                    return revealAsText(session.uri, unit?.unitId);
-                case NavigationTarget.base:
-                    return showInBaseFile(baseFiles, session, unit);
-                case NavigationTarget.al:
-                    return showAlObject(alObjects, session, unit);
-                default:
-                    return notYet('This navigation target', 'a later task');
-            }
-        },
+        // Two targets since `DEC-032`: the unit's own "Go to source", and the raw XML for
+        // the error pane, which has no unit to name (§11.3).
+        openSource: (target, unit) => (target === NavigationTarget.base
+            ? showInBaseFile(baseFiles, session, unit)
+            : revealAsText(session.uri, unit?.unitId)),
     };
 }
 
@@ -189,48 +174,6 @@ async function announceBaseFile(
         : await baseIndex.sourcesOf(resolved.uri);
 
     announceStaleUnits(sources, dto, post, marked);
-}
-
-/** Whether the workspace has AL source at all, which decides whether the action is offered (§10.1). */
-async function announceAlSource(alObjects: AlObjectIndex, post: (message: ExtensionMessage) => void): Promise<void> {
-    post({ type: ExtensionMessageType.alSource, payload: { available: await alObjects.hasAlFiles() } });
-}
-
-/**
- * §10.1, the primary "go to source" (`DEC-009`).
- *
- * Every way this can fail is a sentence rather than an error: the workspace may not hold
- * the app source at all, and that is a normal way to use a translation file.
- */
-async function showAlObject(
-    alObjects: AlObjectIndex | undefined,
-    session: XliffDocumentSession,
-    unit: UnitReference | undefined,
-): Promise<void> {
-    if (unit === undefined) {
-        void vscode.window.showInformationMessage('Choose a unit to show in the AL source.');
-        return;
-    }
-
-    const state = session.current();
-    if (alObjects === undefined || state.kind !== 'document') {
-        void vscode.window.showInformationMessage('The AL source cannot be searched until this file has been read.');
-        return;
-    }
-
-    const file = state.dto.files[unit.fileIndex] ?? state.dto.files[0];
-    const target = file === undefined ? undefined : alTargetFor(unit.unitId, file.tree);
-    if (target === undefined) {
-        void vscode.window.showInformationMessage('This unit\'s id carries no AL object name to look for.');
-        return;
-    }
-
-    const outcome = await revealAlObject(alObjects, target);
-    if (outcome === AlNavigationOutcome.notFound) {
-        void vscode.window.showInformationMessage(`No "${target.kind} ${target.name}" was found in this workspace.`);
-    } else if (outcome === AlNavigationOutcome.noAlFiles) {
-        void vscode.window.showInformationMessage('This workspace contains no AL source files to navigate to.');
-    }
 }
 
 /**

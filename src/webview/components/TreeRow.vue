@@ -36,11 +36,18 @@
         />
         <span class="spacer" />
         <span v-if="pairing !== undefined" class="pairing" :class="pairing.tone" :title="pairing.title">{{ pairing.label }}</span>
-        <StateBadge
-            v-if="row.unit !== undefined"
-            :state="row.unit.state"
-            :muted="!row.unit.translate"
-        />
+        <div v-if="row.unit !== undefined" class="unit-side">
+            <StateBadge :state="row.unit.state" :muted="!row.unit.translate" />
+            <button
+                type="button"
+                class="action"
+                :disabled="baseFile === null || baseFile === undefined || row.unit.orphaned === true"
+                :title="sourceTitle"
+                @click.stop="actions.open(NavigationTarget.base, row.key)"
+            >
+                Go to source
+            </button>
+        </div>
         <ProgressBar v-else-if="summary !== undefined" :summary="summary" />
     </div>
 </template>
@@ -52,6 +59,9 @@ import ProgressBar from './ProgressBar.vue';
 import StateBadge from './StateBadge.vue';
 import UnitCard from './UnitCard.vue';
 import { Icon } from '../icons';
+import { useUnitActions } from '../unitActions';
+
+import { NavigationTarget } from '@shared/messages';
 
 import type { TreeRow } from '../composables/useTreeFlatten';
 import type { StateSummary } from '@shared/state';
@@ -107,6 +117,27 @@ function isPlainClick(event: MouseEvent): boolean {
  * a search of the raw file will match.
  */
 const label = computed(() => props.row.name ?? props.row.key.split(' - ').pop() ?? props.row.key);
+
+const actions = useUnitActions();
+const baseFile = computed(() => actions.baseFileName());
+
+/**
+ * Why the one action is off, rather than only that it is (§12.5). "Not yet", "there is
+ * none" and "the base file dropped this unit" are three different answers and the reader
+ * deserves to know which.
+ */
+const sourceTitle = computed(() => {
+    if (baseFile.value === undefined) {
+        return 'Looking for the base file…';
+    }
+    if (baseFile.value === null) {
+        return 'No base file was found for this translation file.';
+    }
+    if (props.row.unit?.orphaned === true) {
+        return `${baseFile.value} does not contain this unit any more.`;
+    }
+    return `Show ${props.row.key} in ${baseFile.value}`;
+});
 
 /**
  * A drifted unit is worth seeing without opening anything (§9.3). Informational only — it
@@ -227,5 +258,36 @@ const pairing = computed(() => {
 .spacer {
     flex: 1;
     min-width: var(--gap);
+}
+
+/* The state and the one thing to do about it, in that order, on the right of the row. */
+.unit-side {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+}
+
+.action {
+    padding: 1px 7px;
+    border: 1px solid var(--vscode-button-border);
+    border-radius: var(--radius-sm);
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+    font: inherit;
+    font-size: calc(var(--font) * 0.85);
+    cursor: pointer;
+}
+
+.action:hover:not(:disabled) {
+    background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.action:disabled {
+    border-style: dashed;
+    background: none;
+    color: var(--vscode-descriptionForeground);
+    cursor: default;
 }
 </style>

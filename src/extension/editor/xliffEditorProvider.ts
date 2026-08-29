@@ -2,7 +2,6 @@ import * as vscode from 'vscode';
 
 import { DocumentSessionRegistry } from './documentSessionRegistry';
 import { createDocumentSession } from './documentView';
-import { AlObjectIndex } from '../services/alObjectIndex';
 import { BaseFileIndex } from '../services/baseFileIndex';
 import { BaseFileResolver } from '../services/baseFileResolver';
 import { getWebviewHtml, localResourceRoots } from './webviewHtml';
@@ -29,7 +28,6 @@ export class XliffEditorProvider implements vscode.CustomTextEditorProvider {
     private readonly registry = new DocumentSessionRegistry();
     private readonly baseFiles = new BaseFileResolver();
     private readonly baseIndex = new BaseFileIndex();
-    private readonly alObjects = new AlObjectIndex();
 
     public constructor(extensionUri: vscode.Uri) {
         this.extensionUri = extensionUri;
@@ -52,7 +50,6 @@ export class XliffEditorProvider implements vscode.CustomTextEditorProvider {
         this.registry.dispose();
         this.baseFiles.dispose();
         this.baseIndex.dispose();
-        this.alObjects.dispose();
     }
 
     public async resolveCustomTextEditor(
@@ -89,7 +86,7 @@ export class XliffEditorProvider implements vscode.CustomTextEditorProvider {
         const post = (message: ExtensionMessage): void => {
             void webviewPanel.webview.postMessage(message);
         };
-        const view = createDocumentSession(session, post, this.baseFiles, this.baseIndex, this.alObjects);
+        const view = createDocumentSession(session, post, this.baseFiles, this.baseIndex);
         const context: HandlerContext = {
             post,
             session: view,
