@@ -202,8 +202,11 @@ export function useTreeFlatten(source: TreeSource): TreeView {
         write({ expanded: next });
     }
 
+    /** With a filter running, opens only what the filter shows — the rest is not there to open. */
     function expandAll(): void {
-        write({ expanded: new Set(expandableKeys(tree.value)) });
+        const visible = source.visible?.value;
+        const keys = expandableKeys(tree.value);
+        write({ expanded: new Set(visible === undefined ? keys : keys.filter(key => visible.has(key))) });
     }
 
     function collapseAll(): void {

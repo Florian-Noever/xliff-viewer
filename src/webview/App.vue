@@ -21,7 +21,14 @@
                 :summary="rollup.file.value"
                 @update:file-index="activeFileIndex = $event"
             />
-            <Toolbar v-if="activeFile !== undefined" :search="search" />
+            <Toolbar
+                v-if="activeFile !== undefined"
+                :search="search"
+                :filter="filter"
+                :match-count="filtered?.count"
+                @expand-all="tree.expandAll()"
+                @collapse-all="tree.collapseAll()"
+            />
             <UnitTree
                 v-if="activeFile !== undefined"
                 :tree="tree"
@@ -43,24 +50,39 @@ import UnitTree from './components/UnitTree.vue';
 import { useDesignTokens } from './composables/useDesignTokens';
 import { useRollup } from './composables/useRollup';
 import { useSearch } from './composables/useSearch';
+import { useStateFilter } from './composables/useStateFilter';
 import { useTreeFlatten } from './composables/useTreeFlatten';
 import { useXliffDocument } from './composables/useXliffDocument';
+import { visibleNodes } from './ancestorFilter';
 
 useDesignTokens();
 
 const { document, loading, error, settings, activeFile, activeFileIndex, unitsById, blocking, openAsText } = useXliffDocument();
 
+const rollup = useRollup({ file: activeFile, unitsById });
 const search = useSearch({ file: activeFile, unitsById });
+const filter = useStateFilter({
+    summary: rollup.file,
+    unitsById,
+    scope: computed(() => `${document.value?.uri ?? ''}#${activeFileIndex.value}`),
+});
+
+/**
+ * Search and the state filter narrow to the intersection (§11.5). They compose as
+ * predicates rather than as two finished sets — `ancestorFilter.ts` explains why.
+ */
+const filtered = computed(() => visibleNodes(
+    activeFile.value?.tree ?? [],
+    [search.predicate.value, filter.predicate.value].filter(each => each !== undefined),
+));
 
 const tree = useTreeFlatten({
     file: activeFile,
     unitsById,
     defaultExpandDepth: computed(() => settings.value.defaultExpandDepth),
     documentUri: computed(() => document.value?.uri),
-    visible: search.matches,
+    visible: computed(() => filtered.value?.visible),
 });
-
-const rollup = useRollup({ file: activeFile, unitsById });
 </script>
 
 <style scoped>

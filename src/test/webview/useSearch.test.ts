@@ -2,8 +2,9 @@ import { mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, defineComponent, nextTick, ref } from 'vue';
 
-import { buildSearchIndex, toMatcher, useSearch, visibleKeys } from '../../webview/composables/useSearch';
+import { buildSearchIndex, toMatcher, useSearch } from '../../webview/composables/useSearch';
 import { flattenTree } from '../../webview/composables/useTreeFlatten';
+import { visibleNodes } from '../../webview/ancestorFilter';
 
 import type { AlNodeDto, TransUnitDto, XliffFileDto } from '../../shared/dto';
 import type { Search } from '../../webview/composables/useSearch';
@@ -86,6 +87,16 @@ async function type(search: Search, query: string): Promise<void> {
 const keysFor = (visible: ReadonlySet<string> | undefined): string[] =>
     flattenTree(TREE, new Set(), UNITS, visible).map(row => row.key);
 
+const INDEX = buildSearchIndex(TREE, UNITS);
+
+/** What the app composes: a query becomes one predicate over the index. */
+const filterBy = (query: string) => visibleNodes(TREE, [node => toMatcher(query)(INDEX.get(node.key) ?? '')]);
+
+const searchResult = (search: Search) => visibleNodes(
+    TREE,
+    [search.predicate.value].filter(each => each !== undefined),
+);
+
 beforeEach(() => {
     vi.useFakeTimers();
 });
@@ -139,50 +150,44 @@ describe('the index', () => {
     });
 });
 
-describe('visibleKeys', () => {
-    const index = buildSearchIndex(TREE, UNITS);
-
+describe('the ancestor rule', () => {
     it('shows a match and every ancestor of it (§11.5)', () => {
-        const { visible, count } = visibleKeys(TREE, index, toMatcher('Kundennummer'));
+        const result = filterBy('Kundennummer');
 
-        expect([...visible].sort()).toEqual(['Table 1', 'Table 1 - Property 4']);
-        expect(count).toBe(1);
+        expect([...(result?.visible ?? [])].sort()).toEqual(['Table 1', 'Table 1 - Property 4']);
+        expect(result?.count).toBe(1);
     });
 
     it('does not drag a matching container\'s whole subtree along', () => {
         // Searching an object name should not print every unit under it.
-        const { visible } = visibleKeys(TREE, index, toMatcher('PTE Other'));
-
-        expect([...visible]).toEqual(['Table 5']);
+        expect([...(filterBy('PTE Other')?.visible ?? [])]).toEqual(['Table 5']);
     });
 
     it('finds nothing when nothing matches', () => {
-        const { visible, count } = visibleKeys(TREE, index, toMatcher('zzzz'));
+        const result = filterBy('zzzz');
 
-        expect(visible.size).toBe(0);
-        expect(count).toBe(0);
+        expect(result?.visible.size).toBe(0);
+        expect(result?.count).toBe(0);
     });
 
     it('counts every node that matched in its own right', () => {
         // "Contoso" is in the root's name, the field's name, and the leaf's texts.
-        expect(visibleKeys(TREE, index, toMatcher('contoso')).count).toBe(3);
+        expect(filterBy('contoso')?.count).toBe(3);
+    });
+
+    it('leaves the tree alone when no predicate is active', () => {
+        expect(visibleNodes(TREE, [])).toBeUndefined();
     });
 });
 
 describe('the filtered tree', () => {
     it('shows exactly the matches plus their ancestor chain', () => {
-        const index = buildSearchIndex(TREE, UNITS);
-        const { visible } = visibleKeys(TREE, index, toMatcher('Kundennummer'));
-
-        expect(keysFor(visible)).toEqual(['Table 1', 'Table 1 - Property 4']);
+        expect(keysFor(filterBy('Kundennummer')?.visible)).toEqual(['Table 1', 'Table 1 - Property 4']);
     });
 
     it('opens ancestors regardless of what the user had expanded', () => {
-        const index = buildSearchIndex(TREE, UNITS);
-        const { visible } = visibleKeys(TREE, index, toMatcher('Methoden'));
-
         // Nothing is in the expansion set, yet the match three levels down is visible.
-        expect(keysFor(visible)).toEqual([
+        expect(keysFor(filterBy('Methoden')?.visible)).toEqual([
             'Table 1',
             'Table 1 - Field 2',
             'Table 1 - Field 2 - Property 3',
@@ -190,9 +195,7 @@ describe('the filtered tree', () => {
     });
 
     it('renumbers siblings so a filtered row still says where it is', () => {
-        const index = buildSearchIndex(TREE, UNITS);
-        const { visible } = visibleKeys(TREE, index, toMatcher('Kundennummer'));
-        const rows = flattenTree(TREE, new Set(), UNITS, visible);
+        const rows = flattenTree(TREE, new Set(), UNITS, filterBy('Kundennummer')?.visible);
 
         expect(rows.map(row => `${row.position}/${row.siblings}`)).toEqual(['1/1', '1/1']);
     });
@@ -207,8 +210,8 @@ describe('useSearch', () => {
         const search = searchIn();
 
         expect(search.active.value).toBe(false);
-        expect(search.matches.value).toBeUndefined();
-        expect(search.matchCount.value).toBe(0);
+        expect(search.predicate.value).toBeUndefined();
+        expect(searchResult(search)).toBeUndefined();
     });
 
     it('filters once the debounce has passed', async () => {
@@ -216,11 +219,11 @@ describe('useSearch', () => {
 
         search.query.value = 'Kundennummer';
         await nextTick();
-        expect(search.matches.value).toBeUndefined();
+        expect(search.predicate.value).toBeUndefined();
 
         vi.advanceTimersByTime(200);
         await nextTick();
-        expect(search.matches.value?.size).toBe(2);
+        expect(searchResult(search)?.visible.size).toBe(2);
     });
 
     it('collapses a burst of typing into one filter', async () => {
@@ -231,7 +234,7 @@ describe('useSearch', () => {
             await nextTick();
             vi.advanceTimersByTime(20);
         }
-        expect(search.matches.value).toBeUndefined();
+        expect(search.predicate.value).toBeUndefined();
 
         vi.advanceTimersByTime(200);
         await nextTick();
@@ -249,7 +252,7 @@ describe('useSearch', () => {
             ['de-DE=Contoso', 'Table 1 - Field 2 - Property 3'],
         ] as const) {
             await type(search, query);
-            expect(search.matches.value?.has(expected), query).toBe(true);
+            expect(searchResult(search)?.visible.has(expected), query).toBe(true);
         }
     });
 
@@ -258,7 +261,7 @@ describe('useSearch', () => {
 
         await type(search, 'Conto*');
 
-        expect(search.matchCount.value).toBe(3);
+        expect(searchResult(search)?.count).toBe(3);
     });
 
     it('clears without waiting for the debounce', async () => {
@@ -270,7 +273,7 @@ describe('useSearch', () => {
         await nextTick();
 
         expect(search.active.value).toBe(false);
-        expect(search.matches.value).toBeUndefined();
+        expect(search.predicate.value).toBeUndefined();
         expect(search.query.value).toBe('');
     });
 
@@ -288,10 +291,10 @@ describe('useSearch', () => {
         const search = searchIn();
 
         await type(search, 'Caption');
-        expect(search.matchCount.value).toBe(2);
+        expect(searchResult(search)?.count).toBe(2);
 
         await type(search, 'zzzz');
-        expect(search.matchCount.value).toBe(0);
-        expect(search.matches.value?.size).toBe(0);
+        expect(searchResult(search)?.count).toBe(0);
+        expect(searchResult(search)?.visible.size).toBe(0);
     });
 });
