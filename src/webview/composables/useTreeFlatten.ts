@@ -1,7 +1,7 @@
 import { computed, ref, watch } from 'vue';
 
 import type { AlNodeDto, TransUnitDto, XliffFileDto } from '@shared/dto';
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, WritableComputedRef } from 'vue';
 
 /**
  * The tree, flattened to the rows that are actually visible (MASTER_PLAN §11.4).
@@ -14,6 +14,9 @@ import type { ComputedRef, Ref } from 'vue';
  * Expansion keys off the **node key**, which is the trans-unit id prefix and is stable
  * across a re-parse. That is what lets an external edit rebuild the tree without
  * collapsing what the translator had open (`EDIT-02`).
+ *
+ * Expansion and focus are held **per `<file>`** (`DEC-020`): switching away and back
+ * returns the translator to what they had open, rather than to `defaultExpandDepth`.
  */
 
 export interface TreeRow {
@@ -36,7 +39,7 @@ export interface TreeRow {
 export interface TreeView {
     readonly rows: ComputedRef<readonly TreeRow[]>;
     /** The row the keyboard is on. Undefined before anything is focused. */
-    readonly focusedKey: Ref<string | undefined>;
+    readonly focusedKey: WritableComputedRef<string | undefined>;
     readonly focusedIndex: ComputedRef<number>;
     /** True when this file has no AL structure and the flat-list note has not been dismissed (`DEC-022`). */
     readonly showFlatNote: ComputedRef<boolean>;
@@ -109,28 +112,51 @@ export interface TreeSource {
     readonly defaultExpandDepth: ComputedRef<number>;
 }
 
+/** What one `<file>` remembers while the user is looking at another. */
+interface FileViewState {
+    readonly expanded: ReadonlySet<string>;
+    readonly focusedKey?: string;
+}
+
+const NOTHING_OPEN: FileViewState = { expanded: new Set() };
+
 export function useTreeFlatten(source: TreeSource): TreeView {
-    const expanded = ref(new Set<string>());
-    const focusedKey = ref<string | undefined>(undefined);
-    const dismissedNoteFor = ref<string | undefined>(undefined);
+    const byFile = ref(new Map<number, FileViewState>());
+    const dismissedNoteFor = ref(new Set<number>());
 
     const tree = computed(() => source.file.value?.tree ?? []);
-    const rows = computed(() => flattenTree(tree.value, expanded.value, source.unitsById.value));
+    const fileIndex = computed(() => source.file.value?.index ?? -1);
+    const state = computed(() => byFile.value.get(fileIndex.value) ?? NOTHING_OPEN);
+
+    const rows = computed(() => flattenTree(tree.value, state.value.expanded, source.unitsById.value));
+    const focusedKey = computed({
+        get: () => state.value.focusedKey,
+        set: key => write({ focusedKey: key }),
+    });
     const focusedIndex = computed(() => rows.value.findIndex(row => row.key === focusedKey.value));
 
     const showFlatNote = computed(() => source.file.value?.hasAlIds === false
-        && dismissedNoteFor.value !== source.file.value.index.toString());
+        && !dismissedNoteFor.value.has(source.file.value.index));
 
-    // A new file — a switch, or a re-parse — starts at the configured depth. Expansion
-    // keys are id prefixes, so a re-parse of the *same* file keeps what was open.
+    /** Replaces the map rather than mutating it, so every reader sees the change. */
+    function write(change: Partial<FileViewState>): void {
+        const next = new Map(byFile.value);
+        next.set(fileIndex.value, { ...state.value, ...change });
+        byFile.value = next;
+    }
+
+    // A file seen for the first time opens to the configured depth. A re-parse of one
+    // already seen keeps what was open — expansion keys are id prefixes, which survive it —
+    // and so does switching away and back (`DEC-020`).
     watch(
-        () => [source.file.value?.index, tree.value] as const,
-        ([, nodes], previous) => {
-            if (previous !== undefined && previous[0] === source.file.value?.index) {
+        () => [fileIndex.value, tree.value] as const,
+        ([index, nodes]) => {
+            if (byFile.value.has(index)) {
                 return;
             }
-            expanded.value = new Set(keysToDepth(nodes, source.defaultExpandDepth.value));
-            focusedKey.value = undefined;
+            const next = new Map(byFile.value);
+            next.set(index, { expanded: new Set(keysToDepth(nodes, source.defaultExpandDepth.value)) });
+            byFile.value = next;
         },
         // Synchronous: the expansion set and the rows must agree within one tick, or a
         // file switch renders a frame of the new tree under the old file's expansion.
@@ -138,19 +164,19 @@ export function useTreeFlatten(source: TreeSource): TreeView {
     );
 
     function toggle(key: string): void {
-        const next = new Set(expanded.value);
+        const next = new Set(state.value.expanded);
         if (!next.delete(key)) {
             next.add(key);
         }
-        expanded.value = next;
+        write({ expanded: next });
     }
 
     function expandAll(): void {
-        expanded.value = new Set(expandableKeys(tree.value));
+        write({ expanded: new Set(expandableKeys(tree.value)) });
     }
 
     function collapseAll(): void {
-        expanded.value = new Set();
+        write({ expanded: new Set() });
     }
 
     function focus(key: string): void {
@@ -202,7 +228,7 @@ export function useTreeFlatten(source: TreeSource): TreeView {
     }
 
     function dismissFlatNote(): void {
-        dismissedNoteFor.value = source.file.value?.index.toString();
+        dismissedNoteFor.value = new Set(dismissedNoteFor.value).add(fileIndex.value);
     }
 
     return {
