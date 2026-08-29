@@ -171,8 +171,8 @@ describe('effectiveState', () => {
     });
 
     it('is unknown for a target that declares no state at all', () => {
-        // `test.xlf` is exactly this. MASTER_PLAN 5.1 names no state for "translated, but
-        // unsaid"; `unknown` is the one that cannot hide behind a green badge - see D-05.
+        // `test.xlf` is exactly this. `unknown` is the one that cannot hide behind a
+        // green badge, which is why DEC-027 chose it over `translated`.
         expect(effectiveState(unit('a', target('t')))).toBe(XliffState.unknown);
         expect(effectiveState(unitsOf('test.xlf')[0])).toBe(XliffState.unknown);
     });
