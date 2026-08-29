@@ -399,9 +399,7 @@ describe('actions that are not wired yet', () => {
 
         expect(() => facade.updateTarget({ fileIndex: 0, unitId: '1' }, 'x')).toThrow('EDIT-01');
         expect(() => facade.updateState({ fileIndex: 0, unitId: '1' }, 'translated')).toThrow('EDIT-01');
-        expect(() => facade.openSource('al')).toThrow('NAV-02');
-        expect(() => facade.openSource('base')).toThrow('NAV-02');
-        // Revealing a specific unit still needs the id search of §10.2.
-        expect(() => facade.openSource('text', { fileIndex: 0, unitId: '1' })).toThrow('NAV-02');
+        // `al` needs the AL-file search of §10.1; `text` and `base` are wired (NAV-02).
+        expect(() => facade.openSource('al')).toThrow('NAV-04');
     });
 });

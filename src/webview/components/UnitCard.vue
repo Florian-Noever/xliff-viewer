@@ -18,6 +18,21 @@
             <span>{{ hint }}</span>
         </p>
 
+        <div class="actions">
+            <button type="button" class="action" :title="`Open ${unit.id} in the built-in text editor`" @click="actions.open(NavigationTarget.text, unit.id)">
+                Open as text
+            </button>
+            <button
+                type="button"
+                class="action"
+                :disabled="baseFile === null || baseFile === undefined"
+                :title="baseFileTitle"
+                @click="actions.open(NavigationTarget.base, unit.id)"
+            >
+                Show in base file
+            </button>
+        </div>
+
         <MetaChips :unit="unit" />
 
         <NoteList
@@ -34,7 +49,10 @@ import { computed } from 'vue';
 import MetaChips from './MetaChips.vue';
 import NoteList from './NoteList.vue';
 import { DEVELOPER_NOTE } from '../constants';
+import { useUnitActions } from '../unitActions';
 import { loadBearingWhitespace, whitespaceExplanation, whitespaceParts, WhitespaceReason } from '../whitespace';
+
+import { NavigationTarget } from '@shared/messages';
 
 import type { TransUnitDto } from '@shared/dto';
 import type { WebviewSettings } from '@shared/settings';
@@ -54,6 +72,23 @@ const props = defineProps<{
     /** Reconstructed by the caller when `showGeneratorNotes` is on (§4.4). */
     generatorNote?: string;
 }>();
+
+const actions = useUnitActions();
+const baseFile = computed(() => actions.baseFileName());
+
+/**
+ * Why the button is off, rather than only that it is (§12.5). "Not yet" and "there is
+ * none" are different answers and the reader deserves to know which.
+ */
+const baseFileTitle = computed(() => {
+    if (baseFile.value === undefined) {
+        return 'Looking for the base file…';
+    }
+    if (baseFile.value === null) {
+        return 'No base file was found for this translation file.';
+    }
+    return `Show ${props.unit.id} in ${baseFile.value}`;
+});
 
 const whitespace = computed(() => loadBearingWhitespace(props.unit.source, props.unit.target));
 const explanation = computed(() => (whitespace.value === undefined ? undefined : whitespaceExplanation(whitespace.value)));
@@ -147,5 +182,33 @@ const hint = computed(() => {
 .hint-label {
     flex: none;
     color: var(--vscode-descriptionForeground);
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.action {
+    padding: 1px 7px;
+    border: 1px solid var(--vscode-button-border);
+    border-radius: var(--radius-sm);
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+    font: inherit;
+    font-size: calc(var(--font) * 0.85);
+    cursor: pointer;
+}
+
+.action:hover:not(:disabled) {
+    background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.action:disabled {
+    border-style: dashed;
+    background: none;
+    color: var(--vscode-descriptionForeground);
+    cursor: default;
 }
 </style>

@@ -158,7 +158,21 @@ export class WorkspaceEdit {
 }
 
 // ── namespaces ───────────────────────────────────────────────────────────────
+export class Selection {
+    public readonly anchor: Position;
+    public readonly active: Position;
+
+    public constructor(anchor: Position, active: Position) {
+        this.anchor = anchor;
+        this.active = active;
+    }
+}
+
+export const TextEditorRevealType = { Default: 0, InCenter: 1, InCenterIfOutsideViewport: 2, AtTop: 3 } as const;
+
 export const window = {
+    visibleTextEditors: [] as { document: { uri: Uri; getText(): string } }[],
+    activeTextEditor: undefined as { document: { uri: Uri; getText(): string } } | undefined,
     showErrorMessage: (message: string, ...args: unknown[]): Promise<string | undefined> => {
         errorMessages.push(message);
         messageCalls.push({ message, args });

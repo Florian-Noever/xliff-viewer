@@ -54,10 +54,19 @@ import { useStateFilter } from './composables/useStateFilter';
 import { useTreeFlatten } from './composables/useTreeFlatten';
 import { useXliffDocument } from './composables/useXliffDocument';
 import { visibleNodes } from './ancestorFilter';
+import { provideUnitActions } from './unitActions';
 
 useDesignTokens();
 
-const { document, loading, error, settings, activeFile, activeFileIndex, unitsById, blocking, openAsText } = useXliffDocument();
+const { document, loading, error, settings, activeFile, activeFileIndex, unitsById, blocking, openAsText, openSource } = useXliffDocument();
+
+provideUnitActions({
+    open: (target, unitId) => openSource(target, unitId),
+    baseFileName: () => {
+        const resolved = document.value?.baseFile;
+        return resolved === undefined || resolved === null ? resolved : resolved.fileName;
+    },
+});
 
 const rollup = useRollup({ file: activeFile, unitsById });
 const search = useSearch({ file: activeFile, unitsById });
