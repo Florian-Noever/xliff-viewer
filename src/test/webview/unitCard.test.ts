@@ -6,6 +6,7 @@ import NoteList from '../../webview/components/NoteList.vue';
 import UnitCard from '../../webview/components/UnitCard.vue';
 import { indexNodes, reconstructGeneratorNote } from '../../webview/generatorNote';
 import { loadBearingWhitespace, WhitespaceReason } from '../../webview/whitespace';
+import { UNIT_ACTIONS_KEY } from '../../webview/unitActions';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { XliffState } from '../../shared/state';
 
@@ -312,5 +313,84 @@ describe('every DTO field is reachable', () => {
         };
 
         expect(Object.entries(shown).filter(([, visible]) => !visible).map(([field]) => field)).toEqual([]);
+    });
+});
+
+describe('the navigation buttons (§10)', () => {
+    const actions = () => {
+        const calls: { target: string; unitId: string }[] = [];
+        return {
+            calls,
+            provide: (baseFileName: string | null | undefined) => ({
+                global: {
+                    provide: {
+                        [UNIT_ACTIONS_KEY as symbol]: {
+                            open: (target: string, unitId: string) => calls.push({ target, unitId }),
+                            baseFileName: () => baseFileName,
+                        },
+                    },
+                },
+            }),
+        };
+    };
+
+    it('always offers "Open as text" — the escape hatch is never disabled (§10.3)', () => {
+        const wrapper = mount(UnitCard, {
+            props: { unit: unit(), settings: DEFAULT_WEBVIEW_SETTINGS },
+            ...actions().provide(undefined),
+        });
+
+        const button = wrapper.findAll('.action')[0];
+        expect(button.text()).toBe('Open as text');
+        expect(button.attributes('disabled')).toBeUndefined();
+    });
+
+    it('asks the host, naming the unit', async () => {
+        const handle = actions();
+        const wrapper = mount(UnitCard, {
+            props: { unit: unit(), settings: DEFAULT_WEBVIEW_SETTINGS },
+            ...handle.provide('App.g.xlf'),
+        });
+
+        await wrapper.findAll('.action')[0].trigger('click');
+        await wrapper.findAll('.action')[1].trigger('click');
+
+        expect(handle.calls).toEqual([
+            { target: 'text', unitId: 'Table 1 - Property 2' },
+            { target: 'base', unitId: 'Table 1 - Property 2' },
+        ]);
+    });
+
+    it('disables the base-file button while resolution has not run, and says so', () => {
+        const wrapper = mount(UnitCard, {
+            props: { unit: unit(), settings: DEFAULT_WEBVIEW_SETTINGS },
+            ...actions().provide(undefined),
+        });
+
+        const button = wrapper.findAll('.action')[1];
+        expect(button.attributes('disabled')).toBeDefined();
+        expect(button.attributes('title')).toBe('Looking for the base file…');
+    });
+
+    it('gives a different reason when resolution ran and found nothing (§12.5)', () => {
+        const wrapper = mount(UnitCard, {
+            props: { unit: unit(), settings: DEFAULT_WEBVIEW_SETTINGS },
+            ...actions().provide(null),
+        });
+
+        const button = wrapper.findAll('.action')[1];
+        expect(button.attributes('disabled')).toBeDefined();
+        expect(button.attributes('title')).toBe('No base file was found for this translation file.');
+    });
+
+    it('names the base file it would open', () => {
+        const wrapper = mount(UnitCard, {
+            props: { unit: unit(), settings: DEFAULT_WEBVIEW_SETTINGS },
+            ...actions().provide('App.g.xlf'),
+        });
+
+        const button = wrapper.findAll('.action')[1];
+        expect(button.attributes('disabled')).toBeUndefined();
+        expect(button.attributes('title')).toContain('App.g.xlf');
     });
 });

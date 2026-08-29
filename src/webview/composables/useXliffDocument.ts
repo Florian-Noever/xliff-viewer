@@ -7,7 +7,7 @@ import { ExtensionMessageType, isExtensionMessage, NavigationTarget, WebviewMess
 import { DEFAULT_WEBVIEW_SETTINGS } from '@shared/settings';
 
 import type { TransUnitDto, XliffDocumentDto, XliffFileDto } from '@shared/dto';
-import type { ErrorPayload } from '@shared/messages';
+import type { ErrorPayload, NavigationTarget as NavigationTargetValue } from '@shared/messages';
 import type { WebviewSettings } from '@shared/settings';
 import type { ComputedRef, Ref } from 'vue';
 
@@ -42,6 +42,8 @@ export interface XliffDocument {
     readonly unitCount: ComputedRef<number>;
     /** Opens the raw XML in the built-in editor — the one action available while nothing parses. */
     openAsText(): void;
+    /** Navigation for one unit (§10). The host decides what each target means. */
+    openSource(target: NavigationTargetValue, unitId: string): void;
 }
 
 export function useXliffDocument(): XliffDocument {
@@ -102,6 +104,15 @@ export function useXliffDocument(): XliffDocument {
         postMessage({ type: WebviewMessageType.openSource, target: NavigationTarget.text });
     }
 
+    function openSource(target: NavigationTargetValue, unitId: string): void {
+        postMessage({
+            type: WebviewMessageType.openSource,
+            target,
+            fileIndex: activeFile.value?.index ?? 0,
+            unitId,
+        });
+    }
+
     onMounted(() => {
         window.addEventListener('message', onMessage);
         postMessage({ type: WebviewMessageType.ready });
@@ -117,5 +128,17 @@ export function useXliffDocument(): XliffDocument {
         window.removeEventListener('message', onMessage);
     });
 
-    return { document, loading, error, settings, activeFileIndex, activeFile, unitsById, blocking, unitCount, openAsText };
+    return {
+        document,
+        loading,
+        error,
+        settings,
+        activeFileIndex,
+        activeFile,
+        unitsById,
+        blocking,
+        unitCount,
+        openAsText,
+        openSource,
+    };
 }

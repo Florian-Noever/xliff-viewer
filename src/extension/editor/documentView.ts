@@ -1,10 +1,11 @@
 import * as vscode from 'vscode';
 
 import { Logger } from '../services/logger';
+import { revealAsText, revealInBaseFile } from '../services/navigation';
 
 import { ExtensionMessageType, NavigationTarget } from '../../shared/messages';
 
-import type { DocumentSession, SessionState, XliffDocumentSession } from './documentSession';
+import type { DocumentSession, SessionState, UnitReference, XliffDocumentSession } from './documentSession';
 import type { BaseFileResolver } from '../services/baseFileResolver';
 import type { ExtensionMessage } from '../../shared/messages';
 
@@ -15,10 +16,6 @@ import type { ExtensionMessage } from '../../shared/messages';
  * *what the document is*; a view knows *what this panel has already been told*, which is
  * what decides whether a message needs to carry the document again.
  */
-
-const OPEN_WITH_COMMAND = 'vscode.openWith';
-/** VS Code's built-in text editor, which `priority: "default"` keeps reachable (§8.1). */
-const DEFAULT_EDITOR = 'default';
 
 /**
  * Answers `ready` for a panel that has nothing yet.
@@ -51,14 +48,43 @@ export function createDocumentSession(
         updateTarget: () => notYet('Editing a target', 'EDIT-01'),
         updateState: () => notYet('Changing a state', 'EDIT-01'),
         openSource: (target, unit) => {
-            if (target !== NavigationTarget.text || unit !== undefined) {
-                // Revealing a unit needs the id search of §10.2, and `al` / `base` need a
-                // resolved base file — both are NAV-02's, not this task's.
-                return notYet('Navigating to a unit', 'NAV-02');
+            switch (target) {
+                case NavigationTarget.text:
+                    return revealAsText(session.uri, unit?.unitId);
+                case NavigationTarget.base:
+                    return showInBaseFile(baseFiles, session, unit);
+                default:
+                    // `al` needs the AL-file search of §10.1, which is NAV-04's.
+                    return notYet('Navigating to the AL source', 'NAV-04');
             }
-            return Promise.resolve(vscode.commands.executeCommand<void>(OPEN_WITH_COMMAND, session.uri, DEFAULT_EDITOR));
         },
     };
+}
+
+/**
+ * §10.2. Everything that can go wrong here is a normal state, not an error: no resolver,
+ * no base file, or a base file that does not carry this unit. Each says so plainly.
+ */
+async function showInBaseFile(
+    baseFiles: BaseFileResolver | undefined,
+    session: XliffDocumentSession,
+    unit: UnitReference | undefined,
+): Promise<void> {
+    if (unit === undefined) {
+        void vscode.window.showInformationMessage('Choose a unit to show in the base file.');
+        return;
+    }
+
+    const resolved = await baseFiles?.resolve(session.uri, false);
+    if (resolved?.uri === undefined) {
+        void vscode.window.showInformationMessage('No base file was found for this translation file.');
+        return;
+    }
+
+    const found = await revealInBaseFile(resolved.uri, unit.unitId);
+    if (!found) {
+        void vscode.window.showInformationMessage(`The base file does not contain "${unit.unitId}". It may have been removed since this translation was made.`);
+    }
 }
 
 /** Posts `baseFile` once resolution finishes. Not finding one is a result, not a failure (§9.2). */
