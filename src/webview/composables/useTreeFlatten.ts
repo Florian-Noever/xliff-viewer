@@ -114,6 +114,8 @@ export interface TreeSource {
     readonly file: ComputedRef<XliffFileDto | undefined>;
     readonly unitsById: ComputedRef<ReadonlyMap<string, TransUnitDto>>;
     readonly defaultExpandDepth: ComputedRef<number>;
+    /** Identifies the document, so a different one does not inherit this one's state. */
+    readonly documentUri: ComputedRef<string | undefined>;
 }
 
 /** What one `<file>` remembers while the user is looking at another. */
@@ -127,6 +129,7 @@ const NOTHING_OPEN: FileViewState = { expanded: new Set() };
 export function useTreeFlatten(source: TreeSource): TreeView {
     const byFile = ref(new Map<number, FileViewState>());
     const dismissedNoteFor = ref(new Set<number>());
+    let statefulUri: string | undefined;
 
     const tree = computed(() => source.file.value?.tree ?? []);
     const fileIndex = computed(() => source.file.value?.index ?? -1);
@@ -153,9 +156,18 @@ export function useTreeFlatten(source: TreeSource): TreeView {
     // A file seen for the first time opens to the configured depth. A re-parse of one
     // already seen keeps what was open — expansion keys are id prefixes, which survive it —
     // and so does switching away and back (`DEC-020`).
+    //
+    // A different *document* starts over. Its file indices collide with this one's while
+    // meaning nothing to each other, so keeping the state would silently show a collapsed
+    // tree whose expansion set names nodes that no longer exist.
     watch(
-        () => [fileIndex.value, tree.value] as const,
-        ([index, nodes]) => {
+        () => [source.documentUri.value, fileIndex.value, tree.value] as const,
+        ([uri, index, nodes]) => {
+            if (uri !== statefulUri) {
+                statefulUri = uri;
+                byFile.value = new Map();
+                dismissedNoteFor.value = new Set();
+            }
             if (byFile.value.has(index)) {
                 return;
             }

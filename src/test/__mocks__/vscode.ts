@@ -352,6 +352,11 @@ export function documentChangeListenerCount(): number {
     return documentChangeListeners.length;
 }
 
+/** The same spy for `onDidChangeConfiguration`. */
+export function configurationListenerCount(): number {
+    return configurationListeners.length;
+}
+
 /** Sets what the next `show*Message` call resolves to. */
 export function setMessageResult(result: string | undefined): void {
     messageResult = result;

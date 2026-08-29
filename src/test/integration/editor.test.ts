@@ -19,11 +19,21 @@ function findExtension(): vscode.Extension<unknown> {
     return extension;
 }
 
-function fixtureUri(): vscode.Uri {
+const CORPUS = [
+    'Contoso App.g.xlf',
+    'Contoso App.en-US.xlf',
+    'Contoso App.de-DE.xlf',
+    'Fabrikam Base.de-DE.xlf',
+    'test.xlf',
+];
+
+function exampleUri(name: string): vscode.Uri {
     const folders = vscode.workspace.workspaceFolders;
     assertOk(folders && folders.length > 0, 'no workspace folder is open');
-    return vscode.Uri.joinPath(folders[0].uri, 'Examples', 'test.xlf');
+    return vscode.Uri.joinPath(folders[0].uri, 'Examples', name);
 }
+
+const fixtureUri = (): vscode.Uri => exampleUri('test.xlf');
 
 suite('XLIFF custom editor', () => {
     test('the extension activates', async () => {
@@ -57,6 +67,27 @@ suite('XLIFF custom editor', () => {
         assertEqual(activeTab.label, 'test.xlf', 'unexpected active tab');
 
         await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+    });
+
+    test('every corpus file opens with the custom editor', async () => {
+        // REVIEW-02: the host is where a parse failure would surface, and the web host is
+        // where it would surface differently. Five files, both hosts, one test.
+        for (const name of CORPUS) {
+            await vscode.commands.executeCommand('vscode.openWith', exampleUri(name), VIEW_TYPE);
+
+            const activeTab = vscode.window.tabGroups.activeTabGroup.activeTab;
+            assertOk(activeTab, `no active tab after opening ${name}`);
+            assertEqual(activeTab.label, name, `unexpected active tab for ${name}`);
+
+            await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+        }
+    });
+
+    test('every corpus file still opens as plain text', async () => {
+        for (const name of CORPUS) {
+            const document = await vscode.workspace.openTextDocument(exampleUri(name));
+            assertContains(document.getText(), '<xliff', `${name} did not load as XLIFF text`);
+        }
     });
 
     test('the same fixture still opens as plain text', async () => {

@@ -41,6 +41,7 @@ function file(tree: AlNodeDto[], hasAlIds = true, index = 0): XliffFileDto {
 function view(initial: XliffFileDto | undefined, depth = 1) {
     const active = ref<XliffFileDto | undefined>(initial);
     const expandDepth = ref(depth);
+    const uri = ref<string | undefined>('file:///w/one.xlf');
     let captured: TreeView | undefined;
 
     mount(defineComponent({
@@ -49,6 +50,7 @@ function view(initial: XliffFileDto | undefined, depth = 1) {
                 file: computed(() => active.value),
                 unitsById: computed(() => UNITS),
                 defaultExpandDepth: computed(() => expandDepth.value),
+                documentUri: computed(() => uri.value),
             });
             return () => null;
         },
@@ -57,7 +59,7 @@ function view(initial: XliffFileDto | undefined, depth = 1) {
     if (captured === undefined) {
         throw new Error('composable did not run');
     }
-    return { tree: captured, active, expandDepth };
+    return { tree: captured, active, expandDepth, uri };
 }
 
 describe('flattenTree', () => {
@@ -209,6 +211,20 @@ describe('expansion', () => {
         expect(tree.rows.value).toHaveLength(4);
     });
 
+    it('starts over for a different document, whose file indices mean something else', () => {
+        // Two documents both have a file 0. Keeping the first one's expansion would name
+        // nodes the second does not have, and the tree would open collapsed for no
+        // visible reason — which is exactly what the dev server showed.
+        const { tree, active, uri } = view(file(TREE), 0);
+        tree.expandAll();
+        expect(tree.rows.value).toHaveLength(5);
+
+        uri.value = 'file:///w/another.xlf';
+        active.value = file(structuredClone(TREE));
+
+        expect(tree.rows.value).toHaveLength(2);
+    });
+
     it('keeps focus per file too, so switching back does not lose the cursor', () => {
         const { tree, active } = view(file(TREE), 1);
         tree.focus('Table 1 - Field 2');
@@ -327,6 +343,16 @@ describe('the flat-list note (DEC-022)', () => {
         tree.dismissFlatNote();
 
         active.value = file(TREE, false, 1);
+
+        expect(tree.showFlatNote.value).toBe(true);
+    });
+
+    it('forgets a dismissal when a different document arrives', () => {
+        const { tree, active, uri } = view(file(TREE, false));
+        tree.dismissFlatNote();
+
+        uri.value = 'file:///w/another.xlf';
+        active.value = file(TREE, false);
 
         expect(tree.showFlatNote.value).toBe(true);
     });
