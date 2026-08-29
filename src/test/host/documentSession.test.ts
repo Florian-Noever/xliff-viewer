@@ -9,6 +9,7 @@ import { Logger } from '../../extension/services/logger';
 import { ExtensionMessageType } from '../../shared/messages';
 import {
     documentChangeListenerCount,
+    flushExecutedCommands,
     FakeTextDocument,
     fireTextDocumentChange,
     flushLogs,
@@ -317,6 +318,29 @@ describe('the registry', () => {
     });
 });
 
+describe('opening the raw file', () => {
+    it('opens the document itself with the built-in editor', async () => {
+        const session = sessionFor(openDocument('test.xlf'));
+        const { facade } = view(session);
+
+        await facade.openSource('text');
+
+        expect(flushExecutedCommands()).toEqual([
+            { command: 'vscode.openWith', args: [session.uri, 'default'] },
+        ]);
+    });
+
+    it('works for a document that will not parse — which is when it is needed', async () => {
+        const session = sessionFor(openDocument('broken.xlf', '<xliff><file>'));
+        const { facade, send } = view(session);
+
+        send();
+        await facade.openSource('text');
+
+        expect(flushExecutedCommands()).toHaveLength(1);
+    });
+});
+
 describe('actions that are not wired yet', () => {
     it('say which task owns them instead of doing nothing', () => {
         const session = sessionFor(openDocument('test.xlf'));
@@ -324,7 +348,10 @@ describe('actions that are not wired yet', () => {
 
         expect(() => facade.updateTarget({ fileIndex: 0, unitId: '1' }, 'x')).toThrow('EDIT-01');
         expect(() => facade.updateState({ fileIndex: 0, unitId: '1' }, 'translated')).toThrow('EDIT-01');
-        expect(() => facade.openSource({ fileIndex: 0, unitId: '1' }, 'al')).toThrow('NAV-02');
+        expect(() => facade.openSource('al')).toThrow('NAV-02');
+        expect(() => facade.openSource('base')).toThrow('NAV-02');
+        // Revealing a specific unit still needs the id search of §10.2.
+        expect(() => facade.openSource('text', { fileIndex: 0, unitId: '1' })).toThrow('NAV-02');
     });
 });
 

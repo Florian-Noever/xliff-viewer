@@ -40,7 +40,7 @@ function fixture(session?: Partial<DocumentSession>) {
             sendDocument: () => record('sendDocument'),
             updateTarget: (unit, value, state) => record('updateTarget', unit, { value, state }),
             updateState: (unit, state) => record('updateState', unit, state),
-            openSource: (unit, target) => record('openSource', unit, target),
+            openSource: (target, unit) => record('openSource', unit, target),
             ...session,
         },
     };
@@ -97,6 +97,7 @@ describe('routing', () => {
         expect(calls.map(call => call.what)).toEqual(['updateState', 'openSource']);
         expect(calls[0].rest).toBe(XliffState.needsAdaptation);
         expect(calls[1].rest).toBe(NavigationTarget.al);
+        expect(calls[1].unit).toEqual({ fileIndex: 0, unitId: 'x' });
     });
 
     it('copies through the host, which is the only side with a clipboard', async () => {

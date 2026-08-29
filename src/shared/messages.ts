@@ -104,9 +104,10 @@ export type WebviewMessage =
     }
     | {
         readonly type: typeof WebviewMessageType.openSource;
-        readonly fileIndex: number;
-        readonly unitId: string;
         readonly target: NavigationTarget;
+        /** Both or neither. Without them the file itself opens, which is what the error pane offers (§11.3). */
+        readonly fileIndex?: number;
+        readonly unitId?: string;
     }
     | { readonly type: typeof WebviewMessageType.copyToClipboard; readonly text: string }
     | { readonly type: typeof WebviewMessageType.notify; readonly kind: NotifyKind; readonly message: string };
@@ -140,7 +141,8 @@ const WEBVIEW_MESSAGE_GUARDS: { readonly [K in WebviewMessage['type']]: (message
         && typeof message.value === 'string'
         && (message.state === undefined || typeof message.state === 'string'),
     updateState: message => isUnitReference(message) && typeof message.state === 'string',
-    openSource: message => isUnitReference(message) && isOneOf(message.target, NavigationTarget),
+    openSource: message => isOneOf(message.target, NavigationTarget)
+        && (message.fileIndex === undefined && message.unitId === undefined ? true : isUnitReference(message)),
     copyToClipboard: message => typeof message.text === 'string',
     notify: message => isOneOf(message.kind, NotifyKind) && typeof message.message === 'string',
 };

@@ -32,6 +32,7 @@ let virtualFiles: Record<string, string> = {};
 let messageResult: string | undefined;
 let clipboardWrites: string[] = [];
 let logLines: string[] = [];
+let executedCommands: { command: string; args: readonly unknown[] }[] = [];
 let configurationListeners: ((event: ConfigurationChangeEvent) => void)[] = [];
 let documentChangeListeners: ((event: TextDocumentChangeEvent) => void)[] = [];
 let writableFileSystems: Record<string, boolean> = {};
@@ -306,7 +307,10 @@ export const env = {
 export const commands = {
     registerCommand: (_command: string, _callback: (...args: unknown[]) => unknown): Disposable =>
         new Disposable(() => { }),
-    executeCommand: (_command: string, ..._args: unknown[]): Promise<void> => Promise.resolve(),
+    executeCommand: (command: string, ...args: unknown[]): Promise<void> => {
+        executedCommands.push({ command, args });
+        return Promise.resolve();
+    },
 };
 
 // ── arrange ──────────────────────────────────────────────────────────────────
@@ -386,6 +390,10 @@ export function flushClipboardWrites(): string[] {
     return clipboardWrites.splice(0);
 }
 
+export function flushExecutedCommands(): { command: string; args: readonly unknown[] }[] {
+    return executedCommands.splice(0);
+}
+
 /** Everything written to the `LogOutputChannel`, each line prefixed with its level. */
 export function flushLogs(): string[] {
     return logLines.splice(0);
@@ -408,4 +416,5 @@ export function resetMocks(): void {
     documentChangeListeners = [];
     writableFileSystems = {};
     logLines = [];
+    executedCommands = [];
 }

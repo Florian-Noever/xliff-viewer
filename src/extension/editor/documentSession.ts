@@ -6,10 +6,10 @@ import { parseXliff } from '../xliff/parser';
 import { validateStructure } from '../xliff/validate';
 import { Logger } from '../services/logger';
 
-import { ExtensionMessageType } from '../../shared/messages';
+import { ExtensionMessageType, NavigationTarget } from '../../shared/messages';
 
 import type { XliffDocumentDto } from '../../shared/dto';
-import type { ErrorPayload, ExtensionMessage, NavigationTarget } from '../../shared/messages';
+import type { ErrorPayload, ExtensionMessage } from '../../shared/messages';
 import type { XliffDocument } from '../../shared/model';
 import type { XliffState } from '../../shared/state';
 
@@ -25,6 +25,10 @@ import type { XliffState } from '../../shared/state';
 /** Long enough to swallow a burst of typing, short enough that a paste feels immediate. */
 const REPARSE_DEBOUNCE_MS = 150;
 
+const OPEN_WITH_COMMAND = 'vscode.openWith';
+/** VS Code's built-in text editor, which `priority: "default"` keeps reachable (§8.1). */
+const DEFAULT_EDITOR = 'default';
+
 /** A unit is identified by its `<file>` **and** its id — XLIFF scopes ids per file (`DEC-028`). */
 export interface UnitReference {
     readonly fileIndex: number;
@@ -38,7 +42,8 @@ export interface DocumentSession {
     /** An absent `state` means "apply `xliffViewer.stateOnEdit`" (§12.1). */
     updateTarget(unit: UnitReference, value: string, state?: XliffState): void | Promise<void>;
     updateState(unit: UnitReference, state: XliffState): void | Promise<void>;
-    openSource(unit: UnitReference, target: NavigationTarget): void | Promise<void>;
+    /** Without a unit the document itself is opened — the error pane's "Open as text" (§11.3). */
+    openSource(target: NavigationTarget, unit?: UnitReference): void | Promise<void>;
 }
 
 export type SessionState =
@@ -191,7 +196,14 @@ export function createDocumentSession(session: XliffDocumentSession, post: (mess
         },
         updateTarget: () => notYet('Editing a target', 'EDIT-01'),
         updateState: () => notYet('Changing a state', 'EDIT-01'),
-        openSource: () => notYet('Navigation', 'NAV-02'),
+        openSource: (target, unit) => {
+            if (target !== NavigationTarget.text || unit !== undefined) {
+                // Revealing a unit needs the id search of §10.2, and `al` / `base` need a
+                // resolved base file — both are NAV-02's, not this task's.
+                return notYet('Navigating to a unit', 'NAV-02');
+            }
+            return Promise.resolve(vscode.commands.executeCommand<void>(OPEN_WITH_COMMAND, session.uri, DEFAULT_EDITOR));
+        },
     };
 }
 
