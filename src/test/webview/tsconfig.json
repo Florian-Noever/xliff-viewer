@@ -1,0 +1,9 @@
+{
+    "extends": "../../webview/tsconfig.json",
+    "compilerOptions": {
+        "noEmit": true
+    },
+    "include": [
+        "**/*.ts"
+    ]
+}

@@ -1,0 +1,20 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "noEmit": true,
+        // Vitest runs these as ESM, so `import.meta` is legal here even though the
+        // host tsconfig targets CommonJS for the esbuild bundles.
+        "module": "ESNext",
+        "moduleResolution": "Bundler",
+        "types": [
+            "node",
+            "vscode"
+        ]
+    },
+    "include": [
+        "**/*.ts"
+    ],
+    "exclude": [
+        "webview"
+    ]
+}
