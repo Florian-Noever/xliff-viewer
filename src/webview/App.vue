@@ -9,105 +9,35 @@
         />
         <template v-else>
             <StatusPane
-                :loading="xliff === undefined ? loading : undefined"
+                :loading="document === undefined ? loading : undefined"
                 :error="error"
                 variant="banner"
                 @open-as-text="openAsText"
             />
-            <div class="body">
-                <h1 class="title">XLIFF Viewer</h1>
-                <p class="note">
-                    Protocol smoke test. The real UI arrives with UI-01 … UI-04.
+            <header v-if="document !== undefined && activeFile !== undefined" class="file-header">
+                <h1 class="file-name">
+                    {{ document.fileName }}
+                    <span v-if="document.readOnly" class="tag">read-only</span>
+                </h1>
+                <p class="summary">
+                    <span class="languages">{{ activeFile.sourceLanguage }} → {{ activeFile.targetLanguage ?? '—' }}</span>
+                    <span class="count">{{ unitCount }} translation units</span>
+                    <span v-if="activeFile.original !== undefined" class="original">{{ activeFile.original }}</span>
                 </p>
-                <dl class="facts">
-                    <dt>Host</dt>
-                    <dd>{{ isVscode ? 'VS Code webview' : 'browser (Vite dev server)' }}</dd>
-                    <dt>Document</dt>
-                    <dd>{{ xliff === undefined ? '—' : describe(xliff) }}</dd>
-                    <dt>Edit mode</dt>
-                    <dd>{{ settings.editMode ? 'on' : 'off' }}</dd>
-                    <dt>Expand depth</dt>
-                    <dd>{{ settings.defaultExpandDepth }}</dd>
-                </dl>
-            </div>
+            </header>
+            <p v-else class="placeholder">Waiting for a document…</p>
         </template>
     </main>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue';
-
 import StatusPane from './components/StatusPane.vue';
 import { useDesignTokens } from './composables/useDesignTokens';
-import { isVscode, postMessage } from './vscode';
-
-import { ExtensionMessageType, isExtensionMessage, NavigationTarget, WebviewMessageType } from '@shared/messages';
-import { DEFAULT_WEBVIEW_SETTINGS } from '@shared/settings';
-
-import type { XliffDocumentDto } from '@shared/dto';
-import type { ErrorPayload } from '@shared/messages';
-import type { WebviewSettings } from '@shared/settings';
+import { useXliffDocument } from './composables/useXliffDocument';
 
 useDesignTokens();
 
-// Not `document`: inside a component that would shadow the DOM global, and this file
-// is where the real shell gets built.
-const xliff = ref<XliffDocumentDto | undefined>(undefined);
-const loading = ref<string | undefined>(undefined);
-const error = ref<ErrorPayload | undefined>(undefined);
-const settings = ref<WebviewSettings>(DEFAULT_WEBVIEW_SETTINGS);
-
-/**
- * A failure blocks the view only when there is nothing behind it (§7.7). The host posts the
- * last good document ahead of an `error`, so a file broken mid-edit keeps its content and
- * gets a banner instead.
- */
-const blocking = computed(() => xliff.value === undefined && (loading.value !== undefined || error.value !== undefined));
-
-function describe(dto: XliffDocumentDto): string {
-    const units = dto.files.reduce((total, file) => total + file.units.length, 0);
-    return `${dto.fileName} — ${units} units in ${dto.files.length} file(s)${dto.readOnly ? ', read-only' : ''}`;
-}
-
-function openAsText(): void {
-    postMessage({ type: WebviewMessageType.openSource, target: NavigationTarget.text });
-}
-
-function onMessage(event: MessageEvent): void {
-    if (!isExtensionMessage(event.data)) {
-        return;
-    }
-    switch (event.data.type) {
-        case ExtensionMessageType.loading:
-            loading.value = event.data.payload.message;
-            error.value = undefined;
-            break;
-        case ExtensionMessageType.setDocument:
-            // Always ahead of an `error` that follows it, so clearing here is safe.
-            xliff.value = event.data.payload;
-            loading.value = undefined;
-            error.value = undefined;
-            break;
-        case ExtensionMessageType.error:
-            error.value = event.data.payload;
-            loading.value = undefined;
-            break;
-        case ExtensionMessageType.settings:
-            settings.value = event.data.payload;
-            break;
-        default:
-            break;
-    }
-}
-
-onMounted(() => {
-    window.addEventListener('message', onMessage);
-    postMessage({ type: WebviewMessageType.ready });
-});
-
-onUnmounted(() => {
-    window.removeEventListener('message', onMessage);
-});
+const { document, loading, error, activeFile, blocking, unitCount, openAsText } = useXliffDocument();
 </script>
 
 <style scoped>
@@ -117,40 +47,45 @@ onUnmounted(() => {
     flex-direction: column;
 }
 
-.body {
-    padding: calc(var(--pad) * 2);
-    display: flex;
-    flex-direction: column;
-    gap: var(--gap);
+.file-header {
+    padding: calc(var(--pad) * 1.5) calc(var(--pad) * 2);
+    border-bottom: 1px solid var(--vscode-panel-border);
 }
 
-.title {
+.file-name {
     margin: 0;
-    font-size: calc(var(--font) * 1.6);
+    display: flex;
+    align-items: center;
+    gap: var(--gap);
+    font-size: calc(var(--font) * 1.3);
     font-weight: 600;
 }
 
-.note {
-    margin: 0;
-    color: var(--vscode-descriptionForeground);
-}
-
-.facts {
-    margin: 0;
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 4px var(--gap);
-    padding: var(--pad);
+.tag {
+    padding: 1px 6px;
     border: 1px solid var(--vscode-panel-border);
-    border-radius: var(--radius-card);
+    border-radius: var(--radius-sm);
     background: var(--vscode-editorWidget-background);
+    color: var(--vscode-descriptionForeground);
+    font-size: calc(var(--font) * 0.85);
+    font-weight: 400;
 }
 
-.facts dt {
+.summary {
+    margin: 4px 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap);
     color: var(--vscode-descriptionForeground);
 }
 
-.facts dd {
+.languages {
+    color: var(--vscode-foreground);
+}
+
+.placeholder {
     margin: 0;
+    padding: calc(var(--pad) * 2);
+    color: var(--vscode-descriptionForeground);
 }
 </style>
