@@ -80,6 +80,15 @@ export interface AlNodeDto {
     readonly type: string;
     readonly name?: string;
     readonly children: readonly AlNodeDto[];
+    /**
+     * Set on the synthetic object-type level, and only there (`DEC-033`).
+     *
+     * A flag rather than a key-prefix test on the far side: the key's namespace exists to
+     * stop collisions, and making the webview read meaning out of it would turn a private
+     * format into a cross-runtime contract. Absent on every real node, so it costs the
+     * payload nothing but the handful of groups.
+     */
+    readonly group?: true;
 }
 
 export interface XliffFileDto {

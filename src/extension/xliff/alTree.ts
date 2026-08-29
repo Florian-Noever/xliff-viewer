@@ -76,6 +76,65 @@ export function buildAlTree(units: Iterable<XliffTransUnit>): AlNode[] {
     return roots;
 }
 
+/**
+ * The namespace a group key lives in (`DEC-033`).
+ *
+ * A trans-unit id is ` - `-separated `<SymbolType> <hash>` segments, so it cannot contain a
+ * colon — verified against the whole corpus, where no id contains one at all. That is what
+ * keeps `DEC-028`'s invariant true: a node carries a unit exactly when its key **is** that
+ * unit's id, and a group carries none.
+ */
+export const OBJECT_TYPE_GROUP_PREFIX = 'type:';
+
+/**
+ * Wraps the roots in one node per object type (`DEC-033`).
+ *
+ * A file's 230 objects are otherwise one flat list in file order, and finding "the tables"
+ * means scrolling past everything else. The type is already in every id, so this adds a
+ * level rather than information.
+ *
+ * A root whose id did not parse as `<SymbolType> <hash>` has no type to group by and stays
+ * where it is, in file order beside the groups.
+ */
+export function groupByObjectType(roots: readonly AlNode[]): AlNode[] {
+    const order: (AlNode | string)[] = [];
+    const groups = new Map<string, { readonly type: string; readonly members: AlNode[] }>();
+
+    for (const root of roots) {
+        if (root.segment.hash === '') {
+            order.push(root);
+            continue;
+        }
+
+        const key = OBJECT_TYPE_GROUP_PREFIX + root.segment.type;
+        const group = groups.get(key);
+        if (group === undefined) {
+            groups.set(key, { type: root.segment.type, members: [root] });
+            order.push(key);
+        } else {
+            group.members.push(root);
+        }
+    }
+
+    return order.map((entry) => {
+        if (typeof entry !== 'string') {
+            return entry;
+        }
+        const group = groups.get(entry);
+        if (group === undefined) {
+            throw new Error(`No members were collected for the object-type group "${entry}".`);
+        }
+        return {
+            key: entry,
+            // The count is of **objects**, not units: the progress bar already carries the
+            // unit counts, and "Tables (12)" answers a different question.
+            segment: { type: group.type, hash: '', name: `${group.type}s (${group.members.length})` },
+            depth: 0,
+            children: group.members,
+        };
+    });
+}
+
 /** Walks the tree depth-first, in the order the nodes were created. */
 export function* iterateNodes(nodes: readonly AlNode[]): Generator<AlNode> {
     for (const node of nodes) {

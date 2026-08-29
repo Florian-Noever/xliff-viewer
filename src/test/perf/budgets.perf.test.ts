@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { XliffDocumentSession } from '../../extension/editor/documentSession';
 import { createDocumentSession } from '../../extension/editor/documentView';
-import { buildAlTree } from '../../extension/xliff/alTree';
+import { buildAlTree, groupByObjectType } from '../../extension/xliff/alTree';
 import { projectDocument } from '../../extension/xliff/dto';
 import { parseXliff } from '../../extension/xliff/parser';
 import { serialiseXliff } from '../../extension/xliff/serialise';
@@ -13,12 +13,13 @@ import { validateXml } from '../../extension/xliff/validate';
 import { Logger } from '../../extension/services/logger';
 import { visibleNodes } from '../../webview/ancestorFilter';
 import { buildSearchIndex, toMatcher } from '../../webview/composables/useSearch';
-import { flattenTree, expandableKeys } from '../../webview/composables/useTreeFlatten';
+import { expandableKeys, flattenTree, keysToDepth } from '../../webview/composables/useTreeFlatten';
 import { iterateUnits } from '../../shared/model';
 import { effectiveState, summariseTree } from '../../shared/state';
 import { FakeTextDocument } from '../__mocks__/vscode';
 
 import type * as vscode from 'vscode';
+import type { XliffDocumentDto } from '../../shared/dto';
 import type { UnitState } from '../../shared/state';
 
 /**
@@ -66,8 +67,9 @@ describe('§16, measured on the realistic worst case', () => {
     });
 
     it('builds the AL tree in under 60 ms', () => {
+        // Including the object-type level (`DEC-033`), because that is what ships.
         const units = [...iterateUnits(parseXliff(text))];
-        expect(fastest(3, () => buildAlTree(units))).toBeLessThan(60);
+        expect(fastest(3, () => groupByObjectType(buildAlTree(units)))).toBeLessThan(60);
     });
 
     it('rolls state up in under 40 ms', () => {
@@ -102,6 +104,20 @@ describe('§16, measured on the realistic worst case', () => {
             flattenTree(file.tree, expanded, unitsById, result?.visible);
         });
         expect(measured).toBeLessThan(50);
+    });
+
+    it('deserialises the payload and flattens the first screen in under 100 ms', () => {
+        // The webview half of first paint, before Vue renders anything: `JSON.parse` on the
+        // wire format, then the flatten that `defaultExpandDepth` seeds. Measured here
+        // rather than driven by hand in a browser, so `UI-07`'s extra level is watched.
+        const payload = JSON.stringify(projectDocument(parseXliff(text), { uri: 'file:///x', fileName: LARGE }));
+
+        expect(fastest(3, () => {
+            const document = JSON.parse(payload) as XliffDocumentDto;
+            const file = document.files[0];
+            const unitsById = new Map(file.units.map(unit => [unit.id, unit]));
+            flattenTree(file.tree, new Set(keysToDepth(file.tree, 2)), unitsById);
+        })).toBeLessThan(100);
     });
 
     it('builds the search index once per document in under 100 ms', () => {

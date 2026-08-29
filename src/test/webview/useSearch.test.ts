@@ -161,6 +161,56 @@ describe('the index is built once per document, not per keystroke (§11.5)', () 
     });
 });
 
+describe('the object-type level (DEC-033)', () => {
+    const GROUPED: AlNodeDto[] = [{
+        key: 'type:Table',
+        type: 'Table',
+        name: 'Tables (2)',
+        group: true,
+        children: TREE,
+    }];
+
+    const groupedIndex = buildSearchIndex(GROUPED, UNITS);
+
+    it('never matches a group on its own label', () => {
+        // A group that matched alone would render with every child filtered away — a row
+        // that opens onto nothing. It rides in as an ancestor instead.
+        expect(groupedIndex.get('type:Table')).toBe('');
+        expect(toMatcher('tables')(groupedIndex.get('type:Table') ?? '')).toBe(false);
+    });
+
+    it('still indexes everything underneath it', () => {
+        expect(groupedIndex.get('Table 1 - Field 2 - Property 3')).toContain('contoso method name');
+        expect(groupedIndex.size).toBe(1 + INDEX.size);
+    });
+
+    it('shows the group when a unit under it matches, so the path is reachable', () => {
+        const result = visibleNodes(GROUPED, [node => toMatcher('kundennummer')(groupedIndex.get(node.key) ?? '')]);
+
+        expect(result?.visible.has('type:Table')).toBe(true);
+        expect(result?.visible.has('Table 1')).toBe(true);
+        expect(result?.visible.has('Table 1 - Property 4')).toBe(true);
+        // The group is an ancestor, not a match: it is not what the count is counting.
+        expect(result?.count).toBe(1);
+    });
+
+    it('opens the group in the flattened rows, not merely marks it visible', () => {
+        const result = visibleNodes(GROUPED, [node => toMatcher('kundennummer')(groupedIndex.get(node.key) ?? '')]);
+        const rows = flattenTree(GROUPED, new Set(), UNITS, result?.visible);
+
+        expect(rows.map(row => row.key)).toEqual(['type:Table', 'Table 1', 'Table 1 - Property 4']);
+        expect(rows[0].expanded).toBe(true);
+    });
+
+    it('still finds an object by its own type name, through its roots', () => {
+        // Typing "table" was never the group's doing: every root's key and type say it too.
+        const result = visibleNodes(GROUPED, [node => toMatcher('table')(groupedIndex.get(node.key) ?? '')]);
+
+        expect(result?.visible.has('Table 1')).toBe(true);
+        expect(result?.visible.has('type:Table')).toBe(true);
+    });
+});
+
 describe('toMatcher', () => {
     it('matches anywhere, case-insensitively', () => {
         expect(toMatcher('CONTOSO')('a contoso b')).toBe(true);

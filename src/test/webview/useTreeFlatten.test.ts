@@ -247,6 +247,43 @@ describe('expansion', () => {
     });
 });
 
+describe('the object-type level (DEC-033)', () => {
+    const GROUPED: AlNodeDto[] = [{ key: 'type:Table', type: 'Table', name: 'Tables (2)', group: true, children: TREE }];
+
+    it('keeps what defaultExpandDepth always opened, with the group above it', () => {
+        // Depth 1 opened the objects and showed their members. It still does; the level
+        // the setting was never written for is paid for separately.
+        const plain = view(file(TREE), 1).tree;
+        const grouped = view(file(GROUPED), 1).tree;
+
+        const opened = grouped.rows.value.map(row => row.key).filter(key => key !== 'type:Table');
+        expect(opened).toEqual(plain.rows.value.map(row => row.key));
+    });
+
+    it('shows the objects collapsed at depth zero, which is what depth zero meant', () => {
+        // Before the group level, 0 meant "the objects, none of them opened". It still
+        // does — the group is opened for free, because it is not a level the reader asked
+        // to keep shut.
+        const grouped = view(file(GROUPED), 0).tree;
+        const plain = view(file(TREE), 0).tree;
+
+        expect(grouped.rows.value.map(row => row.key)).toEqual(['type:Table', ...plain.rows.value.map(row => row.key)]);
+    });
+
+    it('carries the flag through to the row, so the row can render a label not a symbol', () => {
+        const grouped = view(file(GROUPED), 1).tree;
+
+        expect(grouped.rows.value[0].group).toBe(true);
+        expect(grouped.rows.value.slice(1).every(row => row.group === undefined)).toBe(true);
+    });
+
+    it('does not compensate for a file that has no groups', () => {
+        const plain = view(file(TREE), 2).tree;
+
+        expect(plain.rows.value.map(row => row.key)).toEqual(flattenTree(TREE, new Set(keysToDepth(TREE, 2)), UNITS).map(row => row.key));
+    });
+});
+
 describe('keyboard movement', () => {
     it('starts at the first row, wherever the delta points', () => {
         const { tree } = view(file(TREE), 1);

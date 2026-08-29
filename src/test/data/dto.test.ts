@@ -300,9 +300,34 @@ describe('the tree it hands over', () => {
         );
         const summaries = summariseTree(file.tree, states);
 
-        expect(summaries.size).toBe(4029);
+        // 4029 real nodes plus the nine object-type groups above them (`DEC-033`).
+        expect(summaries.size).toBe(4027);
         const rootTotal = file.tree.reduce((sum, node) => sum + (summaries.get(node.key)?.total ?? 0), 0);
         expect(rootTotal).toBe(2500);
+    });
+
+    it('puts the object types on top, and nothing else there (DEC-033)', () => {
+        const [file] = project('Fabrikam Base.de-DE.xlf').files;
+
+        expect(file.tree.every(node => node.group === true)).toBe(true);
+        expect(file.tree).toHaveLength(9);
+        expect(file.tree.reduce((sum, group) => sum + group.children.length, 0)).toBe(230);
+        expect(file.tree.map(group => group.name)).toContain('Tables (16)');
+    });
+
+    it('marks the groups and only the groups', () => {
+        const [file] = project('Fabrikam Base.de-DE.xlf').files;
+        const marked = [...walk(file.tree)].filter(node => node.group === true);
+
+        expect(marked).toHaveLength(9);
+        expect(marked.every(node => file.tree.includes(node))).toBe(true);
+    });
+
+    it('leaves a file with no AL structure ungrouped (DEC-022)', () => {
+        const [file] = project('test.xlf').files;
+
+        expect(file.hasAlIds).toBe(false);
+        expect(file.tree.some(node => node.group === true)).toBe(false);
     });
 
     it('names the nodes it can', () => {

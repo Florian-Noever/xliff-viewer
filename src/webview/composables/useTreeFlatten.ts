@@ -32,6 +32,8 @@ export interface TreeRow {
     readonly expanded: boolean;
     /** Present when this node carries a unit — a leaf, usually, but an id can be another's prefix. */
     readonly unit?: TransUnitDto;
+    /** The synthetic object-type level, which is a label rather than a symbol (`DEC-033`). */
+    readonly group?: true;
     /** One-based position among its siblings, for `aria-posinset`. */
     readonly position: number;
     /** How many siblings it has, for `aria-setsize`. A virtualised tree must say, since the DOM cannot show it. */
@@ -89,6 +91,7 @@ export function flattenTree(
                 key: node.key,
                 type: node.type,
                 name: node.name,
+                group: node.group,
                 depth,
                 hasChildren,
                 expanded: isExpanded,
@@ -186,7 +189,11 @@ export function useTreeFlatten(source: TreeSource): TreeView {
                 return;
             }
             const next = new Map(byFile.value);
-            next.set(index, { expanded: new Set(keysToDepth(nodes, source.defaultExpandDepth.value)) });
+            // The object-type level (`DEC-033`) sits above everything the setting was
+            // written for, so it is paid for separately: `defaultExpandDepth: 1` opens the
+            // objects it always opened, with their group above them.
+            const grouped = nodes.some(node => node.group === true) ? 1 : 0;
+            next.set(index, { expanded: new Set(keysToDepth(nodes, source.defaultExpandDepth.value + grouped)) });
             byFile.value = next;
         },
         // Synchronous: the expansion set and the rows must agree within one tick, or a
