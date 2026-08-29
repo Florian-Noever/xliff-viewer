@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import { DocumentSessionRegistry } from './documentSessionRegistry';
-import { createDocumentSession, postUpdate } from './documentView';
+import { createDocumentSession } from './documentView';
 import { AlObjectIndex } from '../services/alObjectIndex';
 import { BaseFileIndex } from '../services/baseFileIndex';
 import { BaseFileResolver } from '../services/baseFileResolver';
@@ -89,18 +89,20 @@ export class XliffEditorProvider implements vscode.CustomTextEditorProvider {
         const post = (message: ExtensionMessage): void => {
             void webviewPanel.webview.postMessage(message);
         };
+        const view = createDocumentSession(session, post, this.baseFiles, this.baseIndex, this.alObjects);
         const context: HandlerContext = {
             post,
-            session: createDocumentSession(session, post, this.baseFiles, this.baseIndex, this.alObjects),
+            session: view,
             settings: () => toWebviewSettings(readSettings(document.uri)),
         };
 
         subscriptions.push(
+            view,
             // A re-parse reaches every view of this document, including the ones that
-            // did not trigger it. `postUpdate`, not the initial send: these panels are
+            // did not trigger it. `update`, not the initial send: these panels are
             // already showing the document, so a failure sends only the failure.
             session.attach((state) => {
-                postUpdate(state, post);
+                view.update(state);
             }),
             webviewPanel.webview.onDidReceiveMessage((message: unknown) => {
                 if (!isWebviewMessage(message)) {

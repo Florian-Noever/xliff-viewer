@@ -133,7 +133,7 @@ export class BaseFileResolver implements vscode.Disposable {
             return { uri: vscode.Uri.joinPath(folder, anyInFolder), source: BaseFileSource.folder };
         }
 
-        const inTranslations = await findFirst(TRANSLATIONS_GLOB);
+        const inTranslations = await bestUnderTranslations(nameWithoutLanguage(uri));
         return inTranslations === undefined ? NONE : { uri: inTranslations, source: BaseFileSource.translations };
     }
 
@@ -223,6 +223,39 @@ async function readFolder(folder: vscode.Uri): Promise<string[]> {
     } catch {
         return [];
     }
+}
+
+/**
+ * §9.2's last step searches the **whole workspace**, so in a workspace holding several
+ * apps the first hit is as likely to belong to another one. A base file from the wrong app
+ * marks every unit orphaned (§9.3) — a confidently wrong answer, which is worse than none.
+ * So the app's own name decides among the candidates, and only a single candidate is taken
+ * on trust.
+ */
+async function bestUnderTranslations(appName: string): Promise<vscode.Uri | undefined> {
+    let candidates: vscode.Uri[];
+    try {
+        candidates = await vscode.workspace.findFiles(TRANSLATIONS_GLOB);
+    } catch {
+        return undefined;
+    }
+
+    if (candidates.length <= 1) {
+        return candidates[0];
+    }
+
+    const wanted = `${appName}${BASE_SUFFIX}`.toLowerCase();
+    const named = candidates.find(candidate => fileNameOf(candidate).toLowerCase() === wanted);
+    if (named !== undefined) {
+        return named;
+    }
+
+    Logger.warn(`${candidates.length} base files are under Translations/ and none is named "${wanted}"; using ${candidates[0].path}.`);
+    return candidates[0];
+}
+
+function fileNameOf(uri: vscode.Uri): string {
+    return uri.path.slice(uri.path.lastIndexOf('/') + 1);
 }
 
 async function findFirst(glob: string): Promise<vscode.Uri | undefined> {

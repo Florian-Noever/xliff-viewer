@@ -7,7 +7,7 @@ import { flattenTree } from '../../webview/composables/useTreeFlatten';
 import { visibleNodes } from '../../webview/ancestorFilter';
 
 import type { AlNodeDto, TransUnitDto, XliffFileDto } from '../../shared/dto';
-import type { Search } from '../../webview/composables/useSearch';
+import type { Search, SearchSource } from '../../webview/composables/useSearch';
 
 /**
  * Table 1 "PTE Contoso Methods Setup"
@@ -58,22 +58,31 @@ const FILE: XliffFileDto = {
     hasAlIds: true,
 };
 
-function searchIn(file: XliffFileDto = FILE): Search {
+/**
+ * Mounts the composable in a throwaway component — `useSearch` holds a `watch`, so it
+ * needs a scope — and renders its predicate, so the computeds stay live.
+ */
+function mountSearch(source: SearchSource): Search {
     let captured: Search | undefined;
-    const active = ref(file);
     mount(defineComponent({
         setup() {
-            captured = useSearch({
-                file: computed(() => active.value),
-                unitsById: computed(() => new Map(active.value.units.map(each => [each.id, each]))),
-            });
-            return () => null;
+            captured = useSearch(source);
+            const search = captured;
+            return () => String(search.predicate.value?.(TREE[0]) ?? '');
         },
     }));
     if (captured === undefined) {
         throw new Error('composable did not run');
     }
     return captured;
+}
+
+function searchIn(file: XliffFileDto = FILE): Search {
+    const active = ref(file);
+    return mountSearch({
+        file: computed(() => active.value),
+        unitsById: computed(() => new Map(active.value.units.map(each => [each.id, each]))),
+    });
 }
 
 /** The query path is debounced; tests want the result, not the wait. */
@@ -103,6 +112,53 @@ beforeEach(() => {
 
 afterEach(() => {
     vi.useRealTimers();
+});
+
+describe('the index is built once per document, not per keystroke (§11.5)', () => {
+    /**
+     * Counts index builds by counting reads of the tree they are built from. Lowercasing
+     * 2511 sources, targets, names and notes per character is the obvious way to make a
+     * fast search slow, and nothing else in the suite would notice it happening.
+     */
+    function countingSearch(shown = ref(FILE)) {
+        const reads = { count: 0 };
+        const counted = (file: XliffFileDto): XliffFileDto => ({
+            ...file,
+            get tree() {
+                reads.count++;
+                return file.tree;
+            },
+        });
+        const search = mountSearch({
+            file: computed(() => counted(shown.value)),
+            unitsById: computed(() => UNITS),
+        });
+        return { search, reads, shown };
+    }
+
+    it('lowercases every unit once, however much is typed', async () => {
+        const { search, reads } = countingSearch();
+
+        await type(search, 'c');
+        const afterFirst = reads.count;
+        await type(search, 'co');
+        await type(search, 'con');
+        await type(search, 'contoso');
+
+        expect(afterFirst).toBe(1);
+        expect(reads.count).toBe(1);
+    });
+
+    it('rebuilds when the file it is indexing changes', async () => {
+        const { search, reads, shown } = countingSearch();
+
+        await type(search, 'contoso');
+        expect(reads.count).toBe(1);
+
+        shown.value = { ...FILE, index: 1 };
+        await type(search, 'contoso');
+        expect(reads.count).toBe(2);
+    });
 });
 
 describe('toMatcher', () => {

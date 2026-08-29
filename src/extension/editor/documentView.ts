@@ -21,12 +21,23 @@ import type { ExtensionMessage } from '../../shared/messages';
  * what decides whether a message needs to carry the document again.
  */
 
+/** What the panel's own listener needs on top of the message handlers' contract. */
+export interface DocumentView extends DocumentSession, vscode.Disposable {
+    /**
+     * A later state, for a panel already showing this document.
+     *
+     * It re-announces the base file and the pairing markers, because a `setDocument`
+     * replaces the payload they were attached to. Leaving them out is how `REVIEW-02a`
+     * found the view losing its base file on the first keystroke.
+     */
+    update(state: SessionState): void;
+}
+
 /**
  * Answers `ready` for a panel that has nothing yet.
  *
- * Edits and navigation to a unit are not wired — `EDIT-01` and `NAV-02` own them. They
- * throw rather than doing nothing, so an action that should not be reachable yet says so
- * instead of failing silently (§12.5).
+ * Editing is not wired — `EDIT-01` owns it. It throws rather than doing nothing, so an
+ * action that should not be reachable yet says so instead of failing silently (§12.5).
  */
 export function createDocumentSession(
     session: XliffDocumentSession,
@@ -34,7 +45,33 @@ export function createDocumentSession(
     baseFiles?: BaseFileResolver,
     baseIndex?: BaseFileIndex,
     alObjects?: AlObjectIndex,
-): DocumentSession {
+): DocumentView {
+    const subscriptions: vscode.Disposable[] = [];
+
+    // Which units this panel has been told are orphaned or source-changed, per `<file>`.
+    // `patchUnits` can only *set* a marker; clearing one means sending the unit again
+    // without it, which needs knowing what was sent (§9.3).
+    const marked = new Map<number, ReadonlySet<string>>();
+
+    const announcePairing = (dto: XliffDocumentDto): void => {
+        if (baseFiles !== undefined) {
+            void announceBaseFile(baseFiles, baseIndex, session, dto, post, marked);
+        }
+    };
+
+    // The base file is somebody else's artefact: the AL compiler rewrites it while this
+    // document stays untouched, and the markers on screen were computed from the old one.
+    // The resolver clears its own cache from the same watcher event, and it is constructed
+    // first, so by the time this runs both caches are already cold.
+    if (baseIndex !== undefined) {
+        subscriptions.push(baseIndex.onDidChange(() => {
+            const state = session.current();
+            if (state.kind === 'document') {
+                announcePairing(state.dto);
+            }
+        }));
+    }
+
     const notYet = (what: string, task: string): never => {
         throw new Error(`${what} arrives with ${task}.`);
     };
@@ -48,12 +85,25 @@ export function createDocumentSession(
             // §9.2: resolution is async and must not hold up the document. The webview
             // shows the tree first and learns about the base file when it is known.
             if (state.kind === 'document') {
-                if (baseFiles !== undefined) {
-                    void announceBaseFile(baseFiles, baseIndex, session, state.dto, post);
-                }
+                announcePairing(state.dto);
                 if (alObjects !== undefined) {
                     void announceAlSource(alObjects, post);
                 }
+            }
+        },
+        dispose: () => {
+            for (const subscription of subscriptions) {
+                subscription.dispose();
+            }
+            subscriptions.length = 0;
+        },
+        update: (state) => {
+            postUpdate(state, post);
+            // Not the AL-source answer: it is a fact about the workspace, the webview
+            // keeps it across a `setDocument`, and re-asking would cost a `findFiles`
+            // on every keystroke.
+            if (state.kind === 'document') {
+                announcePairing(state.dto);
             }
         },
         updateTarget: () => notYet('Editing a target', 'EDIT-01'),
@@ -87,6 +137,13 @@ async function showInBaseFile(
         return;
     }
 
+    const state = session.current();
+    if (state.kind === 'document' && state.dto.isBaseFile) {
+        // Resolving a base file's base file would find the document itself (§9.2).
+        void vscode.window.showInformationMessage('This file is the base file.');
+        return;
+    }
+
     const resolved = await baseFiles?.resolve(session.uri, false);
     if (resolved?.uri === undefined) {
         void vscode.window.showInformationMessage('No base file was found for this translation file.');
@@ -106,6 +163,7 @@ async function announceBaseFile(
     session: XliffDocumentSession,
     dto: XliffDocumentDto,
     post: (message: ExtensionMessage) => void,
+    marked: Map<number, ReadonlySet<string>>,
 ): Promise<void> {
     let resolved;
     try {
@@ -123,9 +181,13 @@ async function announceBaseFile(
             : { uri: resolved.uri.toString(), fileName: fileNameOf(resolved.uri) },
     });
 
-    if (resolved.uri !== undefined && baseIndex !== undefined) {
-        await announceStaleUnits(baseIndex, resolved.uri, dto, post);
-    }
+    // No base file is an answer too: whatever was marked against the old one is no longer
+    // something we can claim, so the markers come off.
+    const sources = resolved.uri === undefined || baseIndex === undefined
+        ? new Map<string, string>()
+        : await baseIndex.sourcesOf(resolved.uri);
+
+    announceStaleUnits(sources, dto, post, marked);
 }
 
 /** Whether the workspace has AL source at all, which decides whether the action is offered (§10.1). */
@@ -144,8 +206,14 @@ async function showAlObject(
     session: XliffDocumentSession,
     unit: UnitReference | undefined,
 ): Promise<void> {
+    if (unit === undefined) {
+        void vscode.window.showInformationMessage('Choose a unit to show in the AL source.');
+        return;
+    }
+
     const state = session.current();
-    if (alObjects === undefined || unit === undefined || state.kind !== 'document') {
+    if (alObjects === undefined || state.kind !== 'document') {
+        void vscode.window.showInformationMessage('The AL source cannot be searched until this file has been read.');
         return;
     }
 
@@ -165,39 +233,54 @@ async function showAlObject(
 }
 
 /**
- * Marks the units the base file no longer agrees with (§9.3).
+ * Marks the units the base file no longer agrees with, and unmarks the ones it now does
+ * (§9.3).
  *
  * Sent as `patchUnits` rather than a fresh `setDocument`: a language file in step with its
  * base produces nothing at all, and one that has drifted produces only the units that
  * drifted. Re-sending the whole document to mark three of them would cost 773 KB.
+ *
+ * An **empty** `sources` map means there is nothing to compare against — no base file, or
+ * one that could not be read. That unmarks rather than freezing what was marked before:
+ * `compareToBase` against nothing would call every unit orphaned, which is the one wrong
+ * answer worth guarding against.
  */
-async function announceStaleUnits(
-    baseIndex: BaseFileIndex,
-    baseUri: vscode.Uri,
+function announceStaleUnits(
+    sources: ReadonlyMap<string, string>,
     dto: XliffDocumentDto,
     post: (message: ExtensionMessage) => void,
-): Promise<void> {
-    const sources = await baseIndex.sourcesOf(baseUri);
-    if (sources.size === 0) {
-        return;
-    }
-
+    marked: Map<number, ReadonlySet<string>>,
+): void {
     for (const file of dto.files) {
-        const differences = compareToBase(file.units, sources);
-        if (differences.length === 0) {
-            continue;
-        }
-
+        const differences = sources.size === 0 ? [] : compareToBase(file.units, sources);
         const byId = new Map(file.units.map(unit => [unit.id, unit]));
-        const units = differences.flatMap((difference) => {
+
+        const nowMarked = new Set(differences.map(difference => difference.id));
+        const previously = marked.get(file.index) ?? EMPTY;
+        marked.set(file.index, nowMarked);
+
+        const set = differences.flatMap((difference) => {
             const unit = byId.get(difference.id);
             return unit === undefined ? [] : [{ ...unit, orphaned: difference.orphaned, baseSource: difference.baseSource }];
         });
+        // The DTO's own unit carries no markers, so sending it again is how one comes off.
+        const cleared = [...previously]
+            .filter(id => !nowMarked.has(id))
+            .flatMap((id) => {
+                const unit = byId.get(id);
+                return unit === undefined ? [] : [unit];
+            });
 
-        Logger.info(`${units.length} of ${file.units.length} units in <file> ${file.index} differ from the base file.`);
-        post({ type: ExtensionMessageType.patchUnits, payload: { fileIndex: file.index, units } });
+        if (set.length === 0 && cleared.length === 0) {
+            continue;
+        }
+
+        Logger.info(`<file> ${file.index}: ${set.length} of ${file.units.length} units differ from the base file, ${cleared.length} no longer do.`);
+        post({ type: ExtensionMessageType.patchUnits, payload: { fileIndex: file.index, units: [...set, ...cleared] } });
     }
 }
+
+const EMPTY: ReadonlySet<string> = new Set();
 
 function fileNameOf(uri: vscode.Uri): string {
     return uri.path.slice(uri.path.lastIndexOf('/') + 1);

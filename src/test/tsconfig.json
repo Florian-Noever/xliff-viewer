@@ -10,7 +10,15 @@
             "node",
             "vscode",
             "mocha"
-        ]
+        ],
+        // The perf project measures the webview's own pure search and flatten code
+        // (§11.5's keystroke budget), and that code addresses src/shared through the
+        // alias the webview build gives it.
+        "paths": {
+            "@shared/*": [
+                "../shared/*"
+            ]
+        }
     },
     "include": [
         "**/*.ts"
