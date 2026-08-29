@@ -79,6 +79,13 @@ export function useXliffDocument(): XliffDocument {
                 error.value = message.payload;
                 loading.value = undefined;
                 break;
+            case ExtensionMessageType.baseFile:
+                // Arrives after the document (§9.2). `null` means resolution ran and found
+                // nothing, which the header says out loud; leaving it undefined would not.
+                if (document.value !== undefined) {
+                    document.value = { ...document.value, baseFile: message.payload };
+                }
+                break;
             case ExtensionMessageType.settings:
                 settings.value = message.payload;
                 break;

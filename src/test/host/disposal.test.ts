@@ -89,6 +89,9 @@ afterEach(() => {
 describe('twenty editors', () => {
     it('leave nothing behind when they are closed', async () => {
         const provider = new XliffEditorProvider(vscode.Uri.file('/ext'));
+        // The provider's own base-file resolver watches configuration for its whole life,
+        // so the baseline is what a provider with no editors already holds.
+        const baseline = configurationListenerCount();
         const panels: Panel[] = [];
 
         for (let index = 0; index < 20; index++) {
@@ -99,18 +102,23 @@ describe('twenty editors', () => {
         }
 
         expect(documentChangeListenerCount()).toBe(20);
-        expect(configurationListenerCount()).toBe(20);
+        expect(configurationListenerCount()).toBe(baseline + 20);
 
         for (const panel of panels) {
             panel.close();
         }
 
         expect(documentChangeListenerCount()).toBe(0);
+        expect(configurationListenerCount()).toBe(baseline);
+
+        provider.dispose();
+
         expect(configurationListenerCount()).toBe(0);
     });
 
     it('share one session when they are twenty views of the same document', async () => {
         const provider = new XliffEditorProvider(vscode.Uri.file('/ext'));
+        const baseline = configurationListenerCount();
         const shared = document('shared');
         const panels: Panel[] = [];
 
@@ -123,14 +131,14 @@ describe('twenty editors', () => {
         // One parse subscription for the document, twenty configuration listeners — one
         // per view, because each view answers for its own webview.
         expect(documentChangeListenerCount()).toBe(1);
-        expect(configurationListenerCount()).toBe(20);
+        expect(configurationListenerCount()).toBe(baseline + 20);
 
         for (const panel of panels) {
             panel.close();
         }
 
         expect(documentChangeListenerCount()).toBe(0);
-        expect(configurationListenerCount()).toBe(0);
+        expect(configurationListenerCount()).toBe(baseline);
     });
 
     it('are all disposed when the provider itself goes', async () => {

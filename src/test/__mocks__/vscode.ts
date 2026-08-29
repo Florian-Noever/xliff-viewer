@@ -33,6 +33,8 @@ let messageResult: string | undefined;
 let clipboardWrites: string[] = [];
 let logLines: string[] = [];
 let executedCommands: { command: string; args: readonly unknown[] }[] = [];
+let watcherListeners: { created: ((uri: Uri) => void)[]; deleted: ((uri: Uri) => void)[]; changed: ((uri: Uri) => void)[] } = { created: [], deleted: [], changed: [] };
+let workspaceRoot: Uri | undefined;
 let configurationListeners: ((event: ConfigurationChangeEvent) => void)[] = [];
 let documentChangeListeners: ((event: TextDocumentChangeEvent) => void)[] = [];
 let writableFileSystems: Record<string, boolean> = {};
@@ -211,6 +213,19 @@ export const workspace = {
             return Promise.resolve();
         },
         isWritableFileSystem: (scheme: string): boolean | undefined => writableFileSystems[scheme],
+        readDirectory: (uri: Uri): Promise<[string, number][]> => {
+            const prefix = uri.path.endsWith('/') ? uri.path : `${uri.path}/`;
+            const names = new Set<string>();
+            for (const path of Object.keys(virtualFiles)) {
+                if (path.startsWith(prefix) && !path.slice(prefix.length).includes('/')) {
+                    names.add(path.slice(prefix.length));
+                }
+            }
+            if (names.size === 0 && !Object.keys(virtualFiles).some(path => path.startsWith(prefix))) {
+                return Promise.reject(new Error(`ENOENT: ${uri.path}`));
+            }
+            return Promise.resolve([...names].map(name => [name, FileType.File] as [string, number]));
+        },
         stat: (uri: Uri): Promise<{ type: number; size: number }> => {
             const content = virtualFiles[uri.path];
             if (content === undefined) {
@@ -220,6 +235,12 @@ export const workspace = {
         },
     },
     /** Matches virtual file paths against a `**` / `*` glob. Enough for the resolver tests. */
+    createFileSystemWatcher: (_pattern: string): FakeFileSystemWatcher => new FakeFileSystemWatcher(),
+    getWorkspaceFolder: (_uri: Uri): { uri: Uri } | undefined =>
+        (workspaceRoot === undefined ? undefined : { uri: workspaceRoot }),
+    get workspaceFolders(): { uri: Uri }[] | undefined {
+        return workspaceRoot === undefined ? undefined : [{ uri: workspaceRoot }];
+    },
     findFiles: (pattern: string): Promise<Uri[]> => {
         // One pass with a replacer: expanding `**` in an earlier pass would leave `*`
         // characters that a later single-`*` pass would rewrite again.
@@ -304,6 +325,28 @@ export const env = {
     },
 };
 
+export const FileType = { Unknown: 0, File: 1, Directory: 2, SymbolicLink: 64 } as const;
+
+/** Only what the resolver uses: three events and a dispose. */
+class FakeFileSystemWatcher {
+    public readonly onDidCreate = (listener: (uri: Uri) => void): Disposable => {
+        watcherListeners.created.push(listener);
+        return new Disposable(() => { });
+    };
+
+    public readonly onDidDelete = (listener: (uri: Uri) => void): Disposable => {
+        watcherListeners.deleted.push(listener);
+        return new Disposable(() => { });
+    };
+
+    public readonly onDidChange = (listener: (uri: Uri) => void): Disposable => {
+        watcherListeners.changed.push(listener);
+        return new Disposable(() => { });
+    };
+
+    public dispose(): void { }
+}
+
 export const commands = {
     registerCommand: (_command: string, _callback: (...args: unknown[]) => unknown): Disposable =>
         new Disposable(() => { }),
@@ -339,6 +382,26 @@ export function fireTextDocumentChange(document: { readonly uri: Uri }, changes 
     const event: TextDocumentChangeEvent = { document, contentChanges: Array.from({ length: changes }, () => ({})) };
     for (const listener of [...documentChangeListeners]) {
         listener(event);
+    }
+}
+
+const BACKSLASH = String.fromCharCode(92);
+const FORWARD = '/';
+
+/** Removes one virtual file, as deleting it on disk would. */
+export function removeVirtualFile(path: string): void {
+    delete virtualFiles[path.split(BACKSLASH).join(FORWARD)];
+}
+
+/** Sets the single workspace folder `getWorkspaceFolder` reports. */
+export function setWorkspaceRoot(path: string | undefined): void {
+    workspaceRoot = path === undefined ? undefined : Uri.file(path);
+}
+
+/** Fires the file-system watcher, as a `.g.xlf` appearing or vanishing would. */
+export function fireFileWatcher(kind: 'created' | 'deleted' | 'changed', path: string): void {
+    for (const listener of [...watcherListeners[kind]]) {
+        listener(Uri.file(path));
     }
 }
 
@@ -422,4 +485,6 @@ export function resetMocks(): void {
     writableFileSystems = {};
     logLines = [];
     executedCommands = [];
+    watcherListeners = { created: [], deleted: [], changed: [] };
+    workspaceRoot = undefined;
 }

@@ -1,8 +1,11 @@
 import * as vscode from 'vscode';
 
+import { Logger } from '../services/logger';
+
 import { ExtensionMessageType, NavigationTarget } from '../../shared/messages';
 
 import type { DocumentSession, SessionState, XliffDocumentSession } from './documentSession';
+import type { BaseFileResolver } from '../services/baseFileResolver';
 import type { ExtensionMessage } from '../../shared/messages';
 
 /**
@@ -24,7 +27,11 @@ const DEFAULT_EDITOR = 'default';
  * throw rather than doing nothing, so an action that should not be reachable yet says so
  * instead of failing silently (§12.5).
  */
-export function createDocumentSession(session: XliffDocumentSession, post: (message: ExtensionMessage) => void): DocumentSession {
+export function createDocumentSession(
+    session: XliffDocumentSession,
+    post: (message: ExtensionMessage) => void,
+    baseFiles?: BaseFileResolver,
+): DocumentSession {
     const notYet = (what: string, task: string): never => {
         throw new Error(`${what} arrives with ${task}.`);
     };
@@ -32,7 +39,14 @@ export function createDocumentSession(session: XliffDocumentSession, post: (mess
     return {
         sendDocument: () => {
             post({ type: ExtensionMessageType.loading, payload: { message: 'Reading the translation file…' } });
-            postInitialState(session.current(), session, post);
+            const state = session.current();
+            postInitialState(state, session, post);
+
+            // §9.2: resolution is async and must not hold up the document. The webview
+            // shows the tree first and learns about the base file when it is known.
+            if (baseFiles !== undefined && state.kind === 'document') {
+                void announceBaseFile(baseFiles, session, state.dto.isBaseFile, post);
+            }
         },
         updateTarget: () => notYet('Editing a target', 'EDIT-01'),
         updateState: () => notYet('Changing a state', 'EDIT-01'),
@@ -45,6 +59,31 @@ export function createDocumentSession(session: XliffDocumentSession, post: (mess
             return Promise.resolve(vscode.commands.executeCommand<void>(OPEN_WITH_COMMAND, session.uri, DEFAULT_EDITOR));
         },
     };
+}
+
+/** Posts `baseFile` once resolution finishes. Not finding one is a result, not a failure (§9.2). */
+async function announceBaseFile(
+    baseFiles: BaseFileResolver,
+    session: XliffDocumentSession,
+    isBaseFile: boolean,
+    post: (message: ExtensionMessage) => void,
+): Promise<void> {
+    try {
+        const resolved = await baseFiles.resolve(session.uri, isBaseFile);
+        post({
+            type: ExtensionMessageType.baseFile,
+            payload: resolved.uri === undefined
+                ? null
+                : { uri: resolved.uri.toString(), fileName: fileNameOf(resolved.uri) },
+        });
+    } catch (error: unknown) {
+        Logger.warn(`Base-file resolution failed for ${session.uri.path}: ${error instanceof Error ? error.message : 'unknown error'}`);
+        post({ type: ExtensionMessageType.baseFile, payload: null });
+    }
+}
+
+function fileNameOf(uri: vscode.Uri): string {
+    return uri.path.slice(uri.path.lastIndexOf('/') + 1);
 }
 
 /**
