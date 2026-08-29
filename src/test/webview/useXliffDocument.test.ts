@@ -246,3 +246,48 @@ describe('openAsText', () => {
         expect(postedMessages).toEqual([{ type: WebviewMessageType.openSource, target: 'text' }]);
     });
 });
+
+describe('patchUnits', () => {
+    const patch = (fileIndex: number, units: unknown[]): void =>
+        send({ type: ExtensionMessageType.patchUnits, payload: { fileIndex, units } } as ExtensionMessage);
+
+    it('replaces only the units it names, leaving the rest identical', () => {
+        const state = useIt();
+        sendDocument();
+
+        patch(0, [{ id: 'Table 1', source: 'Customer', target: 'Kunde', state: 'translated', translate: true, notes: [], orphaned: true }]);
+
+        expect(state.unitsById.value.get('Table 1')?.orphaned).toBe(true);
+        expect(state.unitsById.value.get('Table 2')?.orphaned).toBeUndefined();
+        expect(state.unitCount.value).toBe(3);
+    });
+
+    it('touches only the file it names', () => {
+        const state = useIt();
+        sendDocument();
+
+        patch(1, [{ id: 'Table 1', source: 'Customer', target: 'Client', state: 'translated', translate: true, notes: [], orphaned: true }]);
+
+        expect(state.unitsById.value.get('Table 1')?.orphaned).toBeUndefined();
+        state.activeFileIndex.value = 1;
+        expect(state.unitsById.value.get('Table 1')?.orphaned).toBe(true);
+    });
+
+    it('ignores an empty patch, which is what an in-step file produces', () => {
+        const state = useIt();
+        sendDocument();
+        const before = state.document.value;
+
+        patch(0, []);
+
+        expect(state.document.value).toBe(before);
+    });
+
+    it('ignores a patch that arrives before any document', () => {
+        const state = useIt();
+
+        patch(0, [{ id: 'Table 1', source: 'x', state: 'translated', translate: true, notes: [] }]);
+
+        expect(state.document.value).toBeUndefined();
+    });
+});

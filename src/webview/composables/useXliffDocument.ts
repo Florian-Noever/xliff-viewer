@@ -46,6 +46,30 @@ export interface XliffDocument {
     openSource(target: NavigationTargetValue, unitId: string): void;
 }
 
+/**
+ * Replaces the named units in one `<file>`, leaving everything else identical.
+ *
+ * The host sends only the units that changed (§9.3), so this is a merge rather than a
+ * replacement — and a new object each time, because the document is a `shallowRef`.
+ */
+function patchUnits(
+    current: XliffDocumentDto | undefined,
+    fileIndex: number,
+    patched: readonly TransUnitDto[],
+): XliffDocumentDto | undefined {
+    if (current === undefined || patched.length === 0) {
+        return current;
+    }
+
+    const byId = new Map(patched.map(unit => [unit.id, unit]));
+    return {
+        ...current,
+        files: current.files.map(file => (file.index === fileIndex
+            ? { ...file, units: file.units.map(unit => byId.get(unit.id) ?? unit) }
+            : file)),
+    };
+}
+
 export function useXliffDocument(): XliffDocument {
     // shallowRef: the DTO is a large frozen-in-practice tree that is replaced wholesale,
     // never mutated. Deep reactivity over 2500 units would cost on every assignment.
@@ -80,6 +104,9 @@ export function useXliffDocument(): XliffDocument {
             case ExtensionMessageType.error:
                 error.value = message.payload;
                 loading.value = undefined;
+                break;
+            case ExtensionMessageType.patchUnits:
+                document.value = patchUnits(document.value, message.payload.fileIndex, message.payload.units);
                 break;
             case ExtensionMessageType.baseFile:
                 // Arrives after the document (§9.2). `null` means resolution ran and found

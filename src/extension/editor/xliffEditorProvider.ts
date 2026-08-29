@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 
 import { DocumentSessionRegistry } from './documentSessionRegistry';
 import { createDocumentSession, postUpdate } from './documentView';
+import { BaseFileIndex } from '../services/baseFileIndex';
 import { BaseFileResolver } from '../services/baseFileResolver';
 import { getWebviewHtml, localResourceRoots } from './webviewHtml';
 import { dispatch } from '../handlers';
@@ -26,6 +27,7 @@ export class XliffEditorProvider implements vscode.CustomTextEditorProvider {
     private readonly extensionUri: vscode.Uri;
     private readonly registry = new DocumentSessionRegistry();
     private readonly baseFiles = new BaseFileResolver();
+    private readonly baseIndex = new BaseFileIndex();
 
     public constructor(extensionUri: vscode.Uri) {
         this.extensionUri = extensionUri;
@@ -47,6 +49,7 @@ export class XliffEditorProvider implements vscode.CustomTextEditorProvider {
     public dispose(): void {
         this.registry.dispose();
         this.baseFiles.dispose();
+        this.baseIndex.dispose();
     }
 
     public async resolveCustomTextEditor(
@@ -85,7 +88,7 @@ export class XliffEditorProvider implements vscode.CustomTextEditorProvider {
         };
         const context: HandlerContext = {
             post,
-            session: createDocumentSession(session, post, this.baseFiles),
+            session: createDocumentSession(session, post, this.baseFiles, this.baseIndex),
             settings: () => toWebviewSettings(readSettings(document.uri)),
         };
 

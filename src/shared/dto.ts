@@ -53,6 +53,16 @@ export interface TransUnitDto {
     readonly notes: readonly XliffNoteDto[];
     /** The text of a `Developer` note, with any `xx-XX=` prefix stripped (§3.7). */
     readonly developerHint?: string;
+    /**
+     * True when the base file no longer carries this id (§9.3) — the unit was removed from
+     * the AL source and this translation is left over.
+     */
+    readonly orphaned?: boolean;
+    /**
+     * The base file's source, when it differs from ours. Its presence *is* the
+     * source-changed marker, and it carries the text the reader needs to see (§9.3).
+     */
+    readonly baseSource?: string;
 }
 
 /**

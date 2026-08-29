@@ -1,12 +1,15 @@
 import * as vscode from 'vscode';
 
 import { Logger } from '../services/logger';
+import { compareToBase } from '../services/baseFileIndex';
 import { revealAsText, revealInBaseFile } from '../services/navigation';
 
 import { ExtensionMessageType, NavigationTarget } from '../../shared/messages';
 
 import type { DocumentSession, SessionState, UnitReference, XliffDocumentSession } from './documentSession';
+import type { BaseFileIndex } from '../services/baseFileIndex';
 import type { BaseFileResolver } from '../services/baseFileResolver';
+import type { XliffDocumentDto } from '../../shared/dto';
 import type { ExtensionMessage } from '../../shared/messages';
 
 /**
@@ -28,6 +31,7 @@ export function createDocumentSession(
     session: XliffDocumentSession,
     post: (message: ExtensionMessage) => void,
     baseFiles?: BaseFileResolver,
+    baseIndex?: BaseFileIndex,
 ): DocumentSession {
     const notYet = (what: string, task: string): never => {
         throw new Error(`${what} arrives with ${task}.`);
@@ -42,7 +46,7 @@ export function createDocumentSession(
             // §9.2: resolution is async and must not hold up the document. The webview
             // shows the tree first and learns about the base file when it is known.
             if (baseFiles !== undefined && state.kind === 'document') {
-                void announceBaseFile(baseFiles, session, state.dto.isBaseFile, post);
+                void announceBaseFile(baseFiles, baseIndex, session, state.dto, post);
             }
         },
         updateTarget: () => notYet('Editing a target', 'EDIT-01'),
@@ -90,21 +94,64 @@ async function showInBaseFile(
 /** Posts `baseFile` once resolution finishes. Not finding one is a result, not a failure (§9.2). */
 async function announceBaseFile(
     baseFiles: BaseFileResolver,
+    baseIndex: BaseFileIndex | undefined,
     session: XliffDocumentSession,
-    isBaseFile: boolean,
+    dto: XliffDocumentDto,
     post: (message: ExtensionMessage) => void,
 ): Promise<void> {
+    let resolved;
     try {
-        const resolved = await baseFiles.resolve(session.uri, isBaseFile);
-        post({
-            type: ExtensionMessageType.baseFile,
-            payload: resolved.uri === undefined
-                ? null
-                : { uri: resolved.uri.toString(), fileName: fileNameOf(resolved.uri) },
-        });
+        resolved = await baseFiles.resolve(session.uri, dto.isBaseFile);
     } catch (error: unknown) {
         Logger.warn(`Base-file resolution failed for ${session.uri.path}: ${error instanceof Error ? error.message : 'unknown error'}`);
         post({ type: ExtensionMessageType.baseFile, payload: null });
+        return;
+    }
+
+    post({
+        type: ExtensionMessageType.baseFile,
+        payload: resolved.uri === undefined
+            ? null
+            : { uri: resolved.uri.toString(), fileName: fileNameOf(resolved.uri) },
+    });
+
+    if (resolved.uri !== undefined && baseIndex !== undefined) {
+        await announceStaleUnits(baseIndex, resolved.uri, dto, post);
+    }
+}
+
+/**
+ * Marks the units the base file no longer agrees with (§9.3).
+ *
+ * Sent as `patchUnits` rather than a fresh `setDocument`: a language file in step with its
+ * base produces nothing at all, and one that has drifted produces only the units that
+ * drifted. Re-sending the whole document to mark three of them would cost 773 KB.
+ */
+async function announceStaleUnits(
+    baseIndex: BaseFileIndex,
+    baseUri: vscode.Uri,
+    dto: XliffDocumentDto,
+    post: (message: ExtensionMessage) => void,
+): Promise<void> {
+    const sources = await baseIndex.sourcesOf(baseUri);
+    if (sources.size === 0) {
+        return;
+    }
+
+    for (const file of dto.files) {
+        const differences = compareToBase(file.units, sources);
+        if (differences.length === 0) {
+            continue;
+        }
+
+        const byId = new Map(file.units.map(unit => [unit.id, unit]));
+        const units = differences.flatMap((difference) => {
+            const unit = byId.get(difference.id);
+            return unit === undefined ? [] : [{ ...unit, orphaned: difference.orphaned, baseSource: difference.baseSource }];
+        });
+
+        Logger.info(`${units.length} of ${file.units.length} units in <file> ${file.index} differ from the base file.`);
+        post({ type: ExtensionMessageType.patchUnits, payload: { fileIndex: file.index, units } });
     }
 }
 
