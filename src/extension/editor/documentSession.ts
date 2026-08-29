@@ -5,6 +5,7 @@ import { XliffParseError } from '../xliff/errors';
 import { parseXliff } from '../xliff/parser';
 import { validateStructure } from '../xliff/validate';
 import { Logger } from '../services/logger';
+import { fileNameOf } from '../services/uriNames';
 
 import type { XliffDocumentDto } from '../../shared/dto';
 import type { ErrorPayload, NavigationTarget } from '../../shared/messages';
@@ -152,8 +153,7 @@ export class XliffDocumentSession {
     }
 
     private fileName(): string {
-        const path = this.textDocument.uri.path;
-        return path.slice(path.lastIndexOf('/') + 1);
+        return fileNameOf(this.textDocument.uri);
     }
 
     private clearTimer(): void {

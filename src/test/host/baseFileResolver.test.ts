@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { BaseFileResolver, BaseFileSource, nameWithoutLanguage } from '../../extension/services/baseFileResolver';
+import { BaseFileResolver, BaseFileSource } from '../../extension/services/baseFileResolver';
+import { appNameOf, fileNameOf } from '../../extension/services/uriNames';
 import { Logger } from '../../extension/services/logger';
 import {
     fireConfigurationChange,
@@ -42,17 +43,22 @@ afterEach(() => {
     resetMocks();
 });
 
-describe('nameWithoutLanguage', () => {
+describe('appNameOf', () => {
     it('strips the language segment', () => {
-        expect(nameWithoutLanguage(uri('/w/Contoso App.de-DE.xlf'))).toBe('Contoso App');
+        expect(appNameOf(uri('/w/Contoso App.de-DE.xlf'))).toBe('Contoso App');
     });
 
     it('keeps a stem that has no language segment', () => {
-        expect(nameWithoutLanguage(uri('/w/App.xlf'))).toBe('App');
+        expect(appNameOf(uri('/w/App.xlf'))).toBe('App');
     });
 
     it('keeps the dots inside an app name', () => {
-        expect(nameWithoutLanguage(uri('/w/Contoso.Sales.App.de-DE.xlf'))).toBe('Contoso.Sales.App');
+        expect(appNameOf(uri('/w/Contoso.Sales.App.de-DE.xlf'))).toBe('Contoso.Sales.App');
+    });
+
+    it('takes the file name off a URI, whatever the folder is called', () => {
+        expect(fileNameOf(uri('/w/Translations/Contoso App.de-DE.xlf'))).toBe('Contoso App.de-DE.xlf');
+        expect(fileNameOf(uri('/App.g.xlf'))).toBe('App.g.xlf');
     });
 });
 
@@ -88,6 +94,30 @@ describe('the conventions (§9.2 steps 4–6)', () => {
 
         expect(found.uri?.path).toBe('/w/app/Translations/App.g.xlf');
         expect(found.source).toBe(BaseFileSource.translations);
+    });
+
+    it('picks the base file named after this app when several apps share the workspace', async () => {
+        // REVIEW-02a: taking the first hit here paired a translation with another app's
+        // base file, which marks every unit orphaned (§9.3) — a confidently wrong answer.
+        workspaceWith(
+            '/w/loose/App.de-DE.xlf',
+            '/w/other/Translations/Other.g.xlf',
+            '/w/app/Translations/App.g.xlf',
+            '/w/third/Translations/Third.g.xlf',
+        );
+
+        const found = await resolver.resolve(uri('/w/loose/App.de-DE.xlf'), false);
+
+        expect(found.uri?.path).toBe('/w/app/Translations/App.g.xlf');
+    });
+
+    it('says which one it guessed when no candidate carries the app name', async () => {
+        workspaceWith('/w/loose/App.de-DE.xlf', '/w/other/Translations/Other.g.xlf', '/w/third/Translations/Third.g.xlf');
+
+        const found = await resolver.resolve(uri('/w/loose/App.de-DE.xlf'), false);
+
+        expect(found.source).toBe(BaseFileSource.translations);
+        expect(flushLogs().some(line => line.includes('none is named "app.g.xlf"'))).toBe(true);
     });
 
     it('reports nothing, not an error, when the workspace has no base file', async () => {

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { XliffDocumentSession } from '../../extension/editor/documentSession';
 import { DocumentSessionRegistry } from '../../extension/editor/documentSessionRegistry';
-import { createDocumentSession, postUpdate } from '../../extension/editor/documentView';
+import { createDocumentSession } from '../../extension/editor/documentView';
 import { Logger } from '../../extension/services/logger';
 import { ExtensionMessageType } from '../../shared/messages';
 import {
@@ -169,7 +169,8 @@ describe('what a failing re-parse puts on the wire', () => {
         const document = openDocument('Fabrikam Base.de-DE.xlf');
         const session = sessionFor(document);
         const posted: ExtensionMessage[] = [];
-        session.attach(state => postUpdate(state, message => posted.push(message)));
+        const facade = createDocumentSession(session, message => posted.push(message));
+        session.attach(state => facade.update(state));
         session.current();
 
         document.setText('<xliff><file>');
@@ -206,7 +207,8 @@ describe('what a failing re-parse puts on the wire', () => {
         const document = openDocument('Contoso App.de-DE.xlf');
         const session = sessionFor(document);
         const posted: ExtensionMessage[] = [];
-        session.attach(state => postUpdate(state, message => posted.push(message)));
+        const facade = createDocumentSession(session, message => posted.push(message));
+        session.attach(state => facade.update(state));
         session.current();
 
         document.setText(read('Contoso App.en-US.xlf'));

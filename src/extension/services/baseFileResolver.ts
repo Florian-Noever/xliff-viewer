@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 
 import { Logger } from './logger';
 import { readSettings } from './settings';
+import { appNameOf, fileNameOf } from './uriNames';
 
 import { SETTINGS_SECTION } from '../../shared/settings';
 
@@ -123,7 +124,7 @@ export class BaseFileResolver implements vscode.Disposable {
         const folder = parentOf(uri);
         const siblings = await readFolder(folder);
 
-        const sibling = `${nameWithoutLanguage(uri)}${BASE_SUFFIX}`;
+        const sibling = `${appNameOf(uri)}${BASE_SUFFIX}`;
         if (siblings.includes(sibling)) {
             return { uri: vscode.Uri.joinPath(folder, sibling), source: BaseFileSource.sibling };
         }
@@ -133,7 +134,7 @@ export class BaseFileResolver implements vscode.Disposable {
             return { uri: vscode.Uri.joinPath(folder, anyInFolder), source: BaseFileSource.folder };
         }
 
-        const inTranslations = await bestUnderTranslations(nameWithoutLanguage(uri));
+        const inTranslations = await bestUnderTranslations(appNameOf(uri));
         return inTranslations === undefined ? NONE : { uri: inTranslations, source: BaseFileSource.translations };
     }
 
@@ -181,14 +182,6 @@ export class BaseFileResolver implements vscode.Disposable {
 
         return match === undefined ? undefined : vscode.Uri.joinPath(folder, match);
     }
-}
-
-/** `App.de-DE.xlf` → `App`. A file with no language segment keeps its stem. */
-export function nameWithoutLanguage(uri: vscode.Uri): string {
-    const name = uri.path.slice(uri.path.lastIndexOf('/') + 1);
-    const withoutExtension = name.replace(/\.xlf$/i, '');
-    const dot = withoutExtension.lastIndexOf('.');
-    return dot < 0 ? withoutExtension : withoutExtension.slice(0, dot);
 }
 
 function parentOf(uri: vscode.Uri): vscode.Uri {
@@ -252,10 +245,6 @@ async function bestUnderTranslations(appName: string): Promise<vscode.Uri | unde
 
     Logger.warn(`${candidates.length} base files are under Translations/ and none is named "${wanted}"; using ${candidates[0].path}.`);
     return candidates[0];
-}
-
-function fileNameOf(uri: vscode.Uri): string {
-    return uri.path.slice(uri.path.lastIndexOf('/') + 1);
 }
 
 async function findFirst(glob: string): Promise<vscode.Uri | undefined> {

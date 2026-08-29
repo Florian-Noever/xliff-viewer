@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import { Logger } from '../services/logger';
 import { compareToBase } from '../services/baseFileIndex';
 import { AlNavigationOutcome, alTargetFor, revealAlObject, revealAsText, revealInBaseFile } from '../services/navigation';
+import { fileNameOf } from '../services/uriNames';
 
 import { ExtensionMessageType, NavigationTarget } from '../../shared/messages';
 
@@ -282,10 +283,6 @@ function announceStaleUnits(
 
 const EMPTY: ReadonlySet<string> = new Set();
 
-function fileNameOf(uri: vscode.Uri): string {
-    return uri.path.slice(uri.path.lastIndexOf('/') + 1);
-}
-
 /**
  * The first state a panel receives.
  *
@@ -309,7 +306,7 @@ function postInitialState(state: SessionState, session: XliffDocumentSession, po
  * 1.2 MB on the wire for every keystroke that leaves the file unparseable, to redeliver
  * what the panel is already displaying.
  */
-export function postUpdate(state: SessionState, post: (message: ExtensionMessage) => void): void {
+function postUpdate(state: SessionState, post: (message: ExtensionMessage) => void): void {
     post(state.kind === 'document'
         ? { type: ExtensionMessageType.setDocument, payload: state.dto }
         : { type: ExtensionMessageType.error, payload: state.error });
