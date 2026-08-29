@@ -182,10 +182,49 @@ describe('expansion', () => {
         expect(tree.rows.value).toHaveLength(4);
     });
 
-    it('starts fresh when the file switches (DEC-020)', () => {
+    it('opens a file it has not seen before to the configured depth (DEC-020)', () => {
         const { tree, active } = view(file(TREE), 0);
         tree.expandAll();
 
+        active.value = file(TREE, true, 1);
+
+        expect(tree.rows.value).toHaveLength(2);
+    });
+
+    it('gives each file back its own expansion when the user switches away and back', () => {
+        // The switcher is not a reset button. Whatever the translator had open in a file
+        // is what they should find when they come back to it.
+        const { tree, active } = view(file(TREE), 0);
+        tree.expandAll();
+        expect(tree.rows.value).toHaveLength(5);
+
+        active.value = file(TREE, true, 1);
+        tree.toggle('Table 1');
+        expect(tree.rows.value).toHaveLength(4);
+
+        active.value = file(TREE, true, 0);
+        expect(tree.rows.value).toHaveLength(5);
+
+        active.value = file(TREE, true, 1);
+        expect(tree.rows.value).toHaveLength(4);
+    });
+
+    it('keeps focus per file too, so switching back does not lose the cursor', () => {
+        const { tree, active } = view(file(TREE), 1);
+        tree.focus('Table 1 - Field 2');
+
+        active.value = file(TREE, true, 1);
+        expect(tree.focusedKey.value).toBeUndefined();
+
+        active.value = file(TREE, true, 0);
+        expect(tree.focusedKey.value).toBe('Table 1 - Field 2');
+    });
+
+    it('applies the configured depth to each file the first time it is seen', () => {
+        const { tree, active, expandDepth } = view(file(TREE), 2);
+        expect(tree.rows.value).toHaveLength(5);
+
+        expandDepth.value = 0;
         active.value = file(TREE, true, 1);
 
         expect(tree.rows.value).toHaveLength(2);
@@ -290,6 +329,16 @@ describe('the flat-list note (DEC-022)', () => {
         active.value = file(TREE, false, 1);
 
         expect(tree.showFlatNote.value).toBe(true);
+    });
+
+    it('stays dismissed per file, so switching back does not nag again', () => {
+        const { tree, active } = view(file(TREE, false));
+        tree.dismissFlatNote();
+
+        active.value = file(TREE, false, 1);
+        active.value = file(TREE, false, 0);
+
+        expect(tree.showFlatNote.value).toBe(false);
     });
 
     it('is absent when there is no file at all', () => {

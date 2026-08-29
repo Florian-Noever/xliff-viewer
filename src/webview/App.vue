@@ -19,6 +19,7 @@
                 :document="document"
                 :file="activeFile"
                 :summary="rollup.file.value"
+                @update:file-index="activeFileIndex = $event"
             />
             <UnitTree v-if="activeFile !== undefined" :tree="tree" :summaries="rollup.byKey.value" />
             <p v-else class="placeholder">Waiting for a document…</p>
@@ -39,7 +40,7 @@ import { useXliffDocument } from './composables/useXliffDocument';
 
 useDesignTokens();
 
-const { document, loading, error, settings, activeFile, unitsById, blocking, openAsText } = useXliffDocument();
+const { document, loading, error, settings, activeFile, activeFileIndex, unitsById, blocking, openAsText } = useXliffDocument();
 
 const tree = useTreeFlatten({
     file: activeFile,

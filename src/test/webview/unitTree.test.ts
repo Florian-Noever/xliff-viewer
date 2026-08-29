@@ -6,52 +6,11 @@ import UnitTree from '../../webview/components/UnitTree.vue';
 import { useTreeFlatten } from '../../webview/composables/useTreeFlatten';
 
 import { summariseTree } from '../../shared/state';
+import { stubLayout, STUB_ROW_HEIGHT as ROW } from './layoutStub';
 
 import type { AlNodeDto, TransUnitDto, XliffFileDto } from '../../shared/dto';
 import type { StateSummary } from '../../shared/state';
 import type { TreeView } from '../../webview/composables/useTreeFlatten';
-
-const VIEWPORT = 600;
-const ROW = 24;
-
-/**
- * jsdom lays nothing out, so the virtualiser would see a zero-height viewport and render
- * nothing — every assertion below would then pass for the wrong reason. Giving the
- * scroller a size is the minimum needed for the virtualiser to do its job.
- */
-function stubLayout(): () => void {
-    const rect = Element.prototype.getBoundingClientRect;
-    const saved = new Map<string, PropertyDescriptor | undefined>();
-    const sizeOf = (element: Element): number => (element.classList.contains('scroller') ? VIEWPORT : ROW);
-
-    // The virtualiser reads offsetHeight for the viewport and getBoundingClientRect when
-    // measuring a row; jsdom returns 0 for both.
-    for (const property of ['offsetHeight', 'offsetWidth', 'clientHeight', 'clientWidth'] as const) {
-        saved.set(property, Object.getOwnPropertyDescriptor(HTMLElement.prototype, property));
-        Object.defineProperty(HTMLElement.prototype, property, {
-            configurable: true,
-            get(this: HTMLElement) {
-                return property.endsWith('Width') ? 800 : sizeOf(this);
-            },
-        });
-    }
-
-    Element.prototype.getBoundingClientRect = function fake(this: Element): DOMRect {
-        const height = sizeOf(this);
-        return new DOMRect(0, 0, 800, height);
-    };
-
-    return () => {
-        Element.prototype.getBoundingClientRect = rect;
-        for (const [property, descriptor] of saved) {
-            if (descriptor === undefined) {
-                delete (HTMLElement.prototype as unknown as Record<string, unknown>)[property];
-            } else {
-                Object.defineProperty(HTMLElement.prototype, property, descriptor);
-            }
-        }
-    };
-}
 
 /** `roots` objects, each with `members` children — the shape the corpus actually has. */
 function bigTree(roots: number, members: number): { tree: AlNodeDto[]; units: Map<string, TransUnitDto> } {

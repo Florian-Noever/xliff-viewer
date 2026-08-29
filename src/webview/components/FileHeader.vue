@@ -2,6 +2,18 @@
     <header class="file-header">
         <div class="line">
             <h1 class="file-name">{{ document.fileName }}</h1>
+            <label v-if="document.files.length > 1" class="switcher">
+                <span class="switcher-label">File</span>
+                <select
+                    class="switcher-select"
+                    :value="file.index"
+                    @change="emit('update:fileIndex', Number((($event.target) as HTMLSelectElement).value))"
+                >
+                    <option v-for="option in document.files" :key="option.index" :value="option.index">
+                        {{ describe(option) }}
+                    </option>
+                </select>
+            </label>
             <span v-if="document.readOnly" class="tag">{{ document.isBaseFile ? 'base file · read-only' : 'read-only' }}</span>
             <ProgressBar class="bar" :summary="summary" />
             <span class="percent">{{ summary.percent }} %</span>
@@ -35,6 +47,20 @@ const props = defineProps<{
     file: XliffFileDto;
     summary: StateSummary;
 }>();
+
+const emit = defineEmits<{ 'update:fileIndex': [index: number] }>();
+
+/**
+ * XLIFF allows several `<file>` elements and `DEC-020` shows one at a time. AL emits
+ * exactly one, so for every corpus file the switcher is not rendered at all.
+ *
+ * `original` alone is not enough to tell two apart — a document may hold the same app in
+ * two languages — so the target language is always part of the label.
+ */
+function describe(option: XliffFileDto): string {
+    const name = option.original ?? `File ${option.index + 1}`;
+    return `${name} · ${option.sourceLanguage} → ${option.targetLanguage ?? '—'}`;
+}
 
 /**
  * `undefined` means resolution has not run, `null` means it ran and found nothing
@@ -75,6 +101,26 @@ const baseFile = computed(() => {
 
 .percent {
     font-variant-numeric: tabular-nums;
+}
+
+.switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.switcher-label {
+    color: var(--vscode-descriptionForeground);
+    font-size: calc(var(--font) * 0.85);
+}
+
+.switcher-select {
+    padding: 2px 4px;
+    border: 1px solid var(--vscode-input-border);
+    border-radius: var(--radius-sm);
+    background: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    font: inherit;
 }
 
 .tag {
