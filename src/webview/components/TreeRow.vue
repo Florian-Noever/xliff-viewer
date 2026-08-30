@@ -34,6 +34,7 @@
             class="card"
             :unit="row.unit"
             :settings="settings"
+            :editing="editing"
             :name="row.name"
             :target-language="targetLanguage"
             :generator-note="generatorNote"
@@ -78,6 +79,8 @@ const props = defineProps<{
     settings?: WebviewSettings;
     /** The active `<file>`'s target language, which labels a unit's translation row (`DEC-034`). */
     targetLanguage?: string;
+    /** Editing is on and allowed, so a unit's target and state become fields (§12.2). */
+    editing?: boolean;
     /** Rebuilt from the tree by the caller, since the payload does not carry it (§4.4). */
     generatorNote?: string;
 }>();

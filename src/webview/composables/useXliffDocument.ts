@@ -9,6 +9,7 @@ import { DEFAULT_WEBVIEW_SETTINGS } from '@shared/settings';
 import type { TransUnitDto, XliffDocumentDto, XliffFileDto } from '@shared/dto';
 import type { ErrorPayload, NavigationTarget as NavigationTargetValue } from '@shared/messages';
 import type { WebviewSettings } from '@shared/settings';
+import type { XliffState } from '@shared/state';
 import type { ComputedRef, Ref } from 'vue';
 
 /**
@@ -44,6 +45,9 @@ export interface XliffDocument {
     openAsText(): void;
     /** Navigation for one unit (§10). The host decides what each target means. */
     openSource(target: NavigationTargetValue, unitId: string): void;
+    /** Writes a target (§12.1). The host refuses what it must, and says why. */
+    updateTarget(unitId: string, value: string): void;
+    updateState(unitId: string, state: XliffState): void;
 }
 
 /**
@@ -148,6 +152,14 @@ export function useXliffDocument(): XliffDocument {
         });
     }
 
+    function updateTarget(unitId: string, value: string): void {
+        postMessage({ type: WebviewMessageType.updateTarget, fileIndex: activeFile.value?.index ?? 0, unitId, value });
+    }
+
+    function updateState(unitId: string, state: XliffState): void {
+        postMessage({ type: WebviewMessageType.updateState, fileIndex: activeFile.value?.index ?? 0, unitId, state });
+    }
+
     onMounted(() => {
         window.addEventListener('message', onMessage);
         postMessage({ type: WebviewMessageType.ready });
@@ -175,5 +187,7 @@ export function useXliffDocument(): XliffDocument {
         unitCount,
         openAsText,
         openSource,
+        updateTarget,
+        updateState,
     };
 }

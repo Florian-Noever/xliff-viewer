@@ -37,6 +37,17 @@
         <div class="actions">
             <button type="button" class="action" @click="emit('expandAll')">Expand all</button>
             <button type="button" class="action" @click="emit('collapseAll')">Collapse all</button>
+            <button
+                type="button"
+                class="action edit-toggle"
+                :class="{ on: edit.active.value }"
+                :disabled="!edit.available.value"
+                :aria-pressed="edit.active.value"
+                :title="edit.reason.value ?? 'Editing is on. Targets and states can be changed.'"
+                @click="edit.toggle()"
+            >
+                {{ edit.active.value ? 'Editing' : 'Edit' }}
+            </button>
         </div>
     </div>
 </template>
@@ -46,18 +57,22 @@ import { onMounted, onUnmounted, useTemplateRef } from 'vue';
 
 import { stateLabel, stateTone } from '../stateTone';
 
+import type { EditMode } from '../composables/useEditMode';
 import type { Search } from '../composables/useSearch';
 import type { StateFilter } from '../composables/useStateFilter';
 
 /**
  * Search, the state chips, and expand/collapse (MASTER_PLAN §11.2).
  *
- * `EDIT-04` adds the edit-mode toggle here.
+ * The edit toggle carries its own refusal: disabled when the document cannot be edited at
+ * all, and its tooltip says which of §12.5's reasons applies rather than leaving the reader
+ * to guess why nothing happens.
  */
 
 const props = defineProps<{
     search: Search;
     filter: StateFilter;
+    edit: EditMode;
     /** How many units satisfy every active filter. Undefined when nothing is filtering. */
     matchCount?: number;
 }>();
