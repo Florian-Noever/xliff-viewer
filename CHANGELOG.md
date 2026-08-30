@@ -6,7 +6,7 @@ All notable changes to **XLIFF Viewer** are documented in this file.
 
 ## [Unreleased]
 
-Nothing has been published yet. This section is what the extension does today; it becomes the first release entry when one is cut. [`docs/implementation/STATUS.md`](docs/implementation/STATUS.md) is the canonical record and is updated after every task.
+Nothing has been published yet. This section is what the extension does today; it becomes the first release entry when one is cut.
 
 ### Added
 
@@ -28,7 +28,7 @@ Nothing has been published yet. This section is what the extension does today; i
 **The tree**
 - Hierarchy built from the trans-unit **id**, never from the display note: object → member → translated element, at any depth
 - Display names come from the `Xliff Generator` note through an anchored regex keyed on the id's segment types — exact for **100 %** of both large corpus files, including object names that contain the ` - ` separator
-- Objects are grouped by symbol type: `Tables (28)`, `Codeunits (4)`, first-appearance order
+- Objects are grouped by symbol type: `Tables (16)`, `PageExtensions (89)`, first-appearance order
 - **Rolled-up state** on every container, coloured by the worst translatable descendant rather than by the percentage; `translate="no"` units are excluded from the roll-up but still shown
 - Two synthetic states beyond the spec's ten: `missing` (no `<target>` at all) and `empty` (a `<target>` with no text). A target that carries text but declares no state is `unknown` rather than assumed done
 - Virtualised with measured row heights, so a 2 511-unit file scrolls at full speed

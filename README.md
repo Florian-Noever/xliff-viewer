@@ -9,10 +9,10 @@ Open `.xlf` and `.xliff` translation files as a structured, themed GUI instead o
 ## ✨ Features
 
 - **Structured tree** — object type → object → member → translated element, built from the trans-unit id rather than from the display note, so the grouping is exact even when two objects share a name
-- **Object-type grouping** — the top level is `Tables (16)`, `PageExtensions (89)`, `Codeunits (15)`…, so the 227 objects of a real file are navigable instead of one flat list
+- **Object-type grouping** — the top level is `Tables (16)`, `PageExtensions (89)`, `Codeunits (15)`…, so a file's couple of hundred objects are navigable instead of one flat list
 - **Rolled-up state** — every container shows a progress bar coloured by its *worst* descendant, not by its percentage: 99 % done with one missing target is not the same as 99 % done with one needing review
 - **Every field shown** — source, target, `maxwidth`, `size-unit`, `al-object-target`, `translate="no"`, every `<note>`, and a state the spec does not define is shown as the file wrote it
-- **Search** — over id, names, source, target and notes, with `*` wildcards (`Contoso*`, `*Kunde*`); a matching unit brings its whole path into view
+- **Search** — over id, names, source, target and notes, with `*` wildcards (`Setup*`, `*caption*`); a matching unit brings its whole path into view
 - **State filter** — chips for the states the file actually contains, driven by the same roll-up the header shows
 - **Base-file pairing** — resolves the `.g.xlf` for a language file and marks units the base no longer has (*orphaned*) or whose source has since changed
 - **Go to source** — opens the resolved base file at the same unit
@@ -36,20 +36,20 @@ Each unit renders as a labelled box:
 ```text
 Property
 ┌ Caption                          ● translated ┐   Go to source
-│ Original     Contoso Methods Setup            │
-│ [ de-DE ]    Contoso Methoden Einrichtung     │
+│ Original     ExampleSourceText                │
+│ [ de-DE ]    ExampleTranslation               │
 └───────────────────────────────────────────────┘
-  Developer    de-DE=Contoso Methoden Einrichtung
+  Developer    de-DE=ExampleTranslation
 ```
 
 The legend names the translated element and carries its state. `Original` is the source; the bracketed row is the translation, labelled with the file's target language.
 
 ### Search tips
 
-- Plain text (`kunde`) — matches anywhere in id, names, source, target or notes, case-insensitively
+- Plain text (`caption`) — matches anywhere in id, names, source, target or notes, case-insensitively
 - Leading wildcard (`*setup`) — matches anything ending in the term
 - Trailing wildcard (`Table *`) — matches anything starting with it
-- Both (`*contoso*`) — the same as a plain substring match
+- Both (`*name*`) — the same as a plain substring match
 - Everything else is literal, so a query full of `.` and `(` from a source string still finds it
 
 ---
@@ -94,14 +94,6 @@ Not finding one is a normal state, not an error: the viewer works fully without 
 
 ---
 
-## 🧠 Requirements
-
-VS Code 1.134 or newer. Nothing else — the AL Language extension is **not** required. The viewer reads the file you opened and, to pair it, the base file it resolves; nothing outside the workspace unless `xliffViewer.baseFile` points there.
-
-Malformed XML is rejected before parsing, with the line and column, rather than being silently half-read.
-
----
-
 ## 🚦 Status
 
 Not published. The read-only viewer is complete; edit mode is next.
@@ -114,8 +106,6 @@ Not published. The read-only viewer is complete; edit mode is next.
 | Search, filter, base file, navigation | ✅ complete |
 | Edit mode | ⬜ not started |
 | Validation hints, accessibility, persistence, packaging | ⬜ not started |
-
-[`docs/implementation/STATUS.md`](docs/implementation/STATUS.md) is the canonical answer to "what works today" and is updated after every task.
 
 ---
 
@@ -133,8 +123,10 @@ The XML is parsed **once, in the host** — the webview never sees it. The whole
 
 ### Build commands
 
+Either package manager works — the scripts run through `npm-run-all`, which spawns whichever one invoked them, and nothing in the source or the build config is bun-specific.
+
 ```bash
-bun install
+bun install              # or: npm install
 
 bun run compile          # check-types + lint + esbuild (both targets) + vite build
 bun run watch            # all four watchers, which is what F5 starts
@@ -146,15 +138,13 @@ bun run dev:webview      # the webview alone, against a real corpus fixture
 bun run package          # vsce package
 ```
 
-`bun run dev:webview` serves the UI with no extension host behind it, rendering a real projection of `Examples/Fabrikam Base.de-DE.xlf`. A drift test rebuilds that fixture from the corpus and fails if it has been hand-edited, so the dev server always shows what the extension actually sends.
+`bun run dev:webview` serves the UI with no extension host behind it, rendering a real projection of one of the corpus files. A drift test rebuilds that fixture from the corpus and fails if it has been hand-edited, so the dev server always shows what the extension actually sends.
+
+**`bun.lock` is the committed lockfile.** `npm install` resolves the same dependency ranges and works, but writes its own `package-lock.json`, which is git-ignored — so an npm install is reproducible against `package.json`, not byte-for-byte against a lockfile.
 
 ### Tests
 
 Four Vitest projects: `data` (pure, and deliberately *without* a `vscode` alias, so a data test that imports it fails to resolve), `host` (a hand-written `vscode` mock), `webview` (jsdom), and `perf` (the wall-clock budgets, run serially so they measure the code rather than the load).
-
-### Planning documents
-
-`docs/implementation/` holds the durable plan: `MASTER_PLAN.md` (requirements), `ROADMAP.md` (ordered tasks), `STATUS.md` (verified current state), `DECISIONS.md` (`DEC-nnn`, never rewritten), `OPEN_QUESTIONS.md`.
 
 ---
 
