@@ -19,6 +19,7 @@ import {
     flushFileWrites,
     flushInfoMessages,
     flushLogs,
+    flushWarningMessages,
     resetMocks,
     setConfigOverride,
     setWritableFileSystem,
@@ -767,6 +768,73 @@ describe('recognising our own edit (EDIT-02)', () => {
         expect(document.getText()).toBe(LANGUAGE.replace('ExampleTranslation', 'Second'));
     });
 });
+describe('the BOM a save does not keep (EDIT-01a)', () => {
+    const LANGUAGE = `<?xml version="1.0" encoding="utf-8"?>
+<xliff version="1.2">
+  <file source-language="en-US" target-language="de-DE" original="App">
+    <body>
+      <trans-unit id="Table 1 - Property 2">
+        <source>ExampleSourceText</source>
+        <target state="translated">ExampleTranslation</target>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
+`;
+
+    const UNIT = { fileIndex: 0, unitId: 'Table 1 - Property 2' };
+
+    it('says so the first time such a file is edited', async () => {
+        const document = new FakeTextDocument('/w/App.de-DE.xlf', LANGUAGE, 'utf8bom');
+        const { facade } = view(sessionFor(document));
+
+        await facade.updateTarget(UNIT, 'EditedTranslation');
+
+        expect(flushWarningMessages()[0]).toContain('byte-order mark');
+    });
+
+    it('says it once, however many edits follow', async () => {
+        const document = new FakeTextDocument('/w/App.de-DE.xlf', LANGUAGE, 'utf8bom');
+        const { facade } = view(sessionFor(document));
+
+        await facade.updateTarget(UNIT, 'First');
+        await facade.updateTarget(UNIT, 'Second');
+
+        expect(flushWarningMessages()).toHaveLength(1);
+    });
+
+    it('says it once per document, not once per editor', async () => {
+        // Two editors on one file are one file; the reader hears this once.
+        const document = new FakeTextDocument('/w/App.de-DE.xlf', LANGUAGE, 'utf8bom');
+        const session = sessionFor(document);
+        const first = createDocumentSession(session, () => { });
+        const second = createDocumentSession(session, () => { });
+
+        await first.updateTarget(UNIT, 'First');
+        await second.updateTarget(UNIT, 'Second');
+
+        expect(flushWarningMessages()).toHaveLength(1);
+    });
+
+    it('stays quiet for a file with no BOM, which is every AL language file', async () => {
+        const document = openDocument('language.xlf', LANGUAGE);
+        const { facade } = view(sessionFor(document));
+
+        await facade.updateTarget(UNIT, 'EditedTranslation');
+
+        expect(flushWarningMessages()).toEqual([]);
+    });
+
+    it('warns rather than refuses — the edit still lands', async () => {
+        const document = new FakeTextDocument('/w/App.de-DE.xlf', LANGUAGE, 'utf8bom');
+        const { facade } = view(sessionFor(document));
+
+        await facade.updateTarget(UNIT, 'EditedTranslation');
+
+        expect(document.getText()).toBe(LANGUAGE.replace('ExampleTranslation', 'EditedTranslation'));
+    });
+});
+
 describe('what an edit does to the state (EDIT-04, §12.3)', () => {
     const LANGUAGE = `<?xml version="1.0" encoding="utf-8"?>
 <xliff version="1.2">

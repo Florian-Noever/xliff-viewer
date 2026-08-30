@@ -188,7 +188,16 @@ async function write(
         return;
     }
 
-    await session.applyEdit(edit, unit);
+    const applied = await session.applyEdit(edit, unit);
+
+    // Said after the first edit rather than on open: a reader who never edits has nothing
+    // to be warned about, and this is only true of a file that gets saved (`EDIT-01a`).
+    if (applied && session.claimBomWarning()) {
+        void vscode.window.showWarningMessage(
+            'This file begins with a UTF-8 byte-order mark, which VS Code does not write back when it saves. '
+            + 'The translations are unaffected; the first three bytes of the file will change.',
+        );
+    }
 }
 
 /**
