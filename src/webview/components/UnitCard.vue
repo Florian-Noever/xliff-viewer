@@ -137,9 +137,18 @@ const hint = computed(() => {
 .unit-card {
     display: flex;
     flex-direction: column;
-    gap: 3px;
     min-width: 0;
-    padding-block: 2px;
+    /* The trailing space is what separates one translation from the next. */
+    padding-block: 2px var(--gap);
+}
+
+.unit-card > * + * {
+    margin-block-start: 3px;
+}
+
+/* What follows the box is outside it, and the gap says so — the same air the legend has. */
+.box + * {
+    margin-block-start: calc(var(--gap) / 2);
 }
 
 .unit-card.muted {
