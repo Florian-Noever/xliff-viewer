@@ -33,7 +33,37 @@
             "type": "npm",
             "script": "watch:vite",
             "group": "build",
-            "problemMatcher": [],
+            // A background task with no matcher never reports itself ready, so F5 waits for
+            // `vite build --watch` to exit — which it never does. The `background` section
+            // is what releases the launch; the patterns are vite's own, verified against
+            // its output rather than guessed:
+            //
+            //     watching for file changes...
+            //     build started...
+            //     built in 828ms.
+            //
+            // `pattern` is required by the schema but deliberately matches nothing: vite is
+            // bundling here, and type errors belong to `watch:tsc`. A matcher that claimed
+            // to parse rollup's errors and did not would be worse than none.
+            "problemMatcher": {
+                "owner": "vite",
+                "source": "vite",
+                "fileLocation": [
+                    "relative",
+                    "${workspaceFolder}"
+                ],
+                "pattern": {
+                    "regexp": "^(?!)$",
+                    "file": 1,
+                    "line": 2,
+                    "message": 3
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "^\\s*build started",
+                    "endsPattern": "^\\s*built in \\d"
+                }
+            },
             "isBackground": true,
             "label": "npm: watch:vite",
             "presentation": {
