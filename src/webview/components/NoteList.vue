@@ -1,15 +1,15 @@
 <template>
-    <ul v-if="notes.length > 0 || generatorNote !== undefined" class="note-list">
-        <li v-for="(note, index) in notes" :key="index" class="note">
-            <span class="from">{{ note.from ?? 'note' }}</span>
-            <span v-if="note.value === ''" class="empty">(empty)</span>
-            <span v-else class="value">{{ note.value }}</span>
-        </li>
-        <li v-if="generatorNote !== undefined" class="note">
-            <span class="from">Xliff Generator</span>
-            <span class="value">{{ generatorNote }}</span>
-        </li>
-    </ul>
+    <dl v-if="notes.length > 0 || generatorNote !== undefined" class="note-list">
+        <template v-for="(note, index) in notes" :key="index">
+            <dt class="from">{{ note.from ?? 'note' }}</dt>
+            <dd v-if="note.value === ''" class="empty">(empty)</dd>
+            <dd v-else class="value">{{ note.value }}</dd>
+        </template>
+        <template v-if="generatorNote !== undefined">
+            <dt class="from">Xliff Generator</dt>
+            <dd class="value">{{ generatorNote }}</dd>
+        </template>
+    </dl>
 </template>
 
 <script setup lang="ts">
@@ -28,6 +28,10 @@ import type { XliffNoteDto } from '@shared/dto';
  *
  * The `Xliff Generator` note is not in the payload at all; the caller reconstructs it from
  * the tree when `showGeneratorNotes` is on.
+ *
+ * A description list on the unit card's own label column (`DEC-034`), so a note lines up
+ * with the strings it is about. The column is a fixed token rather than content-derived,
+ * which is what lets three separate grids agree without one wrapping the others.
  */
 
 const props = defineProps<{
@@ -44,26 +48,24 @@ const notes = computed(() => (props.showDeveloperNotes
 
 <style scoped>
 .note-list {
+    display: grid;
+    grid-template-columns: minmax(0, var(--label-column)) minmax(0, 1fr);
+    gap: 1px var(--gap);
     margin: 0;
-    padding: 0;
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.note {
-    display: flex;
-    gap: 6px;
     font-size: calc(var(--font) * 0.9);
 }
 
 .from {
-    flex: none;
     color: var(--vscode-descriptionForeground);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.value {
+.value,
+.empty {
+    margin: 0;
+    min-width: 0;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
 }

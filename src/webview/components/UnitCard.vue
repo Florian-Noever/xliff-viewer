@@ -1,17 +1,33 @@
 <template>
     <div class="unit-card" :class="{ muted: !unit.translate }">
-        <div class="text">
-            <p class="source">{{ unit.source === '' ? '' : unit.source }}<span v-if="unit.source === ''" class="absent">(empty source)</span></p>
-            <p class="target">
-                <span v-if="unit.target === undefined" class="absent">no target</span>
-                <span v-else-if="unit.target === ''" class="absent">empty target</span>
-                <template v-else-if="whitespace !== undefined">
-                    <span class="ws" :title="explanation">{{ visible.lead }}</span><span>{{ visible.core }}</span><span class="ws" :title="explanation">{{ visible.trail }}</span>
-                </template>
-                <span v-else>{{ unit.target }}</span>
+        <section class="box" :aria-labelledby="legendId">
+            <p :id="legendId" class="legend">
+                <span class="legend-name">{{ name }}</span>
+                <StateBadge :state="unit.state" :muted="!unit.translate" />
             </p>
-            <p v-if="whitespace !== undefined" class="whitespace-note">{{ explanation }}</p>
-        </div>
+
+            <dl class="strings">
+                <dt class="label">Original</dt>
+                <dd class="value source">
+                    <span v-if="unit.source === ''" class="absent">(empty source)</span>
+                    <span v-else>{{ unit.source }}</span>
+                </dd>
+
+                <template v-for="(translation, index) in rows" :key="index">
+                    <dt class="label">{{ translationLabel(translation) }}</dt>
+                    <dd class="value target">
+                        <span v-if="translation.value === undefined" class="absent">no target</span>
+                        <span v-else-if="translation.value === ''" class="absent">empty target</span>
+                        <template v-else-if="whitespace !== undefined">
+                            <span class="ws" :title="explanation">{{ visible.lead }}</span><span>{{ visible.core }}</span><span class="ws" :title="explanation">{{ visible.trail }}</span>
+                        </template>
+                        <span v-else>{{ translation.value }}</span>
+                    </dd>
+                </template>
+            </dl>
+        </section>
+
+        <p v-if="whitespace !== undefined" class="whitespace-note">{{ explanation }}</p>
 
         <p v-if="unit.orphaned === true" class="pairing orphaned">
             The base file no longer has this unit. It was probably removed from the AL source.
@@ -21,34 +37,45 @@
             <p class="base-source">{{ unit.baseSource === '' ? '(empty)' : unit.baseSource }}</p>
         </div>
 
-        <p v-if="hint !== undefined" class="hint">
-            <span class="hint-label">suggested</span>
-            <span>{{ hint }}</span>
-        </p>
-
-        <MetaChips :unit="unit" />
+        <dl v-if="hint !== undefined" class="aside">
+            <dt class="label">suggested</dt>
+            <dd class="value">{{ hint }}</dd>
+        </dl>
 
         <NoteList
+            class="note-list"
             :notes="unit.notes"
             :show-developer-notes="settings.showDeveloperNotes"
             :generator-note="generatorNote"
         />
+
+        <MetaChips class="chips" :unit="unit" />
     </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, useId } from 'vue';
 
 import MetaChips from './MetaChips.vue';
 import NoteList from './NoteList.vue';
+import StateBadge from './StateBadge.vue';
 import { DEVELOPER_NOTE } from '../constants';
+import { translationLabel, translations } from '../translations';
 import { loadBearingWhitespace, whitespaceExplanation, whitespaceParts, WhitespaceReason } from '../whitespace';
 
 import type { TransUnitDto } from '@shared/dto';
 import type { WebviewSettings } from '@shared/settings';
 
 /**
- * One trans-unit, read-only (MASTER_PLAN §11.3, §2.1).
+ * One trans-unit, read-only (MASTER_PLAN §11.3, §2.1, `DEC-034`).
+ *
+ * A **labelled box**: the legend names the translated element and carries its state, and
+ * the strings inside are label/value pairs. Two unlabelled lines told apart by colour
+ * asked the reader to already know which was the source.
+ *
+ * A description list, not a table and not a `<fieldset>`: `Original` and `[ de-DE ]` are
+ * terms and the strings are their descriptions. `<legend>` belongs to form controls, so
+ * the region is labelled with `aria-labelledby` instead.
  *
  * Text renders as text, never as a disabled input: a disabled field says "you could edit
  * this but may not", which is the wrong message in a viewer.
@@ -59,9 +86,18 @@ const SPACE_MARK = '␣';
 const props = defineProps<{
     unit: TransUnitDto;
     settings: WebviewSettings;
+    /** The active `<file>`'s target language, which labels the translation row (`DEC-034`). */
+    targetLanguage?: string;
+    /** The node's display name, which is the box's legend. Falls back to the id's last segment. */
+    name?: string;
     /** Reconstructed by the caller when `showGeneratorNotes` is on (§4.4). */
     generatorNote?: string;
 }>();
+
+const legendId = useId();
+
+const name = computed(() => props.name ?? props.unit.id.split(' - ').pop() ?? props.unit.id);
+const rows = computed(() => translations(props.unit, props.targetLanguage));
 
 const whitespace = computed(() => loadBearingWhitespace(props.unit.source, props.unit.target));
 const explanation = computed(() => (whitespace.value === undefined ? undefined : whitespaceExplanation(whitespace.value)));
@@ -110,18 +146,59 @@ const hint = computed(() => {
     color: var(--vscode-descriptionForeground);
 }
 
-.text {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
+.box {
     min-width: 0;
+    padding: 2px 8px 4px;
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: var(--radius-sm);
 }
 
-.source,
-.target,
-.hint,
-.whitespace-note {
+.legend {
+    display: flex;
+    align-items: center;
+    gap: var(--gap);
+    margin: 0 0 2px;
+}
+
+.legend-name {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+/*
+ * Everything below the box repeats the box's own columns rather than nesting inside it, so
+ * a note lines up with the string it is about. `NoteList` owns the same grid; the column is
+ * a fixed token, which is what lets three separate grids agree.
+ */
+.strings,
+.aside {
+    display: grid;
+    grid-template-columns: minmax(0, var(--label-column)) minmax(0, 1fr);
+    gap: 1px var(--gap);
     margin: 0;
+}
+
+/* The box's border plus its padding, so the columns continue straight through it. */
+.aside,
+.note-list {
+    padding-inline: 9px;
+}
+
+/* No label of their own, so they start where the values do. */
+.chips {
+    padding-inline-start: calc(9px + var(--label-column) + var(--gap));
+}
+
+.label {
+    color: var(--vscode-descriptionForeground);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.value {
+    margin: 0;
+    min-width: 0;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
 }
@@ -142,19 +219,14 @@ const hint = computed(() => {
 }
 
 .whitespace-note {
+    margin: 0;
+    padding-inline: 9px;
     color: var(--vscode-descriptionForeground);
     font-size: calc(var(--font) * 0.85);
 }
 
-.hint {
-    display: flex;
-    gap: 6px;
-    font-size: calc(var(--font) * 0.9);
-}
-
-.hint-label {
-    flex: none;
-    color: var(--vscode-descriptionForeground);
+.chips {
+    padding-inline: 9px;
 }
 
 .pairing {
@@ -187,5 +259,4 @@ const hint = computed(() => {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
 }
-
 </style>

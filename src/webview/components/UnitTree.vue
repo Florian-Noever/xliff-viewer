@@ -25,6 +25,7 @@
                         :data-index="item.index"
                         :row="rows[item.index]"
                         :settings="settings"
+                        :target-language="targetLanguage"
                         :generator-note="generatorNoteFor(rows[item.index])"
                         :summary="summaries?.get(rows[item.index].key)"
                         :focused="rows[item.index].key === tree.focusedKey.value"
@@ -88,6 +89,8 @@ const props = defineProps<{
     /** Node key → roll-up. Optional so the tree renders before `UI-03`'s summaries exist. */
     summaries?: ReadonlyMap<string, StateSummary>;
     settings?: WebviewSettings;
+    /** The active `<file>`'s target language, which labels a unit's translation row (`DEC-034`). */
+    targetLanguage?: string;
 }>();
 
 /**
