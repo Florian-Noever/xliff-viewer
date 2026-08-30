@@ -183,6 +183,15 @@ const hint = computed(() => {
 }
 
 /*
+ * Pushed to the end of the legend rather than sitting next to the name. An auto margin
+ * rather than `space-between`, so a third thing in the legend — an edit control, say —
+ * still lands beside the name instead of being centred between the two.
+ */
+.legend .state-badge {
+    margin-inline-start: auto;
+}
+
+/*
  * Everything below the box repeats the box's own columns rather than nesting inside it, so
  * a note lines up with the string it is about. `NoteList` owns the same grid; the column is
  * a fixed token, which is what lets three separate grids agree.
