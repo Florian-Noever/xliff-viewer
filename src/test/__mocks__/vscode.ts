@@ -366,6 +366,24 @@ export class FakeTextDocument {
     public setText(text: string): void {
         this.text = text;
     }
+
+    /** Real enough for the writer's offsets: line = newlines before, character = the rest. */
+    public positionAt(offset: number): Position {
+        const clamped = Math.max(0, Math.min(offset, this.text.length));
+        const before = this.text.slice(0, clamped);
+        const line = before.split('\n').length - 1;
+        return new Position(line, clamped - (before.lastIndexOf('\n') + 1));
+    }
+
+    /** The inverse, so a test can read back the text an edit would produce. */
+    public offsetAt(position: Position): number {
+        const lines = this.text.split('\n');
+        let offset = 0;
+        for (let line = 0; line < position.line && line < lines.length; line++) {
+            offset += lines[line].length + 1;
+        }
+        return offset + position.character;
+    }
 }
 
 export const env = {

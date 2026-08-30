@@ -3,11 +3,13 @@ import * as vscode from 'vscode';
 import { Logger } from '../services/logger';
 import { compareToBase } from '../services/baseFileIndex';
 import { revealAsText, revealInBaseFile } from '../services/navigation';
+import { containsComment, setState, setTarget } from '../xliff/writer';
 import { fileNameOf } from '../services/uriNames';
 
 import { ExtensionMessageType, NavigationTarget } from '../../shared/messages';
 
 import type { DocumentSession, SessionState, UnitReference, XliffDocumentSession } from './documentSession';
+import type { TextEditRange } from '../xliff/writer';
 import type { BaseFileIndex } from '../services/baseFileIndex';
 import type { BaseFileResolver } from '../services/baseFileResolver';
 import type { XliffDocumentDto } from '../../shared/dto';
@@ -71,10 +73,6 @@ export function createDocumentSession(
         }));
     }
 
-    const notYet = (what: string, task: string): never => {
-        throw new Error(`${what} arrives with ${task}.`);
-    };
-
     return {
         sendDocument: () => {
             post({ type: ExtensionMessageType.loading, payload: { message: 'Reading the translation file…' } });
@@ -99,14 +97,66 @@ export function createDocumentSession(
                 announcePairing(state.dto);
             }
         },
-        updateTarget: () => notYet('Editing a target', 'EDIT-01'),
-        updateState: () => notYet('Changing a state', 'EDIT-01'),
+        updateTarget: (unit, value, state) => write(session, unit, edit => setTarget(edit.model, edit.text, { unitId: unit.unitId, value, state })),
+        updateState: (unit, state) => write(session, unit, edit => setState(edit.model, edit.text, unit.unitId, state)),
         // Two targets since `DEC-032`: the unit's own "Go to source", and the raw XML for
         // the error pane, which has no unit to name (§11.3).
         openSource: (target, unit) => (target === NavigationTarget.base
             ? showInBaseFile(baseFiles, session, unit)
             : revealAsText(session.uri, unit?.unitId)),
     };
+}
+
+/** The model and the exact text it was parsed from, which the writer needs together (§7.6). */
+type EditableState = Extract<SessionState, { kind: 'document' }>;
+
+/**
+ * The one path that changes a file (MASTER_PLAN §12.1).
+ *
+ * Everything it refuses, it refuses **before** touching the model, and says why: a viewer
+ * that silently does nothing is worse than one that explains itself (§12.5).
+ */
+async function write(
+    session: XliffDocumentSession,
+    unit: UnitReference,
+    mutate: (state: EditableState) => TextEditRange | null,
+): Promise<void> {
+    const state = session.synchronise();
+
+    if (state.kind !== 'document') {
+        void vscode.window.showInformationMessage('This file cannot be edited until it parses.');
+        return;
+    }
+    if (state.dto.readOnly) {
+        void vscode.window.showInformationMessage(state.dto.isBaseFile
+            ? 'This is the base file, which the AL compiler owns. Edit the language file instead.'
+            : 'This file is read-only.');
+        return;
+    }
+    // `DATA-03a`: the parser drops comments, so writing this document would delete them.
+    // Refusing costs an edit; the alternative costs somebody's comment.
+    if (containsComment(state.text)) {
+        void vscode.window.showInformationMessage('This file contains XML comments, which this editor cannot yet preserve. Edit it as text instead.');
+        return;
+    }
+
+    let edit: TextEditRange | null;
+    try {
+        edit = mutate(state);
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'The edit could not be applied.';
+        Logger.warn(`Edit to ${unit.unitId} failed: ${message}`);
+        void vscode.window.showErrorMessage(message);
+        return;
+    }
+
+    // `null` is the writer saying the text would not change — a target set to what it
+    // already says. Applying an empty edit would dirty the document for nothing (§7.6).
+    if (edit === null) {
+        return;
+    }
+
+    await session.applyEdit(edit);
 }
 
 /**

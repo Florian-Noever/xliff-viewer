@@ -3,5 +3,6 @@
 import './web';
 import './editor.test';
 import './navigation.test';
+import './edit.test';
 
 export { run } from './web';

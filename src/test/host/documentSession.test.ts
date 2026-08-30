@@ -8,11 +8,16 @@ import { DocumentSessionRegistry } from '../../extension/editor/documentSessionR
 import { createDocumentSession } from '../../extension/editor/documentView';
 import { Logger } from '../../extension/services/logger';
 import { ExtensionMessageType } from '../../shared/messages';
+import { XliffState } from '../../shared/state';
 import {
     documentChangeListenerCount,
+    flushAppliedEdits,
+    flushErrorMessages,
     flushExecutedCommands,
     FakeTextDocument,
     fireTextDocumentChange,
+    flushFileWrites,
+    flushInfoMessages,
     flushLogs,
     resetMocks,
     setWritableFileSystem,
@@ -394,12 +399,172 @@ describe('opening the raw file', () => {
     });
 });
 
-describe('editing, which is not wired yet', () => {
-    it('says which task owns it instead of doing nothing', () => {
-        const session = sessionFor(openDocument('test.xlf'));
-        const { facade } = view(session);
+describe('writing a target (EDIT-01)', () => {
+    const LANGUAGE = `<?xml version="1.0" encoding="utf-8"?>
+<xliff version="1.2">
+  <file source-language="en-US" target-language="de-DE" original="App">
+    <body>
+      <trans-unit id="Table 1 - Property 2">
+        <source>Customer</source>
+        <target state="translated">ExampleTranslation</target>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
+`;
 
-        expect(() => facade.updateTarget({ fileIndex: 0, unitId: '1' }, 'x')).toThrow('EDIT-01');
-        expect(() => facade.updateState({ fileIndex: 0, unitId: '1' }, 'translated')).toThrow('EDIT-01');
+    /** Applies the one edit the session produced to the text it was produced against. */
+    function applied(document: FakeTextDocument, before: string): string {
+        const edits = flushAppliedEdits();
+        expect(edits).toHaveLength(1);
+        const [edit] = edits;
+        const start = document.offsetAt(edit.range.start);
+        const end = document.offsetAt(edit.range.end);
+        return before.slice(0, start) + edit.newText + before.slice(end);
+    }
+
+    it('changes only the characters inside the target', async () => {
+        const document = openDocument('language.xlf', LANGUAGE);
+        const { facade } = view(sessionFor(document));
+
+        await facade.updateTarget({ fileIndex: 0, unitId: 'Table 1 - Property 2' }, 'NewTranslation');
+
+        expect(applied(document, LANGUAGE)).toBe(LANGUAGE.replace('ExampleTranslation', 'NewTranslation'));
+    });
+
+    it('writes through a WorkspaceEdit rather than the file system (§12.1)', async () => {
+        const document = openDocument('language.xlf', LANGUAGE);
+        const { facade } = view(sessionFor(document));
+
+        await facade.updateTarget({ fileIndex: 0, unitId: 'Table 1 - Property 2' }, 'NewTranslation');
+
+        expect(flushAppliedEdits()).toHaveLength(1);
+        expect(flushFileWrites()).toEqual([]);
+    });
+
+    it('does nothing at all when the target already says that', async () => {
+        // An empty edit would dirty the document for no reason (§7.6).
+        const document = openDocument('language.xlf', LANGUAGE);
+        const { facade } = view(sessionFor(document));
+
+        await facade.updateTarget({ fileIndex: 0, unitId: 'Table 1 - Property 2' }, 'ExampleTranslation');
+
+        expect(flushAppliedEdits()).toEqual([]);
+    });
+
+    it('changes the state without touching the text', async () => {
+        const document = openDocument('language.xlf', LANGUAGE);
+        const { facade } = view(sessionFor(document));
+
+        await facade.updateState({ fileIndex: 0, unitId: 'Table 1 - Property 2' }, XliffState.needsReviewTranslation);
+
+        expect(applied(document, LANGUAGE)).toBe(LANGUAGE.replace('state="translated"', 'state="needs-review-translation"'));
+    });
+
+    it('gives a unit with no target one, rather than refusing', async () => {
+        const noTarget = LANGUAGE.replace('        <target state="translated">ExampleTranslation</target>\n', '');
+        const document = openDocument('language.xlf', noTarget);
+        const { facade } = view(sessionFor(document));
+
+        await facade.updateTarget({ fileIndex: 0, unitId: 'Table 1 - Property 2' }, 'NewTranslation', XliffState.translated);
+
+        expect(applied(document, noTarget)).toContain('<target state="translated">NewTranslation</target>');
+    });
+
+    it('re-parses first when the document moved on since the model was built', async () => {
+        // The corruption `REVIEW-01` pinned: the writer trims against the text it is given,
+        // so a model built from text that no longer exists lands its edit in the wrong place.
+        // The re-parse is debounced, so this window is reachable by typing.
+        vi.useFakeTimers();
+        const document = openDocument('language.xlf', LANGUAGE);
+        const session = sessionFor(document);
+        const { facade } = view(session);
+        session.current();
+
+        const moved = LANGUAGE.replace('<source>Customer</source>', '<source>Customer, renamed elsewhere</source>');
+        document.setText(moved);
+        fireTextDocumentChange(document);
+
+        await facade.updateTarget({ fileIndex: 0, unitId: 'Table 1 - Property 2' }, 'NewTranslation');
+
+        expect(applied(document, moved)).toBe(moved.replace('ExampleTranslation', 'NewTranslation'));
+    });
+});
+
+describe('what the write path refuses (EDIT-01)', () => {
+    const BASE = `<?xml version="1.0" encoding="utf-8"?>
+<xliff version="1.2">
+  <file source-language="en-US" target-language="en-US" original="App">
+    <body>
+      <trans-unit id="Table 1 - Property 2"><source>Customer</source></trans-unit>
+    </body>
+  </file>
+</xliff>
+`;
+
+    const WITH_COMMENT = `<?xml version="1.0" encoding="utf-8"?>
+<xliff version="1.2">
+  <!-- somebody wrote this by hand -->
+  <file source-language="en-US" target-language="de-DE" original="App">
+    <body>
+      <trans-unit id="Table 1 - Property 2">
+        <source>Customer</source>
+        <target state="translated">ExampleTranslation</target>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
+`;
+
+    it('refuses a base file, and says whose it is (DEC-011)', async () => {
+        const document = openDocument('App.g.xlf', BASE);
+        const { facade } = view(sessionFor(document));
+
+        await facade.updateTarget({ fileIndex: 0, unitId: 'Table 1 - Property 2' }, 'NewTranslation');
+
+        expect(flushAppliedEdits()).toEqual([]);
+        expect(flushInfoMessages()[0]).toContain('base file');
+    });
+
+    it('refuses a read-only file system (§12.5)', async () => {
+        setWritableFileSystem('file', false);
+        const document = openDocument('language.xlf', WITH_COMMENT.replace('  <!-- somebody wrote this by hand -->\n', ''));
+        const { facade } = view(sessionFor(document));
+
+        await facade.updateTarget({ fileIndex: 0, unitId: 'Table 1 - Property 2' }, 'NewTranslation');
+
+        expect(flushAppliedEdits()).toEqual([]);
+        expect(flushInfoMessages()[0]).toBe('This file is read-only.');
+    });
+
+    it('refuses a document that does not parse (§7.7)', async () => {
+        const document = openDocument('language.xlf', '<xliff version="1.2"><file>');
+        const { facade } = view(sessionFor(document));
+
+        await facade.updateTarget({ fileIndex: 0, unitId: 'Table 1 - Property 2' }, 'NewTranslation');
+
+        expect(flushAppliedEdits()).toEqual([]);
+        expect(flushInfoMessages()[0]).toContain('until it parses');
+    });
+
+    it('refuses a document carrying XML comments rather than deleting them (DATA-03a)', async () => {
+        // The parser drops comments, so this write would silently take them with it.
+        const document = openDocument('language.xlf', WITH_COMMENT);
+        const { facade } = view(sessionFor(document));
+
+        await facade.updateTarget({ fileIndex: 0, unitId: 'Table 1 - Property 2' }, 'NewTranslation');
+
+        expect(flushAppliedEdits()).toEqual([]);
+        expect(flushInfoMessages()[0]).toContain('XML comments');
+    });
+
+    it('says so when the id is not in the document, and writes nothing', async () => {
+        const document = openDocument('language.xlf', BASE.replace('target-language="en-US"', 'target-language="de-DE"'));
+        const { facade } = view(sessionFor(document));
+
+        await facade.updateTarget({ fileIndex: 0, unitId: 'Table 9 - Property 9' }, 'NewTranslation');
+
+        expect(flushAppliedEdits()).toEqual([]);
+        expect(flushErrorMessages()[0]).toContain('Table 9 - Property 9');
     });
 });

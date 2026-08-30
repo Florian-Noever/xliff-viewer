@@ -130,6 +130,26 @@ describe('§16, measured on the realistic worst case', () => {
         expect(measured).toBeLessThan(100);
     });
 
+    it('turns an edit into a WorkspaceEdit in under 100 ms', async () => {
+        // §12.1's whole path, not just the writer: the freshness check, the model mutation,
+        // a whole-document serialise, and the trim down to one changed line.
+        const document = new FakeTextDocument(`/w/${LARGE}`, text);
+        const session = new XliffDocumentSession(document as unknown as vscode.TextDocument);
+        const view = createDocumentSession(session, () => { });
+        const unit = { fileIndex: 0, unitId: [...iterateUnits(parseXliff(text))][0].id };
+
+        await view.updateTarget(unit, 'warm up');
+        let best = Number.POSITIVE_INFINITY;
+        for (let attempt = 0; attempt < 3; attempt++) {
+            const started = performance.now();
+            await view.updateTarget(unit, `edited ${attempt}`);
+            best = Math.min(best, performance.now() - started);
+        }
+        session.dispose();
+
+        expect(best).toBeLessThan(100);
+    });
+
     it('answers ready with the whole document in under 250 ms', () => {
         expect(fastest(3, () => {
             const session = new XliffDocumentSession(
