@@ -45,8 +45,13 @@ export interface XliffDocument {
     openAsText(): void;
     /** Navigation for one unit (§10). The host decides what each target means. */
     openSource(target: NavigationTargetValue, unitId: string): void;
-    /** Writes a target (§12.1). The host refuses what it must, and says why. */
-    updateTarget(unitId: string, value: string): void;
+    /**
+     * Writes a target (§12.1). The host refuses what it must, and says why.
+     *
+     * An omitted `state` lets `xliffViewer.stateOnEdit` decide (§12.3); passing one says
+     * the reader already chose for this unit.
+     */
+    updateTarget(unitId: string, value: string, state?: XliffState): void;
     updateState(unitId: string, state: XliffState): void;
 }
 
@@ -152,8 +157,8 @@ export function useXliffDocument(): XliffDocument {
         });
     }
 
-    function updateTarget(unitId: string, value: string): void {
-        postMessage({ type: WebviewMessageType.updateTarget, fileIndex: activeFile.value?.index ?? 0, unitId, value });
+    function updateTarget(unitId: string, value: string, state?: XliffState): void {
+        postMessage({ type: WebviewMessageType.updateTarget, fileIndex: activeFile.value?.index ?? 0, unitId, value, state });
     }
 
     function updateState(unitId: string, state: XliffState): void {

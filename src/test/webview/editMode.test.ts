@@ -166,6 +166,43 @@ describe('the toggle in the toolbar', () => {
     });
 });
 
+describe('remembering a state the reader chose (EDIT-04, §12.3)', () => {
+    it('has nothing to remember until one is chosen', () => {
+        const { edit } = editMode();
+
+        expect(edit.chosenState('Table 1 - Property 2')).toBeUndefined();
+    });
+
+    it('remembers per unit, not for the file', () => {
+        const { edit } = editMode();
+
+        edit.rememberState('Table 1 - Property 2', XliffState.needsReviewTranslation);
+
+        expect(edit.chosenState('Table 1 - Property 2')).toBe(XliffState.needsReviewTranslation);
+        expect(edit.chosenState('Table 1 - Property 3')).toBeUndefined();
+    });
+
+    it('forgets when a different document arrives', async () => {
+        // §12.3 scopes the exception to "the same session", and unit ids repeat across
+        // files — a choice made in one document must not follow the reader into the next.
+        const { edit, wrapper } = editMode();
+        edit.rememberState('Table 1 - Property 2', XliffState.signedOff);
+
+        await wrapper.setProps({ document: { ...DOCUMENT, uri: 'file:///w/Other.de-DE.xlf' } });
+
+        expect(edit.chosenState('Table 1 - Property 2')).toBeUndefined();
+    });
+
+    it('keeps the choice across a re-parse of the same document', async () => {
+        const { edit, wrapper } = editMode();
+        edit.rememberState('Table 1 - Property 2', XliffState.signedOff);
+
+        await wrapper.setProps({ document: { ...DOCUMENT, files: [{ ...FILE, units: [unit({ target: 'Edited' })] }] } });
+
+        expect(edit.chosenState('Table 1 - Property 2')).toBe(XliffState.signedOff);
+    });
+});
+
 describe('the card in edit mode', () => {
     function card(over: Partial<TransUnitDto> = {}, editing = true) {
         const calls: { what: string; unitId: string; value: string }[] = [];

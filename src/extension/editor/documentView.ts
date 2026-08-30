@@ -3,7 +3,10 @@ import * as vscode from 'vscode';
 import { Logger } from '../services/logger';
 import { compareToBase } from '../services/baseFileIndex';
 import { revealAsText, revealInBaseFile } from '../services/navigation';
+import { readSettings } from '../services/settings';
 import { containsComment, setState, setTarget } from '../xliff/writer';
+
+import { XliffState } from '../../shared/state';
 import { fileNameOf } from '../services/uriNames';
 
 import { ExtensionMessageType, NavigationTarget } from '../../shared/messages';
@@ -102,7 +105,11 @@ export function createDocumentSession(
                 announcePairing(change.state.dto);
             }
         },
-        updateTarget: (unit, value, state) => write(session, unit, edit => setTarget(edit.model, edit.text, { unitId: unit.unitId, value, state })),
+        updateTarget: (unit, value, state) => write(session, unit, edit => setTarget(edit.model, edit.text, {
+            unitId: unit.unitId,
+            value,
+            state: stateAfterEdit(session, value, state),
+        })),
         updateState: (unit, state) => write(session, unit, edit => setState(edit.model, edit.text, unit.unitId, state)),
         // Two targets since `DEC-032`: the unit's own "Go to source", and the raw XML for
         // the error pane, which has no unit to name (§11.3).
@@ -110,6 +117,26 @@ export function createDocumentSession(
             ? showInBaseFile(baseFiles, session, unit)
             : revealAsText(session.uri, unit?.unitId)),
     };
+}
+
+/**
+ * What a target's state becomes when its text is edited (§12.3).
+ *
+ * Three rules, in this order:
+ *
+ * 1. **Clearing wins outright.** An empty target cannot be translated, reviewed or signed
+ *    off, whatever anybody chose, so it becomes `needs-translation`. §12.3 states this
+ *    without an exception and it is the one that cannot be argued with.
+ * 2. **An explicit state is obeyed.** The webview sends one when the reader picked a state
+ *    for this unit in this session, which is what `stateOnEdit` is not allowed to overrule.
+ * 3. **Otherwise `xliffViewer.stateOnEdit`**, read at edit time so changing it takes effect
+ *    without a reload, and already validated down to a spec state by the settings service.
+ */
+function stateAfterEdit(session: XliffDocumentSession, value: string, chosen: XliffState | undefined): XliffState {
+    if (value === '') {
+        return XliffState.needsTranslation;
+    }
+    return chosen ?? readSettings(session.uri).stateOnEdit;
 }
 
 /** The model and the exact text it was parsed from, which the writer needs together (§7.6). */
