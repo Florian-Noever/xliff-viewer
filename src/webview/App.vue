@@ -83,8 +83,13 @@ provideUnitActions({
         const resolved = document.value?.baseFile;
         return resolved === undefined || resolved === null ? resolved : resolved.fileName;
     },
-    updateTarget: (unitId, value) => updateTarget(unitId, value),
-    updateState: (unitId, state) => updateState(unitId, state),
+    // §12.3: a state the reader chose for this unit outranks `stateOnEdit` on a later
+    // edit to its text, so it travels with the message rather than being remembered twice.
+    updateTarget: (unitId, value) => updateTarget(unitId, value, edit.chosenState(unitId)),
+    updateState: (unitId, state) => {
+        edit.rememberState(unitId, state);
+        updateState(unitId, state);
+    },
 });
 
 const edit = useEditMode({ document, settings });

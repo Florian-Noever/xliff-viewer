@@ -2,6 +2,7 @@ import { computed, ref, watch } from 'vue';
 
 import type { XliffDocumentDto } from '@shared/dto';
 import type { WebviewSettings } from '@shared/settings';
+import type { XliffState } from '@shared/state';
 import type { ComputedRef, Ref } from 'vue';
 
 /**
@@ -42,6 +43,13 @@ export interface EditMode {
     /** The same, in a sentence (§12.5). */
     readonly reason: ComputedRef<string | undefined>;
     toggle(): void;
+    /**
+     * Records that the reader picked a state for this unit, so a later edit to its text
+     * does not quietly replace their choice with `stateOnEdit` (§12.3).
+     */
+    rememberState(unitId: string, state: XliffState): void;
+    /** The state they picked for this unit, or undefined to let `stateOnEdit` decide. */
+    chosenState(unitId: string): XliffState | undefined;
 }
 
 export interface EditModeSource {
@@ -51,6 +59,14 @@ export interface EditModeSource {
 
 export function useEditMode(source: EditModeSource): EditMode {
     const wanted = ref(false);
+
+    // Keyed by unit and reset when the document changes. §12.3 scopes the exception to
+    // "the same session", and unit ids repeat across files — a choice made in one document
+    // must not follow the reader into the next.
+    const chosen = new Map<string, XliffState>();
+    watch(() => source.document.value?.uri, () => {
+        chosen.clear();
+    });
 
     // §13: the setting seeds the toggle rather than owning it. Watching the value means a
     // change in settings re-seeds, while the user's own toggle survives everything else the
@@ -84,5 +100,13 @@ export function useEditMode(source: EditModeSource): EditMode {
         }
     }
 
-    return { wanted, available, active, refusal, reason, toggle };
+    function rememberState(unitId: string, state: XliffState): void {
+        chosen.set(unitId, state);
+    }
+
+    function chosenState(unitId: string): XliffState | undefined {
+        return chosen.get(unitId);
+    }
+
+    return { wanted, available, active, refusal, reason, toggle, rememberState, chosenState };
 }
