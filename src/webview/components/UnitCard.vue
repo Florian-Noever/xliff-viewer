@@ -146,7 +146,14 @@ const hint = computed(() => {
     color: var(--vscode-descriptionForeground);
 }
 
+/*
+ * Sized to its contents, not to the row. `align-self` on a column flex item is
+ * fit-content, so a short string gets a short box while a long one still wraps at the
+ * width the row has left rather than pushing past it.
+ */
 .box {
+    align-self: flex-start;
+    max-width: 100%;
     min-width: 0;
     padding: 2px 8px 4px;
     border: 1px solid var(--vscode-panel-border);
@@ -157,7 +164,8 @@ const hint = computed(() => {
     display: flex;
     align-items: center;
     gap: var(--gap);
-    margin: 0 0 2px;
+    /* The header is a header: it needs air under it, not a line's worth of leading. */
+    margin: 0 0 calc(var(--gap) / 2);
 }
 
 .legend-name {
