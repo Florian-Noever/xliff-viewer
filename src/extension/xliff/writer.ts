@@ -16,6 +16,21 @@ import type { XliffDocument, XliffTransUnit } from '../../shared/model';
  * with `document.positionAt` (§6.1).
  */
 
+/**
+ * Whether the text carries an XML comment (`DATA-03a`).
+ *
+ * The parser discards comments — verified, not assumed: a document with two survives the
+ * round trip byte-perfect except that both are gone. Reading a file that has one is
+ * harmless; **writing it would delete them**, which is why the write path asks first.
+ *
+ * `<!--` cannot open anything but a comment in a well-formed XLIFF document: the corpus has
+ * no CDATA (§3.3), and the same characters inside a text node are entity-escaped. A false
+ * positive would refuse an edit, never destroy one, which is the direction to err in.
+ */
+export function containsComment(text: string): boolean {
+    return text.includes('<!--');
+}
+
 /** A replacement of `[start, end)` in the current text. Offsets are UTF-16 code units. */
 export interface TextEditRange {
     readonly start: number;

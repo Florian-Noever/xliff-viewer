@@ -7,6 +7,7 @@ import { validateStructure } from '../xliff/validate';
 import { Logger } from '../services/logger';
 import { fileNameOf } from '../services/uriNames';
 
+import type { TextEditRange } from '../xliff/writer';
 import type { XliffDocumentDto } from '../../shared/dto';
 import type { ErrorPayload, NavigationTarget } from '../../shared/messages';
 import type { XliffDocument } from '../../shared/model';
@@ -42,7 +43,21 @@ export interface DocumentSession {
 }
 
 export type SessionState =
-    | { readonly kind: 'document'; readonly model: XliffDocument; readonly dto: XliffDocumentDto }
+    | {
+        readonly kind: 'document';
+        readonly model: XliffDocument;
+        readonly dto: XliffDocumentDto;
+        /**
+         * The exact text the model was parsed from.
+         *
+         * Carried with the model rather than fetched separately, because the writer trims
+         * its edit against whatever text it is handed: give it text the model did not come
+         * from and the edit lands at the wrong offsets and eats content. `REVIEW-01` found
+         * that the writer cannot detect this for itself — a legitimately non-AL-formatted
+         * file also fails a "does this re-serialise to that" check (`DEC-017`).
+         */
+        readonly text: string;
+    }
     | { readonly kind: 'error'; readonly error: ErrorPayload };
 
 type StateListener = (state: SessionState) => void;
@@ -72,6 +87,47 @@ export class XliffDocumentSession {
     public current(): SessionState {
         this.state ??= this.parse();
         return this.state;
+    }
+
+    /**
+     * The state to write against: re-parsed first when the document has moved on since the
+     * model was built (§7.6).
+     *
+     * A re-parse is debounced by 150 ms, so between a keystroke and that timer the cached
+     * model describes text that no longer exists. Editing against it is exactly the
+     * corruption `REVIEW-01` pinned, so the write path asks for this rather than `current`.
+     */
+    public synchronise(): SessionState {
+        const state = this.current();
+        if (state.kind === 'document' && state.text === this.textDocument.getText()) {
+            return state;
+        }
+        this.clearTimer();
+        this.state = this.parse();
+        return this.state;
+    }
+
+    /**
+     * Turns the writer's character range into a `WorkspaceEdit` and applies it (§12.1).
+     *
+     * **Never `workspace.fs`**: going through the editor is what gives the edit dirty
+     * state, undo, redo, save and hot exit for free (`DEC-001`). `positionAt` reads the
+     * document's current text, so the offsets are converted here and now rather than
+     * carried around.
+     */
+    public async applyEdit(edit: TextEditRange): Promise<boolean> {
+        const range = new vscode.Range(
+            this.textDocument.positionAt(edit.start),
+            this.textDocument.positionAt(edit.end),
+        );
+        const workspaceEdit = new vscode.WorkspaceEdit();
+        workspaceEdit.replace(this.textDocument.uri, range, edit.newText);
+
+        const applied = await vscode.workspace.applyEdit(workspaceEdit);
+        if (!applied) {
+            Logger.warn(`The edit to ${this.fileName()} was refused by the editor.`);
+        }
+        return applied;
     }
 
     /** The newest successful parse, which may predate a failing edit. */
@@ -122,11 +178,12 @@ export class XliffDocumentSession {
 
     private parse(): SessionState {
         const started = Date.now();
+        const text = this.textDocument.getText();
         try {
-            const model = parseXliff(this.textDocument.getText());
+            const model = parseXliff(text);
             validateStructure(model);
 
-            const state = { kind: 'document', model, dto: this.project(model) } as const;
+            const state = { kind: 'document', model, dto: this.project(model), text } as const;
             this.lastGood = state;
             Logger.info(`Parsed ${this.fileName()} in ${Date.now() - started} ms: ${state.dto.files.length} file(s).`);
             return state;
