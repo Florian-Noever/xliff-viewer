@@ -106,6 +106,7 @@
         "watch": "npm-run-all -p watch:*",
         "watch:esbuild": "node esbuild.mjs --watch",
         "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+        "watch:vue-tsc": "vue-tsc --noEmit --watch --project src/webview/tsconfig.json",
         "watch:vite": "vite build --watch",
         "build:webview": "vite build",
         "dev:webview": "vite",
