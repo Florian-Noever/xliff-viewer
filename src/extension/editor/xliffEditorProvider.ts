@@ -95,11 +95,11 @@ export class XliffEditorProvider implements vscode.CustomTextEditorProvider {
 
         subscriptions.push(
             view,
-            // A re-parse reaches every view of this document, including the ones that
-            // did not trigger it. `update`, not the initial send: these panels are
-            // already showing the document, so a failure sends only the failure.
-            session.attach((state) => {
-                view.update(state);
+            // A change reaches every view of this document, including the ones that did
+            // not cause it. The view decides what each kind is worth saying: a re-parse is
+            // a document, our own edit is one unit (§8.4).
+            session.attach((change) => {
+                view.apply(change);
             }),
             webviewPanel.webview.onDidReceiveMessage((message: unknown) => {
                 if (!isWebviewMessage(message)) {

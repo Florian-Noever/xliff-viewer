@@ -214,6 +214,9 @@ export const window = {
     }),
 };
 
+/** Documents `workspace.applyEdit` can actually write to, keyed by URI. */
+const editableDocuments = new Map<string, { applyEdit(range: Range, newText: string): void }>();
+
 /** Records where navigation put the cursor, which is what the reveal tests assert on. */
 export class FakeTextEditor {
     public readonly document: { uri: Uri; getText(): string };
@@ -316,9 +319,20 @@ export const workspace = {
             .map(path => Uri.file(path));
         return Promise.resolve(matches);
     },
-    applyEdit: (edit: WorkspaceEdit): Promise<boolean> => {
+    applyEdit: async (edit: WorkspaceEdit): Promise<boolean> => {
         appliedEdits.push(...edit.entries);
-        return Promise.resolve(true);
+        // The real `applyEdit` rewrites the document and fires the change event; `EDIT-02`
+        // exists to recognise that event, so the mock has to produce it.
+        //
+        // And it does so **after yielding**, as the real one does. That gap is the whole
+        // point: it is where somebody else's edit can land between us recording ours and
+        // ours coming back, which is the race §8.4 forbids suppressing blindly.
+        await Promise.resolve();
+        for (const entry of edit.entries) {
+            const document = editableDocuments.get(entry.uri);
+            document?.applyEdit(entry.range, entry.newText);
+        }
+        return true;
     },
     onDidChangeTextDocument: (listener: (event: TextDocumentChangeEvent) => void): Disposable => {
         documentChangeListeners.push(listener);
@@ -344,9 +358,16 @@ export interface ConfigurationChangeEvent {
     affectsConfiguration(section: string, scope?: unknown): boolean;
 }
 
+/** What VS Code reports for one replaced span, which is what `EDIT-02` matches against. */
+export interface ContentChange {
+    readonly rangeOffset: number;
+    readonly rangeLength: number;
+    readonly text: string;
+}
+
 export interface TextDocumentChangeEvent {
     readonly document: { readonly uri: Uri };
-    readonly contentChanges: readonly unknown[];
+    readonly contentChanges: readonly ContentChange[];
 }
 
 /** Enough of a `TextDocument` for a session: an identity and its text. */
@@ -357,6 +378,18 @@ export class FakeTextDocument {
     public constructor(path: string, text: string) {
         this.uri = Uri.file(path);
         this.text = text;
+        editableDocuments.set(this.uri.toString(), this);
+    }
+
+    /**
+     * Replaces a range and reports it, the way the editor does — so a session under test
+     * sees its own edit arrive as a change event rather than having to be told.
+     */
+    public applyEdit(range: Range, newText: string): void {
+        const start = this.offsetAt(range.start);
+        const end = this.offsetAt(range.end);
+        this.text = this.text.slice(0, start) + newText + this.text.slice(end);
+        fireTextDocumentChange(this, [{ rangeOffset: start, rangeLength: end - start, text: newText }]);
     }
 
     public getText(): string {
@@ -448,8 +481,21 @@ export function fireConfigurationChange(...sections: string[]): void {
 }
 
 /** Fires `onDidChangeTextDocument`. `changes` defaults to one entry — zero means "no content changed". */
-export function fireTextDocumentChange(document: { readonly uri: Uri }, changes = 1): void {
-    const event: TextDocumentChangeEvent = { document, contentChanges: Array.from({ length: changes }, () => ({})) };
+/**
+ * Fires a change event.
+ *
+ * `changes` is either how many anonymous changes to report — enough for tests that only
+ * care that *something* changed — or the actual spans, which `EDIT-02` needs because it
+ * decides whether an edit was its own by comparing them.
+ */
+export function fireTextDocumentChange(
+    document: { readonly uri: Uri },
+    changes: number | readonly ContentChange[] = 1,
+): void {
+    const contentChanges = typeof changes === 'number'
+        ? Array.from({ length: changes }, () => ({ rangeOffset: 0, rangeLength: 0, text: '' }))
+        : changes;
+    const event: TextDocumentChangeEvent = { document, contentChanges };
     for (const listener of [...documentChangeListeners]) {
         listener(event);
     }
@@ -580,6 +626,7 @@ export function resetMocks(): void {
     executedCommands = [];
     watcherListeners = { created: [], deleted: [], changed: [] };
     workspaceRoot = undefined;
+    editableDocuments.clear();
     revealedPositions = [];
     quickPickCalls = [];
     quickPickChoice = undefined;

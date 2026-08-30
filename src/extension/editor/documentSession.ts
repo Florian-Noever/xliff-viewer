@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
-import { projectDocument } from '../xliff/dto';
+import { projectDocument, projectUnit } from '../xliff/dto';
+import { iterateUnits } from '../../shared/model';
 import { XliffParseError } from '../xliff/errors';
 import { parseXliff } from '../xliff/parser';
 import { validateStructure } from '../xliff/validate';
@@ -11,6 +12,7 @@ import type { TextEditRange } from '../xliff/writer';
 import type { XliffDocumentDto } from '../../shared/dto';
 import type { ErrorPayload, NavigationTarget } from '../../shared/messages';
 import type { XliffDocument } from '../../shared/model';
+import type { TransUnitDto } from '../../shared/dto';
 import type { XliffState } from '../../shared/state';
 
 /**
@@ -60,7 +62,34 @@ export type SessionState =
     }
     | { readonly kind: 'error'; readonly error: ErrorPayload };
 
-type StateListener = (state: SessionState) => void;
+/**
+ * What a view is told when the document changes (§8.4).
+ *
+ * Two kinds, because the answer to "the user typed in another editor" and "we just wrote
+ * the target they were editing" are not the same message. The first is a new document; the
+ * second is one unit, and re-sending the document for it is what costs the view its focus,
+ * its scroll and its expansion.
+ */
+export type SessionChange =
+    | { readonly kind: 'parsed'; readonly state: SessionState }
+    | { readonly kind: 'patched'; readonly fileIndex: number; readonly units: readonly TransUnitDto[] };
+
+type StateListener = (change: SessionChange) => void;
+
+/**
+ * An edit this session asked for and has not yet seen come back.
+ *
+ * Matched against the change event by its **span and its text** (§8.4). Never a timer and
+ * never a bare boolean: either would swallow an edit that somebody else made in the same
+ * tick, which is precisely the event that must not be lost.
+ */
+interface PendingEdit {
+    readonly rangeOffset: number;
+    readonly rangeLength: number;
+    readonly text: string;
+    readonly fileIndex: number;
+    readonly unitId: string;
+}
 
 export class XliffDocumentSession {
     private readonly textDocument: vscode.TextDocument;
@@ -68,6 +97,7 @@ export class XliffDocumentSession {
     private readonly listeners = new Set<StateListener>();
 
     private state: SessionState | undefined;
+    private pending: PendingEdit | undefined;
     /** The last successful parse, kept so a mid-edit syntax error does not blank the view (§7.7). */
     private lastGood: Extract<SessionState, { kind: 'document' }> | undefined;
     private timer: ReturnType<typeof setTimeout> | undefined;
@@ -115,7 +145,17 @@ export class XliffDocumentSession {
      * document's current text, so the offsets are converted here and now rather than
      * carried around.
      */
-    public async applyEdit(edit: TextEditRange): Promise<boolean> {
+    public async applyEdit(edit: TextEditRange, unit: UnitReference): Promise<boolean> {
+        // Recorded before the edit is applied, because the change event can arrive during
+        // the await.
+        this.pending = {
+            rangeOffset: edit.start,
+            rangeLength: edit.end - edit.start,
+            text: edit.newText,
+            fileIndex: unit.fileIndex,
+            unitId: unit.unitId,
+        };
+
         const range = new vscode.Range(
             this.textDocument.positionAt(edit.start),
             this.textDocument.positionAt(edit.end),
@@ -125,6 +165,7 @@ export class XliffDocumentSession {
 
         const applied = await vscode.workspace.applyEdit(workspaceEdit);
         if (!applied) {
+            this.pending = undefined;
             Logger.warn(`The edit to ${this.fileName()} was refused by the editor.`);
         }
         return applied;
@@ -161,6 +202,9 @@ export class XliffDocumentSession {
         if (event.contentChanges.length === 0) {
             return;
         }
+        if (this.absorbOwnEdit(event)) {
+            return;
+        }
 
         this.clearTimer();
         this.timer = setTimeout(() => {
@@ -169,10 +213,57 @@ export class XliffDocumentSession {
         }, REPARSE_DEBOUNCE_MS);
     }
 
+    /**
+     * Consumes the pending edit when this event **is** that edit, and answers with a patch.
+     *
+     * The model was already mutated by the writer, so all that is stale is the text it was
+     * parsed from and the one unit in the payload. Both are corrected here rather than by
+     * re-parsing 1.3 MB to learn what we already know.
+     */
+    private absorbOwnEdit(event: vscode.TextDocumentChangeEvent): boolean {
+        const pending = this.pending;
+        if (pending === undefined || event.contentChanges.length !== 1) {
+            return false;
+        }
+
+        const [change] = event.contentChanges;
+        if (change.rangeOffset !== pending.rangeOffset
+            || change.rangeLength !== pending.rangeLength
+            || change.text !== pending.text) {
+            return false;
+        }
+
+        // Consumed exactly once: a second change with the same span is somebody else's.
+        this.pending = undefined;
+
+        const state = this.state;
+        if (state?.kind !== 'document') {
+            return false;
+        }
+
+        const unit = [...iterateUnits(state.model)].find(each => each.id === pending.unitId);
+        if (unit === undefined) {
+            return false;
+        }
+
+        const patched = projectUnit(unit);
+        this.state = { ...state, text: this.textDocument.getText(), dto: withUnit(state.dto, pending.fileIndex, patched) };
+        this.lastGood = this.state;
+
+        this.announce({ kind: 'patched', fileIndex: pending.fileIndex, units: [patched] });
+        return true;
+    }
+
     private reparse(): void {
+        // Anything still pending was overtaken by a change that was not it.
+        this.pending = undefined;
         this.state = this.parse();
+        this.announce({ kind: 'parsed', state: this.state });
+    }
+
+    private announce(change: SessionChange): void {
         for (const listener of [...this.listeners]) {
-            listener(this.state);
+            listener(change);
         }
     }
 
@@ -226,4 +317,14 @@ function toErrorPayload(error: unknown): ErrorPayload {
         return { message: error.displayMessage, line: error.line, col: error.col };
     }
     return { message: error instanceof Error ? error.message : 'The document could not be read.' };
+}
+
+/** The same document with one unit replaced. Shallow throughout: nothing else moved. */
+function withUnit(dto: XliffDocumentDto, fileIndex: number, unit: TransUnitDto): XliffDocumentDto {
+    return {
+        ...dto,
+        files: dto.files.map(file => (file.index === fileIndex
+            ? { ...file, units: file.units.map(each => (each.id === unit.id ? unit : each)) }
+            : file)),
+    };
 }

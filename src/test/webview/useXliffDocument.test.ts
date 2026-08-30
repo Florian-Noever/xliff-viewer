@@ -5,6 +5,7 @@ import { defineComponent, nextTick } from 'vue';
 import { useXliffDocument } from '../../webview/composables/useXliffDocument';
 import { ExtensionMessageType, WebviewMessageType } from '../../shared/messages';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
+import { summariseUnits } from '../../shared/state';
 import { clearPostedMessages, postedMessages } from '../setup/webview';
 
 import type { XliffDocumentDto } from '../../shared/dto';
@@ -293,6 +294,21 @@ describe('patchUnits', () => {
         expect(state.unitsById.value.get('Table 1')?.orphaned).toBeUndefined();
         state.activeFileIndex.value = 1;
         expect(state.unitsById.value.get('Table 1')?.orphaned).toBe(true);
+    });
+
+    it('moves the roll-up when an edit changes a state (EDIT-02)', () => {
+        // The header percentage and every ancestor bar are computed from the units the
+        // webview holds, so a patch that changes one has to be enough to move them.
+        const state = useIt();
+        sendDocument();
+        const before = summariseUnits(state.activeFile.value?.units ?? []);
+
+        patch(0, [{ id: 'Table 2', source: 'Vendor', target: 'NowTranslated', state: 'translated', translate: true, notes: [] }]);
+
+        const after = summariseUnits(state.activeFile.value?.units ?? []);
+        expect(before.percent).toBe(50);
+        expect(after.percent).toBe(100);
+        expect(after.byState.translated).toBe(2);
     });
 
     it('ignores an empty patch, which is what an in-step file produces', () => {
