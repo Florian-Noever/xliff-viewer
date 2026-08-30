@@ -8,7 +8,7 @@ import { fileNameOf } from '../services/uriNames';
 
 import { ExtensionMessageType, NavigationTarget } from '../../shared/messages';
 
-import type { DocumentSession, SessionState, UnitReference, XliffDocumentSession } from './documentSession';
+import type { DocumentSession, SessionChange, SessionState, UnitReference, XliffDocumentSession } from './documentSession';
 import type { TextEditRange } from '../xliff/writer';
 import type { BaseFileIndex } from '../services/baseFileIndex';
 import type { BaseFileResolver } from '../services/baseFileResolver';
@@ -26,13 +26,14 @@ import type { ExtensionMessage } from '../../shared/messages';
 /** What the panel's own listener needs on top of the message handlers' contract. */
 export interface DocumentView extends DocumentSession, vscode.Disposable {
     /**
-     * A later state, for a panel already showing this document.
+     * What the panel is told when the document changes.
      *
-     * It re-announces the base file and the pairing markers, because a `setDocument`
-     * replaces the payload they were attached to. Leaving them out is how `REVIEW-02a`
-     * found the view losing its base file on the first keystroke.
+     * A re-parse re-announces the base file and the pairing markers too, because a
+     * `setDocument` replaces the payload they were attached to — leaving them out is how
+     * `REVIEW-02a` found the view losing its base file on the first keystroke. Our own
+     * edit is one unit and says only that (§8.4).
      */
-    update(state: SessionState): void;
+    apply(change: SessionChange): void;
 }
 
 /**
@@ -91,10 +92,14 @@ export function createDocumentSession(
             }
             subscriptions.length = 0;
         },
-        update: (state) => {
-            postUpdate(state, post);
-            if (state.kind === 'document') {
-                announcePairing(state.dto);
+        apply: (change) => {
+            if (change.kind === 'patched') {
+                post({ type: ExtensionMessageType.patchUnits, payload: { fileIndex: change.fileIndex, units: change.units } });
+                return;
+            }
+            postUpdate(change.state, post);
+            if (change.state.kind === 'document') {
+                announcePairing(change.state.dto);
             }
         },
         updateTarget: (unit, value, state) => write(session, unit, edit => setTarget(edit.model, edit.text, { unitId: unit.unitId, value, state })),
@@ -156,7 +161,7 @@ async function write(
         return;
     }
 
-    await session.applyEdit(edit);
+    await session.applyEdit(edit, unit);
 }
 
 /**

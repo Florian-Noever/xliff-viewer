@@ -88,7 +88,12 @@ function projectFile(file: XliffFile, index: number): XliffFileDto {
     };
 }
 
-function projectUnit(unit: XliffTransUnit): TransUnitDto {
+/**
+ * Exported so `EDIT-02` can rebuild the one unit that changed rather than re-projecting a
+ * megabyte. There must be exactly one projection, or a patched unit and its neighbours
+ * start disagreeing about what a unit looks like.
+ */
+export function projectUnit(unit: XliffTransUnit): TransUnitDto {
     const declared = unit.target?.state;
 
     return {

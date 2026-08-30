@@ -175,7 +175,7 @@ describe('what a failing re-parse puts on the wire', () => {
         const session = sessionFor(document);
         const posted: ExtensionMessage[] = [];
         const facade = createDocumentSession(session, message => posted.push(message));
-        session.attach(state => facade.update(state));
+        session.attach(change => facade.apply(change));
         session.current();
 
         document.setText('<xliff><file>');
@@ -213,7 +213,7 @@ describe('what a failing re-parse puts on the wire', () => {
         const session = sessionFor(document);
         const posted: ExtensionMessage[] = [];
         const facade = createDocumentSession(session, message => posted.push(message));
-        session.attach(state => facade.update(state));
+        session.attach(change => facade.apply(change));
         session.current();
 
         document.setText(read('Contoso App.en-US.xlf'));
@@ -233,7 +233,11 @@ describe('reacting to an external edit', () => {
         const document = openDocument('Contoso App.de-DE.xlf');
         const session = sessionFor(document);
         const states: SessionState[] = [];
-        session.attach(state => states.push(state));
+        session.attach((change) => {
+            if (change.kind === 'parsed') {
+                states.push(change.state);
+            }
+        });
         session.current();
         flushLogs();
 
@@ -253,7 +257,11 @@ describe('reacting to an external edit', () => {
         const document = openDocument('Contoso App.de-DE.xlf');
         const session = sessionFor(document);
         const states: SessionState[] = [];
-        session.attach(state => states.push(state));
+        session.attach((change) => {
+            if (change.kind === 'parsed') {
+                states.push(change.state);
+            }
+        });
         session.current();
 
         fireTextDocumentChange(document);
@@ -272,8 +280,16 @@ describe('reacting to an external edit', () => {
         const session = sessionFor(document);
         const first: SessionState[] = [];
         const second: SessionState[] = [];
-        session.attach(state => first.push(state));
-        session.attach(state => second.push(state));
+        session.attach((change) => {
+            if (change.kind === 'parsed') {
+                first.push(change.state);
+            }
+        });
+        session.attach((change) => {
+            if (change.kind === 'parsed') {
+                second.push(change.state);
+            }
+        });
         session.current();
         flushLogs();
 
@@ -289,7 +305,11 @@ describe('reacting to an external edit', () => {
         const document = openDocument('Contoso App.de-DE.xlf');
         const session = sessionFor(document);
         const states: SessionState[] = [];
-        session.attach(state => states.push(state));
+        session.attach((change) => {
+            if (change.kind === 'parsed') {
+                states.push(change.state);
+            }
+        });
 
         fireTextDocumentChange(openDocument('somewhere-else.xlf', '<xliff/>'));
         vi.advanceTimersByTime(200);
@@ -301,7 +321,11 @@ describe('reacting to an external edit', () => {
         const document = openDocument('Contoso App.de-DE.xlf');
         const session = sessionFor(document);
         const states: SessionState[] = [];
-        session.attach(state => states.push(state));
+        session.attach((change) => {
+            if (change.kind === 'parsed') {
+                states.push(change.state);
+            }
+        });
 
         fireTextDocumentChange(document, 0);
         vi.advanceTimersByTime(200);
@@ -313,7 +337,11 @@ describe('reacting to an external edit', () => {
         const document = openDocument('Contoso App.de-DE.xlf');
         const session = sessionFor(document);
         const states: SessionState[] = [];
-        session.attach(state => states.push(state));
+        session.attach((change) => {
+            if (change.kind === 'parsed') {
+                states.push(change.state);
+            }
+        });
 
         fireTextDocumentChange(document);
         session.dispose();
@@ -566,5 +594,154 @@ describe('what the write path refuses (EDIT-01)', () => {
 
         expect(flushAppliedEdits()).toEqual([]);
         expect(flushErrorMessages()[0]).toContain('Table 9 - Property 9');
+    });
+});
+describe('recognising our own edit (EDIT-02)', () => {
+    const LANGUAGE = `<?xml version="1.0" encoding="utf-8"?>
+<xliff version="1.2">
+  <file source-language="en-US" target-language="de-DE" original="App">
+    <body>
+      <trans-unit id="Table 1 - Property 2">
+        <source>Customer</source>
+        <target state="translated">ExampleTranslation</target>
+      </trans-unit>
+      <trans-unit id="Table 1 - Property 3">
+        <source>Vendor</source>
+        <target state="translated">AnotherTranslation</target>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
+`;
+
+    const UNIT = { fileIndex: 0, unitId: 'Table 1 - Property 2' };
+    const types = (posted: readonly ExtensionMessage[]) => posted.map(message => message.type);
+
+    function edited(text: string) {
+        const document = openDocument('language.xlf', text);
+        const session = sessionFor(document);
+        const posted: ExtensionMessage[] = [];
+        const facade = createDocumentSession(session, message => posted.push(message));
+        session.attach(change => facade.apply(change));
+        session.current();
+        posted.length = 0;
+        return { document, session, facade, posted };
+    }
+
+    it('answers its own edit with a patch, never a whole document', async () => {
+        // Re-sending 1.2 MB after a keystroke is what costs the view its focus and scroll.
+        const { facade, posted } = edited(LANGUAGE);
+
+        await facade.updateTarget(UNIT, 'EditedTranslation');
+
+        expect(types(posted)).toEqual([ExtensionMessageType.patchUnits]);
+        const [patch] = posted;
+        expect(patch.type === ExtensionMessageType.patchUnits && patch.payload.units).toEqual([
+            expect.objectContaining({ id: UNIT.unitId, target: 'EditedTranslation' }),
+        ]);
+    });
+
+    it('patches only the unit that changed', async () => {
+        const { facade, posted } = edited(LANGUAGE);
+
+        await facade.updateTarget(UNIT, 'EditedTranslation');
+
+        const [patch] = posted;
+        expect(patch.type === ExtensionMessageType.patchUnits && patch.payload.units).toHaveLength(1);
+        expect(patch.type === ExtensionMessageType.patchUnits && patch.payload.fileIndex).toBe(0);
+    });
+
+    it('carries the new state, so the roll-up and the header can move', async () => {
+        const { facade, posted } = edited(LANGUAGE);
+
+        await facade.updateState(UNIT, XliffState.needsReviewTranslation);
+
+        const [patch] = posted;
+        expect(patch.type === ExtensionMessageType.patchUnits && patch.payload.units[0].state)
+            .toBe(XliffState.needsReviewTranslation);
+    });
+
+    it('treats an edit it did not make as external, and re-parses in full', () => {
+        vi.useFakeTimers();
+        const { document, posted } = edited(LANGUAGE);
+
+        const before = document.getText();
+        document.setText(before.replace('AnotherTranslation', 'SomebodyElseTyped'));
+        fireTextDocumentChange(document, [{
+            rangeOffset: before.indexOf('AnotherTranslation'),
+            rangeLength: 'AnotherTranslation'.length,
+            text: 'SomebodyElseTyped',
+        }]);
+        vi.advanceTimersByTime(200);
+
+        expect(types(posted)).toEqual([ExtensionMessageType.setDocument]);
+    });
+
+    it('does not swallow an external edit that lands between recording ours and seeing it', async () => {
+        // The race §8.4 forbids suppressing blindly. Our edit is recorded, then somebody
+        // else's arrives *first*. The assertion has to land inside that window: once our
+        // own change also arrives, the re-parse it triggers would hide the difference.
+        vi.useFakeTimers();
+        const { document, facade, posted } = edited(LANGUAGE);
+
+        const before = document.getText();
+        const editing = facade.updateTarget(UNIT, 'EditedTranslation');
+        fireTextDocumentChange(document, [{
+            rangeOffset: before.indexOf('AnotherTranslation'),
+            rangeLength: 'AnotherTranslation'.length,
+            text: 'SomebodyElseTyped',
+        }]);
+
+        // The foreign edit must have scheduled a full re-parse. A bare boolean would have
+        // taken it for ours and scheduled nothing, leaving the model missing that change
+        // while believing itself current.
+        vi.advanceTimersByTime(200);
+        expect(types(posted)).toEqual([ExtensionMessageType.setDocument]);
+
+        await editing;
+    });
+
+    it('absorbs its own edit exactly once, so a repeat of it is external', async () => {
+        // Without consuming the record, a later change with the *same* span and text would
+        // be taken for ours too — the user pasting back what we just wrote.
+        const { document, facade, posted } = edited(LANGUAGE);
+
+        await facade.updateTarget(UNIT, 'EditedTranslation');
+        const [applied] = flushAppliedEdits();
+        expect(types(posted)).toEqual([ExtensionMessageType.patchUnits]);
+
+        const start = document.offsetAt(applied.range.start);
+        fireTextDocumentChange(document, [{
+            rangeOffset: start,
+            rangeLength: document.offsetAt(applied.range.end) - start,
+            text: applied.newText,
+        }]);
+        await new Promise(resolve => setTimeout(resolve, 250));
+
+        expect(types(posted)).toEqual([ExtensionMessageType.patchUnits, ExtensionMessageType.setDocument]);
+    });
+
+    it('matches the edit rather than merely counting one, so a different span is external', () => {
+        vi.useFakeTimers();
+        const { document, session, posted } = edited(LANGUAGE);
+
+        // A change of the same shape somewhere else entirely is not ours.
+        const before = document.getText();
+        fireTextDocumentChange(document, [{ rangeOffset: 0, rangeLength: 0, text: '' }]);
+        vi.advanceTimersByTime(200);
+        session.dispose();
+
+        expect(types(posted)).toEqual([ExtensionMessageType.setDocument]);
+        expect(before).toBe(document.getText());
+    });
+
+    it('keeps the model and its text in step, so the next edit lands correctly', async () => {
+        const { document, facade, posted } = edited(LANGUAGE);
+
+        await facade.updateTarget(UNIT, 'First');
+        await facade.updateTarget(UNIT, 'Second');
+
+        expect(types(posted)).toEqual([ExtensionMessageType.patchUnits, ExtensionMessageType.patchUnits]);
+        expect(document.getText()).toBe(LANGUAGE.replace('ExampleTranslation', 'Second'));
     });
 });

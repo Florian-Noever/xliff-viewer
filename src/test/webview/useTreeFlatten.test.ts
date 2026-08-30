@@ -284,6 +284,31 @@ describe('the object-type level (DEC-033)', () => {
     });
 });
 
+describe('an edit does not disturb the tree (EDIT-02)', () => {
+    it('keeps expansion when a patched unit arrives', () => {
+        // `patchUnits` replaces units, never the tree, and expansion is keyed on node keys
+        // — so the reseed watcher must not fire and the open nodes must stay open.
+        const { tree, active } = view(file(TREE), 0);
+        tree.toggle('Table 1');
+        const opened = tree.rows.value.map(row => row.key);
+
+        const edited = new Map(UNITS);
+        edited.set('Table 1 - Property 4', { ...unit('Table 1 - Property 4'), target: 'EditedTranslation' });
+        active.value = { ...file(TREE), units: [...edited.values()] };
+
+        expect(tree.rows.value.map(row => row.key)).toEqual(opened);
+    });
+
+    it('keeps the focused row where it was', () => {
+        const { tree, active } = view(file(TREE), 1);
+        tree.focus('Table 1 - Property 4');
+
+        active.value = { ...file(TREE), units: [...UNITS.values()] };
+
+        expect(tree.focusedKey.value).toBe('Table 1 - Property 4');
+    });
+});
+
 describe('keyboard movement', () => {
     it('starts at the first row, wherever the delta points', () => {
         const { tree } = view(file(TREE), 1);
