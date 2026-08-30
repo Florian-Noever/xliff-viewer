@@ -27,6 +27,9 @@ import type { XliffState } from '../../shared/state';
 /** Long enough to swallow a burst of typing, short enough that a paste feels immediate. */
 const REPARSE_DEBOUNCE_MS = 150;
 
+/** What VS Code calls a UTF-8 file that starts with a byte-order mark. */
+const BOM_ENCODING = 'utf8bom';
+
 /** A unit is identified by its `<file>` **and** its id — XLIFF scopes ids per file (`DEC-028`). */
 export interface UnitReference {
     readonly fileIndex: number;
@@ -98,6 +101,7 @@ export class XliffDocumentSession {
 
     private state: SessionState | undefined;
     private pending: PendingEdit | undefined;
+    private bomWarned = false;
     /** The last successful parse, kept so a mid-edit syntax error does not blank the view (§7.7). */
     private lastGood: Extract<SessionState, { kind: 'document' }> | undefined;
     private timer: ReturnType<typeof setTimeout> | undefined;
@@ -135,6 +139,22 @@ export class XliffDocumentSession {
         this.clearTimer();
         this.state = this.parse();
         return this.state;
+    }
+
+    /**
+     * True the first time this document is edited while the editor will drop its BOM
+     * (`EDIT-01a`), and false ever after.
+     *
+     * Per **document** rather than per view, because two editors on one file are one file:
+     * the reader should hear this once, not once each. `TextDocument.encoding` is readonly,
+     * so saying so is the whole of what an extension can do about it.
+     */
+    public claimBomWarning(): boolean {
+        if (this.bomWarned || this.textDocument.encoding !== BOM_ENCODING) {
+            return false;
+        }
+        this.bomWarned = true;
+        return true;
     }
 
     /**

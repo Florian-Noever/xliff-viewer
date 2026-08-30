@@ -373,11 +373,14 @@ export interface TextDocumentChangeEvent {
 /** Enough of a `TextDocument` for a session: an identity and its text. */
 export class FakeTextDocument {
     public readonly uri: Uri;
+    /** What the editor detected on read. `utf8bom` is the case `EDIT-01a` warns about. */
+    public encoding: string;
     private text: string;
 
-    public constructor(path: string, text: string) {
+    public constructor(path: string, text: string, encoding = 'utf8') {
         this.uri = Uri.file(path);
         this.text = text;
+        this.encoding = encoding;
         editableDocuments.set(this.uri.toString(), this);
     }
 
