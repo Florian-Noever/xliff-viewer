@@ -6,6 +6,7 @@ import NoteList from '../../webview/components/NoteList.vue';
 import UnitCard from '../../webview/components/UnitCard.vue';
 import { indexNodes, reconstructGeneratorNote } from '../../webview/generatorNote';
 import { loadBearingWhitespace, WhitespaceReason } from '../../webview/whitespace';
+import { translationLabel, translations } from '../../webview/translations';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { XliffState } from '../../shared/state';
 
@@ -160,7 +161,7 @@ describe('NoteList (§3.7)', () => {
     it('shows every note verbatim, including ones from tools we do not know', () => {
         const list = mount(NoteList, { props: { notes, showDeveloperNotes: true } });
 
-        expect(list.findAll('.note')).toHaveLength(3);
+        expect(list.findAll('.from')).toHaveLength(3);
         expect(list.text()).toContain('checked');
         expect(list.text()).toContain('anonymous');
     });
@@ -181,7 +182,7 @@ describe('NoteList (§3.7)', () => {
     it('hides only the Developer notes when the setting is off', () => {
         const list = mount(NoteList, { props: { notes, showDeveloperNotes: false } });
 
-        expect(list.findAll('.note')).toHaveLength(2);
+        expect(list.findAll('.from')).toHaveLength(2);
         expect(list.text()).not.toContain('de-DE=Kunde');
     });
 
@@ -198,7 +199,7 @@ describe('the Developer hint', () => {
             developerHint: 'Kunde',
         });
 
-        expect(wrapper.get('.hint').text()).toContain('Kunde');
+        expect(wrapper.get('.aside').text()).toContain('Kunde');
         expect(wrapper.text()).toContain('de-DE=Kunde');
     });
 
@@ -206,7 +207,7 @@ describe('the Developer hint', () => {
         // Otherwise every unit prints its target twice, once as the suggestion.
         const wrapper = card({ target: 'Kunde', notes: [{ from: 'Developer', value: 'de-DE=Kunde' }], developerHint: 'Kunde' });
 
-        expect(wrapper.find('.hint').exists()).toBe(false);
+        expect(wrapper.find('.aside').exists()).toBe(false);
         expect(wrapper.text()).toContain('de-DE=Kunde');
     });
 
@@ -216,7 +217,7 @@ describe('the Developer hint', () => {
             developerHint: '%1 = Document No.',
         });
 
-        expect(wrapper.find('.hint').exists()).toBe(false);
+        expect(wrapper.find('.aside').exists()).toBe(false);
         expect(wrapper.text()).toContain('%1 = Document No.');
     });
 
@@ -226,7 +227,7 @@ describe('the Developer hint', () => {
             { showDeveloperNotes: false },
         );
 
-        expect(wrapper.find('.hint').exists()).toBe(false);
+        expect(wrapper.find('.aside').exists()).toBe(false);
     });
 });
 
@@ -309,12 +310,88 @@ describe('every DTO field is reachable', () => {
             sizeUnit: text.includes('char'),
             alObjectTarget: text.includes('Page 23584087'),
             notes: text.includes('de-DE=Kundin'),
-            developerHint: wrapper.find('.hint').exists(),
+            developerHint: wrapper.find('.aside').exists(),
             orphaned: true, // covered by its own case below; mutually exclusive with baseSource
             baseSource: text.includes('The base file now says'),
         };
 
         expect(Object.entries(shown).filter(([, visible]) => !visible).map(([field]) => field)).toEqual([]);
+    });
+});
+
+describe('the labelled box (UI-09, DEC-034)', () => {
+    const boxed = (over: Partial<TransUnitDto> = {}, props: Record<string, unknown> = {}) =>
+        mount(UnitCard, { props: { unit: unit(over), settings: DEFAULT_WEBVIEW_SETTINGS, ...props } });
+
+    it('legends the box with the name and the state, together', () => {
+        const wrapper = boxed({}, { name: 'Caption' });
+
+        expect(wrapper.get('.legend-name').text()).toBe('Caption');
+        expect(wrapper.get('.legend .state-badge').text()).toBe('translated');
+    });
+
+    it('labels the box for a screen reader with the legend it shows', () => {
+        const wrapper = boxed({}, { name: 'Caption' });
+        const box = wrapper.get('.box');
+
+        expect(box.attributes('aria-labelledby')).toBe(wrapper.get('.legend').attributes('id'));
+    });
+
+    it('falls back to the id when the caller has no name to give', () => {
+        // A node whose generator note could not be parsed has no name (§4.4). The last id
+        // segment is what a search of the raw file would match, so it beats a blank legend.
+        expect(boxed().get('.legend-name').text()).toBe('Property 2');
+    });
+
+    it('labels the source Original and the target with its language', () => {
+        const wrapper = boxed({}, { targetLanguage: 'de-DE' });
+        const labels = wrapper.findAll('.strings .label').map(each => each.text());
+
+        expect(labels).toEqual(['Original', '[ de-DE ]']);
+        expect(wrapper.findAll('.strings .value').map(each => each.text())).toEqual(['Customer', 'Kunde']);
+    });
+
+    it('says "target" rather than empty brackets when the file declares no language', () => {
+        expect(boxed().findAll('.strings .label').map(each => each.text())).toEqual(['Original', 'target']);
+    });
+
+    it('keeps the absent and empty target wordings inside the cell (§2.1)', () => {
+        expect(boxed({ target: undefined, state: XliffState.missing }).get('.target').text()).toBe('no target');
+        expect(boxed({ target: '', state: XliffState.empty }).get('.target').text()).toBe('empty target');
+        expect(boxed({ source: '' }).get('.source').text()).toBe('(empty source)');
+    });
+
+    it('keeps the load-bearing whitespace marks inside the cell (DEC-021)', () => {
+        const wrapper = boxed({ source: 'Name', target: ' ' });
+
+        expect(wrapper.get('.target').text()).toContain('␣');
+        expect(wrapper.get('.whitespace-note').text()).toContain('only whitespace');
+    });
+
+    it('renders one translation row, because XLIFF 1.2 allows one target', () => {
+        // Not an oversight and not a simplification waiting to happen: `<target>` is
+        // singular in the format, `<alt-trans>` is excluded, and a second language is a
+        // second file. The list is the seam Phase 7 fills — see `DEC-034` before removing it.
+        expect(boxed({}, { targetLanguage: 'de-DE' }).findAll('.strings .target')).toHaveLength(1);
+    });
+});
+
+describe('translations() (DEC-034)', () => {
+    it('returns exactly one entry, carrying the language, the value and the state', () => {
+        expect(translations(unit(), 'de-DE')).toEqual([{ language: 'de-DE', value: 'Kunde', state: XliffState.translated }]);
+    });
+
+    it('keeps an absent target absent rather than turning it into an empty string', () => {
+        expect(translations(unit({ target: undefined }), 'de-DE')[0].value).toBeUndefined();
+    });
+
+    it('carries no language when the file declares none', () => {
+        expect(translations(unit())[0].language).toBeUndefined();
+    });
+
+    it('labels a row with the language in brackets, or the plain word without one', () => {
+        expect(translationLabel({ language: 'fr-FR', state: XliffState.translated })).toBe('[ fr-FR ]');
+        expect(translationLabel({ state: XliffState.translated })).toBe('target');
     });
 });
 

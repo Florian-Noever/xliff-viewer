@@ -59,7 +59,7 @@ async function search(wrapper: ReturnType<typeof open>, query: string): Promise<
 }
 
 const rowKeys = (wrapper: ReturnType<typeof open>): string[] =>
-    wrapper.findAll('.tree-row .name').map(row => row.text());
+    wrapper.findAll('.tree-row .name, .tree-row .legend-name').map(row => row.text());
 
 let restore: () => void;
 

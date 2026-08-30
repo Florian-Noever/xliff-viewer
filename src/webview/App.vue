@@ -34,6 +34,7 @@
                 :tree="tree"
                 :summaries="rollup.byKey.value"
                 :settings="settings"
+                :target-language="activeFile.targetLanguage"
             />
             <p v-else class="placeholder">Waiting for a document…</p>
         </template>

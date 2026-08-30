@@ -26,18 +26,22 @@
         <span v-else class="chevron-spacer" aria-hidden="true" />
 
         <span v-if="row.group !== true" class="type">{{ row.type }}</span>
-        <span class="name">{{ label }}</span>
+        <!-- A unit's name is its box's legend (`DEC-034`), so the row does not repeat it —
+             unless there is no box, which is a tree rendered before its settings arrived. -->
+        <span v-if="row.unit === undefined || settings === undefined" class="name">{{ label }}</span>
         <UnitCard
-            v-if="row.unit !== undefined && settings !== undefined"
+            v-else
             class="card"
             :unit="row.unit"
             :settings="settings"
+            :name="row.name"
+            :target-language="targetLanguage"
             :generator-note="generatorNote"
         />
-        <span class="spacer" />
+        <!-- Only a row without a box needs pushing: the box itself fills the space. -->
+        <span v-if="row.unit === undefined || settings === undefined" class="spacer" />
         <span v-if="pairing !== undefined" class="pairing" :class="pairing.tone" :title="pairing.title">{{ pairing.label }}</span>
         <div v-if="row.unit !== undefined" class="unit-side">
-            <StateBadge :state="row.unit.state" :muted="!row.unit.translate" />
             <button
                 type="button"
                 class="action"
@@ -56,7 +60,6 @@
 import { computed } from 'vue';
 
 import ProgressBar from './ProgressBar.vue';
-import StateBadge from './StateBadge.vue';
 import UnitCard from './UnitCard.vue';
 import { Icon } from '../icons';
 import { useUnitActions } from '../unitActions';
@@ -73,6 +76,8 @@ const props = defineProps<{
     /** The roll-up for this node. Absent on a unit row, which shows its own state instead. */
     summary?: StateSummary;
     settings?: WebviewSettings;
+    /** The active `<file>`'s target language, which labels a unit's translation row (`DEC-034`). */
+    targetLanguage?: string;
     /** Rebuilt from the tree by the caller, since the payload does not carry it (§4.4). */
     generatorNote?: string;
 }>();

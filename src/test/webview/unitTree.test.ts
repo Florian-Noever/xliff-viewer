@@ -178,7 +178,9 @@ describe('the rows it renders', () => {
 describe('keyboard (§11.7)', () => {
     async function focused(wrapper: ReturnType<typeof mountTree>['wrapper']): Promise<string> {
         await nextTick();
-        return wrapper.find('.tree-row.is-focused').exists() ? wrapper.get('.tree-row.is-focused .name').text() : 'none';
+        return wrapper.find('.tree-row.is-focused').exists()
+            ? wrapper.get('.tree-row.is-focused .name, .tree-row.is-focused .legend-name').text()
+            : 'none';
     }
 
     it('moves down and up', async () => {
@@ -380,12 +382,14 @@ describe('the one navigation action (UI-06, DEC-032)', () => {
         return { wrapper, calls, button: wrapper.get('.action') };
     }
 
-    it('offers exactly one action, and it sits with the state', () => {
+    it('offers exactly one action, and the state sits on the box (DEC-034)', () => {
         const { wrapper, button } = mountRow('App.g.xlf');
 
         expect(wrapper.findAll('.action')).toHaveLength(1);
         expect(button.text()).toBe('Go to source');
-        expect(wrapper.get('.unit-side').findAll('.state-badge')).toHaveLength(1);
+        // The badge moved onto the legend, beside the name it describes.
+        expect(wrapper.get('.unit-side').findAll('.state-badge')).toHaveLength(0);
+        expect(wrapper.get('.legend').findAll('.state-badge')).toHaveLength(1);
     });
 
     it('asks the host for the base file, naming the unit', async () => {
@@ -488,7 +492,7 @@ describe('state on the rows (UI-03)', () => {
     it('shows a unit its own state and a container its roll-up', async () => {
         const { tree, units } = bigTree(1, 2);
         const summaries = summariseTree(tree, units);
-        const { wrapper } = mountTree(tree, units, 1, true, summaries);
+        const { wrapper } = mountTree(tree, units, 1, true, summaries, DEFAULT_WEBVIEW_SETTINGS);
         await nextTick();
 
         const rows = wrapper.findAll('.tree-row');
@@ -496,7 +500,8 @@ describe('state on the rows (UI-03)', () => {
         expect(rows[0].find('.progress').exists()).toBe(true);
         expect(rows[0].get('.counts').text()).toBe('2/2');
         expect(rows[1].find('.progress').exists()).toBe(false);
-        expect(rows[1].get('.state-badge').text()).toBe('translated');
+        // A unit's state is on its box's legend, not on the row (`DEC-034`).
+        expect(rows[1].get('.legend .state-badge').text()).toBe('translated');
     });
 
     it('shows no bar on a container until its summary arrives', async () => {
