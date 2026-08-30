@@ -6,6 +6,7 @@
             "dependsOn": [
                 "npm: watch:esbuild",
                 "npm: watch:tsc",
+                "npm: watch:vue-tsc",
                 "npm: watch:vite"
             ],
             "dependsOrder": "parallel",
@@ -78,6 +79,24 @@
             "problemMatcher": "$tsc-watch",
             "isBackground": true,
             "label": "npm: watch:tsc",
+            "presentation": {
+                "group": "watch",
+                "reveal": "never"
+            }
+        },
+        {
+            "type": "npm",
+            "script": "watch:vue-tsc",
+            "group": "build",
+            // `watch:tsc` covers the host and src/shared; `tsc` does not check .vue files at
+            // all, so without this a webview type error only appears at the next
+            // `check-types`. `vue-tsc` is tsc with a plugin and prints tsc's own watch
+            // messages verbatim, so `$tsc-watch` reads it unchanged — verified against a real
+            // run: "Starting compilation in watch mode..." then "Found 0 errors. Watching
+            // for file changes."
+            "problemMatcher": "$tsc-watch",
+            "isBackground": true,
+            "label": "npm: watch:vue-tsc",
             "presentation": {
                 "group": "watch",
                 "reveal": "never"
