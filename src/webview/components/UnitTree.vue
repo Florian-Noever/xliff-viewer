@@ -25,6 +25,7 @@
                         :data-index="item.index"
                         :row="rows[item.index]"
                         :settings="settings"
+                        :editing="editing"
                         :target-language="targetLanguage"
                         :generator-note="generatorNoteFor(rows[item.index])"
                         :summary="summaries?.get(rows[item.index].key)"
@@ -91,6 +92,8 @@ const props = defineProps<{
     settings?: WebviewSettings;
     /** The active `<file>`'s target language, which labels a unit's translation row (`DEC-034`). */
     targetLanguage?: string;
+    /** Editing is on and allowed, so a unit's target and state become fields (§12.2). */
+    editing?: boolean;
 }>();
 
 /**

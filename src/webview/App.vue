@@ -25,6 +25,7 @@
                 v-if="activeFile !== undefined"
                 :search="search"
                 :filter="filter"
+                :edit="edit"
                 :match-count="filtered?.count"
                 @expand-all="tree.expandAll()"
                 @collapse-all="tree.collapseAll()"
@@ -34,6 +35,7 @@
                 :tree="tree"
                 :summaries="rollup.byKey.value"
                 :settings="settings"
+                :editing="edit.active.value"
                 :target-language="activeFile.targetLanguage"
             />
             <p v-else class="placeholder">Waiting for a document…</p>
@@ -49,6 +51,7 @@ import StatusPane from './components/StatusPane.vue';
 import Toolbar from './components/Toolbar.vue';
 import UnitTree from './components/UnitTree.vue';
 import { useDesignTokens } from './composables/useDesignTokens';
+import { useEditMode } from './composables/useEditMode';
 import { useRollup } from './composables/useRollup';
 import { useSearch } from './composables/useSearch';
 import { useStateFilter } from './composables/useStateFilter';
@@ -70,6 +73,8 @@ const {
     blocking,
     openAsText,
     openSource,
+    updateTarget,
+    updateState,
 } = useXliffDocument();
 
 provideUnitActions({
@@ -78,8 +83,11 @@ provideUnitActions({
         const resolved = document.value?.baseFile;
         return resolved === undefined || resolved === null ? resolved : resolved.fileName;
     },
+    updateTarget: (unitId, value) => updateTarget(unitId, value),
+    updateState: (unitId, state) => updateState(unitId, state),
 });
 
+const edit = useEditMode({ document, settings });
 const rollup = useRollup({ file: activeFile, unitsById });
 const search = useSearch({ file: activeFile, unitsById });
 const filter = useStateFilter({

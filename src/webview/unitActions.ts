@@ -1,6 +1,7 @@
 import { inject, provide } from 'vue';
 
 import type { NavigationTarget } from '@shared/messages';
+import type { XliffState } from '@shared/state';
 import type { InjectionKey } from 'vue';
 
 /**
@@ -15,6 +16,9 @@ export interface UnitActions {
     open(target: NavigationTarget, unitId: string): void;
     /** Undefined while resolution has not run; null when it ran and found nothing (§9.2). */
     baseFileName(): string | null | undefined;
+    /** Commits a target (§12.1). Called on blur, never per keystroke. */
+    updateTarget(unitId: string, value: string): void;
+    updateState(unitId: string, state: XliffState): void;
 }
 
 /** Exported so a test can provide a stand-in without mounting the whole app. */
@@ -26,5 +30,10 @@ export function provideUnitActions(actions: UnitActions): void {
 
 /** Falls back to doing nothing, so a card can be mounted on its own in a test. */
 export function useUnitActions(): UnitActions {
-    return inject(UNIT_ACTIONS_KEY, { open: () => { }, baseFileName: () => undefined });
+    return inject(UNIT_ACTIONS_KEY, {
+        open: () => { },
+        baseFileName: () => undefined,
+        updateTarget: () => { },
+        updateState: () => { },
+    });
 }
