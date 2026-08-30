@@ -1,65 +1,165 @@
-# xliff-viewer README
+# XLIFF Viewer
 
-This is the README for your extension "xliff-viewer". After writing up a brief description, we recommend including the following sections.
+Open `.xlf` and `.xliff` translation files as a structured, themed GUI instead of raw XML. Built for Business Central / AL translation files, where a single file holds thousands of units and the trans-unit id already carries the object hierarchy — so the viewer shows objects, members and translated elements rather than one long list of `<trans-unit>` elements.
 
-## Features
-
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
-
-## Requirements
-
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
-
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
+> **Read-only today.** Everything below is what the viewer shows. Editing targets and states is designed and specified but **not yet built** — see [Status](#-status).
 
 ---
 
-## Working with Markdown
+## ✨ Features
 
-You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
+- **Structured tree** — object type → object → member → translated element, built from the trans-unit id rather than from the display note, so the grouping is exact even when two objects share a name
+- **Object-type grouping** — the top level is `Pages (40)`, `PageExtensions (60)`, `Codeunits (40)`…, so an app's hundreds of objects are navigable instead of one flat list
+- **Rolled-up state** — every container shows a progress bar coloured by its *worst* descendant, not by its percentage: 99 % done with one missing target is not the same as 99 % done with one needing review
+- **Every field shown** — source, target, `maxwidth`, `size-unit`, `al-object-target`, `translate="no"`, every `<note>`, and a state the spec does not define is shown as the file wrote it
+- **Search** — over id, names, source, target and notes, with `*` wildcards (`Contoso*`, `*Kunde*`); a matching unit brings its whole path into view
+- **State filter** — chips for the states the file actually contains, driven by the same roll-up the header shows
+- **Base-file pairing** — resolves the `.g.xlf` for a language file and marks units the base no longer has (*orphaned*) or whose source has since changed
+- **Go to source** — opens the resolved base file at the same unit
+- **Load-bearing whitespace** — a target that is only a space, or whose edges differ from the source, is marked and explained; `xml:space="preserve"` means those spaces are the translation
+- **Multi-`<file>` documents** — a switcher, with each file remembering its own expansion
+- **Reopen as XML** — the editor registers at `default` priority, so *Reopen Editor With… → Text Editor* is always there
+- **Desktop and web** — the same extension runs in VS Code and in `vscode.dev` / `github.dev`
 
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
+---
 
-## For more information
+## 🧰 Usage
 
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+Open any `.xlf` or `.xliff` file. The viewer replaces the text editor automatically.
 
-**Enjoy!**
+- **Header** — the app the file translates, its languages, unit count, resolved base file, and the whole file's progress
+- **Toolbar** — search, state chips, expand / collapse all
+- **Tree** — click a container row anywhere to open or close it; unit rows are content, not controls
+
+Each unit renders as a labelled box:
+
+```text
+Property
+┌ Caption                          ● translated ┐   Go to source
+│ Original     Contoso Methods Setup            │
+│ [ de-DE ]    Contoso Methoden Einrichtung     │
+└───────────────────────────────────────────────┘
+  Developer    de-DE=Contoso Methoden Einrichtung
+```
+
+The legend names the translated element and carries its state. `Original` is the source; the bracketed row is the translation, labelled with the file's target language.
+
+### Search tips
+
+- Plain text (`kunde`) — matches anywhere in id, names, source, target or notes, case-insensitively
+- Leading wildcard (`*setup`) — matches anything ending in the term
+- Trailing wildcard (`Table *`) — matches anything starting with it
+- Both (`*contoso*`) — the same as a plain substring match
+- Everything else is literal, so a query full of `.` and `(` from a source string still finds it
+
+---
+
+## ⌨️ Keyboard Shortcuts
+
+| Key                | Action                                                       |
+| ------------------ | ------------------------------------------------------------ |
+| `Ctrl+F` / `Cmd+F` | Focus the search box                                         |
+| `Escape`           | Clear the search (while the box is focused)                  |
+| `↑` `↓`            | Move through the visible rows                                |
+| `→`                | Open a closed row, or step into its first child              |
+| `←`                | Close an open row, or step out to its parent                 |
+| `Home` / `End`     | Jump to the first / last row                                 |
+| `Enter` / `Space`  | Open or close the focused row                                |
+
+---
+
+## ⚙️ Settings
+
+| Setting | Type | Default | Effect |
+| --- | --- | --- | --- |
+| `xliffViewer.baseFile` | `string` | `""` | An explicit base-file path or glob. Empty means "work it out" — see below |
+| `xliffViewer.showDeveloperNotes` | `boolean` | `true` | Show `Developer` notes and the suggestion parsed out of them |
+| `xliffViewer.showGeneratorNotes` | `boolean` | `false` | Show the `Xliff Generator` note, rebuilt from the tree |
+| `xliffViewer.defaultExpandDepth` | `number` | `1` | How many levels of real structure a file opens to |
+| `xliffViewer.editMode` | `boolean` | `false` | **Reserved.** Edit mode is not built; this setting changes nothing yet |
+| `xliffViewer.stateOnEdit` | `string` | `translated` | **Reserved.** Ditto |
+| `xliffViewer.validation.enabled` | `boolean` | `true` | **Reserved.** The in-GUI validation hints are not built; malformed XML is rejected regardless |
+
+### How the base file is found
+
+For `<App>.<lang>.xlf`, in order, first hit wins:
+
+1. `xliffViewer.baseFile` — absolute path, workspace-relative path, or glob
+2. `xliffSync.baseFile`, if the XLIFF Sync extension has it set — read defensively, never written
+3. The sibling `<App>.g.xlf`
+4. Any `*.g.xlf` in the same folder
+5. Any `*.g.xlf` under a `Translations/` folder in the workspace, preferring the one named after this app
+
+Not finding one is a normal state, not an error: the viewer works fully without a base file and the affordances that need one say why they are disabled. NAB AL Tools has no base-file setting to read — it uses the same convention steps 3–5 already implement.
+
+---
+
+## 🧠 Requirements
+
+VS Code 1.134 or newer. Nothing else — the AL Language extension is **not** required. The viewer reads the file you opened and, to pair it, the base file it resolves; nothing outside the workspace unless `xliffViewer.baseFile` points there.
+
+Malformed XML is rejected before parsing, with the line and column, rather than being silently half-read.
+
+---
+
+## 🚦 Status
+
+Not published. The read-only viewer is complete; edit mode is next.
+
+| Phase | State |
+| --- | --- |
+| Toolchain | ✅ complete |
+| Data layer — parse, validate, serialise, byte-identical round trip | ✅ complete |
+| Read-only GUI | ✅ complete |
+| Search, filter, base file, navigation | ✅ complete |
+| Edit mode | ⬜ not started |
+| Validation hints, accessibility, persistence, packaging | ⬜ not started |
+
+[`docs/implementation/STATUS.md`](docs/implementation/STATUS.md) is the canonical answer to "what works today" and is updated after every task.
+
+---
+
+## 🛠️ Developer Notes
+
+### Architecture
+
+| Layer | Technology | Purpose |
+| --- | --- | --- |
+| Extension host | TypeScript, esbuild → two CJS bundles | Parses the XLIFF, resolves the base file, owns navigation. One entry, built for both `node` and `browser`, so the same source runs on the desktop and on the web |
+| Shared | TypeScript | The model, the state domain, the DTOs and both message unions — imported by both runtimes, so there is one definition rather than two |
+| Webview | Vue 3, Vite, `@tanstack/vue-virtual` | The tree, virtualised. Rolls up state, searches and filters over the DTOs already in memory; no round trip to the host for a keystroke |
+
+The XML is parsed **once, in the host** — the webview never sees it. The whole document is read and written as one string with a format-faithful serialiser, verified byte-identical against every file in `Examples/`.
+
+### Build commands
+
+```bash
+bun install
+
+bun run compile          # check-types + lint + esbuild (both targets) + vite build
+bun run watch            # all four watchers, which is what F5 starts
+bun run check-types      # tsc for the host and tests, vue-tsc for the webview
+bun run lint             # eslint src
+bun run test             # vitest: data, host, webview, then the perf budgets
+bun run test:integration # @vscode/test-electron and @vscode/test-web
+bun run dev:webview      # the webview alone, against a real corpus fixture
+bun run package          # vsce package
+```
+
+`bun run dev:webview` serves the UI with no extension host behind it, rendering a real projection of `Examples/Fabrikam Base.de-DE.xlf`. A drift test rebuilds that fixture from the corpus and fails if it has been hand-edited, so the dev server always shows what the extension actually sends.
+
+### Tests
+
+Four Vitest projects: `data` (pure, and deliberately *without* a `vscode` alias, so a data test that imports it fails to resolve), `host` (a hand-written `vscode` mock), `webview` (jsdom), and `perf` (the wall-clock budgets, run serially so they measure the code rather than the load).
+
+### Planning documents
+
+`docs/implementation/` holds the durable plan: `MASTER_PLAN.md` (requirements), `ROADMAP.md` (ordered tasks), `STATUS.md` (verified current state), `DECISIONS.md` (`DEC-nnn`, never rewritten), `OPEN_QUESTIONS.md`.
+
+---
+
+## 📜 License
+
+Not yet chosen.
+
+Icons are from [`@vscode/codicons`](https://github.com/microsoft/vscode-codicons), licensed [CC BY 4.0](https://github.com/microsoft/vscode-codicons/blob/main/LICENSE).
