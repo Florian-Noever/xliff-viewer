@@ -736,6 +736,27 @@ describe('recognising our own edit (EDIT-02)', () => {
         expect(before).toBe(document.getText());
     });
 
+    it('tells every view of the document, not only the one that asked (REVIEW-02b)', async () => {
+        // Two editors share one session. A patch that reached only the editing view would
+        // leave the other showing a target the file no longer has.
+        const document = openDocument('language.xlf', LANGUAGE);
+        const session = sessionFor(document);
+        const first: ExtensionMessage[] = [];
+        const second: ExtensionMessage[] = [];
+        const facade = createDocumentSession(session, message => first.push(message));
+        session.attach(change => facade.apply(change));
+        const other = createDocumentSession(session, message => second.push(message));
+        session.attach(change => other.apply(change));
+        session.current();
+        first.length = 0;
+        second.length = 0;
+
+        await facade.updateTarget(UNIT, 'EditedTranslation');
+
+        expect(types(first)).toEqual([ExtensionMessageType.patchUnits]);
+        expect(types(second)).toEqual([ExtensionMessageType.patchUnits]);
+    });
+
     it('keeps the model and its text in step, so the next edit lands correctly', async () => {
         const { document, facade, posted } = edited(LANGUAGE);
 
