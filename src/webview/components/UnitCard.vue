@@ -38,6 +38,7 @@
                             :style="fieldStyle"
                             spellcheck="false"
                             :value="translation.value ?? ''"
+                            @input="fitHeight($event)"
                             @blur="commitTarget($event)"
                             @keydown.esc.prevent="revert($event)"
                         />
@@ -147,19 +148,34 @@ const longestLine = (value: string) => value.split('\n').reduce((widest, line) =
 /**
  * Both of these are **floors**, not sizes.
  *
- * `field-sizing: content` is what actually sizes the field, and it does so as the reader
- * types: the field widens with the word being written until it reaches `--field-max-inline`,
- * and only then wraps. An explicit `inline-size` would defeat that, so the source's width is
- * a minimum instead — a target that is still empty gets room the size of what it has to say,
- * and grows from there.
+ * Width is `field-sizing: content`'s: the field widens with the word being written until it
+ * reaches `--field-max-inline`, and only then wraps. An explicit `inline-size` would defeat
+ * that, so the source's width is a minimum instead — a target that is still empty gets room
+ * the size of what it has to say, and grows from there.
  *
- * `min-block-size` is the same idea for height, and is what stops `resize: vertical` from
- * dragging the field shorter than the text it started with.
+ * Height has no cap: a translation is worth seeing whole. One line is the floor, and it is
+ * what `resize: vertical` may shrink to — the floor is a line rather than the initial height
+ * so a long target can be folded away when it is not the one being read.
  */
 const fieldStyle = computed(() => ({
     minInlineSize: `${Math.min(FIELD_MAX_COLUMNS, Math.max(FIELD_MIN_COLUMNS, longestLine(props.unit.source)))}ch`,
-    minBlockSize: `calc(${targetRows.value} * 1lh + var(--field-chrome))`,
+    minBlockSize: 'calc(1lh + var(--field-chrome))',
 }));
+
+/**
+ * Fits the field to what it now holds, on every keystroke.
+ *
+ * `field-sizing: content` does this on its own here, and is what sizes the width. Height is
+ * the axis a translator watches while typing, so it is set rather than left to a feature
+ * whose behaviour we can only confirm in one engine. `blockSize` is set to `auto` first so
+ * the field can shrink back as well as grow, and the border is added because `scrollHeight`
+ * counts the padding but not the border that `border-box` includes.
+ */
+function fitHeight(event: Event): void {
+    const field = event.target as HTMLTextAreaElement;
+    field.style.blockSize = 'auto';
+    field.style.blockSize = `${field.scrollHeight + field.offsetHeight - field.clientHeight}px`;
+}
 
 /**
  * Committed on **blur**, never per keystroke.
@@ -310,8 +326,8 @@ const hint = computed(() => {
 }
 
 .target-input {
-    /* Everything `border-box` adds to the height, which `min-block-size` has to allow for. */
-    --field-chrome: 4px;
+    /* The padding and border below, which `min-block-size` and `fitHeight` allow for. */
+    --field-chrome: 8px;
     /* `FIELD_MAX_COLUMNS`, which floors the same field from the other side. */
     --field-max-inline: 72ch;
 
@@ -320,7 +336,8 @@ const hint = computed(() => {
     /* The field grows with what is typed into it, in both directions, as it is typed. */
     field-sizing: content;
     max-inline-size: min(var(--field-max-inline), 100%);
-    padding: 1px 4px;
+    /* Room to put the caret before the first character and after the last one. */
+    padding: 3px 7px;
     border: 1px solid var(--vscode-input-border);
     border-radius: var(--radius-sm);
     background: var(--vscode-input-background);
