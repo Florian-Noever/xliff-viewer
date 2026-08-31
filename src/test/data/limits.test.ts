@@ -48,12 +48,13 @@ describe('shapes AL never emits but XLIFF allows', () => {
     });
 });
 
-describe('known losses — deliberate, recorded, and not yet fixed', () => {
-    it('DROPS XML comments (see STATUS Known Issues; task DATA-03a)', () => {
+describe('known losses — deliberate and recorded', () => {
+    it('DROPS XML comments, which is why a document with one is never written (DEC-038)', () => {
         const text = wrap('      <!-- reviewed by AB -->\n      <trans-unit id="a">\n        <source>s</source>\n      </trans-unit>');
 
-        // This is content loss, not formatting normalisation. Asserted so that the day
-        // someone fixes it, this test fails and tells them to update the record.
+        // Content loss, not formatting normalisation — which is exactly why the write path
+        // refuses such a document rather than rewriting it (`DEC-038`). Asserted so that the
+        // day someone preserves comments, this test fails and tells them the guard can go.
         expect(roundTrip(text)).not.toContain('reviewed by AB');
     });
 

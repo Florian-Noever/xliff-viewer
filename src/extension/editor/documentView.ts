@@ -165,10 +165,10 @@ async function write(
             : 'This file is read-only.');
         return;
     }
-    // `DATA-03a`: the parser drops comments, so writing this document would delete them.
+    // `DEC-038`: the parser drops comments, so writing this document would delete them.
     // Refusing costs an edit; the alternative costs somebody's comment.
     if (containsComment(state.text)) {
-        void vscode.window.showInformationMessage('This file contains XML comments, which this editor cannot yet preserve. Edit it as text instead.');
+        void vscode.window.showInformationMessage('This file contains XML comments, which this editor does not preserve. Edit it as text instead.');
         return;
     }
 

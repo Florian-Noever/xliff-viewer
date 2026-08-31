@@ -577,7 +577,7 @@ describe('what the write path refuses (EDIT-01)', () => {
         expect(flushInfoMessages()[0]).toContain('until it parses');
     });
 
-    it('refuses a document carrying XML comments rather than deleting them (DATA-03a)', async () => {
+    it('refuses a document carrying XML comments rather than deleting them (DEC-038)', async () => {
         // The parser drops comments, so this write would silently take them with it.
         const document = openDocument('language.xlf', WITH_COMMENT);
         const { facade } = view(sessionFor(document));
