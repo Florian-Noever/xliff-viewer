@@ -203,6 +203,12 @@ describe('the Developer hint', () => {
         expect(wrapper.text()).toContain('de-DE=Kunde');
     });
 
+    it('labels the row the way every other label in the card is written', () => {
+        const wrapper = card({ target: 'Kundin', notes: [{ from: 'Developer', value: 'de-DE=Kunde' }], developerHint: 'Kunde' });
+
+        expect(wrapper.get('.aside .label').text()).toBe('Suggested');
+    });
+
     it('stays quiet when the translator already used it — which is most of the corpus', () => {
         // Otherwise every unit prints its target twice, once as the suggestion.
         const wrapper = card({ target: 'Kunde', notes: [{ from: 'Developer', value: 'de-DE=Kunde' }], developerHint: 'Kunde' });

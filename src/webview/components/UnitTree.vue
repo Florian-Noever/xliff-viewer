@@ -63,6 +63,14 @@ import type { ComponentPublicInstance } from 'vue';
 
 const OVERSCAN = 8;
 
+/**
+ * What a keystroke belongs to when it does not belong to the tree.
+ *
+ * The handler sits on the scroller, so everything typed into a row bubbles through it. A
+ * target field needs Space, Enter, the arrows and Home/End far more than the tree does.
+ */
+const CONTROL_SELECTOR = 'input, textarea, select, button, [contenteditable="true"]';
+
 /** Key → intent. The mapping is presentation; what each intent *does* is the composable's (§11.7). */
 const KEY_ACTIONS: Readonly<Record<string, (tree: TreeView) => void>> = {
     ArrowDown: tree => tree.moveFocus(1),
@@ -141,11 +149,16 @@ watch(() => props.tree.focusedIndex.value, (index) => {
 
 function onKeydown(event: KeyboardEvent): void {
     const handled = KEY_ACTIONS[event.key];
-    if (handled === undefined) {
+    if (handled === undefined || startedInAControl(event.target)) {
         return;
     }
     event.preventDefault();
     handled(props.tree);
+}
+
+/** `closest`, not an instance check: the glyph inside a button is what gets the event. */
+function startedInAControl(target: EventTarget | null): boolean {
+    return target instanceof Element && target.closest(CONTROL_SELECTOR) !== null;
 }
 </script>
 

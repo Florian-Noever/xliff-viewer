@@ -56,16 +56,25 @@ Nothing has been published yet. This section is what the extension does today; i
 - *Go to source* opens the base file at the same unit
 - Both caches are watcher-driven: regenerating the base file while a translation is open re-marks it
 
+**Edit mode**
+- Off by default and opt-in per window; when it is off, the reason is stated — a base file, a read-only document, or simply the toggle
+- Targets are written through a `WorkspaceEdit`, never to disk, so one typed translation is one undo step and saving is VS Code's business
+- A missing `<target>` is inserted, and clearing one writes the self-closing form AL itself emits
+- The state follows the edit — `stateOnEdit` by default, a state the translator picked instead, and `needs-translation` whenever the target is cleared
+- Our own edit is recognised by its span and text, so the view is patched in place rather than rebuilt: focus, scroll and expansion survive typing
+- The target field takes the space it needs, grows as lines are added, and cannot be dragged shorter than what it holds
+- A file that begins with a UTF-8 BOM says so once when first edited: VS Code drops the mark when it saves, and an extension cannot stop it
+
 **Settings**
-- `xliffViewer.baseFile`, `showDeveloperNotes`, `showGeneratorNotes`, `defaultExpandDepth` all take effect immediately
-- `editMode`, `stateOnEdit` and `validation.enabled` are declared but reserved — edit mode and the in-GUI validation hints are not built
+- `xliffViewer.baseFile`, `showDeveloperNotes`, `showGeneratorNotes`, `defaultExpandDepth`, `editMode` and `stateOnEdit` all take effect immediately
+- `validation.enabled` is declared but reserved — the in-GUI validation hints are not built
 
 **Performance**
 - Every wall-clock budget is an assertion in a serial test project rather than a claim: opening the 1.35 MB / 2 500-unit corpus file takes 86 ms host-side against a 250 ms budget, a keystroke filters the tree in 0.5 ms against 50 ms, and the payload is 1 220 KB from a 1 350 KB source
 
 ### Known limitations
 
-- **Editing is not implemented.** The write path exists and is tested, but nothing in the GUI reaches it yet
-- **XML comments are dropped.** No AL-generated file contains one, so this has never mattered for reading — but it must be settled before edit mode ships, since a whole-document write would delete a comment a person added by hand
+- **A document containing an XML comment cannot be edited.** The parser drops comments, and a whole-document write would delete one a person added by hand, so such a file is refused rather than silently rewritten. No AL-generated file contains one
+- **Validation hints are not built.** Nothing warns yet about a target past its `maxwidth`, a placeholder the translation lost, or an empty target claiming to be translated
 - `<alt-trans>`, `<context-group>` and inline tags (`<g>`, `<ph>`) are not modelled. None occurs anywhere in the corpus
 - The webview has not been confirmed inside VS Code for the Web. The editor binds correctly there and the same bundle renders correctly when served directly, but the automated browser cannot register that host's webview service worker

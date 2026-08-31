@@ -35,6 +35,7 @@
                             ref="editor"
                             class="target-input"
                             :rows="targetRows"
+                            :style="fieldStyle"
                             spellcheck="false"
                             :value="translation.value ?? ''"
                             @blur="commitTarget($event)"
@@ -62,7 +63,7 @@
         </div>
 
         <dl v-if="hint !== undefined" class="aside">
-            <dt class="label">suggested</dt>
+            <dt class="label">Suggested</dt>
             <dd class="value">{{ hint }}</dd>
         </dl>
 
@@ -111,6 +112,11 @@ import type { WebviewSettings } from '@shared/settings';
 
 const SPACE_MARK = '␣';
 
+/** Narrow enough that a one-word caption gets a small field, wide enough to type into. */
+const FIELD_MIN_COLUMNS = 24;
+/** Past this the field would be a wall of text; what does not fit wraps. */
+const FIELD_MAX_COLUMNS = 72;
+
 const props = defineProps<{
     unit: TransUnitDto;
     settings: WebviewSettings;
@@ -135,6 +141,23 @@ const editing = computed(() => props.editing === true);
  * Capped, because one unit must not take the whole viewport.
  */
 const targetRows = computed(() => Math.min(8, Math.max(1, (props.unit.target ?? '').split('\n').length)));
+
+const longestLine = (value: string) => value.split('\n').reduce((widest, line) => Math.max(widest, line.length), 0);
+
+/**
+ * The field is sized to what it holds rather than to the row.
+ *
+ * Width comes from the longer of the source and the target — the source is what the
+ * translation is about to say, so it is the better guess for a target that is still empty.
+ *
+ * `min-block-size` is what stops `resize: vertical` from dragging the field shorter than
+ * the text it started with. `field-sizing: content` grows it from there; a drag sets an
+ * explicit height that wins over both, and the floor is what keeps that drag honest.
+ */
+const fieldStyle = computed(() => ({
+    inlineSize: `${Math.min(FIELD_MAX_COLUMNS, Math.max(FIELD_MIN_COLUMNS, longestLine(props.unit.source), longestLine(props.unit.target ?? '')))}ch`,
+    minBlockSize: `calc(${targetRows.value} * 1lh + var(--field-chrome))`,
+}));
 
 /**
  * Committed on **blur**, never per keystroke.
@@ -224,20 +247,11 @@ const hint = computed(() => {
 }
 
 /*
- * Sized to its contents, not to the row. `align-self` on a column flex item is
- * fit-content, so a short string gets a short box while a long one still wraps at the
- * width the row has left rather than pushing past it.
+ * Sized to its contents, not to the row, in both modes. `align-self` on a column flex item
+ * is fit-content, so a short string gets a short box while a long one still wraps at the
+ * width the row has left rather than pushing past it. The field inside carries its own
+ * width for the same reason (`fieldStyle`).
  */
-/*
- * A field needs room; a label does not. Read-only, the box is as wide as its longest
- * string, which is what keeps a column of them scannable. In edit mode it takes the row,
- * because a target typed into the width of its old value is a target typed through a
- * letterbox.
- */
-.unit-card.editing .box {
-    align-self: stretch;
-}
-
 .box {
     align-self: flex-start;
     max-width: 100%;
@@ -282,6 +296,11 @@ const hint = computed(() => {
     margin: 0;
 }
 
+/* A bordered field one pixel under the source reads as a strikethrough through it. */
+.unit-card.editing .strings {
+    row-gap: 4px;
+}
+
 /* The box's border plus its padding, so the columns continue straight through it. */
 .aside,
 .note-list {
@@ -289,9 +308,14 @@ const hint = computed(() => {
 }
 
 .target-input {
+    /* Everything `border-box` adds to the height, which `min-block-size` has to allow for. */
+    --field-chrome: 4px;
+
     display: block;
-    inline-size: 100%;
-    min-inline-size: 12ch;
+    box-sizing: border-box;
+    /* The field grows with what is typed into it, so pressing Enter visibly does something. */
+    field-sizing: content;
+    max-inline-size: 100%;
     padding: 1px 4px;
     border: 1px solid var(--vscode-input-border);
     border-radius: var(--radius-sm);

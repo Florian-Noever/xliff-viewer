@@ -31,6 +31,9 @@ function bigTree(roots: number, members: number): { tree: AlNodeDto[]; units: Ma
     return { tree, units };
 }
 
+/** The card asks for these through `provide`; no tree test is about what they do. */
+const NO_ACTIONS = { open: () => { }, baseFileName: () => undefined, updateTarget: () => { }, updateState: () => { } };
+
 function mountTree(
     tree: AlNodeDto[],
     units: Map<string, TransUnitDto>,
@@ -38,6 +41,7 @@ function mountTree(
     hasAlIds = true,
     summaries?: ReadonlyMap<string, StateSummary>,
     settings?: WebviewSettings,
+    editing = false,
 ) {
     const file = ref<XliffFileDto>({
         index: 0,
@@ -59,10 +63,13 @@ function mountTree(
                 documentUri: computed(() => 'file:///w/one.xlf'),
             });
             view = created;
-            return { tree: created, summaries, settings };
+            return { tree: created, summaries, settings, editing };
         },
-        template: '<UnitTree :tree="tree" :summaries="summaries" :settings="settings" />',
-    }), { attachTo: document.body });
+        template: '<UnitTree :tree="tree" :summaries="summaries" :settings="settings" :editing="editing" />',
+    }), {
+        attachTo: document.body,
+        global: { provide: { [UNIT_ACTIONS_KEY as symbol]: NO_ACTIONS } },
+    });
 
     if (view === undefined) {
         throw new Error('composable did not run');
@@ -242,6 +249,49 @@ describe('keyboard (§11.7)', () => {
         await wrapper.get('[role="tree"]').trigger('keydown', { key: 'a' });
 
         expect(await focused(wrapper)).toBe('none');
+    });
+});
+
+describe('a key typed into a field belongs to the field (EDIT-03a)', () => {
+    /** One object, one unit, editing on — the shape that puts a textarea inside the tree. */
+    async function editableTree() {
+        const { tree, units } = bigTree(1, 1);
+        const mounted = mountTree(tree, units, 2, true, undefined, DEFAULT_WEBVIEW_SETTINGS, true);
+        await nextTick();
+        return mounted;
+    }
+
+    /**
+     * The handler is on the scroller, so everything typed in a row bubbles through it.
+     * Before `EDIT-03a` it called `preventDefault` on all of these, and a translator could
+     * not type a space, start a line, or move the caret.
+     */
+    it.each(['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowLeft', 'Home', 'End', 'Enter', ' '])(
+        'leaves %s alone when it was typed into the target field',
+        async (key) => {
+            const { wrapper, view } = await editableTree();
+            const before = view.rows.value.length;
+            const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+
+            wrapper.get('textarea').element.dispatchEvent(event);
+            await nextTick();
+
+            expect(event.defaultPrevented).toBe(false);
+            expect(view.rows.value).toHaveLength(before);
+        },
+    );
+
+    it('still answers the same keys when they belong to the tree', async () => {
+        const { wrapper, view } = await editableTree();
+        const tree = wrapper.get('[role="tree"]');
+
+        await tree.trigger('keydown', { key: 'ArrowDown' });
+        const event = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
+        tree.element.dispatchEvent(event);
+        await nextTick();
+
+        expect(event.defaultPrevented).toBe(true);
+        expect(view.rows.value).toHaveLength(1);
     });
 });
 

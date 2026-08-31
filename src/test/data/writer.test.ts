@@ -224,3 +224,44 @@ describe('the round-trip stays green after a write', () => {
         expect(serialiseXliff(parseXliff(written))).toBe(written);
     });
 });
+
+/**
+ * `EDIT-03a`. The field lets a translator press Enter, so a target can hold a real line
+ * break. It is worth pinning that one survives: nothing in the corpus has one — AL writes
+ * its own line break as a literal backslash inside a single-line string — so no existing
+ * test would notice if the write path started normalising or escaping them.
+ */
+describe('a line break a translator typed', () => {
+    const TYPED = 'Erste Zeile\nZweite Zeile';
+
+    it('survives the write, the re-parse and the re-serialise', () => {
+        const { text, document, units } = load(LANGUAGE_FILE);
+        const written = apply(text, required(setTarget(document, text, { unitId: units[10].id, value: TYPED }), 'an edit'));
+
+        const reparsed = parseXliff(written);
+        expect([...iterateUnits(reparsed)].find(unit => unit.id === units[10].id)?.target?.value).toBe(TYPED);
+        expect(serialiseXliff(reparsed)).toBe(written);
+    });
+
+    it('does not drag the document\'s own line endings along with it', () => {
+        // A CRLF document with an LF inside a target: the target keeps what was typed and
+        // the file keeps what it had. Mixing the two would rewrite every line.
+        const source = read(LANGUAGE_FILE).split('\n').join('\r\n');
+        const document = parseXliff(source);
+        const units = [...iterateUnits(document)];
+        const written = apply(source, required(setTarget(document, source, { unitId: units[10].id, value: TYPED }), 'an edit'));
+
+        expect(written.split('\r\n')).toHaveLength(source.split('\r\n').length);
+        expect([...iterateUnits(parseXliff(written))].find(unit => unit.id === units[10].id)?.target?.value).toBe(TYPED);
+    });
+
+    it('leaves AL\'s own backslash line break exactly as it found it', () => {
+        // `Text.\\` is one line to XML and a line break to AL. It is a character like any
+        // other here, and nothing in the write path may treat it as an escape.
+        const { text, document, units } = load(LANGUAGE_FILE);
+        const written = apply(text, required(setTarget(document, text, { unitId: units[10].id, value: 'Achtung! \\Weiter?' }), 'an edit'));
+
+        expect(written).toContain('>Achtung! \\Weiter?</target>');
+        expect([...iterateUnits(parseXliff(written))].find(unit => unit.id === units[10].id)?.target?.value).toBe('Achtung! \\Weiter?');
+    });
+});
