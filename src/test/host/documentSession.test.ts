@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { XliffDocumentSession } from '../../extension/editor/documentSession';
 import { DocumentSessionRegistry } from '../../extension/editor/documentSessionRegistry';
 import { createDocumentSession } from '../../extension/editor/documentView';
+import { BaseFileResolver } from '../../extension/services/baseFileResolver';
 import { Logger } from '../../extension/services/logger';
 import { ExtensionMessageType } from '../../shared/messages';
 import { XliffState } from '../../shared/state';
@@ -945,5 +946,32 @@ describe('what an edit does to the state (EDIT-04, §12.3)', () => {
         await facade.updateState(UNIT, XliffState.needsAdaptation);
 
         expect(targetLine(document, LANGUAGE)).toBe('<target state="needs-adaptation">ExampleTranslation</target>');
+    });
+});
+
+describe('when base-file resolution itself fails (REVIEW-03)', () => {
+    it('says there is no base file rather than leaving the question open', async () => {
+        // `null` and `undefined` are different answers on this message: `null` means
+        // resolution ran and found nothing, which the header states out loud; `undefined`
+        // means it has not run, and the header waits. A resolver that throws must produce
+        // the first, or the header waits for an answer that is never coming.
+        const resolver = new BaseFileResolver();
+        vi.spyOn(resolver, 'resolve').mockRejectedValue(new Error('the workspace went away'));
+        const session = sessionFor(openDocument('Contoso App.de-DE.xlf', read('Contoso App.de-DE.xlf')));
+        const posted: ExtensionMessage[] = [];
+
+        try {
+            const facade = createDocumentSession(session, message => posted.push(message), resolver);
+            await facade.sendDocument();
+            const answers = posted.filter(message => message.type === ExtensionMessageType.baseFile);
+
+            expect(answers).toHaveLength(1);
+            expect(answers[0].payload).toBeNull();
+            expect(flushLogs().join(' ')).toContain('Base-file resolution failed');
+            facade.dispose();
+        } finally {
+            resolver.dispose();
+            session.dispose();
+        }
     });
 });
