@@ -65,6 +65,12 @@ Nothing has been published yet. This section is what the extension does today; i
 - The target field grows as it is typed into — wider until it reaches its cap, then taller, with no limit on height — and folds back down to a single line when dragged
 - A file that begins with a UTF-8 BOM says so once when first edited: VS Code drops the mark when it saves, and an extension cannot stop it
 
+**Coming back to where you were**
+- Hiding a tab and returning to it keeps the expansion, the focused row, the scroll position, the search, the state filter and the edit toggle
+- The webview is not held in memory while the tab is hidden. It is rebuilt from the host's cached parse on reveal — 36 ms for a 2 500-unit file against a 400 ms budget — and the view state is what makes that invisible
+- The scroll position is remembered as a row rather than as a pixel offset, so it lands in the right place whatever the virtualiser has measured so far
+- A saved state that no longer fits the document is ignored rather than half-applied
+
 **Keyboard and screen readers**
 - The tree is a real ARIA tree: `role`, `aria-level`, `aria-expanded`, and sibling counts that reflect the whole tree rather than the handful of rows on screen
 - One tab stop for the tree and the arrow keys inside it, with `aria-activedescendant` naming the current row — set only while that row is rendered, never pointing at something that is not there

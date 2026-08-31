@@ -45,7 +45,7 @@
 
 <script setup lang="ts">
 import { useVirtualizer } from '@tanstack/vue-virtual';
-import { computed, ref, useId, watch } from 'vue';
+import { computed, nextTick, ref, useId, watch } from 'vue';
 
 import TreeRow from './TreeRow.vue';
 import { ROW_HEIGHT } from '../constants';
@@ -98,6 +98,8 @@ const KEY_ACTIONS: Readonly<Record<string, (tree: TreeView) => void>> = {
     },
 };
 
+const emit = defineEmits<{ scrolled: [row: number] }>();
+
 const props = defineProps<{
     tree: TreeView;
     /** Node key → roll-up. Optional so the tree renders before `UI-03`'s summaries exist. */
@@ -138,6 +140,32 @@ const virtualizer = useVirtualizer(computed(() => ({
 
 const virtualItems = computed(() => virtualizer.value.getVirtualItems());
 const offset = computed(() => virtualItems.value[0]?.start ?? 0);
+
+/**
+ * Where the tree is scrolled to, as the **first rendered row** rather than a pixel offset.
+ *
+ * Emitted when that row changes, not on every scroll event: a pixel of movement is not a
+ * change worth persisting, and `POLISH-03` throttles on top of this.
+ */
+const firstVisibleRow = computed(() => virtualItems.value[0]?.index ?? 0);
+watch(firstVisibleRow, row => emit('scrolled', row));
+
+/**
+ * Puts a saved scroll position back (§11.8).
+ *
+ * `scrollToIndex` rather than a `scrollTop`, because row heights are measured lazily as
+ * rows render: a restored pixel offset lands wherever the estimates happened to put it,
+ * while an index is exact whatever has been measured so far. Deferred a tick so the rows
+ * the caller just restored the expansion for exist to scroll among.
+ */
+async function scrollToRow(index: number): Promise<void> {
+    await nextTick();
+    if (index > 0 && index < rows.value.length) {
+        virtualizer.value.scrollToIndex(index, { align: 'start' });
+    }
+}
+
+defineExpose({ scrollToRow });
 
 /**
  * `aria-activedescendant` names an element, so every row needs an id — by **position**

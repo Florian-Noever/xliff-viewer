@@ -5,6 +5,7 @@ import { XliffEditorProvider } from '../../extension/editor/xliffEditorProvider'
 import { Logger } from '../../extension/services/logger';
 import { ExtensionMessageType, WebviewMessageType } from '../../shared/messages';
 import {
+    customEditorRegistrations,
     documentChangeListenerCount,
     FakeTextDocument,
     fireConfigurationChange,
@@ -373,5 +374,22 @@ describe('navigation that cannot go anywhere still says so (\u00a712.5)', () => 
         await settle();
 
         expect(flushInfoMessages()).toEqual(['Choose a unit to show in the base file.']);
+    });
+});
+
+describe('how the editor is registered (DEC-030)', () => {
+    it('does not ask VS Code to keep a hidden tab alive', () => {
+        // `retainContextWhenHidden` was kept only until `POLISH-03` could put back what a
+        // destroyed webview loses. It costs memory per open tab, and the reveal it was
+        // protecting measured 36 ms against a 400 ms budget.
+        customEditorRegistrations.length = 0;
+        const context = { extensionUri: vscode.Uri.file('/ext'), subscriptions: [] } as unknown as vscode.ExtensionContext;
+
+        XliffEditorProvider.register(context);
+
+        const [registration] = customEditorRegistrations;
+        expect(registration.viewType).toBe('xliff-viewer.editor');
+        expect(JSON.stringify(registration.options)).not.toContain('retainContextWhenHidden');
+        expect(registration.options).toEqual({ supportsMultipleEditorsPerDocument: true });
     });
 });

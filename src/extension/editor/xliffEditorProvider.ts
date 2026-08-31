@@ -35,8 +35,12 @@ export class XliffEditorProvider implements vscode.CustomTextEditorProvider {
 
     public static register(context: vscode.ExtensionContext): vscode.Disposable {
         const provider = new XliffEditorProvider(context.extensionUri);
+        // No `retainContextWhenHidden` (`DEC-030`). A hidden tab's webview is destroyed and
+        // rebuilt from the host's cached parse on reveal — 36 ms against a 400 ms budget —
+        // and `POLISH-03`'s `vscode.setState` puts back what that costs: expansion, focus,
+        // scroll, search, filter and the edit toggle. The flag was kept until the
+        // persistence existed precisely so the reveal would not lose them.
         const registration = vscode.window.registerCustomEditorProvider(XliffEditorProvider.viewType, provider, {
-            webviewOptions: { retainContextWhenHidden: true },
             supportsMultipleEditorsPerDocument: true,
         });
 

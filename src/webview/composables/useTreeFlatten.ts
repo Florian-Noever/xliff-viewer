@@ -60,6 +60,22 @@ export interface TreeView {
     /** ←: closes an open node, else steps out to its parent. */
     collapseFocused(): void;
     dismissFlatNote(): void;
+    /** What each `<file>` has open and what it was focused on, for `POLISH-03` to persist. */
+    snapshot(): TreeSnapshot;
+    /**
+     * Puts a saved expansion back (§11.8).
+     *
+     * A key that no longer names a node is kept rather than dropped: the set is consulted by
+     * lookup, so a stale key opens nothing, and dropping it would lose a branch a re-parse
+     * is about to bring back. What must not happen is a throw.
+     */
+    restore(snapshot: TreeSnapshot): void;
+}
+
+/** Both maps are keyed by `<file>` index as a string, because that is what JSON gives back. */
+export interface TreeSnapshot {
+    readonly expanded: Readonly<Record<string, readonly string[]>>;
+    readonly focused: Readonly<Record<string, string>>;
 }
 
 /**
@@ -167,6 +183,7 @@ export function useTreeFlatten(source: TreeSource): TreeView {
     function write(change: Partial<FileViewState>): void {
         const next = new Map(byFile.value);
         next.set(fileIndex.value, { ...state.value, ...change });
+        statefulUri = source.documentUri.value;
         byFile.value = next;
     }
 
@@ -272,6 +289,31 @@ export function useTreeFlatten(source: TreeSource): TreeView {
         dismissedNoteFor.value = new Set(dismissedNoteFor.value).add(fileIndex.value);
     }
 
+    function snapshot(): TreeSnapshot {
+        const expanded: Record<string, readonly string[]> = {};
+        const focused: Record<string, string> = {};
+        for (const [index, view] of byFile.value) {
+            expanded[String(index)] = [...view.expanded];
+            if (view.focusedKey !== undefined) {
+                focused[String(index)] = view.focusedKey;
+            }
+        }
+        return { expanded, focused };
+    }
+
+    function restore(saved: TreeSnapshot): void {
+        const next = new Map<number, FileViewState>();
+        for (const [index, keys] of Object.entries(saved.expanded)) {
+            const file = Number(index);
+            if (Number.isInteger(file)) {
+                next.set(file, { expanded: new Set(keys), focusedKey: saved.focused[index] });
+            }
+        }
+        // The URI the watcher remembers moves with it, or the next document-change check
+        // treats this as a new document and reseeds the state just put back.
+        byFile.value = next;
+    }
+
     return {
         rows,
         nodesByKey,
@@ -286,5 +328,7 @@ export function useTreeFlatten(source: TreeSource): TreeView {
         expandFocused,
         collapseFocused,
         dismissFlatNote,
+        snapshot,
+        restore,
     };
 }
