@@ -324,15 +324,34 @@ describe('the card in edit mode', () => {
         expect(wrapper.get('textarea').attributes('style')).toContain('min-inline-size: 72ch');
     });
 
-    it('cannot be dragged shorter than the text already in it (EDIT-03a)', () => {
-        // `resize: vertical` has no floor of its own, so a drag can hide a line the
-        // translator wrote. The floor is the height `rows` started at.
+    it('can be folded down to one line, and no further (EDIT-03a)', () => {
+        // `resize: vertical` has no floor of its own, so a drag can take a field to nothing.
+        // One line rather than the height it opened at: a long target is worth folding away
+        // when it is not the one being read.
         const one = card({ target: 'OneLine' });
         const three = card({ target: 'one\ntwo\nthree' });
 
-        expect(one.wrapper.get('textarea').attributes('style')).toContain('min-block-size: calc(1 * 1lh');
-        expect(three.wrapper.get('textarea').attributes('style')).toContain('min-block-size: calc(3 * 1lh');
+        expect(one.wrapper.get('textarea').attributes('style')).toContain('min-block-size: calc(1lh');
+        expect(three.wrapper.get('textarea').attributes('style')).toContain('min-block-size: calc(1lh');
         expect(three.wrapper.get('textarea').attributes('rows')).toBe('3');
+    });
+
+    it('re-fits its height to what was typed, not to what it was given (EDIT-03a)', async () => {
+        // The height is set rather than left to `field-sizing`, so it is asserted here. The
+        // browser lays nothing out under jsdom, so the content height is stubbed: what is
+        // being tested is that the field is re-measured on input and told to fit.
+        const { wrapper } = card({ target: 'one line' });
+        const field = wrapper.get('textarea').element as HTMLTextAreaElement;
+        Object.defineProperty(field, 'scrollHeight', { configurable: true, value: 88 });
+        Object.defineProperty(field, 'offsetHeight', { configurable: true, value: 24 });
+        Object.defineProperty(field, 'clientHeight', { configurable: true, value: 22 });
+
+        expect(field.style.blockSize).toBe('');
+        field.value = 'one\ntwo\nthree\nfour';
+        await wrapper.get('textarea').trigger('input');
+
+        // 88 of content and padding, plus the 2 of border that `border-box` counts.
+        expect(field.style.blockSize).toBe('90px');
     });
 
     it('offers exactly the ten states the spec defines, and none of the synthetic ones', () => {

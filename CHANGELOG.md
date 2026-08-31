@@ -62,7 +62,7 @@ Nothing has been published yet. This section is what the extension does today; i
 - A missing `<target>` is inserted, and clearing one writes the self-closing form AL itself emits
 - The state follows the edit — `stateOnEdit` by default, a state the translator picked instead, and `needs-translation` whenever the target is cleared
 - Our own edit is recognised by its span and text, so the view is patched in place rather than rebuilt: focus, scroll and expansion survive typing
-- The target field grows as it is typed into — wider until it reaches its cap, then taller — and cannot be dragged shorter than what it holds
+- The target field grows as it is typed into — wider until it reaches its cap, then taller, with no limit on height — and folds back down to a single line when dragged
 - A file that begins with a UTF-8 BOM says so once when first edited: VS Code drops the mark when it saves, and an extension cannot stop it
 
 **Settings**
