@@ -42,6 +42,9 @@
             />
             <p v-else class="placeholder">Waiting for a document…</p>
         </template>
+
+        <!-- Off screen, never empty of purpose: what changed, for a reader who cannot see it. -->
+        <p class="sr-only" role="status" aria-live="polite">{{ announcer.message.value }}</p>
     </main>
 </template>
 
@@ -52,6 +55,7 @@ import FileHeader from './components/FileHeader.vue';
 import StatusPane from './components/StatusPane.vue';
 import Toolbar from './components/Toolbar.vue';
 import UnitTree from './components/UnitTree.vue';
+import { useAnnouncer } from './composables/useAnnouncer';
 import { useDesignTokens } from './composables/useDesignTokens';
 import { useEditMode } from './composables/useEditMode';
 import { useRollup } from './composables/useRollup';
@@ -64,6 +68,8 @@ import { visibleNodes } from './ancestorFilter';
 import { provideUnitActions } from './unitActions';
 
 useDesignTokens();
+
+const announcer = useAnnouncer();
 
 const {
     document,
@@ -78,7 +84,7 @@ const {
     openSource,
     updateTarget,
     updateState,
-} = useXliffDocument();
+} = useXliffDocument({ announce: announcer.announce });
 
 provideUnitActions({
     open: (target, unitId) => openSource(target, unitId),

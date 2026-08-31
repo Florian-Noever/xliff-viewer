@@ -65,6 +65,13 @@ Nothing has been published yet. This section is what the extension does today; i
 - The target field grows as it is typed into — wider until it reaches its cap, then taller, with no limit on height — and folds back down to a single line when dragged
 - A file that begins with a UTF-8 BOM says so once when first edited: VS Code drops the mark when it saves, and an extension cannot stop it
 
+**Keyboard and screen readers**
+- The tree is a real ARIA tree: `role`, `aria-level`, `aria-expanded`, and sibling counts that reflect the whole tree rather than the handful of rows on screen
+- One tab stop for the tree and the arrow keys inside it, with `aria-activedescendant` naming the current row — set only while that row is rendered, never pointing at something that is not there
+- A polite live region says what an accepted edit produced, and stays quiet for anything that was not an edit
+- Every interactive element has a name, every icon-only button an explicit one
+- Nothing animates outside a reduced-motion guard, and the focus ring, progress bar and pressed filter chip name the system palette so a forced-colours theme does not erase them
+
 **Validation hints**
 - Advisory only. Nothing here blocks an edit, changes a value, or stops a save
 - Flags a target past its `maxwidth`, a `%1`-style placeholder present on one side and not the other, and an empty target the file calls finished

@@ -89,6 +89,17 @@ body {
     outline-offset: 2px;
 }
 
+/*
+ * A forced-colours theme replaces every colour we chose, `--vscode-*` included, so the
+ * focus ring has to be named in the system's own palette or it is drawn in the text
+ * colour and disappears into what it is outlining (§11.7).
+ */
+@media (forced-colors: active) {
+    :focus-visible {
+        outline-color: Highlight;
+    }
+}
+
 .sr-only {
     position: absolute;
     width: 1px;
