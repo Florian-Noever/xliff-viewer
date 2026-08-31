@@ -93,7 +93,7 @@ Nothing has been published yet. This section is what the extension does today; i
 
 ### Known limitations
 
-- **A document containing an XML comment cannot be edited.** The parser drops comments, and a whole-document write would delete one a person added by hand, so such a file is refused rather than silently rewritten. No AL-generated file contains one
+- **A document containing an XML comment cannot be edited.** The parser drops comments, and a whole-document write would delete one a person added by hand, so such a file is refused rather than silently rewritten — it still opens, searches and navigates normally. This is deliberate and settled: preserving them would mean restructuring the model, and no AL-generated file contains one
 - **A carriage return inside a `<source>` or `<target>` becomes a line feed.** XML requires every conformant parser to normalise it, so the information is gone before we see it. It cannot arise from editing here — the editor writes line feeds — and no corpus file contains one
 - `<alt-trans>`, `<context-group>` and inline tags (`<g>`, `<ph>`) are not modelled. None occurs anywhere in the corpus
 - The webview has not been confirmed inside VS Code for the Web. The editor binds correctly there and the same bundle renders correctly when served directly, but the automated browser cannot register that host's webview service worker

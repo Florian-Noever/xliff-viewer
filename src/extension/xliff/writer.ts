@@ -17,11 +17,14 @@ import type { XliffDocument, XliffTransUnit } from '../../shared/model';
  */
 
 /**
- * Whether the text carries an XML comment (`DATA-03a`).
+ * Whether the text carries an XML comment (`DEC-038`).
  *
  * The parser discards comments — verified, not assumed: a document with two survives the
  * round trip byte-perfect except that both are gone. Reading a file that has one is
  * harmless; **writing it would delete them**, which is why the write path asks first.
+ *
+ * This is permanent, not a stopgap. Preserving comments needs ordered children in the model,
+ * and no AL-generated file has ever carried one — `DEC-038` weighs the two.
  *
  * `<!--` cannot open anything but a comment in a well-formed XLIFF document: the corpus has
  * no CDATA (§3.3), and the same characters inside a text node are entity-escaped. A false
