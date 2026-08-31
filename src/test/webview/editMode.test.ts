@@ -299,6 +299,38 @@ describe('the card in edit mode', () => {
         expect(wrapper.get('textarea').attributes('rows')).toBe('3');
     });
 
+
+    it('is as wide as what it holds, not as wide as the row (EDIT-03a)', () => {
+        const short = card({ source: 'Ab', target: 'Cd' });
+        const long = card({ source: 'A'.repeat(40), target: 'B'.repeat(40) });
+
+        expect(short.wrapper.get('textarea').attributes('style')).toContain('inline-size: 24ch');
+        expect(long.wrapper.get('textarea').attributes('style')).toContain('inline-size: 40ch');
+    });
+
+    it('takes its width from the source when there is no target to measure', () => {
+        const { wrapper } = card({ source: 'A'.repeat(50), target: undefined });
+
+        expect(wrapper.get('textarea').attributes('style')).toContain('inline-size: 50ch');
+    });
+
+    it('stops widening rather than becoming a wall of text', () => {
+        const { wrapper } = card({ source: 'A'.repeat(400) });
+
+        expect(wrapper.get('textarea').attributes('style')).toContain('inline-size: 72ch');
+    });
+
+    it('cannot be dragged shorter than the text already in it (EDIT-03a)', () => {
+        // `resize: vertical` has no floor of its own, so a drag can hide a line the
+        // translator wrote. The floor is the height `rows` started at.
+        const one = card({ target: 'OneLine' });
+        const three = card({ target: 'one\ntwo\nthree' });
+
+        expect(one.wrapper.get('textarea').attributes('style')).toContain('min-block-size: calc(1 * 1lh');
+        expect(three.wrapper.get('textarea').attributes('style')).toContain('min-block-size: calc(3 * 1lh');
+        expect(three.wrapper.get('textarea').attributes('rows')).toBe('3');
+    });
+
     it('offers exactly the ten states the spec defines, and none of the synthetic ones', () => {
         const { wrapper } = card();
         const options = wrapper.findAll('option').map(each => each.attributes('value'));

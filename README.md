@@ -2,7 +2,7 @@
 
 Open `.xlf` and `.xliff` translation files as a structured, themed GUI instead of raw XML. Built for Business Central / AL translation files, where a single file holds thousands of units and the trans-unit id already carries the object hierarchy — so the viewer shows objects, members and translated elements rather than one long list of `<trans-unit>` elements.
 
-> **Read-only today.** Everything below is what the viewer shows. Editing targets and states is designed and specified but **not yet built** — see [Status](#-status).
+> **Read-only until you say otherwise.** A file opens as a viewer; editing is a toggle away, and when it is off the GUI says which of the three reasons applies. Writes go through VS Code's own edit machinery, so undo, dirty state and save behave exactly as they do in the text editor.
 
 ---
 
@@ -16,6 +16,7 @@ Open `.xlf` and `.xliff` translation files as a structured, themed GUI instead o
 - **State filter** — chips for the states the file actually contains, driven by the same roll-up the header shows
 - **Base-file pairing** — resolves the `.g.xlf` for a language file and marks units the base no longer has (*orphaned*) or whose source has since changed
 - **Go to source** — opens the resolved base file at the same unit
+- **Edit mode** — opt-in per window: type a target, pick a state, and let the state follow the edit. Writes go through a `WorkspaceEdit`, so one typed translation is one undo step
 - **Load-bearing whitespace** — a target that is only a space, or whose edges differ from the source, is marked and explained; `xml:space="preserve"` means those spaces are the translation
 - **Multi-`<file>` documents** — a switcher, with each file remembering its own expansion
 - **Reopen as XML** — the editor registers at `default` priority, so *Reopen Editor With… → Text Editor* is always there
@@ -28,7 +29,7 @@ Open `.xlf` and `.xliff` translation files as a structured, themed GUI instead o
 Open any `.xlf` or `.xliff` file. The viewer replaces the text editor automatically.
 
 - **Header** — the app the file translates, its languages, unit count, resolved base file, and the whole file's progress
-- **Toolbar** — search, state chips, expand / collapse all
+- **Toolbar** — search, state chips, expand / collapse all, and the edit toggle
 - **Tree** — click a container row anywhere to open or close it; unit rows are content, not controls
 
 Each unit renders as a labelled box:
@@ -43,6 +44,16 @@ Property
 ```
 
 The legend names the translated element and carries its state. `Original` is the source; the bracketed row is the translation, labelled with the file's target language.
+
+### Editing
+
+Turn editing on with the toolbar toggle, or start every file that way with `xliffViewer.editMode`.
+
+- The translation row becomes a field. It is committed when you leave it, not on every keystroke, so `Ctrl+Z` undoes a translation rather than a letter
+- `Escape` abandons what you typed and puts the committed value back
+- The field is as wide as what it holds and grows as you add lines; drag its lower edge for more room
+- Editing a target sets its state to `xliffViewer.stateOnEdit`; clearing one always sets `needs-translation`. Picking a state yourself overrides both
+- A base file (`.g.xlf`) is never editable — it is the generator's output. The GUI says so rather than showing a dead field
 
 ### Search tips
 
@@ -66,6 +77,8 @@ The legend names the translated element and carries its state. `Original` is the
 | `Home` / `End`     | Jump to the first / last row                                 |
 | `Enter` / `Space`  | Open or close the focused row                                |
 
+Keys typed into a field belong to the field, not to the tree.
+
 ---
 
 ## ⚙️ Settings
@@ -76,8 +89,8 @@ The legend names the translated element and carries its state. `Original` is the
 | `xliffViewer.showDeveloperNotes` | `boolean` | `true` | Show `Developer` notes and the suggestion parsed out of them |
 | `xliffViewer.showGeneratorNotes` | `boolean` | `false` | Show the `Xliff Generator` note, rebuilt from the tree |
 | `xliffViewer.defaultExpandDepth` | `number` | `1` | How many levels of real structure a file opens to |
-| `xliffViewer.editMode` | `boolean` | `false` | **Reserved.** Edit mode is not built; this setting changes nothing yet |
-| `xliffViewer.stateOnEdit` | `string` | `translated` | **Reserved.** Ditto |
+| `xliffViewer.editMode` | `boolean` | `false` | Open files with editing already on, instead of read-only |
+| `xliffViewer.stateOnEdit` | `string` | `translated` | The state a target moves to when it is edited. Clearing a target always sets `needs-translation` |
 | `xliffViewer.validation.enabled` | `boolean` | `true` | **Reserved.** The in-GUI validation hints are not built; malformed XML is rejected regardless |
 
 ### How the base file is found
@@ -96,7 +109,7 @@ Not finding one is a normal state, not an error: the viewer works fully without 
 
 ## 🚦 Status
 
-Not published. The read-only viewer is complete; edit mode is next.
+Not published. The viewer and edit mode are complete; the remaining work is validation hints, accessibility, persistence and packaging.
 
 | Phase | State |
 | --- | --- |
@@ -104,7 +117,7 @@ Not published. The read-only viewer is complete; edit mode is next.
 | Data layer — parse, validate, serialise, byte-identical round trip | ✅ complete |
 | Read-only GUI | ✅ complete |
 | Search, filter, base file, navigation | ✅ complete |
-| Edit mode | ⬜ not started |
+| Edit mode | ✅ complete |
 | Validation hints, accessibility, persistence, packaging | ⬜ not started |
 
 ---
