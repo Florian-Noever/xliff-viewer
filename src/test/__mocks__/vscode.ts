@@ -176,6 +176,9 @@ export const ProgressLocation = { SourceControl: 1, Window: 10, Notification: 15
 
 export const TextEditorRevealType = { Default: 0, InCenter: 1, InCenterIfOutsideViewport: 2, AtTop: 3 } as const;
 
+/** What the extension asked for when it registered its editor — `DEC-030` is about one flag. */
+export const customEditorRegistrations: { viewType: string; options?: unknown }[] = [];
+
 export const window = {
     visibleTextEditors: [] as { document: { uri: Uri; getText(): string } }[],
     activeTextEditor: undefined as { document: { uri: Uri; getText(): string } } | undefined,
@@ -203,6 +206,10 @@ export const window = {
     showQuickPick: <T extends { label: string; description?: string }>(items: T[], _options?: unknown): Promise<T | undefined> => {
         quickPickCalls.push(items.map(item => ({ label: item.label, description: item.description })));
         return Promise.resolve(quickPickChoice === undefined ? undefined : items[quickPickChoice]);
+    },
+    registerCustomEditorProvider: (viewType: string, _provider: unknown, options?: unknown): Disposable => {
+        customEditorRegistrations.push({ viewType, options });
+        return new Disposable(() => { });
     },
     createOutputChannel: (_name: string, _options?: unknown) => ({
         trace: (message: string) => logLines.push(`trace ${message}`),

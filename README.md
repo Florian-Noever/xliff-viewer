@@ -21,6 +21,7 @@ Open `.xlf` and `.xliff` translation files as a structured, themed GUI instead o
 - **Load-bearing whitespace** — a target that is only a space, or whose edges differ from the source, is marked and explained; `xml:space="preserve"` means those spaces are the translation
 - **Multi-`<file>` documents** — a switcher, with each file remembering its own expansion
 - **Reopen as XML** — the editor registers at `default` priority, so *Reopen Editor With… → Text Editor* is always there
+- **Comes back where you left it** — hiding a tab and returning to it keeps the expansion, the focused row, the scroll position, the search, the filter and the edit toggle
 - **Desktop and web** — the same extension runs in VS Code and in `vscode.dev` / `github.dev`
 
 ---
@@ -113,7 +114,7 @@ Not finding one is a normal state, not an error: the viewer works fully without 
 
 ## 🚦 Status
 
-Not published. The viewer, edit mode, the validation hints and the accessibility pass are complete; the remaining work is view-state persistence and packaging.
+Not published. Everything the extension does is built; the remaining work is packaging.
 
 | Phase | State |
 | --- | --- |
@@ -124,7 +125,8 @@ Not published. The viewer, edit mode, the validation hints and the accessibility
 | Edit mode | ✅ complete |
 | Validation hints | ✅ complete |
 | Accessibility and keyboard | ✅ complete |
-| View-state persistence, packaging | ⬜ not started |
+| View-state persistence | ✅ complete |
+| Packaging | ⬜ not started |
 
 ---
 

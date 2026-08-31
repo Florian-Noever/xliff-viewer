@@ -32,6 +32,7 @@
             />
             <UnitTree
                 v-if="activeFile !== undefined"
+                ref="unitTree"
                 :tree="tree"
                 :summaries="rollup.byKey.value"
                 :hints="validation.byUnit.value"
@@ -39,6 +40,7 @@
                 :settings="settings"
                 :editing="edit.active.value"
                 :target-language="activeFile.targetLanguage"
+                @scrolled="firstVisibleRow = $event"
             />
             <p v-else class="placeholder">Waiting for a document…</p>
         </template>
@@ -49,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, useTemplateRef } from 'vue';
 
 import FileHeader from './components/FileHeader.vue';
 import StatusPane from './components/StatusPane.vue';
@@ -57,6 +59,7 @@ import Toolbar from './components/Toolbar.vue';
 import UnitTree from './components/UnitTree.vue';
 import { useAnnouncer } from './composables/useAnnouncer';
 import { useDesignTokens } from './composables/useDesignTokens';
+import { usePersistedState } from './composables/usePersistedState';
 import { useEditMode } from './composables/useEditMode';
 import { useRollup } from './composables/useRollup';
 import { useSearch } from './composables/useSearch';
@@ -65,6 +68,8 @@ import { useTreeFlatten } from './composables/useTreeFlatten';
 import { useValidation } from './composables/useValidation';
 import { useXliffDocument } from './composables/useXliffDocument';
 import { visibleNodes } from './ancestorFilter';
+
+import { isKnownState } from '@shared/state';
 import { provideUnitActions } from './unitActions';
 
 useDesignTokens();
@@ -126,6 +131,47 @@ const tree = useTreeFlatten({
     defaultExpandDepth: computed(() => settings.value.defaultExpandDepth),
     documentUri: computed(() => document.value?.uri),
     visible: computed(() => filtered.value?.visible),
+});
+
+/**
+ * §11.8, and with it the removal of `retainContextWhenHidden` (`DEC-030`).
+ *
+ * The shape lives here rather than in the composable because this is where the pieces are:
+ * `usePersistedState` owns the slot, the throttle and the guard, and knows nothing about
+ * what a tree or a filter is.
+ */
+const unitTree = useTemplateRef<{ scrollToRow: (row: number) => void }>('unitTree');
+const firstVisibleRow = ref(0);
+
+usePersistedState({
+    uri: computed(() => document.value?.uri),
+    snapshot: () => {
+        const uri = document.value?.uri;
+        if (uri === undefined) {
+            return undefined;
+        }
+        const { expanded, focused } = tree.snapshot();
+        return {
+            uri,
+            activeFileIndex: activeFileIndex.value,
+            expanded,
+            focused,
+            firstVisibleRow: firstVisibleRow.value,
+            query: search.query.value,
+            states: [...filter.selected.value],
+            editing: edit.wanted.value,
+        };
+    },
+    restore: (state) => {
+        // Order matters. Expansion decides which rows exist, so the row to scroll to is
+        // only meaningful once it is back; the filters decide which of those rows show.
+        activeFileIndex.value = state.activeFileIndex;
+        tree.restore(state);
+        search.query.value = state.query;
+        filter.selected.value = new Set(state.states.filter(isKnownState));
+        edit.wanted.value = state.editing;
+        unitTree.value?.scrollToRow(state.firstVisibleRow);
+    },
 });
 </script>
 
