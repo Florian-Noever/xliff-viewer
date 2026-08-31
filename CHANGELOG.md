@@ -65,9 +65,15 @@ Nothing has been published yet. This section is what the extension does today; i
 - The target field grows as it is typed into — wider until it reaches its cap, then taller, with no limit on height — and folds back down to a single line when dragged
 - A file that begins with a UTF-8 BOM says so once when first edited: VS Code drops the mark when it saves, and an extension cannot stop it
 
+**Validation hints**
+- Advisory only. Nothing here blocks an edit, changes a value, or stops a save
+- Flags a target past its `maxwidth`, a `%1`-style placeholder present on one side and not the other, and an empty target the file calls finished
+- Containers count the **translations** worth looking at beneath them, so a collapsed branch says whether it is worth opening
+- Measured against the corpus before it was written: **one** genuine finding in 4001 units. An untranslated target is told one thing, not four, and `maxwidth` is only checked where the file says it counts characters
+- Optionally also flags a target identical to its source — off by default, because proper nouns, identifiers and captions legitimately read the same in both languages
+
 **Settings**
-- `xliffViewer.baseFile`, `showDeveloperNotes`, `showGeneratorNotes`, `defaultExpandDepth`, `editMode` and `stateOnEdit` all take effect immediately
-- `validation.enabled` is declared but reserved — the in-GUI validation hints are not built
+- `xliffViewer.baseFile`, `showDeveloperNotes`, `showGeneratorNotes`, `defaultExpandDepth`, `editMode`, `stateOnEdit`, `validation.enabled` and `validation.sameAsSource` all take effect immediately
 
 **Performance**
 - Every wall-clock budget is an assertion in a serial test project rather than a claim: opening the 1.35 MB / 2 500-unit corpus file takes 86 ms host-side against a 250 ms budget, a keystroke filters the tree in 0.5 ms against 50 ms, and the payload is 1 220 KB from a 1 350 KB source
@@ -75,7 +81,6 @@ Nothing has been published yet. This section is what the extension does today; i
 ### Known limitations
 
 - **A document containing an XML comment cannot be edited.** The parser drops comments, and a whole-document write would delete one a person added by hand, so such a file is refused rather than silently rewritten. No AL-generated file contains one
-- **Validation hints are not built.** Nothing warns yet about a target past its `maxwidth`, a placeholder the translation lost, or an empty target claiming to be translated
 - **A carriage return inside a `<source>` or `<target>` becomes a line feed.** XML requires every conformant parser to normalise it, so the information is gone before we see it. It cannot arise from editing here — the editor writes line feeds — and no corpus file contains one
 - `<alt-trans>`, `<context-group>` and inline tags (`<g>`, `<ph>`) are not modelled. None occurs anywhere in the corpus
 - The webview has not been confirmed inside VS Code for the Web. The editor binds correctly there and the same bundle renders correctly when served directly, but the automated browser cannot register that host's webview service worker

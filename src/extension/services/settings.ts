@@ -35,6 +35,7 @@ export function readSettings(scope?: vscode.ConfigurationScope): XliffViewerSett
         showGeneratorNotes: readBoolean(configuration, SettingKey.showGeneratorNotes, DEFAULT_WEBVIEW_SETTINGS.showGeneratorNotes),
         defaultExpandDepth: readDepth(configuration),
         validationEnabled: readBoolean(configuration, SettingKey.validationEnabled, DEFAULT_WEBVIEW_SETTINGS.validationEnabled),
+        validationSameAsSource: readBoolean(configuration, SettingKey.validationSameAsSource, DEFAULT_WEBVIEW_SETTINGS.validationSameAsSource),
     };
 }
 
@@ -46,6 +47,7 @@ export function toWebviewSettings(settings: XliffViewerSettings): WebviewSetting
         showGeneratorNotes: settings.showGeneratorNotes,
         defaultExpandDepth: settings.defaultExpandDepth,
         validationEnabled: settings.validationEnabled,
+        validationSameAsSource: settings.validationSameAsSource,
     };
 }
 

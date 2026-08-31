@@ -113,7 +113,7 @@ describe('the editor provider', () => {
         ]);
         expect(harness.posted[0]).toEqual({
             type: ExtensionMessageType.settings,
-            payload: { editMode: false, showDeveloperNotes: true, showGeneratorNotes: false, defaultExpandDepth: 4, validationEnabled: true },
+            payload: { editMode: false, showDeveloperNotes: true, showGeneratorNotes: false, defaultExpandDepth: 4, validationEnabled: true, validationSameAsSource: false },
         });
 
         const document = harness.posted[2];
@@ -144,7 +144,7 @@ describe('the editor provider', () => {
 
         expect(harness.posted).toEqual([{
             type: ExtensionMessageType.settings,
-            payload: { editMode: true, showDeveloperNotes: true, showGeneratorNotes: false, defaultExpandDepth: 1, validationEnabled: true },
+            payload: { editMode: true, showDeveloperNotes: true, showGeneratorNotes: false, defaultExpandDepth: 1, validationEnabled: true, validationSameAsSource: false },
         }]);
     });
 

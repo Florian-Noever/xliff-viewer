@@ -28,6 +28,8 @@
                         :editing="editing"
                         :target-language="targetLanguage"
                         :generator-note="generatorNoteFor(rows[item.index])"
+                        :hints="hints?.get(rows[item.index].key)"
+                        :hint-count="hintCounts?.get(rows[item.index].key)"
                         :summary="summaries?.get(rows[item.index].key)"
                         :focused="rows[item.index].key === tree.focusedKey.value"
                         @toggle="tree.toggle($event)"
@@ -49,6 +51,7 @@ import { reconstructGeneratorNote } from '../generatorNote';
 import { Icon } from '../icons';
 
 import type { TreeRow as Row, TreeView } from '../composables/useTreeFlatten';
+import type { Hint } from '../validation';
 import type { StateSummary } from '@shared/state';
 import type { WebviewSettings } from '@shared/settings';
 import type { ComponentPublicInstance } from 'vue';
@@ -100,6 +103,9 @@ const props = defineProps<{
     settings?: WebviewSettings;
     /** The active `<file>`'s target language, which labels a unit's translation row (`DEC-034`). */
     targetLanguage?: string;
+    /** Unit id → its §12.4 hints, and node key → how many carry one beneath it. */
+    hints?: ReadonlyMap<string, readonly Hint[]>;
+    hintCounts?: ReadonlyMap<string, number>;
     /** Editing is on and allowed, so a unit's target and state become fields (§12.2). */
     editing?: boolean;
 }>();

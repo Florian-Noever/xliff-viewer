@@ -14,6 +14,7 @@ import { Logger } from '../../extension/services/logger';
 import { visibleNodes } from '../../webview/ancestorFilter';
 import { buildSearchIndex, toMatcher } from '../../webview/composables/useSearch';
 import { expandableKeys, flattenTree, keysToDepth } from '../../webview/composables/useTreeFlatten';
+import { hintsFor } from '../../webview/validation';
 import { iterateUnits } from '../../shared/model';
 import { effectiveState, summariseTree } from '../../shared/state';
 import { FakeTextDocument } from '../__mocks__/vscode';
@@ -80,6 +81,22 @@ describe('§16, measured on the realistic worst case', () => {
         const roots = buildAlTree(units);
 
         expect(fastest(3, () => summariseTree(roots, states))).toBeLessThan(40);
+    });
+
+    it('hints the whole document in under 40 ms (POLISH-01)', () => {
+        // Against the roll-up's budget, since it is the same shape of work: one pass over
+        // every unit, recomputed when the document changes and not per keystroke. Measured
+        // with the same-as-source check **on**, which is the expensive case — it is the only
+        // one that fires in bulk, and off by default precisely because it does.
+        const dto = projectDocument(parseXliff(text), { uri: 'file:///x', fileName: LARGE });
+        const file = dto.files[0];
+        const options = { sourceLanguage: file.sourceLanguage, targetLanguage: file.targetLanguage, sameAsSource: true };
+
+        expect(fastest(3, () => {
+            for (const unit of file.units) {
+                hintsFor(unit, options);
+            }
+        })).toBeLessThan(40);
     });
 
     it('builds and serialises the DTO in under 50 ms', () => {

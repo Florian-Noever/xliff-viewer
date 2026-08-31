@@ -34,6 +34,8 @@
                 v-if="activeFile !== undefined"
                 :tree="tree"
                 :summaries="rollup.byKey.value"
+                :hints="validation.byUnit.value"
+                :hint-counts="validation.countByKey.value"
                 :settings="settings"
                 :editing="edit.active.value"
                 :target-language="activeFile.targetLanguage"
@@ -56,6 +58,7 @@ import { useRollup } from './composables/useRollup';
 import { useSearch } from './composables/useSearch';
 import { useStateFilter } from './composables/useStateFilter';
 import { useTreeFlatten } from './composables/useTreeFlatten';
+import { useValidation } from './composables/useValidation';
 import { useXliffDocument } from './composables/useXliffDocument';
 import { visibleNodes } from './ancestorFilter';
 import { provideUnitActions } from './unitActions';
@@ -94,6 +97,7 @@ provideUnitActions({
 
 const edit = useEditMode({ document, settings });
 const rollup = useRollup({ file: activeFile, unitsById });
+const validation = useValidation({ file: activeFile, settings });
 const search = useSearch({ file: activeFile, unitsById });
 const filter = useStateFilter({
     summary: rollup.file,

@@ -38,6 +38,16 @@ export interface TransUnitDto {
     readonly state: XliffState;
     /** Only when the file declared a `state` the spec does not define, so the GUI can show what it said. */
     readonly rawState?: string;
+    /**
+     * What the file declared, when that is not what the unit means (`DEC-036`).
+     *
+     * `state` is resolved: an empty target is `empty` however finished it claims to be. That
+     * resolution is right for the roll-up and loses the file's own words, which §2.1 says to
+     * show and which `POLISH-01` needs — "empty target whose state claims translated" is not
+     * a question `state` can answer. Present on 362 of the corpus's 4001 units, 1.04 % of the
+     * largest payload; absent wherever the two agree, which is everywhere else.
+     */
+    readonly declaredState?: XliffState;
     readonly translate: boolean;
     readonly maxwidth?: number;
     /**

@@ -17,6 +17,7 @@ Open `.xlf` and `.xliff` translation files as a structured, themed GUI instead o
 - **Base-file pairing** — resolves the `.g.xlf` for a language file and marks units the base no longer has (*orphaned*) or whose source has since changed
 - **Go to source** — opens the resolved base file at the same unit
 - **Edit mode** — opt-in per window: type a target, pick a state, and let the state follow the edit. Writes go through a `WorkspaceEdit`, so one typed translation is one undo step
+- **Validation hints** — a target past its `maxwidth`, a placeholder the translation lost or invented, an empty target the file calls finished. Advisory: they never block an edit or change a value, and a container says how many translations beneath it are worth a look
 - **Load-bearing whitespace** — a target that is only a space, or whose edges differ from the source, is marked and explained; `xml:space="preserve"` means those spaces are the translation
 - **Multi-`<file>` documents** — a switcher, with each file remembering its own expansion
 - **Reopen as XML** — the editor registers at `default` priority, so *Reopen Editor With… → Text Editor* is always there
@@ -91,7 +92,8 @@ Keys typed into a field belong to the field, not to the tree.
 | `xliffViewer.defaultExpandDepth` | `number` | `1` | How many levels of real structure a file opens to |
 | `xliffViewer.editMode` | `boolean` | `false` | Open files with editing already on, instead of read-only |
 | `xliffViewer.stateOnEdit` | `string` | `translated` | The state a target moves to when it is edited. Clearing a target always sets `needs-translation` |
-| `xliffViewer.validation.enabled` | `boolean` | `true` | **Reserved.** The in-GUI validation hints are not built; malformed XML is rejected regardless |
+| `xliffViewer.validation.enabled` | `boolean` | `true` | Show the validation hints. Malformed XML is rejected regardless — that is not a hint |
+| `xliffViewer.validation.sameAsSource` | `boolean` | `false` | Also hint when a target repeats its source. Off by default: proper nouns, identifiers and captions legitimately read the same in both languages |
 
 ### How the base file is found
 
@@ -109,7 +111,7 @@ Not finding one is a normal state, not an error: the viewer works fully without 
 
 ## 🚦 Status
 
-Not published. The viewer and edit mode are complete; the remaining work is validation hints, accessibility, persistence and packaging.
+Not published. The viewer, edit mode and the validation hints are complete; the remaining work is accessibility, view-state persistence and packaging.
 
 | Phase | State |
 | --- | --- |
@@ -118,7 +120,8 @@ Not published. The viewer and edit mode are complete; the remaining work is vali
 | Read-only GUI | ✅ complete |
 | Search, filter, base file, navigation | ✅ complete |
 | Edit mode | ✅ complete |
-| Validation hints, accessibility, persistence, packaging | ⬜ not started |
+| Validation hints | ✅ complete |
+| Accessibility, persistence, packaging | ⬜ not started |
 
 ---
 

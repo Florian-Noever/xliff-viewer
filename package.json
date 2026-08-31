@@ -95,6 +95,12 @@
                     "default": true,
                     "markdownDescription": "Flag `maxwidth` overruns, placeholder mismatches between source and target, and empty targets that claim a finished state. These are hints, never blocks.",
                     "scope": "resource"
+                },
+                "xliffViewer.validation.sameAsSource": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "Also flag a target identical to its source. Off by default: proper nouns, identifiers and captions that read the same in both languages are legitimately identical.",
+                    "scope": "resource"
                 }
             }
         }

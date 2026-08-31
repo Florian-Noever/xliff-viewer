@@ -293,6 +293,7 @@ describe('every DTO field is reachable', () => {
             target: ' Kunde ',
             state: XliffState.unknown,
             rawState: 'proofread',
+            declaredState: XliffState.signedOff,
             translate: false,
             maxwidth: 50,
             sizeUnit: 'char',
@@ -311,6 +312,7 @@ describe('every DTO field is reachable', () => {
             target: text.includes('Kunde'),
             state: true, // StateBadge, on the row rather than in the card
             rawState: text.includes('proofread'),
+            declaredState: text.includes('state="signed-off"'),
             translate: text.includes('translate="no"'),
             maxwidth: text.includes('max 50 char'),
             sizeUnit: text.includes('char'),
