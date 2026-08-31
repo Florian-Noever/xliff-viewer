@@ -336,22 +336,63 @@ describe('the card in edit mode', () => {
         expect(three.wrapper.get('textarea').attributes('rows')).toBe('3');
     });
 
+    /** jsdom lays nothing out, so the field is told what it would have measured. */
+    function measuring(field: HTMLTextAreaElement, scrollHeight: number, clientHeight: number, border = 2): void {
+        Object.defineProperty(field, 'scrollHeight', { configurable: true, get: () => scrollHeight });
+        Object.defineProperty(field, 'clientHeight', { configurable: true, get: () => clientHeight });
+        Object.defineProperty(field, 'offsetHeight', { configurable: true, get: () => clientHeight + border });
+    }
+
     it('re-fits its height to what was typed, not to what it was given (EDIT-03a)', async () => {
-        // The height is set rather than left to `field-sizing`, so it is asserted here. The
-        // browser lays nothing out under jsdom, so the content height is stubbed: what is
-        // being tested is that the field is re-measured on input and told to fit.
         const { wrapper } = card({ target: 'one line' });
         const field = wrapper.get('textarea').element as HTMLTextAreaElement;
-        Object.defineProperty(field, 'scrollHeight', { configurable: true, value: 88 });
-        Object.defineProperty(field, 'offsetHeight', { configurable: true, value: 24 });
-        Object.defineProperty(field, 'clientHeight', { configurable: true, value: 22 });
+        measuring(field, 88, 88);
 
-        expect(field.style.blockSize).toBe('');
         field.value = 'one\ntwo\nthree\nfour';
         await wrapper.get('textarea').trigger('input');
 
-        // 88 of content and padding, plus the 2 of border that `border-box` counts.
-        expect(field.style.blockSize).toBe('90px');
+        // 88 of content and padding, the 2 of border that `border-box` counts, and the
+        // pixel that covers `scrollHeight` having rounded.
+        expect(field.style.blockSize).toBe('91px');
+    });
+
+    it('rounds up rather than leaving a scrollbar where half a line should be (EDIT-03a)', async () => {
+        // `scrollHeight` is an integer rounding of a height that is not one, and
+        // `clientHeight` is rounded the same way — so a field can overflow by a fraction
+        // while the DOM reports that it does not. The pixel is what covers that.
+        const { wrapper } = card({ target: 'one line' });
+        const field = wrapper.get('textarea').element as HTMLTextAreaElement;
+        measuring(field, 40, 40);
+
+        await wrapper.get('textarea').trigger('input');
+
+        expect(field.style.blockSize).toBe('43px');
+    });
+
+    it('opens a wrapped target at its full height, before a key is ever pressed', () => {
+        // The field lives in a virtualiser, so it mounts as the tree scrolls. `rows` counts
+        // the target's own line breaks and knows nothing about the ones wrapping adds.
+        const heights = new WeakMap<HTMLTextAreaElement, boolean>();
+        const original = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'scrollHeight');
+        Object.defineProperty(HTMLTextAreaElement.prototype, 'scrollHeight', {
+            configurable: true,
+            get(this: HTMLTextAreaElement) {
+                heights.set(this, true);
+                return 56;
+            },
+        });
+
+        try {
+            const { wrapper } = card({ target: 'a target long enough to wrap' });
+            const field = wrapper.get('textarea').element as HTMLTextAreaElement;
+
+            expect(heights.get(field)).toBe(true);
+            expect(field.style.blockSize).not.toBe('');
+        } finally {
+            if (original !== undefined) {
+                Object.defineProperty(HTMLTextAreaElement.prototype, 'scrollHeight', original);
+            }
+        }
     });
 
     it('offers exactly the ten states the spec defines, and none of the synthetic ones', () => {
