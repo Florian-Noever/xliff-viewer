@@ -1,6 +1,8 @@
 .vscode/**
 .vscode-test/**
 .vscode-test-web/**
+.claude/**
+CLAUDE.md
 src/**
 out/test/**
 out/web/test/**
@@ -19,3 +21,4 @@ bun.lock
 **/tsconfig.json
 **/*.ts
 **/*.map
+*.vsix

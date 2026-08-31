@@ -114,7 +114,7 @@ Not finding one is a normal state, not an error: the viewer works fully without 
 
 ## 🚦 Status
 
-Not published. Everything the extension does is built; the remaining work is packaging.
+Not published, and buildable into an installable VSIX today: `bun run package` (or `npm run package`) writes one at the repository root.
 
 | Phase | State |
 | --- | --- |
@@ -126,7 +126,23 @@ Not published. Everything the extension does is built; the remaining work is pac
 | Validation hints | ✅ complete |
 | Accessibility and keyboard | ✅ complete |
 | View-state persistence | ✅ complete |
-| Packaging | ⬜ not started |
+| Packaging | ✅ complete |
+
+---
+
+## 📦 Installing a build
+
+```bash
+npm run package
+```
+
+That writes `xliff-viewer-<version>.vsix`. Install it with *Extensions → … → Install from VSIX…*, or:
+
+```bash
+code --install-extension xliff-viewer-0.0.1.vsix
+```
+
+The VSIX carries the two host bundles, the webview bundle and its HTML shell, and nothing else — no sources, no tests and none of the example translation files.
 
 ---
 
@@ -171,6 +187,6 @@ Four Vitest projects: `data` (pure, and deliberately *without* a `vscode` alias,
 
 ## 📜 License
 
-Not yet chosen.
+[MIT](LICENSE).
 
 Icons are from [`@vscode/codicons`](https://github.com/microsoft/vscode-codicons), licensed [CC BY 4.0](https://github.com/microsoft/vscode-codicons/blob/main/LICENSE).
