@@ -38,10 +38,16 @@
             :name="row.name"
             :target-language="targetLanguage"
             :generator-note="generatorNote"
+            :hints="hints"
         />
         <!-- Only a row without a box needs pushing: the box itself fills the space. -->
         <span v-if="row.unit === undefined || settings === undefined" class="spacer" />
         <span v-if="pairing !== undefined" class="pairing" :class="pairing.tone" :title="pairing.title">{{ pairing.label }}</span>
+        <!-- Containers only: a unit row's card already says the hint in words, and the
+             count exists to say which collapsed branch is worth opening. -->
+        <span v-if="row.unit === undefined && hintCount !== undefined && hintCount > 0" class="hint-count" :title="hintTitle">
+            <span aria-hidden="true">⚠</span>{{ hintCount }}
+        </span>
         <div v-if="row.unit !== undefined" class="unit-side">
             <button
                 type="button"
@@ -68,6 +74,7 @@ import { useUnitActions } from '../unitActions';
 import { NavigationTarget } from '@shared/messages';
 
 import type { TreeRow } from '../composables/useTreeFlatten';
+import type { Hint } from '../validation';
 import type { StateSummary } from '@shared/state';
 import type { WebviewSettings } from '@shared/settings';
 
@@ -83,6 +90,10 @@ const props = defineProps<{
     editing?: boolean;
     /** Rebuilt from the tree by the caller, since the payload does not carry it (§4.4). */
     generatorNote?: string;
+    /** This unit's §12.4 hints. Absent on a container, which shows `hintCount` instead. */
+    hints?: readonly Hint[];
+    /** How many units beneath this node carry a hint. Absent when none do. */
+    hintCount?: number;
 }>();
 
 const emit = defineEmits<{
@@ -125,6 +136,12 @@ function isPlainClick(event: MouseEvent): boolean {
  * a search of the raw file will match.
  */
 const label = computed(() => props.row.name ?? props.row.key.split(' - ').pop() ?? props.row.key);
+
+/** Units, not hints: "3" should mean three translations to look at, not one with three faults. */
+const hintTitle = computed(() => {
+    const count = props.hintCount ?? 0;
+    return `${count} ${count === 1 ? 'translation' : 'translations'} below this one ${count === 1 ? 'has' : 'have'} something worth checking.`;
+});
 
 const actions = useUnitActions();
 const baseFile = computed(() => actions.baseFileName());
@@ -230,6 +247,20 @@ const pairing = computed(() => {
     display: inline-flex;
     width: 16px;
     height: 16px;
+}
+
+/*
+ * Advisory, so it is a quiet count rather than a badge: the tone says "look here", the
+ * progress bar beside it still says how the branch is doing.
+ */
+.hint-count {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    color: var(--vscode-editorWarning-foreground);
+    font-size: calc(var(--font) * 0.9);
+    font-variant-numeric: tabular-nums;
 }
 
 .pairing {

@@ -906,6 +906,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "source": "Sample text 7",
                     "target": "",
                     "state": "empty",
+                    "declaredState": "needs-translation",
                     "translate": true,
                     "sizeUnit": "char",
                     "notes": [
@@ -1461,6 +1462,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "source": "Sample text 41",
                     "target": "",
                     "state": "empty",
+                    "declaredState": "needs-translation",
                     "translate": true,
                     "sizeUnit": "char",
                     "notes": [
@@ -1476,6 +1478,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "source": "",
                     "target": "",
                     "state": "empty",
+                    "declaredState": "needs-translation",
                     "translate": true,
                     "sizeUnit": "char",
                     "notes": [
@@ -1581,6 +1584,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "source": "Sample text 47",
                     "target": "",
                     "state": "empty",
+                    "declaredState": "needs-translation",
                     "translate": true,
                     "sizeUnit": "char",
                     "alObjectTarget": "Page 1936673938",
@@ -1692,6 +1696,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "source": "Sample text 54",
                     "target": "",
                     "state": "empty",
+                    "declaredState": "needs-translation",
                     "translate": true,
                     "sizeUnit": "char",
                     "alObjectTarget": "Page 1434786627",

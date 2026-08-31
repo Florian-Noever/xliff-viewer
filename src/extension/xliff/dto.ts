@@ -95,13 +95,15 @@ function projectFile(file: XliffFile, index: number): XliffFileDto {
  */
 export function projectUnit(unit: XliffTransUnit): TransUnitDto {
     const declared = unit.target?.state;
+    const state = effectiveState(unit);
 
     return {
         id: unit.id,
         source: unit.source,
         target: unit.target?.value,
-        state: effectiveState(unit),
+        state,
         rawState: declared !== undefined && !isSpecState(declared) ? declared : undefined,
+        declaredState: isSpecState(declared) && declared !== state ? declared : undefined,
         translate: unit.translate,
         maxwidth: unit.maxwidth,
         sizeUnit: unit.sizeUnit,

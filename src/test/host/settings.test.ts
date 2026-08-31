@@ -32,6 +32,7 @@ describe('readSettings', () => {
         setConfigOverride('xliffViewer.showGeneratorNotes', true);
         setConfigOverride('xliffViewer.defaultExpandDepth', 3);
         setConfigOverride('xliffViewer.validation.enabled', false);
+        setConfigOverride('xliffViewer.validation.sameAsSource', true);
 
         expect(readSettings()).toEqual({
             baseFile: 'Translations/*.g.xlf',
@@ -41,6 +42,7 @@ describe('readSettings', () => {
             showGeneratorNotes: true,
             defaultExpandDepth: 3,
             validationEnabled: false,
+            validationSameAsSource: true,
         });
     });
 

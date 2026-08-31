@@ -44,6 +44,12 @@ const chips = computed(() => {
     if (unit.alObjectTarget !== undefined) {
         list.push({ label: unit.alObjectTarget, title: `al-object-target="${unit.alObjectTarget}"` });
     }
+    if (unit.declaredState !== undefined) {
+        list.push({
+            label: `state="${unit.declaredState}"`,
+            title: `The file declares this state, but the target is ${unit.target === '' ? 'empty' : 'not what it describes'} — so the unit counts as ${unit.state}.`,
+        });
+    }
     if (unit.rawState !== undefined) {
         list.push({
             label: `state="${unit.rawState}"`,

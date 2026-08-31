@@ -19,6 +19,7 @@ export const SettingKey = {
     showGeneratorNotes: 'showGeneratorNotes',
     defaultExpandDepth: 'defaultExpandDepth',
     validationEnabled: 'validation.enabled',
+    validationSameAsSource: 'validation.sameAsSource',
 } as const;
 export type SettingKey = typeof SettingKey[keyof typeof SettingKey];
 
@@ -34,6 +35,12 @@ export interface WebviewSettings {
     readonly showGeneratorNotes: boolean;
     readonly defaultExpandDepth: number;
     readonly validationEnabled: boolean;
+    /**
+     * Its own key rather than a case of `validationEnabled`, because §12.4 calls this hint
+     * weak and wants it off (`DEC-037`). It is right about 304 of the corpus's translated
+     * units — proper nouns and identifiers a translator left alone on purpose.
+     */
+    readonly validationSameAsSource: boolean;
 }
 
 /** Mirrors the `package.json` defaults; used when the webview renders before the host speaks. */
@@ -43,6 +50,7 @@ export const DEFAULT_WEBVIEW_SETTINGS: WebviewSettings = {
     showGeneratorNotes: false,
     defaultExpandDepth: 1,
     validationEnabled: true,
+    validationSameAsSource: false,
 };
 
 export const DEFAULT_STATE_ON_EDIT = XliffState.translated;

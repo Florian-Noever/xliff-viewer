@@ -55,6 +55,13 @@
 
         <p v-if="whitespace !== undefined" class="whitespace-note">{{ explanation }}</p>
 
+        <ul v-if="hints !== undefined && hints.length > 0" class="hints">
+            <li v-for="advice in hints" :key="advice.kind" class="hint">
+                <span class="hint-mark" aria-hidden="true">⚠</span>
+                <span>{{ advice.message }}</span>
+            </li>
+        </ul>
+
         <p v-if="unit.orphaned === true" class="pairing orphaned">
             The base file no longer has this unit. It was probably removed from the AL source.
         </p>
@@ -95,6 +102,7 @@ import { loadBearingWhitespace, whitespaceExplanation, whitespaceParts, Whitespa
 
 import type { TransUnitDto } from '@shared/dto';
 import type { WebviewSettings } from '@shared/settings';
+import type { Hint } from '../validation';
 
 /**
  * One trans-unit, read-only (MASTER_PLAN §11.3, §2.1, `DEC-034`).
@@ -129,6 +137,8 @@ const props = defineProps<{
     generatorNote?: string;
     /** Editing is on **and** allowed. Read-only renders text, never a disabled input (§11.3). */
     editing?: boolean;
+    /** The §12.4 hints for this unit. Advisory: nothing here blocks or changes anything. */
+    hints?: readonly Hint[];
 }>();
 
 const actions = useUnitActions();
@@ -420,6 +430,28 @@ const hint = computed(() => {
     padding-inline: 9px;
     color: var(--vscode-descriptionForeground);
     font-size: calc(var(--font) * 0.85);
+}
+
+/* Advisory, so they read as an aside rather than as an error the reader has to clear. */
+.hints {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin: 0;
+    padding-inline: 9px;
+    list-style: none;
+    color: var(--vscode-descriptionForeground);
+    font-size: calc(var(--font) * 0.85);
+}
+
+.hint {
+    display: flex;
+    gap: 5px;
+}
+
+.hint-mark {
+    flex: none;
+    color: var(--vscode-editorWarning-foreground);
 }
 
 .chips {
