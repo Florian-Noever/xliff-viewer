@@ -114,7 +114,7 @@ const SPACE_MARK = '␣';
 
 /** Narrow enough that a one-word caption gets a small field, wide enough to type into. */
 const FIELD_MIN_COLUMNS = 24;
-/** Past this the field would be a wall of text; what does not fit wraps. */
+/** The cap the field's own width may not pass; `--field-max-inline` holds the same number. */
 const FIELD_MAX_COLUMNS = 72;
 
 const props = defineProps<{
@@ -145,17 +145,19 @@ const targetRows = computed(() => Math.min(8, Math.max(1, (props.unit.target ?? 
 const longestLine = (value: string) => value.split('\n').reduce((widest, line) => Math.max(widest, line.length), 0);
 
 /**
- * The field is sized to what it holds rather than to the row.
+ * Both of these are **floors**, not sizes.
  *
- * Width comes from the longer of the source and the target — the source is what the
- * translation is about to say, so it is the better guess for a target that is still empty.
+ * `field-sizing: content` is what actually sizes the field, and it does so as the reader
+ * types: the field widens with the word being written until it reaches `--field-max-inline`,
+ * and only then wraps. An explicit `inline-size` would defeat that, so the source's width is
+ * a minimum instead — a target that is still empty gets room the size of what it has to say,
+ * and grows from there.
  *
- * `min-block-size` is what stops `resize: vertical` from dragging the field shorter than
- * the text it started with. `field-sizing: content` grows it from there; a drag sets an
- * explicit height that wins over both, and the floor is what keeps that drag honest.
+ * `min-block-size` is the same idea for height, and is what stops `resize: vertical` from
+ * dragging the field shorter than the text it started with.
  */
 const fieldStyle = computed(() => ({
-    inlineSize: `${Math.min(FIELD_MAX_COLUMNS, Math.max(FIELD_MIN_COLUMNS, longestLine(props.unit.source), longestLine(props.unit.target ?? '')))}ch`,
+    minInlineSize: `${Math.min(FIELD_MAX_COLUMNS, Math.max(FIELD_MIN_COLUMNS, longestLine(props.unit.source)))}ch`,
     minBlockSize: `calc(${targetRows.value} * 1lh + var(--field-chrome))`,
 }));
 
@@ -310,12 +312,14 @@ const hint = computed(() => {
 .target-input {
     /* Everything `border-box` adds to the height, which `min-block-size` has to allow for. */
     --field-chrome: 4px;
+    /* `FIELD_MAX_COLUMNS`, which floors the same field from the other side. */
+    --field-max-inline: 72ch;
 
     display: block;
     box-sizing: border-box;
-    /* The field grows with what is typed into it, so pressing Enter visibly does something. */
+    /* The field grows with what is typed into it, in both directions, as it is typed. */
     field-sizing: content;
-    max-inline-size: 100%;
+    max-inline-size: min(var(--field-max-inline), 100%);
     padding: 1px 4px;
     border: 1px solid var(--vscode-input-border);
     border-radius: var(--radius-sm);
