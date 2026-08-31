@@ -32,13 +32,13 @@
                         <textarea
                             v-if="editing"
                             :id="targetId"
-                            ref="editor"
+                            :ref="fitOnMount"
                             class="target-input"
                             :rows="targetRows"
                             :style="fieldStyle"
                             spellcheck="false"
                             :value="translation.value ?? ''"
-                            @input="fitHeight($event)"
+                            @input="fitOnInput($event)"
                             @blur="commitTarget($event)"
                             @keydown.esc.prevent="revert($event)"
                         />
@@ -163,18 +163,40 @@ const fieldStyle = computed(() => ({
 }));
 
 /**
- * Fits the field to what it now holds, on every keystroke.
+ * Fits the field to what it holds.
  *
  * `field-sizing: content` does this on its own here, and is what sizes the width. Height is
  * the axis a translator watches while typing, so it is set rather than left to a feature
- * whose behaviour we can only confirm in one engine. `blockSize` is set to `auto` first so
- * the field can shrink back as well as grow, and the border is added because `scrollHeight`
+ * whose behaviour we can only confirm in one engine. `blockSize` goes to `auto` first so the
+ * field can shrink back as well as grow, and the border is added because `scrollHeight`
  * counts the padding but not the border that `border-box` includes.
+ *
+ * The spare pixel is not slop. `scrollHeight` is an integer rounding of a height that is
+ * not one — a 13px font at `line-height: normal` puts fractions in every line — so fitting
+ * to it exactly can leave the text half a pixel taller than the box it is in, which shows
+ * as a scrollbar rather than as a missing half pixel. The rounding cannot be measured
+ * around: `clientHeight` is rounded the same way, so the overflow is invisible to the DOM
+ * even while the browser is drawing a scrollbar for it. Rounding up always covers it, and
+ * one pixel of extra height is not visible.
  */
-function fitHeight(event: Event): void {
-    const field = event.target as HTMLTextAreaElement;
+function fit(field: HTMLTextAreaElement): void {
     field.style.blockSize = 'auto';
-    field.style.blockSize = `${field.scrollHeight + field.offsetHeight - field.clientHeight}px`;
+    field.style.blockSize = `${field.scrollHeight + field.offsetHeight - field.clientHeight + 1}px`;
+}
+
+function fitOnInput(event: Event): void {
+    fit(event.target as HTMLTextAreaElement);
+}
+
+/**
+ * A function ref rather than `onMounted`: the field lives in a `v-for` inside a virtualiser,
+ * so it mounts and unmounts as the tree scrolls. A target that wraps has to open at its full
+ * height, not at the one line `rows` would give it.
+ */
+function fitOnMount(element: unknown): void {
+    if (element instanceof HTMLTextAreaElement) {
+        fit(element);
+    }
 }
 
 /**
