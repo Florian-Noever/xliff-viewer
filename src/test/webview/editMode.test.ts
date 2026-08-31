@@ -300,24 +300,28 @@ describe('the card in edit mode', () => {
     });
 
 
-    it('is as wide as what it holds, not as wide as the row (EDIT-03a)', () => {
+    it('starts at least as wide as the source it translates (EDIT-03a)', () => {
+        // A floor rather than a width: `field-sizing: content` does the sizing, and it does
+        // it as the reader types. An `inline-size` here would freeze the field instead.
         const short = card({ source: 'Ab', target: 'Cd' });
-        const long = card({ source: 'A'.repeat(40), target: 'B'.repeat(40) });
+        const long = card({ source: 'A'.repeat(40), target: 'Cd' });
 
-        expect(short.wrapper.get('textarea').attributes('style')).toContain('inline-size: 24ch');
-        expect(long.wrapper.get('textarea').attributes('style')).toContain('inline-size: 40ch');
+        expect(short.wrapper.get('textarea').attributes('style')).toContain('min-inline-size: 24ch');
+        expect(long.wrapper.get('textarea').attributes('style')).toContain('min-inline-size: 40ch');
+        // A width, rather than a floor, is what would freeze the field at its old value.
+        expect((short.wrapper.get('textarea').element as HTMLTextAreaElement).style.inlineSize).toBe('');
     });
 
-    it('takes its width from the source when there is no target to measure', () => {
+    it('gives an empty target the room its source says it needs', () => {
         const { wrapper } = card({ source: 'A'.repeat(50), target: undefined });
 
-        expect(wrapper.get('textarea').attributes('style')).toContain('inline-size: 50ch');
+        expect(wrapper.get('textarea').attributes('style')).toContain('min-inline-size: 50ch');
     });
 
     it('stops widening rather than becoming a wall of text', () => {
         const { wrapper } = card({ source: 'A'.repeat(400) });
 
-        expect(wrapper.get('textarea').attributes('style')).toContain('inline-size: 72ch');
+        expect(wrapper.get('textarea').attributes('style')).toContain('min-inline-size: 72ch');
     });
 
     it('cannot be dragged shorter than the text already in it (EDIT-03a)', () => {

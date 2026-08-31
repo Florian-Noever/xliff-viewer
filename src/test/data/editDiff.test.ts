@@ -35,6 +35,20 @@ function apply(text: string, edit: { start: number; end: number; newText: string
     return text.slice(0, edit.start) + edit.newText + text.slice(edit.end);
 }
 
+/**
+ * How many lines the edit replaces, and how many it writes in their place.
+ *
+ * A target is usually one line, but nothing says it has to be: `xml:space="preserve"` makes
+ * a line break inside a target legal, and edit mode lets a translator type one. Counting
+ * lines against a fixed 1 would make this assertion about the fixture rather than about the
+ * writer.
+ */
+function span(original: string, edit: { start: number; end: number; newText: string }): { at: number; before: number; after: number } {
+    const at = original.slice(0, edit.start).split(/\r?\n/).length - 1;
+    const through = original.slice(0, edit.end).split(/\r?\n/).length - 1;
+    return { at, before: through - at + 1, after: edit.newText.split(/\r?\n/).length };
+}
+
 /** Lines that differ, as `[index, before, after]`, using each file's own line ending. */
 function differences(before: string, after: string): [number, string, string][] {
     const left = before.split(/\r?\n/);
@@ -63,11 +77,17 @@ describe('§1.4: one edit changes only what was edited', () => {
             const changed = differences(original, after);
 
             if (hadTarget) {
-                // One line rewritten in place, and it is the target's.
-                expect(changed, `${name}: ${JSON.stringify(changed)}`).toHaveLength(1);
-                expect(changed[0][1]).toContain('<target');
-                expect(changed[0][2]).toContain(EDITED);
-                expect(after.split(/\r?\n/)).toHaveLength(original.split(/\r?\n/).length);
+                // The target's own lines are rewritten and nothing else is: what follows
+                // them is the original, shifted by whatever the new target's height differs.
+                const { at, before: was, after: now } = span(original, edit ?? { start: 0, end: 0, newText: '' });
+                const left = original.split(/\r?\n/);
+                const right = after.split(/\r?\n/);
+
+                expect(right, `${name}: ${JSON.stringify(changed)}`).toHaveLength(left.length + now - was);
+                expect(left.slice(0, at)).toEqual(right.slice(0, at));
+                expect(right[at]).toContain('<target');
+                expect(right.slice(at, at + now).join('')).toContain(EDITED);
+                expect(right.slice(at + now)).toEqual(left.slice(at + was));
             } else {
                 // A unit with no target gains one: exactly one line more, and from the
                 // first difference onwards every line is the original shifted by one.
@@ -86,15 +106,16 @@ describe('§1.4: one edit changes only what was edited', () => {
             const original = read(name);
             const document = parseXliff(original);
             const [unit] = [...iterateUnits(document)];
-            // An inserted target is one line more, and therefore one line ending more.
-            const inserted = unit.target === undefined ? 1 : 0;
-
             const edit = setTarget(document, original, { unitId: unit.id, value: EDITED, state: 'translated' });
             const after = apply(original, edit ?? { start: 0, end: 0, newText: '' });
+            // A target that gains or loses lines moves the line-ending count with it — but
+            // only in a document whose line ending is the one being counted.
+            const { before: was, after: now } = span(original, edit ?? { start: 0, end: 0, newText: '' });
+            const delta = original.includes('\r\n') ? now - was : 0;
 
             expect(after.startsWith('﻿'), `${name}: BOM`).toBe(original.startsWith('﻿'));
             expect(after.includes('\r\n'), `${name}: CRLF`).toBe(original.includes('\r\n'));
-            expect(after.split('\r\n').length, `${name}: CRLF count`).toBe(original.split('\r\n').length + inserted);
+            expect(after.split('\r\n').length, `${name}: CRLF count`).toBe(original.split('\r\n').length + delta);
         });
 
         it(`keeps every other unit byte-identical in ${name}`, () => {
@@ -125,8 +146,8 @@ describe('§1.4: one edit changes only what was edited', () => {
         const edit = setTarget(document, original, { unitId: unit.id, value: EDITED, state: 'translated' });
         expect(edit).not.toBeNull();
 
-        const span = (edit?.end ?? 0) - (edit?.start ?? 0);
-        expect(span).toBeLessThan(200);
+        const characters = (edit?.end ?? 0) - (edit?.start ?? 0);
+        expect(characters).toBeLessThan(200);
         expect(original.length).toBeGreaterThan(1_000_000);
     });
 });

@@ -62,7 +62,7 @@ Nothing has been published yet. This section is what the extension does today; i
 - A missing `<target>` is inserted, and clearing one writes the self-closing form AL itself emits
 - The state follows the edit — `stateOnEdit` by default, a state the translator picked instead, and `needs-translation` whenever the target is cleared
 - Our own edit is recognised by its span and text, so the view is patched in place rather than rebuilt: focus, scroll and expansion survive typing
-- The target field takes the space it needs, grows as lines are added, and cannot be dragged shorter than what it holds
+- The target field grows as it is typed into — wider until it reaches its cap, then taller — and cannot be dragged shorter than what it holds
 - A file that begins with a UTF-8 BOM says so once when first edited: VS Code drops the mark when it saves, and an extension cannot stop it
 
 **Settings**
@@ -76,5 +76,6 @@ Nothing has been published yet. This section is what the extension does today; i
 
 - **A document containing an XML comment cannot be edited.** The parser drops comments, and a whole-document write would delete one a person added by hand, so such a file is refused rather than silently rewritten. No AL-generated file contains one
 - **Validation hints are not built.** Nothing warns yet about a target past its `maxwidth`, a placeholder the translation lost, or an empty target claiming to be translated
+- **A carriage return inside a `<source>` or `<target>` becomes a line feed.** XML requires every conformant parser to normalise it, so the information is gone before we see it. It cannot arise from editing here — the editor writes line feeds — and no corpus file contains one
 - `<alt-trans>`, `<context-group>` and inline tags (`<g>`, `<ph>`) are not modelled. None occurs anywhere in the corpus
 - The webview has not been confirmed inside VS Code for the Web. The editor binds correctly there and the same bundle renders correctly when served directly, but the automated browser cannot register that host's webview service worker

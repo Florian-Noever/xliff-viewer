@@ -17,6 +17,7 @@ const read = (name: string): string => readFileSync(`${EXAMPLES}/${name}`, 'utf8
 const LANGUAGE_FILE = 'Contoso App.de-DE.xlf';
 const LARGE_FILE = 'Fabrikam Base.de-DE.xlf';
 const BASE_FILE = 'Contoso App.g.xlf';
+const MINIMAL_FILE = 'test.xlf';
 
 /** Narrows without a `!` assertion, which the project's lint rules forbid. */
 function required<T>(value: T | null | undefined, what: string): T {
@@ -246,13 +247,19 @@ describe('a line break a translator typed', () => {
     it('does not drag the document\'s own line endings along with it', () => {
         // A CRLF document with an LF inside a target: the target keeps what was typed and
         // the file keeps what it had. Mixing the two would rewrite every line.
-        const source = read(LANGUAGE_FILE).split('\n').join('\r\n');
+        //
+        // `test.xlf` rather than a corpus file, because the assertion counts line endings
+        // and every target in it is one line — a target that already spans two would make
+        // the count depend on the fixture rather than on the writer.
+        const source = read(MINIMAL_FILE).split('\n').join('\r\n');
         const document = parseXliff(source);
         const units = [...iterateUnits(document)];
-        const written = apply(source, required(setTarget(document, source, { unitId: units[10].id, value: TYPED }), 'an edit'));
+        const written = apply(source, required(setTarget(document, source, { unitId: units[0].id, value: TYPED }), 'an edit'));
 
+        // One line more, because the typed break adds one — and it is an LF, so the CRLF
+        // count is untouched.
         expect(written.split('\r\n')).toHaveLength(source.split('\r\n').length);
-        expect([...iterateUnits(parseXliff(written))].find(unit => unit.id === units[10].id)?.target?.value).toBe(TYPED);
+        expect([...iterateUnits(parseXliff(written))].find(unit => unit.id === units[0].id)?.target?.value).toBe(TYPED);
     });
 
     it('leaves AL\'s own backslash line break exactly as it found it', () => {
