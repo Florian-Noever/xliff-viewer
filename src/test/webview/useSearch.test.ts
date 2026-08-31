@@ -161,6 +161,29 @@ describe('the index is built once per document, not per keystroke (§11.5)', () 
     });
 });
 
+describe('the seam between two fields (REVIEW-03)', () => {
+    // Every field a node can match on is joined into one haystack. Joined with anything a
+    // person could type, a query spanning the join matches a phrase that exists in neither
+    // field — so the separator is a NUL, which XML text cannot contain and a search box
+    // cannot produce. Found untested by `REVIEW-03`: a space passed every other test here.
+    const seam: AlNodeDto[] = [{ key: 'Table 1 - Property 2', type: 'Property', name: 'Alpha', children: [] }];
+    const seamUnits = new Map([['Table 1 - Property 2', unit('Table 1 - Property 2', 'Beta', 'Gamma')]]);
+    const seamIndex = buildSearchIndex(seam, seamUnits);
+    const matches = (query: string) => toMatcher(query)(seamIndex.get('Table 1 - Property 2') ?? '');
+
+    it('matches within a field', () => {
+        expect(matches('alpha')).toBe(true);
+        expect(matches('beta')).toBe(true);
+        expect(matches('gamma')).toBe(true);
+    });
+
+    it('does not match a phrase that spans two of them', () => {
+        expect(matches('alpha beta')).toBe(false);
+        expect(matches('alphabeta')).toBe(false);
+        expect(matches('beta gamma')).toBe(false);
+    });
+});
+
 describe('the object-type level (DEC-033)', () => {
     const GROUPED: AlNodeDto[] = [{
         key: 'type:Table',
