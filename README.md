@@ -80,6 +80,8 @@ Turn editing on with the toolbar toggle, or start every file that way with `xlif
 
 Keys typed into a field belong to the field, not to the tree.
 
+The tree is a single tab stop with the arrow keys moving inside it, which is how an ARIA tree behaves. Everything interactive has a name, nothing animates when your system asks it not to, and the signals that are colours also carry a word or a number.
+
 ---
 
 ## ⚙️ Settings
@@ -111,7 +113,7 @@ Not finding one is a normal state, not an error: the viewer works fully without 
 
 ## 🚦 Status
 
-Not published. The viewer, edit mode and the validation hints are complete; the remaining work is accessibility, view-state persistence and packaging.
+Not published. The viewer, edit mode, the validation hints and the accessibility pass are complete; the remaining work is view-state persistence and packaging.
 
 | Phase | State |
 | --- | --- |
@@ -121,7 +123,8 @@ Not published. The viewer, edit mode and the validation hints are complete; the 
 | Search, filter, base file, navigation | ✅ complete |
 | Edit mode | ✅ complete |
 | Validation hints | ✅ complete |
-| Accessibility, persistence, packaging | ⬜ not started |
+| Accessibility and keyboard | ✅ complete |
+| View-state persistence, packaging | ⬜ not started |
 
 ---
 

@@ -1,5 +1,6 @@
 <template>
     <div
+        :id="rowId"
         class="tree-row"
         :class="{ 'is-focused': focused, 'is-container': row.hasChildren }"
         role="treeitem"
@@ -7,8 +8,6 @@
         :aria-posinset="row.position"
         :aria-setsize="row.siblings"
         :aria-expanded="row.hasChildren ? row.expanded : undefined"
-        :aria-selected="focused"
-        :tabindex="focused ? 0 : -1"
         :style="{ paddingInlineStart: `calc(var(--row-indent) * ${row.depth})` }"
         @click="onClick"
     >
@@ -81,6 +80,13 @@ import type { WebviewSettings } from '@shared/settings';
 const props = defineProps<{
     row: TreeRow;
     focused: boolean;
+    /**
+     * What the tree's `aria-activedescendant` points at (§11.7).
+     *
+     * DOM focus stays on the tree, not on the row, so a screen reader has no other way to
+     * be told which row the arrow keys are on. Absent in tests that mount a row alone.
+     */
+    rowId?: string;
     /** The roll-up for this node. Absent on a unit row, which shows its own state instead. */
     summary?: StateSummary;
     settings?: WebviewSettings;

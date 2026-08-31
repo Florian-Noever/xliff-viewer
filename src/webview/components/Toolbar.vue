@@ -162,6 +162,14 @@ onUnmounted(() => {
     background: var(--vscode-list-activeSelectionBackground);
 }
 
+/* Both signals for "on" are colours, and a forced-colours theme takes both. */
+@media (forced-colors: active) {
+    .chip.on {
+        background: Highlight;
+        color: HighlightText;
+    }
+}
+
 .dot {
     width: 7px;
     height: 7px;

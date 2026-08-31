@@ -13,6 +13,7 @@
             class="scroller"
             role="tree"
             aria-label="Translation units"
+            :aria-activedescendant="activeDescendant"
             :tabindex="rows.length === 0 ? -1 : 0"
             @keydown="onKeydown"
         >
@@ -23,6 +24,7 @@
                         :key="rows[item.index].key"
                         :ref="measure(item.index)"
                         :data-index="item.index"
+                        :row-id="rowId(item.index)"
                         :row="rows[item.index]"
                         :settings="settings"
                         :editing="editing"
@@ -43,7 +45,7 @@
 
 <script setup lang="ts">
 import { useVirtualizer } from '@tanstack/vue-virtual';
-import { computed, ref, watch } from 'vue';
+import { computed, ref, useId, watch } from 'vue';
 
 import TreeRow from './TreeRow.vue';
 import { ROW_HEIGHT } from '../constants';
@@ -136,6 +138,22 @@ const virtualizer = useVirtualizer(computed(() => ({
 
 const virtualItems = computed(() => virtualizer.value.getVirtualItems());
 const offset = computed(() => virtualItems.value[0]?.start ?? 0);
+
+/**
+ * `aria-activedescendant` names an element, so every row needs an id — by **position**
+ * rather than by key, because a node key is an XLIFF id full of spaces and dots.
+ *
+ * Set only while the row it names is **rendered**. The focused row can be scrolled out of
+ * the virtualiser's window, and an attribute pointing at an element that is not in the
+ * document is worse than an absent one: a screen reader is told there is a current item and
+ * then cannot find it.
+ */
+const treeId = useId();
+const rowId = (index: number): string => `${treeId}-row-${index}`;
+const activeDescendant = computed(() => {
+    const focused = props.tree.focusedIndex.value;
+    return virtualItems.value.some(item => item.index === focused) ? rowId(focused) : undefined;
+});
 
 /** `measureElement` wants the DOM node; a Vue component ref hands over its root. */
 const measure = (index: number) => (instance: Element | ComponentPublicInstance | null): void => {

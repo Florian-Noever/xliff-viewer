@@ -71,6 +71,20 @@ const title = computed(() => {
     background: currentColor;
 }
 
+/*
+ * Track and fill both become the forced text colour, which makes the bar one solid block.
+ * The border keeps its extent readable; the counts beside it carry the number regardless.
+ */
+@media (forced-colors: active) {
+    .track {
+        border: 1px solid CanvasText;
+    }
+
+    .fill {
+        background: Highlight;
+    }
+}
+
 .counts {
     color: var(--vscode-descriptionForeground);
     font-size: calc(var(--font) * 0.85);

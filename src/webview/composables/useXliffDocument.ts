@@ -1,6 +1,7 @@
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue';
 
 import { DEV_DOCUMENT } from '../fixtures/devDocument';
+import { stateLabel } from '../stateTone';
 import { isVscode, postMessage } from '../vscode';
 
 import { ExtensionMessageType, isExtensionMessage, NavigationTarget, WebviewMessageType } from '@shared/messages';
@@ -24,6 +25,11 @@ import type { ComputedRef, Ref } from 'vue';
  * costs one message. View state that must outlive a hidden tab is `POLISH-02`'s, through
  * `vscode.setState`.
  */
+
+export interface XliffDocumentOptions {
+    /** The polite live region (§11.7). Absent in tests that do not care what was said. */
+    announce?: (text: string) => void;
+}
 
 export interface XliffDocument {
     /** Undefined until the first `setDocument`, and never cleared by a later failure. */
@@ -79,7 +85,32 @@ function patchUnits(
     };
 }
 
-export function useXliffDocument(): XliffDocument {
+/**
+ * What a patch actually changed for the reader (§11.7).
+ *
+ * A patch is not always an edit: `NAV-03` sends the pairing markers through the same
+ * message, and announcing "3 translations updated" because a base file was resolved would
+ * be noise. Only a changed `state` or `target` is a change the reader made.
+ */
+function announcementFor(previous: XliffDocumentDto | undefined, fileIndex: number, patched: readonly TransUnitDto[]): string | undefined {
+    const before = new Map((previous?.files.find(file => file.index === fileIndex)?.units ?? []).map(unit => [unit.id, unit]));
+    const edited = patched.filter((unit) => {
+        const was = before.get(unit.id);
+        return was !== undefined && (was.state !== unit.state || was.target !== unit.target);
+    });
+
+    if (edited.length === 0) {
+        return undefined;
+    }
+    if (edited.length > 1) {
+        return `${edited.length} translations updated.`;
+    }
+    const [unit] = edited;
+    const target = unit.target === undefined || unit.target === '' ? 'Target cleared' : 'Target saved';
+    return `${target}. State: ${stateLabel(unit.state)}.`;
+}
+
+export function useXliffDocument(options: XliffDocumentOptions = {}): XliffDocument {
     // shallowRef: the DTO is a large frozen-in-practice tree that is replaced wholesale,
     // never mutated. Deep reactivity over 2500 units would cost on every assignment.
     const document = shallowRef<XliffDocumentDto | undefined>(undefined);
@@ -122,9 +153,14 @@ export function useXliffDocument(): XliffDocument {
                 error.value = message.payload;
                 loading.value = undefined;
                 break;
-            case ExtensionMessageType.patchUnits:
+            case ExtensionMessageType.patchUnits: {
+                const said = announcementFor(document.value, message.payload.fileIndex, message.payload.units);
                 document.value = patchUnits(document.value, message.payload.fileIndex, message.payload.units);
+                if (said !== undefined) {
+                    options.announce?.(said);
+                }
                 break;
+            }
             case ExtensionMessageType.baseFile:
                 // Arrives after the document (§9.2). `null` means resolution ran and found
                 // nothing, which the header says out loud; leaving it undefined would not.
