@@ -2,6 +2,17 @@
     "name": "xliff-viewer",
     "displayName": "XLIFF Viewer",
     "description": "View and edit XLIFF translation files with a structured GUI",
+    "publisher": "Florian-Noever",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Florian-Noever/xliff-viewer"
+    },
+    "bugs": {
+        "url": "https://github.com/Florian-Noever/xliff-viewer/issues"
+    },
+    "homepage": "https://github.com/Florian-Noever/xliff-viewer",
+    "qna": "github",
     "version": "0.0.1",
     "engines": {
         "vscode": "^1.134.0"

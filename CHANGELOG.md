@@ -6,7 +6,7 @@ All notable changes to **XLIFF Viewer** are documented in this file.
 
 ## [Unreleased]
 
-Nothing has been published yet. This section is what the extension does today; it becomes the first release entry when one is cut.
+Nothing has been published yet. This section is what the extension does today; it becomes the first release entry when one is cut. `npm run package` builds an installable VSIX from it in the meantime.
 
 ### Added
 
