@@ -16,6 +16,9 @@ const SHIPS = [
     'CHANGELOG.md',
     'LICENSE',
     'README.md',
+    'assets/icon-dark.svg',
+    'assets/icon-light-x512.png',
+    'assets/icon-light.svg',
     'media/webview.html',
     'out/extension.js',
     'out/web/extension.js',
@@ -39,7 +42,7 @@ beforeAll(async () => {
 }, 60_000);
 
 describe('what the VSIX contains', () => {
-    it('is exactly the nine files the extension needs, and nothing else', () => {
+    it('is exactly the twelve files the extension needs, and nothing else', () => {
         expect([...files]).toEqual(SHIPS);
     });
 
@@ -57,6 +60,8 @@ describe('what the VSIX contains', () => {
         expect(files.filter(file => file.startsWith('src/'))).toEqual([]);
         expect(files.filter(file => file.startsWith('Examples/'))).toEqual([]);
         expect(files.filter(file => file.startsWith('docs/'))).toEqual([]);
+        // `assets/` is a working folder: four more icons live there that nothing uses.
+        expect(files.filter(file => file.startsWith('assets/'))).toHaveLength(3);
         expect(files.filter(file => file.endsWith('.ts') || file.endsWith('.map'))).toEqual([]);
         expect(files).not.toContain('index.html');
     });

@@ -32,6 +32,7 @@ const FIXTURE = `<?xml version="1.0" encoding="utf-8"?>
 
 interface Harness {
     readonly posted: ExtensionMessage[];
+    readonly panel: vscode.WebviewPanel;
     send(message: unknown): void;
     dispose(): void;
 }
@@ -69,6 +70,7 @@ async function openEditor(supplied?: FakeTextDocument): Promise<Harness> {
 
     return {
         posted,
+        panel,
         send: (message: unknown) => {
             for (const listener of listeners) {
                 listener(message);
@@ -391,5 +393,29 @@ describe('how the editor is registered (DEC-030)', () => {
         expect(registration.viewType).toBe('xliff-viewer.editor');
         expect(JSON.stringify(registration.options)).not.toContain('retainContextWhenHidden');
         expect(registration.options).toEqual({ supportsMultipleEditorsPerDocument: true });
+    });
+});
+
+describe('the icon on the editor tab', () => {
+    // VS Code names these by the theme they are shown *under*, not by their own colour, and
+    // the pairing is the one thing here that is easy to get backwards.
+    it('gives a light theme the dark-inked icon, and a dark theme the light one', async () => {
+        const harness = await openEditor();
+
+        const icons = harness.panel.iconPath as { light: vscode.Uri; dark: vscode.Uri };
+
+        expect(icons.light.path).toContain('assets/icon-dark.svg');
+        expect(icons.dark.path).toContain('assets/icon-light.svg');
+        harness.dispose();
+    });
+
+    it('resolves both against the extension, not the workspace', async () => {
+        const harness = await openEditor();
+
+        const icons = harness.panel.iconPath as { light: vscode.Uri; dark: vscode.Uri };
+
+        expect(icons.light.path.startsWith(EXTENSION_URI.path)).toBe(true);
+        expect(icons.dark.path.startsWith(EXTENSION_URI.path)).toBe(true);
+        harness.dispose();
     });
 });
