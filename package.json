@@ -2,6 +2,7 @@
     "name": "xliff-viewer",
     "displayName": "XLIFF Viewer",
     "description": "View and edit XLIFF translation files with a structured GUI",
+    "icon": "assets/icon-light-x512.png",
     "publisher": "Florian-Noever",
     "license": "MIT",
     "repository": {

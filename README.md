@@ -189,4 +189,4 @@ Four Vitest projects: `data` (pure, and deliberately *without* a `vscode` alias,
 
 [MIT](LICENSE).
 
-Icons are from [`@vscode/codicons`](https://github.com/microsoft/vscode-codicons), licensed [CC BY 4.0](https://github.com/microsoft/vscode-codicons/blob/main/LICENSE).
+The extension's own icons are in `assets/`. The in-GUI icons are from [`@vscode/codicons`](https://github.com/microsoft/vscode-codicons), licensed [CC BY 4.0](https://github.com/microsoft/vscode-codicons/blob/main/LICENSE).

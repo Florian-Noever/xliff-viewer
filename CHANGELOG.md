@@ -65,6 +65,9 @@ Nothing has been published yet. This section is what the extension does today; i
 - The target field grows as it is typed into — wider until it reaches its cap, then taller, with no limit on height — and folds back down to a single line when dragged
 - A file that begins with a UTF-8 BOM says so once when first edited: VS Code drops the mark when it saves, and an extension cannot stop it
 
+**How it looks in the workbench**
+- The editor tab carries the extension's own icon, in a light or dark version chosen by the active theme
+
 **Coming back to where you were**
 - Hiding a tab and returning to it keeps the expansion, the focused row, the scroll position, the search, the state filter and the edit toggle
 - The webview is not held in memory while the tab is hidden. It is rebuilt from the host's cached parse on reveal — 36 ms for a 2 500-unit file against a 400 ms budget — and the view state is what makes that invisible

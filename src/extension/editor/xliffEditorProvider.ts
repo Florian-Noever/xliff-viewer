@@ -21,6 +21,15 @@ import type { ExtensionMessage } from '../../shared/messages';
  * The provider owns no parsing itself — it acquires the document's session, connects one
  * webview to it, and drops both when the panel closes.
  */
+/**
+ * VS Code names these by the theme they are *for*, not by their own colour: `light` is shown
+ * under a light theme, so it is the dark-inked icon.
+ */
+const TAB_ICON = {
+    light: ['assets', 'icon-dark.svg'],
+    dark: ['assets', 'icon-light.svg'],
+} as const;
+
 export class XliffEditorProvider implements vscode.CustomTextEditorProvider {
     public static readonly viewType = 'xliff-viewer.editor';
 
@@ -77,6 +86,10 @@ export class XliffEditorProvider implements vscode.CustomTextEditorProvider {
             this.registry.release(session);
         });
 
+        webviewPanel.iconPath = {
+            light: vscode.Uri.joinPath(this.extensionUri, ...TAB_ICON.light),
+            dark: vscode.Uri.joinPath(this.extensionUri, ...TAB_ICON.dark),
+        };
         webviewPanel.webview.options = {
             enableScripts: true,
             localResourceRoots: localResourceRoots(this.extensionUri),

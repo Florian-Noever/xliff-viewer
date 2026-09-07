@@ -3,6 +3,10 @@
 .vscode-test-web/**
 .claude/**
 CLAUDE.md
+assets/**
+!assets/icon-light-x512.png
+!assets/icon-light.svg
+!assets/icon-dark.svg
 src/**
 out/test/**
 out/web/test/**
