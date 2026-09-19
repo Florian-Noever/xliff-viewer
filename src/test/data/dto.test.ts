@@ -11,12 +11,12 @@ import { summariseTree, summariseUnits, XliffState } from '../../shared/state';
 import type { AlNodeDto, TransUnitDto, XliffDocumentDto, XliffFileDto } from '../../shared/dto';
 import type { UnitState } from '../../shared/state';
 
-const EXAMPLES = fileURLToPath(new URL('../../../Examples', import.meta.url));
+const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
 const AL_FILES = ['Contoso App.g.xlf', 'Contoso App.en-US.xlf', 'Contoso App.de-DE.xlf', 'Fabrikam Base.de-DE.xlf'];
-const CORPUS = [...AL_FILES, 'test.xlf'];
+const CORPUS = [...AL_FILES, 'minimal.xlf'];
 
 function project(name: string): XliffDocumentDto {
-    const text = readFileSync(`${EXAMPLES}/${name}`, 'utf8');
+    const text = readFileSync(`${FIXTURES}/${name}`, 'utf8');
     return projectDocument(parseXliff(text), { uri: `file:///${name}`, fileName: name });
 }
 
@@ -92,7 +92,7 @@ describe('shape', () => {
 describe('units', () => {
     it('projects every unit of the model exactly once', () => {
         for (const name of CORPUS) {
-            const text = readFileSync(`${EXAMPLES}/${name}`, 'utf8');
+            const text = readFileSync(`${FIXTURES}/${name}`, 'utf8');
             const modelIds = [...iterateUnits(parseXliff(text))].map(unit => unit.id);
             const dto = projectDocument(parseXliff(text), { uri: 'file:///x', fileName: name });
             const projected = dto.files.flatMap(file => file.units).map(unit => unit.id);
@@ -117,10 +117,10 @@ describe('units', () => {
 
     it('projects a unit in full', () => {
         const [file] = project('Fabrikam Base.de-DE.xlf').files;
-        const unit = unitById(file, 'Codeunit 4282448380 - Method 421560849 - NamedType 3555979353');
+        const unit = unitById(file, 'Codeunit 4184348254 - Method 2070365322 - NamedType 1660893115');
 
         expect(unit).toEqual({
-            id: 'Codeunit 4282448380 - Method 421560849 - NamedType 3555979353',
+            id: 'Codeunit 4184348254 - Method 2070365322 - NamedType 1660893115',
             source: 'none',
             target: 'keine',
             state: XliffState.translated,
@@ -228,7 +228,7 @@ describe('hasAlIds', () => {
     });
 
     it('is false for a file whose ids carry no AL structure', () => {
-        expect(project('test.xlf').files[0].hasAlIds).toBe(false);
+        expect(project('minimal.xlf').files[0].hasAlIds).toBe(false);
     });
 
     it('is true when only some ids are AL-shaped, so the tree is still worth showing', () => {
@@ -278,18 +278,18 @@ describe('isBaseFile and readOnly', () => {
     });
 
     it('lets the caller force read-only on a document that is not a base file', () => {
-        const text = readFileSync(`${EXAMPLES}/test.xlf`, 'utf8');
-        const dto = projectDocument(parseXliff(text), { uri: 'file:///x', fileName: 'test.xlf', readOnly: true });
+        const text = readFileSync(`${FIXTURES}/minimal.xlf`, 'utf8');
+        const dto = projectDocument(parseXliff(text), { uri: 'file:///x', fileName: 'minimal.xlf', readOnly: true });
 
         expect(dto.isBaseFile).toBe(false);
         expect(dto.readOnly).toBe(true);
     });
 
     it('distinguishes an unresolved base file from one that was looked for', () => {
-        const text = readFileSync(`${EXAMPLES}/test.xlf`, 'utf8');
+        const text = readFileSync(`${FIXTURES}/minimal.xlf`, 'utf8');
 
-        expect(projectDocument(parseXliff(text), { uri: 'file:///x', fileName: 'test.xlf' }).baseFile).toBeUndefined();
-        expect(projectDocument(parseXliff(text), { uri: 'file:///x', fileName: 'test.xlf', baseFile: null }).baseFile).toBeNull();
+        expect(projectDocument(parseXliff(text), { uri: 'file:///x', fileName: 'minimal.xlf' }).baseFile).toBeUndefined();
+        expect(projectDocument(parseXliff(text), { uri: 'file:///x', fileName: 'minimal.xlf', baseFile: null }).baseFile).toBeNull();
     });
 });
 
@@ -302,7 +302,7 @@ describe('the tree it hands over', () => {
         const summaries = summariseTree(file.tree, states);
 
         // Every real node plus the object-type groups above them.
-        expect(summaries.size).toBe(4027);
+        expect(summaries.size).toBe(4029);
         const rootTotal = file.tree.reduce((sum, node) => sum + (summaries.get(node.key)?.total ?? 0), 0);
         expect(rootTotal).toBe(2500);
     });
@@ -325,7 +325,7 @@ describe('the tree it hands over', () => {
     });
 
     it('leaves a file with no AL structure ungrouped', () => {
-        const [file] = project('test.xlf').files;
+        const [file] = project('minimal.xlf').files;
 
         expect(file.hasAlIds).toBe(false);
         expect(file.tree.some(node => node.group === true)).toBe(false);

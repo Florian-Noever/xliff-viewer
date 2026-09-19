@@ -10,7 +10,7 @@ const SEGMENT_SEPARATOR = ' - ';
  * instead — the segment **types** from the id interleaved with the **names** from the nodes:
  *
  * ```text
- * id     Table 3783554337 - Field 4264183382 - Property 2879900210
+ * id     Table 2023264910 - Field 1165218225 - Property 2879900210
  * nodes  Table / Sales Setup, Field / Quote Nos., Property / Caption
  * note   Table Sales Setup - Field Quote Nos. - Property Caption
  * ```

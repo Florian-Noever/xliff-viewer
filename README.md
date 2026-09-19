@@ -156,7 +156,7 @@ The VSIX carries the two host bundles, the webview bundle and its HTML shell, an
 | Shared | TypeScript | The model, the state domain, the DTOs and both message unions — imported by both runtimes, so there is one definition rather than two |
 | Webview | Vue 3, Vite, `@tanstack/vue-virtual` | The tree, virtualised. Rolls up state, searches and filters over the DTOs already in memory; no round trip to the host for a keystroke |
 
-The XML is parsed **once, in the host** — the webview never sees it. The whole document is read and written as one string with a format-faithful serialiser, verified byte-identical against every file in `Examples/`.
+The XML is parsed **once, in the host** — the webview never sees it. The whole document is read and written as one string with a format-faithful serialiser, verified byte-identical against a fixture corpus written in the exact shape the AL compiler emits.
 
 ### Build commands
 
@@ -171,17 +171,23 @@ npm run check-types      # tsc for the host and tests, vue-tsc for the webview
 npm run lint             # eslint src
 npm test                 # vitest: data, host, webview, then the perf budgets
 npm run test:integration # @vscode/test-electron and @vscode/test-web
-npm run dev:webview      # the webview alone, against a real corpus fixture
+npm run dev:webview      # the webview alone, against a fixture document
 npm run package          # vsce package
 ```
 
-`npm run dev:webview` serves the UI with no extension host behind it, rendering a real projection of one of the corpus files. A drift test rebuilds that fixture from the corpus and fails if it has been hand-edited, so the dev server always shows what the extension actually sends.
+`npm run dev:webview` serves the UI with no extension host behind it, rendering a projection of the largest fixture file. A drift test rebuilds that document from the file and fails if it has been hand-edited, so the dev server always shows what the extension actually sends.
 
 **Install scripts are opt-in.** npm 11 runs a dependency's install script only when `allowScripts` in `package.json` approves it. Two are: `@playwright/browser-chromium`, which downloads the browser the web integration tests run in, and `esbuild`. Without the first, those tests cannot start — and they **hang** rather than fail, so if they ever sit silent after a dependency update, check `npm install-scripts ls` first. `keytar` and `@vscode/vsce-sign` are denied: they serve publishing, which this project does not do.
 
 ### Tests
 
 Four Vitest projects: `data` (pure, and deliberately *without* a `vscode` alias, so a data test that imports it fails to resolve), `host` (a hand-written `vscode` mock), `webview` (jsdom), and `perf` (the wall-clock budgets, run serially so they measure the code rather than the load).
+
+The XLIFF the tests read is invented. `src/test/fixtures/corpus.ts` generates every file in `src/test/fixtures/xliff/` in the exact shape the AL compiler writes, and a test fails if a committed file drifts from it. After changing the generator, rewrite the files with the command below (in PowerShell, set `$env:UPDATE_FIXTURES = '1'` first instead):
+
+```bash
+UPDATE_FIXTURES=1 npx vitest run --project data src/test/data/corpus.test.ts
+```
 
 ---
 

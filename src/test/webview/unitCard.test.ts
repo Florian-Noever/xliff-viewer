@@ -124,9 +124,9 @@ describe('MetaChips (nothing dropped)', () => {
     });
 
     it('shows al-object-target', () => {
-        const chips = mount(MetaChips, { props: { unit: unit({ alObjectTarget: 'Page 23584087' }) } });
+        const chips = mount(MetaChips, { props: { unit: unit({ alObjectTarget: 'Page 2343612539' }) } });
 
-        expect(chips.text()).toContain('Page 23584087');
+        expect(chips.text()).toContain('Page 2343612539');
     });
 
     it('explains an untranslatable unit rather than only muting it', () => {
@@ -297,7 +297,7 @@ describe('every DTO field is reachable', () => {
             translate: false,
             maxwidth: 50,
             sizeUnit: 'char',
-            alObjectTarget: 'Page 23584087',
+            alObjectTarget: 'Page 2343612539',
             notes: [{ from: 'Developer', value: 'de-DE=Kundin' }],
             developerHint: 'Kundin',
         });
@@ -316,7 +316,7 @@ describe('every DTO field is reachable', () => {
             translate: text.includes('translate="no"'),
             maxwidth: text.includes('max 50 char'),
             sizeUnit: text.includes('char'),
-            alObjectTarget: text.includes('Page 23584087'),
+            alObjectTarget: text.includes('Page 2343612539'),
             notes: text.includes('de-DE=Kundin'),
             developerHint: wrapper.find('.aside').exists(),
             orphaned: true, // covered by its own case below; mutually exclusive with baseSource

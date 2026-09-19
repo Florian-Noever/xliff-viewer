@@ -139,7 +139,7 @@ describe('the same-as-source check', () => {
 describe('the example files, which the hints have to be quiet on', () => {
     // Read the way `App.test.ts` reads sources: this project runs under jsdom, where
     // `import.meta.url` is not a file URL and `node:fs` has nothing to resolve against.
-    const files: Record<string, string> = import.meta.glob('../../../Examples/*.xlf', { query: '?raw', import: 'default', eager: true });
+    const files: Record<string, string> = import.meta.glob('../fixtures/xliff/*.xlf', { query: '?raw', import: 'default', eager: true });
 
     it('finds exactly one placeholder mistake across the example files, and no false maxwidth', () => {
         // Run through the real parser and projection, not a regex over the text. The one

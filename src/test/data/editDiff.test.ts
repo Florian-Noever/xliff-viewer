@@ -13,15 +13,15 @@ import { iterateUnits } from '../../shared/model';
  * a BOM, CRLF, no namespace, a self-closing target, no targets at all.
  */
 
-const EXAMPLES = fileURLToPath(new URL('../../../Examples', import.meta.url));
-const read = (name: string): string => readFileSync(`${EXAMPLES}/${name}`, 'utf8');
+const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
+const read = (name: string): string => readFileSync(`${FIXTURES}/${name}`, 'utf8');
 
 const CORPUS = [
     'Contoso App.g.xlf',
     'Contoso App.en-US.xlf',
     'Contoso App.de-DE.xlf',
     'Fabrikam Base.de-DE.xlf',
-    'test.xlf',
+    'minimal.xlf',
 ];
 
 const EDITED = 'ZZZ EDITED ZZZ';

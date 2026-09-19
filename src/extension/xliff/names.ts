@@ -50,7 +50,7 @@ function escapeRegex(value: string): string {
  * any ` - ` not followed by the next expected type:
  *
  * ```text
- * id    Table 3783554337 - Field 4264183382 - Property 2879900210
+ * id    Table 2023264910 - Field 1165218225 - Property 2879900210
  * types [Table, Field, Property]
  * regex /^Table (.+?) - Field (.+?) - Property (.+)$/
  * ```

@@ -24,16 +24,16 @@ const CORPUS = [
     'Contoso App.en-US.xlf',
     'Contoso App.de-DE.xlf',
     'Fabrikam Base.de-DE.xlf',
-    'test.xlf',
+    'minimal.xlf',
 ];
 
 function exampleUri(name: string): vscode.Uri {
     const folders = vscode.workspace.workspaceFolders;
     assertOk(folders && folders.length > 0, 'no workspace folder is open');
-    return vscode.Uri.joinPath(folders[0].uri, 'Examples', name);
+    return vscode.Uri.joinPath(folders[0].uri, 'src', 'test', 'fixtures', 'xliff', name);
 }
 
-const fixtureUri = (): vscode.Uri => exampleUri('test.xlf');
+const fixtureUri = (): vscode.Uri => exampleUri('minimal.xlf');
 
 suite('XLIFF custom editor', () => {
     test('the extension activates', async () => {
@@ -64,7 +64,7 @@ suite('XLIFF custom editor', () => {
 
         const activeTab = vscode.window.tabGroups.activeTabGroup.activeTab;
         assertOk(activeTab, 'no active tab after opening the fixture');
-        assertEqual(activeTab.label, 'test.xlf', 'unexpected active tab');
+        assertEqual(activeTab.label, 'minimal.xlf', 'unexpected active tab');
 
         await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
     });

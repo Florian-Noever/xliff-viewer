@@ -32,9 +32,9 @@ import type { UnitState } from '../../shared/state';
  * `perf` project runs them one file at a time, after everything else.
  */
 
-const EXAMPLES = fileURLToPath(new URL('../../../Examples', import.meta.url));
+const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
 const LARGE = 'Fabrikam Base.de-DE.xlf';
-const text = readFileSync(`${EXAMPLES}/${LARGE}`, 'utf8');
+const text = readFileSync(`${FIXTURES}/${LARGE}`, 'utf8');
 
 /** Best of several: the fastest run is the one least disturbed by everything else. */
 function fastest(attempts: number, run: () => void): number {

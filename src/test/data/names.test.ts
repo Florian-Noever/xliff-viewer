@@ -14,8 +14,8 @@ import {
 import { parseXliff } from '../../extension/xliff/parser';
 import { iterateUnits } from '../../shared/model';
 
-const EXAMPLES = fileURLToPath(new URL('../../../Examples', import.meta.url));
-const unitsOf = (name: string) => [...iterateUnits(parseXliff(readFileSync(`${EXAMPLES}/${name}`, 'utf8')))];
+const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
+const unitsOf = (name: string) => [...iterateUnits(parseXliff(readFileSync(`${FIXTURES}/${name}`, 'utf8')))];
 
 describe('segmentTypes', () => {
     it('splits an AL id into type and hash', () => {
