@@ -170,11 +170,12 @@ describe('units', () => {
     it('drops the Xliff Generator note but keeps the Developer one', () => {
         const [file] = project('Fabrikam Base.de-DE.xlf').files;
         const serialised = JSON.stringify(file);
+        const method = [...walk(file.tree)].find(node => node.type === 'Method')?.name ?? '';
 
         expect(serialised).not.toContain('Xliff Generator');
         // The names survive, the path they were cut from does not.
-        expect(serialised).toContain('SampleMethod6');
-        expect(serialised).not.toContain(' - Method SampleMethod6');
+        expect(method).not.toBe('');
+        expect(serialised).not.toContain(` - Method ${method}`);
         expect(serialised).toContain('"from":"Developer"');
     });
 

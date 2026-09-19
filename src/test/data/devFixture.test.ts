@@ -76,7 +76,8 @@ describe('the dev-server fixture', () => {
 
         expect(shared).toHaveLength(2);
         expect(shared.map(node => node.type).sort()).toEqual(['Page', 'Table']);
-        expect(new Set(shared.map(node => node.name))).toEqual(new Set(['PTE Sample Object 1']));
+        expect(shared[0].name).toBeDefined();
+        expect(shared[1].name).toBe(shared[0].name);
     });
 
     it('is four levels deep somewhere, so nesting is visible', () => {

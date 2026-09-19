@@ -41,7 +41,7 @@ afterEach(() => {
 
 describe('appNameOf', () => {
     it('strips the language segment', () => {
-        expect(appNameOf(uri('/w/Contoso App.de-DE.xlf'))).toBe('Contoso App');
+        expect(appNameOf(uri('/w/Contoso Base App.de-DE.xlf'))).toBe('Contoso Base App');
     });
 
     it('keeps a stem that has no language segment', () => {
@@ -53,7 +53,7 @@ describe('appNameOf', () => {
     });
 
     it('takes the file name off a URI, whatever the folder is called', () => {
-        expect(fileNameOf(uri('/w/Translations/Contoso App.de-DE.xlf'))).toBe('Contoso App.de-DE.xlf');
+        expect(fileNameOf(uri('/w/Translations/Contoso Base App.de-DE.xlf'))).toBe('Contoso Base App.de-DE.xlf');
         expect(fileNameOf(uri('/App.g.xlf'))).toBe('App.g.xlf');
     });
 });

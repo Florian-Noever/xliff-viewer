@@ -115,9 +115,19 @@ describe('names for every corpus unit', () => {
 
 describe('note lookup', () => {
     it('finds the generator and developer notes by their from attribute', () => {
-        const unit = unitsOf('Contoso App.de-DE.xlf')[0];
-        expect(generatorNote(unit)).toContain('Table PTE Contoso Methods Setup');
-        expect(developerNote(unit)).toContain('Contoso Methoden Einrichtung');
+        // The reverse of the order AL writes them in, so a lookup by position would fail.
+        const unit = {
+            attributes: {},
+            id: 'a',
+            translate: true,
+            source: 's',
+            notes: [
+                { attributes: { from: 'Xliff Generator' }, from: 'Xliff Generator', value: 'Table PTE Contoso Methods Setup - Property Caption' },
+                { attributes: { from: 'Developer' }, from: 'Developer', value: 'de-DE=Contoso Methoden Einrichtung' },
+            ],
+        };
+        expect(generatorNote(unit)).toBe('Table PTE Contoso Methods Setup - Property Caption');
+        expect(developerNote(unit)).toBe('de-DE=Contoso Methoden Einrichtung');
     });
 
     it('returns undefined when a note is absent', () => {

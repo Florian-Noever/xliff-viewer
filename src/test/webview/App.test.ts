@@ -10,15 +10,15 @@ import type { XliffDocumentDto } from '../../shared/dto';
 import type { ExtensionMessage } from '../../shared/messages';
 
 const DOCUMENT: XliffDocumentDto = {
-    uri: 'file:///w/Fabrikam Base.de-DE.xlf',
-    fileName: 'Fabrikam Base.de-DE.xlf',
+    uri: 'file:///w/Contoso-Base.de-DE.xlf',
+    fileName: 'Contoso-Base.de-DE.xlf',
     isBaseFile: false,
     readOnly: false,
     files: [{
         index: 0,
         sourceLanguage: 'en-US',
         targetLanguage: 'de-DE',
-        original: 'Fabrikam Base',
+        original: 'Contoso-Base',
         tree: [],
         units: [
             { id: '1', source: 'Customer', target: 'Kunde', state: 'translated', translate: true, notes: [] },
@@ -61,7 +61,7 @@ describe('the file header', () => {
         const wrapper = mountWithDocument();
         await nextTick();
 
-        expect(wrapper.text()).toContain('Fabrikam Base.de-DE.xlf');
+        expect(wrapper.text()).toContain('Contoso-Base.de-DE.xlf');
         expect(wrapper.text()).toContain('en-US');
         expect(wrapper.text()).toContain('de-DE');
         expect(wrapper.text()).toContain('2 units');
@@ -71,8 +71,8 @@ describe('the file header', () => {
         const wrapper = mountWithDocument();
         await nextTick();
 
-        expect(wrapper.get('.app-name').text()).toBe('Fabrikam Base');
-        expect(wrapper.get('.file-name').text()).toBe('Fabrikam Base.de-DE.xlf');
+        expect(wrapper.get('.app-name').text()).toBe('Contoso-Base');
+        expect(wrapper.get('.file-name').text()).toBe('Contoso-Base.de-DE.xlf');
     });
 
     it('keeps the file name as the title when the file declares no app', async () => {
@@ -83,7 +83,7 @@ describe('the file header', () => {
         });
         await nextTick();
 
-        expect(wrapper.get('.app-name').text()).toBe('Fabrikam Base.de-DE.xlf');
+        expect(wrapper.get('.app-name').text()).toBe('Contoso-Base.de-DE.xlf');
         expect(wrapper.find('.file-name').exists()).toBe(false);
     });
 
@@ -145,7 +145,7 @@ describe('failure', () => {
 
         expect(wrapper.get('.status-pane').classes()).toContain('banner');
         expect(wrapper.text()).toContain('Unclosed tag');
-        expect(wrapper.text()).toContain('Fabrikam Base.de-DE.xlf');
+        expect(wrapper.text()).toContain('Contoso-Base.de-DE.xlf');
     });
 
     it('offers the raw file, which is the only action left when nothing parses', async () => {
