@@ -16,8 +16,8 @@ node_modules/**
 .gitignore
 .graphifyignore
 esbuild.mjs
-vite.config.ts
-vitest.config.ts
+vite.config.mts
+vitest.config.mts
 eslint.config.mjs
 vsc-extension-quickstart.md
 index.html
