@@ -169,7 +169,7 @@ describe('theming', () => {
 
         const offenders = Object.entries(sources)
             .filter(([path]) => !path.endsWith('global.css'))
-            .filter(([, source]) => literal.test(source as string))
+            .filter(([, source]) => literal.test(source))
             .map(([path]) => path);
 
         expect(offenders).toEqual([]);

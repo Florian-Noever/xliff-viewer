@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+
 import * as esbuild from 'esbuild';
 
 const watch = process.argv.includes('--watch');
@@ -25,6 +27,23 @@ const esbuildProblemMatcherPlugin = {
             });
             console.log(`[watch] build finished (${target})`);
         });
+    },
+};
+
+/**
+ * mocha's browser build is a UMD script in a `"type": "module"` package, so esbuild inlines it as
+ * ESM and its `module.exports = factory()` replaces the test bundle's exports. With `module`,
+ * `exports` and `define` hidden it takes its global-only branch.
+ * @type {import('esbuild').Plugin}
+ */
+const mochaBrowserBuildPlugin = {
+    name: 'mocha-browser-build',
+
+    setup(build) {
+        build.onLoad({ filter: /[\\/]node_modules[\\/]mocha[\\/]mocha\.js$/ }, async ({ path }) => ({
+            contents: `(function (module, exports, define) {\n${await readFile(path, 'utf8')}\n}).call(globalThis);`,
+            loader: 'js',
+        }));
     },
 };
 
@@ -85,6 +104,7 @@ async function buildTests() {
             platform: 'browser',
             external: ['vscode'],
             define: { global: 'globalThis' },
+            plugins: [mochaBrowserBuildPlugin],
         }),
     ]);
 }
