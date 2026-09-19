@@ -50,26 +50,27 @@ describe('the large corpus file', () => {
 });
 
 describe('grouping is by hash, never by name', () => {
-    it('keeps the ambiguous "Table PTE Contoso Zone" object as one root', () => {
-        // Its note reads "Table PTE Contoso Zone - Field Code - Property Caption", which a
-        // name-based split could read as an object called "PTE Contoso Zone - Field Code".
-        const roots = buildAlTree(unitsOf('Fabrikam Base.de-DE.xlf'));
-        const table = roots.filter(node => node.segment.name === 'PTE Contoso Zone' && node.segment.type === 'Table');
+    // AL hashes a symbol's *name*, so a Table and a Page of one name share a hash.
+    const largeUnits = unitsOf('Fabrikam Base.de-DE.xlf');
+    const largeRoots = buildAlTree(largeUnits);
+    const pages = new Map(largeRoots.filter(node => node.segment.type === 'Page').map(node => [node.segment.hash, node]));
+    const table = largeRoots.find(node => node.segment.type === 'Table' && pages.has(node.segment.hash));
+    const page = pages.get(table?.segment.hash ?? '');
 
-        expect(table).toHaveLength(1);
-        expect([...iterateUnitNodes(table)]).toHaveLength(3);
+    it('keeps an object whose name another type shares as one root, with every unit under it', () => {
+        const root = largeRoots.filter(node => node.key === table?.key);
+        const own = largeUnits.filter(candidate => candidate.id.startsWith(`${table?.key} - `));
+
+        expect(root).toHaveLength(1);
+        expect(own.length).toBeGreaterThan(0);
+        expect([...iterateUnitNodes(root)]).toHaveLength(own.length);
     });
 
     it('separates same-name objects that also share a hash', () => {
-        // The AL hash is derived from the symbol NAME, so "Table PTE Contoso Zone" and
-        // "Page PTE Contoso Zone" share a hash. Keying on the hash alone would merge them.
-        const roots = buildAlTree(unitsOf('Fabrikam Base.de-DE.xlf'));
-        const named = roots.filter(node => node.segment.name === 'PTE Contoso Zone');
-
-        expect(named).toHaveLength(2);
-        expect(named.map(node => node.segment.type).sort()).toEqual(['Page', 'Table']);
-        expect(new Set(named.map(node => node.segment.hash)).size).toBe(1);
-        expect(named.map(node => node.key).sort()).toEqual(['Page 69043486', 'Table 69043486']);
+        expect(table).toBeDefined();
+        expect(page?.segment.name).toBe(table?.segment.name);
+        expect(page?.segment.hash).toBe(table?.segment.hash);
+        expect(page?.key).not.toBe(table?.key);
     });
 
     it('keys on type and hash together, so a shared hash cannot merge nodes', () => {
