@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 /**
  * Static wrapper over a `LogOutputChannel`. Initialised once in `activate`.
- * Extension code logs through this, never `console.*` (MASTER_PLAN §8.5).
+ * Extension code logs through this, never `console.*`.
  */
 export class Logger {
     private static channel: vscode.LogOutputChannel | undefined;

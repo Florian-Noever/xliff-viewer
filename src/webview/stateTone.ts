@@ -1,11 +1,11 @@
 import { isKnownState, XliffState } from '@shared/state';
 
 /**
- * How a translation state is coloured (MASTER_PLAN §11.6).
+ * How a translation state is coloured.
  *
  * Four tones, not thirteen colours: a translator needs to know whether a unit is done,
  * needs work, or is missing — the exact spec state is on the badge in words. **Colour is
- * never the only signal** (§11.7); every badge that has a tone also has its name.
+ * never the only signal**; every badge that has a tone also has its name.
  *
  * The tone is a class name, and the colours behind it are theme variables in the
  * component's own stylesheet. Nothing here knows a colour.
@@ -16,9 +16,9 @@ export const StateTone = {
     done: 'done',
     /** `new` and every `needs-*`: work is expected. */
     pending: 'pending',
-    /** `missing`, `empty`, and anything the spec does not define (`DEC-027`). */
+    /** `missing`, `empty`, and anything the spec does not define. */
     absent: 'absent',
-    /** `translate="no"`: excluded from every roll-up, and shown as such (§5.3). */
+    /** `translate="no"`: excluded from every roll-up, and shown as such. */
     muted: 'muted',
 } as const;
 export type StateTone = typeof StateTone[keyof typeof StateTone];

@@ -20,18 +20,18 @@ import { DEVELOPER_NOTE } from '../constants';
 import type { XliffNoteDto } from '@shared/dto';
 
 /**
- * Every note the unit carries, verbatim (§3.7).
+ * Every note the unit carries, verbatim.
  *
- * Unknown `from` values are shown rather than dropped — other tools write notes, and §2.1
- * says nothing is lost. An empty `Developer` note is shown as empty rather than omitted:
- * 347 corpus units have one, and its absence and its emptiness are different facts.
+ * Unknown `from` values are shown rather than dropped: other tools write notes too. An
+ * empty `Developer` note is shown as empty rather than omitted, because its absence and
+ * its emptiness are different facts.
  *
  * The `Xliff Generator` note is not in the payload at all; the caller reconstructs it from
  * the tree when `showGeneratorNotes` is on.
  *
- * A description list on the unit card's own label column (`DEC-034`), so a note lines up
- * with the strings it is about. The column is a fixed token rather than content-derived,
- * which is what lets three separate grids agree without one wrapping the others.
+ * A description list on the unit card's own label column, so a note lines up with the
+ * strings it is about. The column is a fixed token rather than content-derived, which is
+ * what lets three separate grids agree without one wrapping the others.
  */
 
 const props = defineProps<{

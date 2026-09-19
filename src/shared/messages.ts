@@ -1,24 +1,15 @@
 /**
- * The `postMessage` contract, defined once and imported by both runtimes (§8.3, §6.3,
- * `DEC-014`). There is nothing to keep in sync: one union per direction, one guard each.
+ * The `postMessage` contract, defined once and imported by both runtimes. There is nothing
+ * to keep in sync: one union per direction, one guard each.
  *
- * Everything crossing this boundary is an `as const` object, never a TypeScript `enum`
- * (§14.5) — enums are neither JSON-safe nor esbuild-safe across files.
+ * Everything crossing this boundary is an `as const` object, never a TypeScript `enum` —
+ * enums are neither JSON-safe nor esbuild-safe across files.
  *
- * ## Two corrections to §8.3's table
+ * `patchUnits`, and every message naming a unit, carries the file index: XLIFF scopes a
+ * trans-unit id to its `<file>`, so an id alone does not identify a unit.
  *
- * `patchUnits` carries `{ fileIndex, units }` rather than `{ units, summary,
- * nodeSummaries }`. The summaries went when `DEC-016` moved the roll-up into the webview,
- * and the file index is required by `DEC-028`: XLIFF scopes a trans-unit id to its
- * `<file>`, so an id alone does not identify a unit. Every message naming a unit carries
- * the index for the same reason.
- *
- * `settings` is a sixth extension → webview message. §13 requires five settings to reach
- * the view and §8.3 gave them no way to travel; folding them into `setDocument` would mean
- * re-sending a megabyte to toggle a checkbox.
- *
- * There was briefly a seventh, `alSource`, for the AL-object search. `DEC-032` removed the
- * action it served, and the message with it.
+ * `settings` is a message of its own: folding the settings into `setDocument` would mean
+ * re-sending the whole document to toggle a checkbox.
  */
 
 import type { TransUnitDto, XliffDocumentDto, BaseFileDto } from './dto';
@@ -52,7 +43,7 @@ export interface ErrorPayload {
     readonly col?: number;
 }
 
-/** Always `{ type, payload }` (§8.3). */
+/** Always `{ type, payload }`. */
 export type ExtensionMessage =
     | { readonly type: typeof ExtensionMessageType.loading; readonly payload: LoadingPayload }
     | { readonly type: typeof ExtensionMessageType.setDocument; readonly payload: XliffDocumentDto }
@@ -74,10 +65,8 @@ export const WebviewMessageType = {
 export type WebviewMessageType = typeof WebviewMessageType[keyof typeof WebviewMessageType];
 
 /**
- * Where navigation goes (§10).
- *
- * Two targets since `DEC-032`: `base` is the unit's "Go to source", and `text` is the
- * document-level escape hatch the error pane offers when nothing parses (§11.3).
+ * Where navigation goes: `base` is the unit's "Go to source", and `text` is the
+ * document-level escape hatch the error pane offers when nothing parses.
  */
 export const NavigationTarget = {
     base: 'base',
@@ -92,7 +81,7 @@ export const NotifyKind = {
 } as const;
 export type NotifyKind = typeof NotifyKind[keyof typeof NotifyKind];
 
-/** Flat, not `{ type, payload }` — §8.3 shapes the two directions differently. */
+/** Flat, unlike `ExtensionMessage`'s `{ type, payload }`. */
 export type WebviewMessage =
     | { readonly type: typeof WebviewMessageType.ready }
     | {
@@ -100,7 +89,7 @@ export type WebviewMessage =
         readonly fileIndex: number;
         readonly unitId: string;
         readonly value: string;
-        /** Omitted to let `xliffViewer.stateOnEdit` decide (§12.1). */
+        /** Omitted to let `xliffViewer.stateOnEdit` decide. */
         readonly state?: XliffState;
     }
     | {
@@ -112,7 +101,7 @@ export type WebviewMessage =
     | {
         readonly type: typeof WebviewMessageType.openSource;
         readonly target: NavigationTarget;
-        /** Both or neither. Without them the file itself opens, which is what the error pane offers (§11.3). */
+        /** Both or neither. Without them the file itself opens, which is what the error pane offers. */
         readonly fileIndex?: number;
         readonly unitId?: string;
     }

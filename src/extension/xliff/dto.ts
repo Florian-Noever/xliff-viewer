@@ -9,7 +9,7 @@ import type { AlNodeDto, BaseFileDto, TransUnitDto, XliffDocumentDto, XliffFileD
 import type { AlNode, XliffDocument, XliffFile, XliffTransUnit } from '../../shared/model';
 
 /**
- * Projects the parsed model into the webview payload (MASTER_PLAN §7.5).
+ * Projects the parsed model into the webview payload.
  *
  * Runs in the host, once per load, over a document that has already been through
  * `validateStructure` — which is what guarantees each file's ids are unique and therefore
@@ -22,9 +22,9 @@ const BASE_FILE_SUFFIX = '.g.xlf';
 export interface DocumentContext {
     readonly uri: string;
     readonly fileName: string;
-    /** Defaults to `isBaseFile` (`DEC-011`); pass it to force a document read-only for another reason. */
+    /** Defaults to `isBaseFile`; pass it to force a document read-only for another reason. */
     readonly readOnly?: boolean;
-    /** `null` when resolution ran and found nothing. Omit while it has not run (`NAV-01`). */
+    /** `null` when resolution ran and found nothing. Omit while it has not run. */
     readonly baseFile?: BaseFileDto | null;
 }
 
@@ -47,7 +47,7 @@ export function projectDocument(document: XliffDocument, context: DocumentContex
  * source and target language.
  *
  * Both halves are needed: a language file freshly synced from the base also has no targets,
- * and `Contoso App.en-US.xlf` translates en-US into en-US but is a real language file.
+ * and a language file may translate into its own source language, en-US into en-US.
  */
 function looksLikeBaseFile(document: XliffDocument, fileName: string): boolean {
     if (fileName.toLowerCase().endsWith(BASE_FILE_SUFFIX)) {
@@ -81,7 +81,7 @@ function projectFile(file: XliffFile, index: number): XliffFileDto {
         original: file.original,
         datatype: file.datatype,
         // A file with no AL structure has no types to group by, and its flat list is
-        // already the right answer (`DEC-022`, `DEC-033`).
+        // already the right answer.
         tree: projectNodes(hasAlIds ? groupByObjectType(roots) : roots),
         units: models.map(projectUnit),
         hasAlIds,
@@ -89,9 +89,9 @@ function projectFile(file: XliffFile, index: number): XliffFileDto {
 }
 
 /**
- * Exported so `EDIT-02` can rebuild the one unit that changed rather than re-projecting a
- * megabyte. There must be exactly one projection, or a patched unit and its neighbours
- * start disagreeing about what a unit looks like.
+ * Exported so an edit can rebuild the one unit that changed rather than re-projecting the
+ * whole document. There must be exactly one projection, or a patched unit and its
+ * neighbours start disagreeing about what a unit looks like.
  */
 export function projectUnit(unit: XliffTransUnit): TransUnitDto {
     const declared = unit.target?.state;

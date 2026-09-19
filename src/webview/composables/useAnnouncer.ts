@@ -3,7 +3,7 @@ import { nextTick, readonly, ref } from 'vue';
 import type { DeepReadonly, Ref } from 'vue';
 
 /**
- * The polite live region §11.7 asks for.
+ * The polite live region that tells a screen reader what changed.
  *
  * A screen reader announces a live region when its **text changes**, so saying the same
  * thing twice says it once. Editing three targets to `translated` in a row is exactly that

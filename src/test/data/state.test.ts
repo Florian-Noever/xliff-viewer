@@ -24,7 +24,7 @@ import type { XliffTarget, XliffTransUnit } from '../../shared/model';
 import type { UnitState } from '../../shared/state';
 
 describe('severity order', () => {
-    it('is exactly the thirteen entries of MASTER_PLAN §5.2, in order', () => {
+    it('is exactly the thirteen states, worst first', () => {
         // Written out literally rather than derived: this ordering drives every
         // roll-up, and a derived assertion would agree with its own mistake.
         expect([...STATE_SEVERITY]).toEqual([
@@ -114,7 +114,7 @@ describe('isSpecState', () => {
         expect(isSpecState(XliffState.unknown)).toBe(false);
     });
 
-    it('accepts the three states seen in the corpus', () => {
+    it('accepts translated, needs-translation and needs-adaptation', () => {
         expect(isSpecState('translated')).toBe(true);
         expect(isSpecState('needs-translation')).toBe(true);
         expect(isSpecState('needs-adaptation')).toBe(true);
@@ -156,7 +156,7 @@ describe('effectiveState', () => {
     });
 
     it('treats a single space as a translation, not as empty', () => {
-        // Ten corpus units are exactly this; trimming would report them untranslated (MASTER_PLAN 3.6).
+        // Under `xml:space="preserve"` the space is the translation; trimming would report it untranslated.
         expect(effectiveState(unit('a', target(' ', 'translated')))).toBe(XliffState.translated);
     });
 
@@ -171,15 +171,15 @@ describe('effectiveState', () => {
     });
 
     it('is unknown for a target that declares no state at all', () => {
-        // `test.xlf` is exactly this. `unknown` is the one that cannot hide behind a
-        // green badge, which is why DEC-027 chose it over `translated`.
+        // The `test.xlf` fixture is exactly this. `unknown` rather than `translated`,
+        // because `unknown` cannot hide behind a green badge.
         expect(effectiveState(unit('a', target('t')))).toBe(XliffState.unknown);
         expect(effectiveState(unitsOf('test.xlf')[0])).toBe(XliffState.unknown);
     });
 });
 
 describe('the corpus, summarised', () => {
-    it('reports Fabrikam Base.de-DE.xlf exactly', () => {
+    it('reports the large language file exactly', () => {
         expect(summaryOf('Fabrikam Base.de-DE.xlf')).toEqual({
             total: 2511,
             translatable: 2511,
@@ -199,7 +199,7 @@ describe('the corpus, summarised', () => {
         expect(summary.byState).toEqual({ missing: 1098 });
     });
 
-    it('reports the two outliers in Contoso App.de-DE.xlf', () => {
+    it('reports the outliers in a mostly translated file', () => {
         const summary = summaryOf('Contoso App.de-DE.xlf');
 
         expect(summary.byState[XliffState.needsTranslation]).toBe(1);
@@ -209,7 +209,7 @@ describe('the corpus, summarised', () => {
     });
 
     it('never rounds up to 100 while a unit is outstanding', () => {
-        // 1096 of 1098 is 99.8 %, which Math.round alone would report as complete.
+        // This fixture's ratio rounds to 100, so Math.round alone would report it complete.
         expect(summaryOf('Contoso App.de-DE.xlf').percent).toBe(99);
     });
 
@@ -250,7 +250,7 @@ describe('summariseUnits', () => {
     });
 
     it('still counts an untranslatable unit in total and byState', () => {
-        // It is displayed, muted, so it has to stay countable (MASTER_PLAN 5.3, rule 3).
+        // It is displayed, muted, so it has to stay countable.
         const summary = summariseUnits([{ state: XliffState.missing, translate: false }]);
 
         expect(summary.total).toBe(1);

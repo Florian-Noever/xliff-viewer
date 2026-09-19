@@ -13,7 +13,7 @@ import type { XliffDocumentDto } from '../../shared/dto';
 
 const EXAMPLES = fileURLToPath(new URL('../../../Examples', import.meta.url));
 
-/** Rebuilds the fixture the way the generator did, straight from the corpus. */
+/** Rebuilds the fixture straight from the corpus, keeping only the units it selects. */
 function rebuild(): XliffDocumentDto {
     const model = parseXliff(readFileSync(`${EXAMPLES}/${DEV_FIXTURE_SOURCE}`, 'utf8'));
     const trimmed = {
@@ -43,7 +43,7 @@ describe('the dev-server fixture', () => {
         expect(DEV_DOCUMENT).toEqual(rebuild());
     });
 
-    it('carries every root it claims to, one object-type level down (DEC-033)', () => {
+    it('carries every root it claims to, one object-type level down', () => {
         const roots = DEV_DOCUMENT.files[0].tree.flatMap(group => group.children).map(node => node.key);
         expect(roots.sort()).toEqual([...DEV_FIXTURE_ROOTS].sort());
     });
@@ -68,8 +68,8 @@ describe('the dev-server fixture', () => {
     });
 
     it('keeps the two objects that share a hash apart', () => {
-        // Table 625177701 and Page 625177701 are the same name under two object types
-        // (§4.5) — the case the tree must not merge, visible on the dev server.
+        // Table 625177701 and Page 625177701 are the same name under two object types:
+        // the case the tree must not merge, visible on the dev server.
         const shared = DEV_DOCUMENT.files[0].tree
             .flatMap(group => group.children)
             .filter(node => node.key.endsWith('625177701'));
@@ -84,7 +84,7 @@ describe('the dev-server fixture', () => {
         const depth = (nodes: readonly Nested[], level = 0): number =>
             nodes.length === 0 ? level : Math.max(...nodes.map((node: Nested) => depth(node.children, level + 1)));
 
-        // Five with the object-type level above them (`DEC-033`).
+        // Five with the object-type level above them.
         expect(depth(DEV_DOCUMENT.files[0].tree)).toBe(5);
     });
 

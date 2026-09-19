@@ -14,20 +14,20 @@ import type { XliffState } from '@shared/state';
 import type { ComputedRef, Ref } from 'vue';
 
 /**
- * The document the webview is showing, and everything derived from it (MASTER_PLAN §11.3).
+ * The document the webview is showing, and everything derived from it.
  *
  * All of the message handling lives here rather than in `App.vue`: components render, they
  * do not decide. It is also the one place that knows the host's message order, which is
  * load-bearing — see `document` below.
  *
- * **Nothing here survives being unmounted, and nothing needs to** (`DEC-029`). The webview
- * re-posts `ready` on every mount and the host answers from its parse cache, so remounting
- * costs one message. View state that must outlive a hidden tab is `POLISH-02`'s, through
+ * **Nothing here survives being unmounted, and nothing needs to.** The webview re-posts
+ * `ready` on every mount and the host answers from its parse cache, so remounting costs one
+ * message. View state that must outlive a hidden tab is `usePersistedState`'s, through
  * `vscode.setState`.
  */
 
 export interface XliffDocumentOptions {
-    /** The polite live region (§11.7). Absent in tests that do not care what was said. */
+    /** The polite live region. Absent in tests that do not care what was said. */
     announce?: (text: string) => void;
 }
 
@@ -39,22 +39,22 @@ export interface XliffDocument {
     /** The most recent failure, cleared by the next successful parse. */
     readonly error: Ref<ErrorPayload | undefined>;
     readonly settings: Ref<WebviewSettings>;
-    /** Which `<file>` is on screen (`DEC-020`). `UI-03a` gives it a switcher. */
+    /** Which `<file>` is on screen. The file header's switcher sets it. */
     readonly activeFileIndex: Ref<number>;
     readonly activeFile: ComputedRef<XliffFileDto | undefined>;
-    /** The active file's units by id. The DTO ships an array and its nodes carry no unit id (`DEC-028`). */
+    /** The active file's units by id. The DTO ships an array and its nodes carry no unit id. */
     readonly unitsById: ComputedRef<ReadonlyMap<string, TransUnitDto>>;
-    /** True when a failure has nothing behind it, so the error must take the whole view (§7.7). */
+    /** True when a failure has nothing behind it, so the error must take the whole view. */
     readonly blocking: ComputedRef<boolean>;
     readonly unitCount: ComputedRef<number>;
     /** Opens the raw XML in the built-in editor — the one action available while nothing parses. */
     openAsText(): void;
-    /** Navigation for one unit (§10). The host decides what each target means. */
+    /** Navigation for one unit. The host decides what each target means. */
     openSource(target: NavigationTargetValue, unitId: string): void;
     /**
-     * Writes a target (§12.1). The host refuses what it must, and says why.
+     * Writes a target. The host refuses what it must, and says why.
      *
-     * An omitted `state` lets `xliffViewer.stateOnEdit` decide (§12.3); passing one says
+     * An omitted `state` lets `xliffViewer.stateOnEdit` decide; passing one says
      * the reader already chose for this unit.
      */
     updateTarget(unitId: string, value: string, state?: XliffState): void;
@@ -64,7 +64,7 @@ export interface XliffDocument {
 /**
  * Replaces the named units in one `<file>`, leaving everything else identical.
  *
- * The host sends only the units that changed (§9.3), so this is a merge rather than a
+ * The host sends only the units that changed, so this is a merge rather than a
  * replacement — and a new object each time, because the document is a `shallowRef`.
  */
 function patchUnits(
@@ -86,9 +86,9 @@ function patchUnits(
 }
 
 /**
- * What a patch actually changed for the reader (§11.7).
+ * What a patch actually changed for the reader.
  *
- * A patch is not always an edit: `NAV-03` sends the pairing markers through the same
+ * A patch is not always an edit: the base-file pairing markers arrive through the same
  * message, and announcing "3 translations updated" because a base file was resolved would
  * be noise. Only a changed `state` or `target` is a change the reader made.
  */
@@ -112,7 +112,7 @@ function announcementFor(previous: XliffDocumentDto | undefined, fileIndex: numb
 
 export function useXliffDocument(options: XliffDocumentOptions = {}): XliffDocument {
     // shallowRef: the DTO is a large frozen-in-practice tree that is replaced wholesale,
-    // never mutated. Deep reactivity over 2500 units would cost on every assignment.
+    // never mutated. Deep reactivity over thousands of units would cost on every assignment.
     const document = shallowRef<XliffDocumentDto | undefined>(undefined);
     const loading = ref<string | undefined>(undefined);
     const error = ref<ErrorPayload | undefined>(undefined);
@@ -135,7 +135,7 @@ export function useXliffDocument(options: XliffDocumentOptions = {}): XliffDocum
                 break;
             case ExtensionMessageType.setDocument: {
                 // The host posts the last good document *ahead* of an error, so clearing
-                // the error here is safe and a later `error` still lands (§7.7).
+                // the error here is safe and a later `error` still lands.
                 //
                 // A re-parse of the *same* document keeps the selected `<file>`, the way
                 // the tree keeps its expansion: an edit must not snap a multi-file
@@ -162,7 +162,7 @@ export function useXliffDocument(options: XliffDocumentOptions = {}): XliffDocum
                 break;
             }
             case ExtensionMessageType.baseFile:
-                // Arrives after the document (§9.2). `null` means resolution ran and found
+                // Arrives after the document. `null` means resolution ran and found
                 // nothing, which the header says out loud; leaving it undefined would not.
                 if (document.value !== undefined) {
                     document.value = { ...document.value, baseFile: message.payload };
@@ -205,8 +205,8 @@ export function useXliffDocument(options: XliffDocumentOptions = {}): XliffDocum
         window.addEventListener('message', onMessage);
         postMessage({ type: WebviewMessageType.ready });
 
-        // No host to answer `ready`: the Vite dev server renders a real corpus projection
-        // so the UI can be built in a browser (§14.4).
+        // No host to answer `ready`: the Vite dev server renders a bundled sample document
+        // so the UI can be built in a browser.
         if (import.meta.env.DEV && !isVscode) {
             document.value = DEV_DOCUMENT;
         }

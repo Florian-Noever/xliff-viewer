@@ -7,11 +7,7 @@ import { useAnnouncer } from '../../webview/composables/useAnnouncer';
 import { DEV_DOCUMENT } from '../../webview/fixtures/devDocument';
 import { stubLayout } from './layoutStub';
 
-/**
- * `POLISH-02`. MASTER_PLAN §11.7, checked against what the DOM actually says rather than
- * against what the components meant to say — every finding here came from scanning a
- * mounted app, and one of the first three was a false alarm the scan itself corrected.
- */
+/** Checked against what the DOM of a mounted app says, not what the components meant to say. */
 
 const INTERACTIVE = 'a[href], button, input, select, textarea';
 
@@ -136,9 +132,9 @@ describe('the tree, as ARIA sees it', () => {
         expect(leaves.every(item => item.attributes('aria-expanded') === undefined)).toBe(true);
     });
 
-    it('does not claim to be selectable, because it is not (UI-05)', async () => {
-        // Focus moved to an outline and selection went away with it. `aria-selected="false"`
-        // on every row would tell a reader there is a selection to make.
+    it('does not claim to be selectable, because it is not', async () => {
+        // Focus is an outline and there is no selection. `aria-selected="false"` on every
+        // row would tell a reader there is a selection to make.
         const wrapper = await app();
 
         expect(wrapper.findAll('[aria-selected]')).toEqual([]);
@@ -188,10 +184,10 @@ describe('the tree, as ARIA sees it', () => {
     });
 });
 
-describe('what the live region says (§11.7)', () => {
+describe('what the live region says', () => {
     const first = DEV_DOCUMENT.files[0].units[0];
 
-    /** A patch, the way the host sends one after an edit it accepted (§12.1). */
+    /** A patch, the way the host sends one after an edit it accepted. */
     async function patch(units: readonly unknown[]): Promise<string> {
         const wrapper = await app();
         window.postMessage({ type: 'patchUnits', payload: { fileIndex: 0, units } }, '*');
@@ -217,7 +213,7 @@ describe('what the live region says (§11.7)', () => {
             .toBe('2 translations updated.');
     });
 
-    it('stays quiet for a patch that is not an edit (NAV-03)', async () => {
+    it('stays quiet for a patch that is not an edit', async () => {
         // The pairing markers travel through the same message. "3 translations updated"
         // because a base file finished resolving is noise, and noise trains a reader to
         // ignore the region.
@@ -242,7 +238,7 @@ describe('the live region itself', () => {
     });
 });
 
-describe('what is not said with colour alone (§11.6, §11.7)', () => {
+describe('what is not said with colour alone', () => {
     it('puts the state in words beside its dot', async () => {
         const wrapper = await app();
         const badge = wrapper.get('.state-badge');

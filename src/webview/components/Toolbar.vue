@@ -1,4 +1,4 @@
-<!-- eslint-disable vue/multi-word-component-names -- MASTER_PLAN §11.3 names this component Toolbar; the rule guards against clashing with an HTML element, and there is none. -->
+<!-- eslint-disable vue/multi-word-component-names -- the rule guards against clashing with an HTML element, and there is no toolbar element. -->
 <template>
     <div class="toolbar">
         <label class="search">
@@ -62,11 +62,11 @@ import type { Search } from '../composables/useSearch';
 import type { StateFilter } from '../composables/useStateFilter';
 
 /**
- * Search, the state chips, and expand/collapse (MASTER_PLAN §11.2).
+ * Search, the state chips, and expand/collapse.
  *
  * The edit toggle carries its own refusal: disabled when the document cannot be edited at
- * all, and its tooltip says which of §12.5's reasons applies rather than leaving the reader
- * to guess why nothing happens.
+ * all, and its tooltip says which reason applies rather than leaving the reader to guess
+ * why nothing happens.
  */
 
 const props = defineProps<{
@@ -82,7 +82,7 @@ const emit = defineEmits<{ expandAll: []; collapseAll: [] }>();
 const { query, clear } = props.search;
 const input = useTemplateRef<HTMLInputElement>('input');
 
-/** Ctrl+F focuses search, Escape clears it (§11.7). Escape is on the input; this is the reach for it. */
+/** Ctrl+F focuses search, Escape clears it. Escape is on the input; this is the reach for it. */
 function onKeydown(event: KeyboardEvent): void {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f') {
         event.preventDefault();

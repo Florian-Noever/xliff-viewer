@@ -42,7 +42,7 @@ describe('source and target', () => {
         expect(card({ target: '', state: XliffState.empty }).get('.target').text()).toBe('empty target');
     });
 
-    it('survives the eight empty sources in the corpus without losing the row', () => {
+    it('survives an empty source without losing the row', () => {
         const wrapper = card({ source: '' });
 
         expect(wrapper.get('.source').text()).toBe('(empty source)');
@@ -57,8 +57,8 @@ describe('source and target', () => {
     });
 });
 
-describe('load-bearing whitespace (DEC-021)', () => {
-    it('marks a target that is nothing but a space — ten of them in the corpus', () => {
+describe('load-bearing whitespace', () => {
+    it('marks a target that is nothing but a space', () => {
         const wrapper = card({ source: 'Name', target: ' ', state: XliffState.translated });
 
         expect(wrapper.findAll('.ws')).not.toHaveLength(0);
@@ -77,7 +77,7 @@ describe('load-bearing whitespace (DEC-021)', () => {
         expect(wrapper.get('.whitespace-note').text()).toContain('differ from the source');
     });
 
-    it('says nothing when the edges match the source — the other 45 corpus units', () => {
+    it('says nothing when the edges match the source', () => {
         const wrapper = card({ source: ' Name ', target: ' Name ' });
 
         expect(wrapper.find('.ws').exists()).toBe(false);
@@ -112,7 +112,7 @@ describe('loadBearingWhitespace', () => {
     });
 });
 
-describe('MetaChips (§2.1 — nothing dropped)', () => {
+describe('MetaChips (nothing dropped)', () => {
     it('shows nothing for an ordinary unit', () => {
         expect(mount(MetaChips, { props: { unit: unit() } }).find('.chip').exists()).toBe(false);
     });
@@ -151,7 +151,7 @@ describe('MetaChips (§2.1 — nothing dropped)', () => {
     });
 });
 
-describe('NoteList (§3.7)', () => {
+describe('NoteList', () => {
     const notes = [
         { from: 'Developer', value: 'de-DE=Kunde' },
         { from: 'Reviewer', value: 'checked' },
@@ -173,7 +173,7 @@ describe('NoteList (§3.7)', () => {
     });
 
     it('shows an empty Developer note as empty rather than hiding it', () => {
-        // 347 corpus units have one; absent and empty are different facts.
+        // Absent and empty are different facts.
         const list = mount(NoteList, { props: { notes: [{ from: 'Developer', value: '' }], showDeveloperNotes: true } });
 
         expect(list.get('.empty').text()).toBe('(empty)');
@@ -209,7 +209,7 @@ describe('the Developer hint', () => {
         expect(wrapper.get('.aside .label').text()).toBe('Suggested');
     });
 
-    it('stays quiet when the translator already used it — which is most of the corpus', () => {
+    it('stays quiet when the translator already used it', () => {
         // Otherwise every unit prints its target twice, once as the suggestion.
         const wrapper = card({ target: 'Kunde', notes: [{ from: 'Developer', value: 'de-DE=Kunde' }], developerHint: 'Kunde' });
 
@@ -217,7 +217,7 @@ describe('the Developer hint', () => {
         expect(wrapper.text()).toContain('de-DE=Kunde');
     });
 
-    it('says nothing extra when the note had no prefix to strip (§3.7)', () => {
+    it('says nothing extra when the note had no prefix to strip', () => {
         const wrapper = card({
             notes: [{ from: 'Developer', value: '%1 = Document No.' }],
             developerHint: '%1 = Document No.',
@@ -237,7 +237,7 @@ describe('the Developer hint', () => {
     });
 });
 
-describe('the reconstructed generator note (§4.4)', () => {
+describe('the reconstructed generator note', () => {
     const tree: AlNodeDto[] = [{
         key: 'Table 3783554337',
         type: 'Table',
@@ -286,8 +286,8 @@ describe('the reconstructed generator note (§4.4)', () => {
 
 describe('every DTO field is reachable', () => {
     it('renders something for each one', () => {
-        // §2.1: nothing the file carries may be dropped. If a field is added to
-        // TransUnitDto and nothing here shows it, this fails.
+        // Nothing the file carries may be dropped. If a field is added to TransUnitDto and
+        // nothing here shows it, this fails.
         const full = unit({
             baseSource: 'Customer (renamed)',
             target: ' Kunde ',
@@ -327,7 +327,7 @@ describe('every DTO field is reachable', () => {
     });
 });
 
-describe('the labelled box (UI-09, DEC-034)', () => {
+describe('the labelled box', () => {
     const boxed = (over: Partial<TransUnitDto> = {}, props: Record<string, unknown> = {}) =>
         mount(UnitCard, { props: { unit: unit(over), settings: DEFAULT_WEBVIEW_SETTINGS, ...props } });
 
@@ -346,7 +346,7 @@ describe('the labelled box (UI-09, DEC-034)', () => {
     });
 
     it('falls back to the id when the caller has no name to give', () => {
-        // A node whose generator note could not be parsed has no name (§4.4). The last id
+        // A node whose generator note could not be parsed has no name. The last id
         // segment is what a search of the raw file would match, so it beats a blank legend.
         expect(boxed().get('.legend-name').text()).toBe('Property 2');
     });
@@ -363,13 +363,13 @@ describe('the labelled box (UI-09, DEC-034)', () => {
         expect(boxed().findAll('.strings .label').map(each => each.text())).toEqual(['Original', 'target']);
     });
 
-    it('keeps the absent and empty target wordings inside the cell (§2.1)', () => {
+    it('keeps the absent and empty target wordings inside the cell', () => {
         expect(boxed({ target: undefined, state: XliffState.missing }).get('.target').text()).toBe('no target');
         expect(boxed({ target: '', state: XliffState.empty }).get('.target').text()).toBe('empty target');
         expect(boxed({ source: '' }).get('.source').text()).toBe('(empty source)');
     });
 
-    it('keeps the load-bearing whitespace marks inside the cell (DEC-021)', () => {
+    it('keeps the load-bearing whitespace marks inside the cell', () => {
         const wrapper = boxed({ source: 'Name', target: ' ' });
 
         expect(wrapper.get('.target').text()).toContain('␣');
@@ -377,14 +377,13 @@ describe('the labelled box (UI-09, DEC-034)', () => {
     });
 
     it('renders one translation row, because XLIFF 1.2 allows one target', () => {
-        // Not an oversight and not a simplification waiting to happen: `<target>` is
-        // singular in the format, `<alt-trans>` is excluded, and a second language is a
-        // second file. The list is the seam Phase 7 fills — see `DEC-034` before removing it.
+        // `<target>` is singular in the format, `<alt-trans>` is not modelled, and a second
+        // language is a second file. The list is the seam for showing those files side by side.
         expect(boxed({}, { targetLanguage: 'de-DE' }).findAll('.strings .target')).toHaveLength(1);
     });
 });
 
-describe('translations() (DEC-034)', () => {
+describe('translations()', () => {
     it('returns exactly one entry, carrying the language, the value and the state', () => {
         expect(translations(unit(), 'de-DE')).toEqual([{ language: 'de-DE', value: 'Kunde', state: XliffState.translated }]);
     });
@@ -403,7 +402,7 @@ describe('translations() (DEC-034)', () => {
     });
 });
 
-describe('the base ⊕ language pairing (§9.3)', () => {
+describe('the base ⊕ language pairing', () => {
     it('says a unit the base no longer has is orphaned', () => {
         const wrapper = card({ orphaned: true });
 

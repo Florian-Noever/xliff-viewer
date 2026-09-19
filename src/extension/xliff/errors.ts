@@ -6,10 +6,10 @@ export interface XliffErrorPosition {
 
 /**
  * Raised when a document cannot be trusted — either it is not well-formed XML, or it
- * lacks structure the model layer depends on (MASTER_PLAN §7.7).
+ * lacks structure the model layer depends on.
  *
  * A document that produces this is **never written**: with a whole-file writer, acting
- * on a misreading would rewrite the entire file from it (`DEC-017`).
+ * on a misreading would rewrite the entire file from it.
  */
 export class XliffParseError extends Error {
     public override readonly name = 'XliffParseError';

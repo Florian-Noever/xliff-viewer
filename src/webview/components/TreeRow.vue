@@ -25,7 +25,7 @@
         <span v-else class="chevron-spacer" aria-hidden="true" />
 
         <span v-if="row.group !== true" class="type">{{ row.type }}</span>
-        <!-- A unit's name is its box's legend (`DEC-034`), so the row does not repeat it —
+        <!-- A unit's name is its box's legend, so the row does not repeat it —
              unless there is no box, which is a tree rendered before its settings arrived. -->
         <span v-if="row.unit === undefined || settings === undefined" class="name">{{ label }}</span>
         <UnitCard
@@ -81,7 +81,7 @@ const props = defineProps<{
     row: TreeRow;
     focused: boolean;
     /**
-     * What the tree's `aria-activedescendant` points at (§11.7).
+     * What the tree's `aria-activedescendant` points at.
      *
      * DOM focus stays on the tree, not on the row, so a screen reader has no other way to
      * be told which row the arrow keys are on. Absent in tests that mount a row alone.
@@ -90,13 +90,13 @@ const props = defineProps<{
     /** The roll-up for this node. Absent on a unit row, which shows its own state instead. */
     summary?: StateSummary;
     settings?: WebviewSettings;
-    /** The active `<file>`'s target language, which labels a unit's translation row (`DEC-034`). */
+    /** The active `<file>`'s target language, which labels a unit's translation row. */
     targetLanguage?: string;
-    /** Editing is on and allowed, so a unit's target and state become fields (§12.2). */
+    /** Editing is on and allowed, so a unit's target and state become fields. */
     editing?: boolean;
-    /** Rebuilt from the tree by the caller, since the payload does not carry it (§4.4). */
+    /** Rebuilt from the tree by the caller, since the payload does not carry it. */
     generatorNote?: string;
-    /** This unit's §12.4 hints. Absent on a container, which shows `hintCount` instead. */
+    /** This unit's validation hints. Absent on a container, which shows `hintCount` instead. */
     hints?: readonly Hint[];
     /** How many units beneath this node carry a hint. Absent when none do. */
     hintCount?: number;
@@ -137,7 +137,7 @@ function isPlainClick(event: MouseEvent): boolean {
 }
 
 /**
- * The generator note could not be parsed for this node, so there is no name (§4.4).
+ * The generator note could not be parsed for this node, so there is no name.
  * Showing the hash is better than showing nothing: it is what the id says, and it is what
  * a search of the raw file will match.
  */
@@ -153,7 +153,7 @@ const actions = useUnitActions();
 const baseFile = computed(() => actions.baseFileName());
 
 /**
- * Why the one action is off, rather than only that it is (§12.5). "Not yet", "there is
+ * Why the one action is off, rather than only that it is. "Not yet", "there is
  * none" and "the base file dropped this unit" are three different answers and the reader
  * deserves to know which.
  */
@@ -171,7 +171,7 @@ const sourceTitle = computed(() => {
 });
 
 /**
- * A drifted unit is worth seeing without opening anything (§9.3). Informational only — it
+ * A drifted unit is worth seeing without opening anything. Informational only — it
  * never changes a state and never blocks an edit.
  */
 const pairing = computed(() => {

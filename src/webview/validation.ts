@@ -3,7 +3,7 @@ import { XliffState } from '@shared/state';
 import type { TransUnitDto } from '@shared/dto';
 
 /**
- * The §12.4 checks: what a translation is probably getting wrong.
+ * The validation checks: what a translation is probably getting wrong.
  *
  * **Every one of these is advisory.** None blocks an edit, none changes a value, and none
  * is an error — a translator who meant it is right and the hint is wrong. That is why they
@@ -13,12 +13,12 @@ import type { TransUnitDto } from '@shared/dto';
  *
  * - a unit with **no `<target>`** is not checked. It has nothing to be wrong about, and a
  *   base file is nothing but such units;
- * - a `translate="no"` unit is not checked, for the same reason the roll-up excludes it
- *   (§5.4): the file has said this one is not a translation.
+ * - a `translate="no"` unit is not checked, for the same reason the roll-up excludes it:
+ *   the file has said this one is not a translation.
  *
- * §12.4's fifth line — leading and trailing whitespace differing from the source — is not
- * here. `DEC-021` already marks that case in the target itself and explains why, and it does
- * so **unconditionally**: the marks are not a hint, and leaving them behind when
+ * Leading and trailing whitespace differing from the source is not checked here.
+ * `whitespace.ts` already marks that case in the target itself and explains why, and it
+ * does so **unconditionally**: the marks are not a hint, and leaving them behind when
  * `validation.enabled` is off would leave glyphs on screen with nothing to explain them.
  */
 
@@ -29,7 +29,7 @@ export const HintKind = {
     placeholders: 'placeholders',
     /** The target is empty and the file calls it finished. */
     statedButEmpty: 'statedButEmpty',
-    /** The target repeats the source verbatim. Off by default — see `DEC-037`. */
+    /** The target repeats the source verbatim. Off by default: proper nouns and identifiers legitimately do. */
     sameAsSource: 'sameAsSource',
 } as const;
 export type HintKind = typeof HintKind[keyof typeof HintKind];
@@ -43,7 +43,7 @@ export interface HintOptions {
     /** The `<file>`'s own languages. Equal ones make the same-as-source hint meaningless. */
     readonly sourceLanguage?: string;
     readonly targetLanguage?: string;
-    /** `xliffViewer.validation.sameAsSource` (`DEC-037`). */
+    /** `xliffViewer.validation.sameAsSource`. */
     readonly sameAsSource: boolean;
 }
 
@@ -56,7 +56,7 @@ export interface HintOptions {
  */
 const CHARACTERS = 'char';
 
-/** `%1` is AL's; `#1` is in §12.4's list because other XLIFF producers use it. */
+/** `%1` is AL's; `#1` is matched too because other XLIFF producers use it. */
 const PLACEHOLDER = /%\d+|#\d+/g;
 
 /** The states that claim the work is done, and which an empty target therefore contradicts. */
@@ -71,8 +71,7 @@ export function hintsFor(unit: TransUnitDto, options: HintOptions): readonly Hin
     if (target === '') {
         // The only thing worth saying about an empty target is that the file calls it done.
         // Everything else — no placeholders, no overrun — is a restatement of "untranslated",
-        // which the state already says. Measured: without this, three of the corpus's four
-        // placeholder findings are untranslated units.
+        // which the state already says.
         return unit.declaredState !== undefined && FINISHED.includes(unit.declaredState)
             ? [{ kind: HintKind.statedButEmpty, message: `This target is empty, but the file declares it ${unit.declaredState}.` }]
             : [];
@@ -99,9 +98,9 @@ export function hintsFor(unit: TransUnitDto, options: HintOptions): readonly Hin
 }
 
 /**
- * Compared as **sets**, which is what §12.4 asks for — "present in source but missing from
- * target, or vice versa". Counting them instead would flag the corpus unit whose target
- * deliberately uses each of `%1`…`%4` twice, which is not a mistake.
+ * Compared as **sets**: present in source but missing from target, or vice versa. Counting
+ * them instead would flag a target that deliberately uses a placeholder twice, which is not
+ * a mistake.
  */
 function comparePlaceholders(source: string, target: string): string | undefined {
     const inSource = new Set(source.match(PLACEHOLDER) ?? []);
@@ -122,8 +121,8 @@ function comparePlaceholders(source: string, target: string): string | undefined
 }
 
 /**
- * A file whose two languages are the same is not a translation of anything — every unit in
- * `Contoso App.en-US.xlf` repeats its source, and saying so 1098 times helps nobody.
+ * A file whose two languages are the same is not a translation of anything — its targets
+ * repeat their sources by design, and saying so for every unit helps nobody.
  */
 function translatesBetweenLanguages(options: HintOptions): boolean {
     return options.targetLanguage !== undefined && options.targetLanguage !== options.sourceLanguage;

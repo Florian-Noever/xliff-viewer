@@ -114,11 +114,10 @@ afterEach(() => {
     vi.useRealTimers();
 });
 
-describe('the index is built once per document, not per keystroke (§11.5)', () => {
+describe('the index is built once per document, not per keystroke', () => {
     /**
      * Counts index builds by counting reads of the tree they are built from. Lowercasing
-     * 2511 sources, targets, names and notes per character is the obvious way to make a
-     * fast search slow, and nothing else in the suite would notice it happening.
+     * every source, target, name and note per keystroke would make a fast search slow.
      */
     function countingSearch(shown = ref(FILE)) {
         const reads = { count: 0 };
@@ -161,11 +160,9 @@ describe('the index is built once per document, not per keystroke (§11.5)', () 
     });
 });
 
-describe('the seam between two fields (REVIEW-03)', () => {
-    // Every field a node can match on is joined into one haystack. Joined with anything a
-    // person could type, a query spanning the join matches a phrase that exists in neither
-    // field — so the separator is a NUL, which XML text cannot contain and a search box
-    // cannot produce. Found untested by `REVIEW-03`: a space passed every other test here.
+describe('the seam between two fields', () => {
+    // Every field a node can match on is joined into one haystack. The separator is a NUL,
+    // which XML text cannot contain and a search box cannot produce, so no query spans two.
     const seam: AlNodeDto[] = [{ key: 'Table 1 - Property 2', type: 'Property', name: 'Alpha', children: [] }];
     const seamUnits = new Map([['Table 1 - Property 2', unit('Table 1 - Property 2', 'Beta', 'Gamma')]]);
     const seamIndex = buildSearchIndex(seam, seamUnits);
@@ -184,7 +181,7 @@ describe('the seam between two fields (REVIEW-03)', () => {
     });
 });
 
-describe('the object-type level (DEC-033)', () => {
+describe('the object-type level', () => {
     const GROUPED: AlNodeDto[] = [{
         key: 'type:Table',
         type: 'Table',
@@ -226,7 +223,7 @@ describe('the object-type level (DEC-033)', () => {
     });
 
     it('still finds an object by its own type name, through its roots', () => {
-        // Typing "table" was never the group's doing: every root's key and type say it too.
+        // "table" matches through every root's key and type, not through the group's label.
         const result = visibleNodes(GROUPED, [node => toMatcher('table')(groupedIndex.get(node.key) ?? '')]);
 
         expect(result?.visible.has('Table 1')).toBe(true);
@@ -258,7 +255,7 @@ describe('toMatcher', () => {
 });
 
 describe('the index', () => {
-    it('covers every text a unit carries (§11.5)', () => {
+    it('covers every text a unit carries', () => {
         const index = buildSearchIndex(TREE, UNITS);
         const leaf = index.get('Table 1 - Field 2 - Property 3') ?? '';
 
@@ -280,7 +277,7 @@ describe('the index', () => {
 });
 
 describe('the ancestor rule', () => {
-    it('shows a match and every ancestor of it (§11.5)', () => {
+    it('shows a match and every ancestor of it', () => {
         const result = filterBy('Kundennummer');
 
         expect([...(result?.visible ?? [])].sort()).toEqual(['Table 1', 'Table 1 - Property 4']);

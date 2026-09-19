@@ -175,7 +175,7 @@ describe('applying messages', () => {
 });
 
 describe('the active file', () => {
-    it('is the first one until something says otherwise (DEC-020)', () => {
+    it('is the first one until something says otherwise', () => {
         const state = useIt();
 
         sendDocument();
@@ -202,8 +202,8 @@ describe('the active file', () => {
     });
 
     it('keeps the selected file across a re-parse of the same document', () => {
-        // REVIEW-02a: an edit re-sends the document; snapping back to the first <file>
-        // would undo the switcher on every keystroke, the way it undid the base file.
+        // An edit re-sends the document; snapping back to the first <file> would undo the
+        // switcher on every keystroke.
         const state = useIt();
 
         sendDocument();
@@ -235,7 +235,7 @@ describe('the active file', () => {
 });
 
 describe('unitsById', () => {
-    it('indexes the active file, which is what nodes are looked up through (DEC-028)', () => {
+    it('indexes the active file, which is what nodes are looked up through', () => {
         const state = useIt();
 
         sendDocument();
@@ -296,7 +296,7 @@ describe('patchUnits', () => {
         expect(state.unitsById.value.get('Table 1')?.orphaned).toBe(true);
     });
 
-    it('moves the roll-up when an edit changes a state (EDIT-02)', () => {
+    it('moves the roll-up when an edit changes a state', () => {
         // The header percentage and every ancestor bar are computed from the units the
         // webview holds, so a patch that changes one has to be enough to move them.
         const state = useIt();

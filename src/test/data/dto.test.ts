@@ -210,7 +210,7 @@ describe('several <file> elements', () => {
 
     it('does not lose a unit when two files share an id', () => {
         // XLIFF scopes ids to their <file>; a single document-wide record would drop one
-        // of these silently, in the very case DEC-020 exists to support.
+        // of these silently.
         const dto = projectXml(twoFiles('Table 1 - Property 2'));
         const [first, second] = dto.files;
 
@@ -250,7 +250,7 @@ describe('isBaseFile and readOnly', () => {
     });
 
     it('does not call a language file a base file just because it translates into its own language', () => {
-        // Contoso App.en-US.xlf is en-US → en-US, and every unit has a target.
+        // This fixture is en-US → en-US, and every unit has a target.
         const dto = project('Contoso App.en-US.xlf');
 
         expect(dto.isBaseFile).toBe(false);
@@ -300,13 +300,13 @@ describe('the tree it hands over', () => {
         );
         const summaries = summariseTree(file.tree, states);
 
-        // 4018 real nodes plus the nine object-type groups above them (`DEC-033`).
+        // Every real node plus the object-type groups above them.
         expect(summaries.size).toBe(4027);
         const rootTotal = file.tree.reduce((sum, node) => sum + (summaries.get(node.key)?.total ?? 0), 0);
         expect(rootTotal).toBe(2511);
     });
 
-    it('puts the object types on top, and nothing else there (DEC-033)', () => {
+    it('puts the object types on top, and nothing else there', () => {
         const [file] = project('Fabrikam Base.de-DE.xlf').files;
 
         expect(file.tree.every(node => node.group === true)).toBe(true);
@@ -323,7 +323,7 @@ describe('the tree it hands over', () => {
         expect(marked.every(node => file.tree.includes(node))).toBe(true);
     });
 
-    it('leaves a file with no AL structure ungrouped (DEC-022)', () => {
+    it('leaves a file with no AL structure ungrouped', () => {
         const [file] = project('test.xlf').files;
 
         expect(file.hasAlIds).toBe(false);
@@ -339,11 +339,10 @@ describe('the tree it hands over', () => {
 });
 
 describe('budget', () => {
-    it('serialises the large file inside the §16 payload budget', () => {
+    it('serialises the large file inside the payload budget', () => {
         const bytes = Buffer.byteLength(JSON.stringify(project('Fabrikam Base.de-DE.xlf')), 'utf8');
 
-        // 1177 KB measured; 2189 KB with a StateSummary on every node. The point of the
-        // assertion is that re-adding them, or the generator note, cannot pass unnoticed.
+        // A StateSummary on every node, or the generator note, would push the payload past this.
         expect(bytes).toBeLessThan(1250 * 1024);
     });
 
@@ -388,11 +387,11 @@ describe('base-file detection across several files', () => {
 });
 
 describe('what the header will show', () => {
-    // The DTO is the roll-up's only input in the webview, so the figures §5.4 promises
-    // have to survive the projection — not merely the model they were measured on.
+    // The DTO is the roll-up's only input in the webview, so the header's figures must
+    // hold for the projection, not merely for the model.
     const summaryOf = (name: string) => summariseUnits(project(name).files[0].units);
 
-    it('gives Fabrikam Base.de-DE.xlf 86 % and a worst state of empty', () => {
+    it('gives a partly translated file its known percentage and a worst state of empty', () => {
         const summary = summaryOf('Fabrikam Base.de-DE.xlf');
 
         expect(summary.percent).toBe(86);

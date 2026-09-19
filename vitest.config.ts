@@ -8,17 +8,16 @@ const VSCODE_MOCK = resolvePath('./src/test/__mocks__/vscode.ts');
 const SHARED = resolvePath('./src/shared');
 
 /**
- * Three projects (MASTER_PLAN §14.7, DEC-015):
+ * Four projects:
  *
  *   data    — pure. NO alias for `vscode`, deliberately: a data test that imports it
  *             must fail to resolve. That failure is the standing proof that
- *             src/extension/xliff/ and src/shared/ stay dependency-free (§6.1).
+ *             src/extension/xliff/ and src/shared/ stay dependency-free.
  *   host    — `vscode` aliased to the hand-written mock.
  *   webview — jsdom, the Vue plugin, and an `acquireVsCodeApi` stub.
- *   perf    — the §16 wall-clock budgets, one file at a time and on their own. Run
- *             beside the others they measured 65 ms against a 60 ms budget and 23 ms
- *             alone; a timing assertion that depends on what else is running is not an
- *             assertion. `npm test` runs this project after the other three.
+ *   perf    — the wall-clock budgets, one file at a time and on their own: a timing
+ *             assertion that depends on what else is running is not an assertion.
+ *             `npm test` runs this project after the other three.
  */
 export default defineConfig({
     test: {

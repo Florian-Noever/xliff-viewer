@@ -10,8 +10,7 @@ import { stubLayout } from './layoutStub';
 import type { AlNodeDto, TransUnitDto, XliffDocumentDto, XliffFileDto } from '../../shared/dto';
 
 /**
- * No corpus file exercises this — AL emits exactly one `<file>` — so the fixture is
- * synthetic and this is the only coverage the switcher will ever have (`DEC-020`).
+ * AL emits exactly one `<file>`, so a document with several has to be built by hand.
  *
  * The two files differ in every way the header shows: language, `original`, unit count
  * and state. An assertion that passed on identical files would prove nothing.
@@ -81,7 +80,7 @@ describe('a document with one <file>', () => {
         expect(wrapper.find('select').exists()).toBe(false);
     });
 
-    it('renders no switcher for the real corpus fixture either', async () => {
+    it('renders no switcher for the dev fixture either', async () => {
         const wrapper = open(DEV_DOCUMENT);
         await nextTick();
 
@@ -150,7 +149,7 @@ describe('a document with several', () => {
         expect(wrapper.text()).not.toContain('Table 1 - Property 2');
     });
 
-    it('is a labelled control, reachable by Tab and operable by keyboard (§11.7)', async () => {
+    it('is a labelled control, reachable by Tab and operable by keyboard', async () => {
         const wrapper = open(TWO_FILES);
         await nextTick();
 

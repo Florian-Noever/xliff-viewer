@@ -16,7 +16,7 @@ import type { WebviewSettings } from '../../shared/settings';
 import type { StateSummary } from '../../shared/state';
 import type { TreeView } from '../../webview/composables/useTreeFlatten';
 
-/** `roots` objects, each with `members` children — the shape the corpus actually has. */
+/** `roots` objects, each with `members` children. */
 function bigTree(roots: number, members: number): { tree: AlNodeDto[]; units: Map<string, TransUnitDto> } {
     const units = new Map<string, TransUnitDto>();
     const tree = Array.from({ length: roots }, (_unused, object) => {
@@ -88,7 +88,7 @@ afterEach(() => {
 });
 
 describe('virtualisation', () => {
-    it('renders a window over 2511 units, not all of them', async () => {
+    it('renders a window over thousands of rows, not all of them', async () => {
         const { wrapper, view } = mountTree(...Object.values(bigTree(227, 11)) as [AlNodeDto[], Map<string, TransUnitDto>]);
         await nextTick();
 
@@ -121,7 +121,7 @@ describe('virtualisation', () => {
 });
 
 describe('the rows it renders', () => {
-    it('is a real ARIA tree (§11.7)', async () => {
+    it('is a real ARIA tree', async () => {
         const { wrapper } = mountTree(...Object.values(bigTree(3, 2)) as [AlNodeDto[], Map<string, TransUnitDto>]);
         await nextTick();
 
@@ -182,7 +182,7 @@ describe('the rows it renders', () => {
     });
 });
 
-describe('keyboard (§11.7)', () => {
+describe('keyboard', () => {
     async function focused(wrapper: ReturnType<typeof mountTree>['wrapper']): Promise<string> {
         await nextTick();
         return wrapper.find('.tree-row.is-focused').exists()
@@ -252,7 +252,7 @@ describe('keyboard (§11.7)', () => {
     });
 });
 
-describe('a key typed into a field belongs to the field (EDIT-03a)', () => {
+describe('a key typed into a field belongs to the field', () => {
     /** One object, one unit, editing on — the shape that puts a textarea inside the tree. */
     async function editableTree() {
         const { tree, units } = bigTree(1, 1);
@@ -262,9 +262,8 @@ describe('a key typed into a field belongs to the field (EDIT-03a)', () => {
     }
 
     /**
-     * The handler is on the scroller, so everything typed in a row bubbles through it.
-     * Before `EDIT-03a` it called `preventDefault` on all of these, and a translator could
-     * not type a space, start a line, or move the caret.
+     * The handler is on the scroller, so everything typed in a row bubbles through it; a
+     * `preventDefault` there would stop a space, a new line or a caret move in the field.
      */
     it.each(['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowLeft', 'Home', 'End', 'Enter', ' '])(
         'leaves %s alone when it was typed into the target field',
@@ -295,7 +294,7 @@ describe('a key typed into a field belongs to the field (EDIT-03a)', () => {
     });
 });
 
-describe('what a row click means (UI-05)', () => {
+describe('what a row click means', () => {
     /** A node that carries a unit *and* children: an id can be another unit's prefix. */
     function treeWithBoth(): { tree: AlNodeDto[]; units: Map<string, TransUnitDto> } {
         const units = new Map<string, TransUnitDto>();
@@ -400,7 +399,7 @@ describe('what a row click means (UI-05)', () => {
     });
 });
 
-describe('the one navigation action (UI-06, DEC-032)', () => {
+describe('the one navigation action', () => {
     const unit = (over: Partial<TransUnitDto> = {}): TransUnitDto =>
         ({ id: 'Table 0 - Property 0', source: 'Customer', target: 'Kunde', state: 'translated', translate: true, notes: [], ...over });
 
@@ -432,12 +431,12 @@ describe('the one navigation action (UI-06, DEC-032)', () => {
         return { wrapper, calls, button: wrapper.get('.action') };
     }
 
-    it('offers exactly one action, and the state sits on the box (DEC-034)', () => {
+    it('offers exactly one action, and the state sits on the box', () => {
         const { wrapper, button } = mountRow('App.g.xlf');
 
         expect(wrapper.findAll('.action')).toHaveLength(1);
         expect(button.text()).toBe('Go to source');
-        // The badge moved onto the legend, beside the name it describes.
+        // The badge sits on the legend, beside the name it describes.
         expect(wrapper.get('.unit-side').findAll('.state-badge')).toHaveLength(0);
         expect(wrapper.get('.legend').findAll('.state-badge')).toHaveLength(1);
     });
@@ -457,7 +456,7 @@ describe('the one navigation action (UI-06, DEC-032)', () => {
         expect(button.attributes('title')).toBe('Looking for the base file…');
     });
 
-    it('gives a different reason once resolution ran and found nothing (§12.5)', () => {
+    it('gives a different reason once resolution ran and found nothing', () => {
         const { button } = mountRow(null);
 
         expect(button.attributes('disabled')).toBeDefined();
@@ -471,7 +470,7 @@ describe('the one navigation action (UI-06, DEC-032)', () => {
         expect(button.attributes('title')).toContain('App.g.xlf');
     });
 
-    it('is disabled for a unit the base file no longer has, and says why (§9.3)', () => {
+    it('is disabled for a unit the base file no longer has, and says why', () => {
         const { button } = mountRow('App.g.xlf', { orphaned: true });
 
         expect(button.attributes('disabled')).toBeDefined();
@@ -511,7 +510,7 @@ describe('the one navigation action (UI-06, DEC-032)', () => {
         expect(wrapper.emitted('toggle')).toBeUndefined();
     });
 
-    it('shows a group row as a label, with no symbol-type badge (DEC-033)', () => {
+    it('shows a group row as a label, with no symbol-type badge', () => {
         const wrapper = mount(TreeRow, {
             props: {
                 row: { key: 'type:Table', type: 'Table', name: 'Tables (12)', group: true, depth: 0, hasChildren: true, expanded: true, position: 1, siblings: 1 },
@@ -538,7 +537,7 @@ describe('the one navigation action (UI-06, DEC-032)', () => {
     });
 });
 
-describe('state on the rows (UI-03)', () => {
+describe('state on the rows', () => {
     it('shows a unit its own state and a container its roll-up', async () => {
         const { tree, units } = bigTree(1, 2);
         const summaries = summariseTree(tree, units);
@@ -550,7 +549,7 @@ describe('state on the rows (UI-03)', () => {
         expect(rows[0].find('.progress').exists()).toBe(true);
         expect(rows[0].get('.counts').text()).toBe('2/2');
         expect(rows[1].find('.progress').exists()).toBe(false);
-        // A unit's state is on its box's legend, not on the row (`DEC-034`).
+        // A unit's state is on its box's legend, not on the row.
         expect(rows[1].get('.legend .state-badge').text()).toBe('translated');
     });
 
@@ -563,7 +562,7 @@ describe('state on the rows (UI-03)', () => {
     });
 });
 
-describe('the flat-list note (DEC-022)', () => {
+describe('the flat-list note', () => {
     it('explains why there is no tree, and goes away when dismissed', async () => {
         const { wrapper } = mountTree(...Object.values(bigTree(2, 0)) as [AlNodeDto[], Map<string, TransUnitDto>], 1, false);
         await nextTick();

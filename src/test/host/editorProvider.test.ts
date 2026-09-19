@@ -161,7 +161,7 @@ describe('the editor provider', () => {
 
     it('releases the session when the panel closes while the editor is still resolving', async () => {
         // The template read is awaited before any listener is wired. A panel disposed in
-        // that window used to leave its session — and its change subscription — alive.
+        // that window must still release its session and its change subscription.
         const disposeHandlers: (() => void)[] = [];
         const panel = {
             webview: {
@@ -210,7 +210,7 @@ describe('the editor provider', () => {
     });
 });
 
-describe('what survives a re-parse (REVIEW-02a)', () => {
+describe('what survives a re-parse', () => {
     const BASE = `<?xml version="1.0" encoding="utf-8"?>
 <xliff version="1.2"><file source-language="en-US" target-language="en-US" original="App"><body>
   <trans-unit id="Table 1 - Property 2"><source>Customer (renamed)</source></trans-unit>
@@ -270,7 +270,7 @@ describe('what survives a re-parse (REVIEW-02a)', () => {
         fireFileWatcher('changed', '/w/App.g.xlf');
         await settle();
 
-        // The document did not change; the file it is paired against did (§9.3). The unit
+        // The document did not change; the file it is paired against did. The unit
         // now agrees with its base, so the marker has to come *off* — which `patchUnits`
         // can only do by sending the unit again without one.
         const cleared = patchedUnits(harness.posted);
@@ -346,7 +346,7 @@ describe('what survives a re-parse (REVIEW-02a)', () => {
     });
 });
 
-describe('navigation that cannot go anywhere still says so (\u00a712.5)', () => {
+describe('navigation that cannot go anywhere still says so', () => {
     it('refuses to look for a base file\'s own base file', async () => {
         const document = new FakeTextDocument('/w/App.g.xlf', `<?xml version="1.0" encoding="utf-8"?>
 <xliff version="1.2"><file source-language="en-US" target-language="en-US" original="App"><body>
@@ -379,11 +379,10 @@ describe('navigation that cannot go anywhere still says so (\u00a712.5)', () => 
     });
 });
 
-describe('how the editor is registered (DEC-030)', () => {
+describe('how the editor is registered', () => {
     it('does not ask VS Code to keep a hidden tab alive', () => {
-        // `retainContextWhenHidden` was kept only until `POLISH-03` could put back what a
-        // destroyed webview loses. It costs memory per open tab, and the reveal it was
-        // protecting measured 36 ms against a 400 ms budget.
+        // `retainContextWhenHidden` costs memory per open tab; a recreated webview asks for
+        // the document again and restores its view state from what it saved.
         customEditorRegistrations.length = 0;
         const context = { extensionUri: vscode.Uri.file('/ext'), subscriptions: [] } as unknown as vscode.ExtensionContext;
 

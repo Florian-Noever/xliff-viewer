@@ -1,5 +1,5 @@
 /**
- * Minimal assertions. `node:assert` is not available in the web host (§6.5), and the
+ * Minimal assertions. `node:assert` is not available in the web host, and the
  * integration bundle must build for both.
  */
 

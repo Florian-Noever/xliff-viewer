@@ -4,12 +4,8 @@ import { fileURLToPath, URL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 /**
- * `POLISH-04`. The README is documentation that ships **inside the VSIX**, so it is read on
- * the marketplace page beside the settings it describes. A settings table that has drifted
- * from `contributes.configuration` is worse than no table: it is wrong with authority.
- *
- * Checked here rather than by eye because it drifts silently — `POLISH-01` added a setting,
- * and nothing but a person noticing would have caught the table staying at seven rows.
+ * The README ships inside the VSIX, so its settings table must match
+ * `contributes.configuration`: a drifted table is wrong with authority.
  */
 
 const root = (name: string): string => readFileSync(fileURLToPath(new URL(`../../../${name}`, import.meta.url)), 'utf8');
@@ -20,7 +16,7 @@ interface Row {
     readonly fallback: string;
 }
 
-/** `| \`key\` | \`type\` | \`default\` | prose |` — the shape the table has had since it was written. */
+/** `| \`key\` | \`type\` | \`default\` | prose |` — the shape of a settings-table row. */
 function documented(): Row[] {
     const rows: Row[] = [];
     for (const line of root('README.md').split(/\r?\n/)) {
@@ -59,7 +55,7 @@ describe('the README, as documentation that ships', () => {
 
     it('pays the codicons attribution, which is a licence condition rather than a courtesy', () => {
         // CC BY 4.0 requires attribution wherever the work is distributed, and the README
-        // is what ships. §14.6 lists it as an obligation for exactly this reason.
+        // is what ships.
         const readme = root('README.md');
 
         expect(readme).toContain('@vscode/codicons');

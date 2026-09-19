@@ -59,11 +59,10 @@ import type { WebviewSettings } from '@shared/settings';
 import type { ComponentPublicInstance } from 'vue';
 
 /**
- * The virtualiser over the flattened rows (MASTER_PLAN §11.4).
+ * The virtualiser over the flattened rows.
  *
- * Rows are measured rather than assumed: a container row is one line today, and a unit
- * card will not be (`UI-04`). `measureElement` is what keeps the scrollbar honest once
- * they differ.
+ * Rows are measured rather than assumed: a container row is one line and a unit card is
+ * several. `measureElement` is what keeps the scrollbar honest when they differ.
  */
 
 const OVERSCAN = 8;
@@ -76,7 +75,7 @@ const OVERSCAN = 8;
  */
 const CONTROL_SELECTOR = 'input, textarea, select, button, [contenteditable="true"]';
 
-/** Key → intent. The mapping is presentation; what each intent *does* is the composable's (§11.7). */
+/** Key → intent. The mapping is presentation; what each intent *does* is the composable's. */
 const KEY_ACTIONS: Readonly<Record<string, (tree: TreeView) => void>> = {
     ArrowDown: tree => tree.moveFocus(1),
     ArrowUp: tree => tree.moveFocus(-1),
@@ -102,21 +101,21 @@ const emit = defineEmits<{ scrolled: [row: number] }>();
 
 const props = defineProps<{
     tree: TreeView;
-    /** Node key → roll-up. Optional so the tree renders before `UI-03`'s summaries exist. */
+    /** Node key → roll-up. Without it, container rows render with no progress bar. */
     summaries?: ReadonlyMap<string, StateSummary>;
     settings?: WebviewSettings;
-    /** The active `<file>`'s target language, which labels a unit's translation row (`DEC-034`). */
+    /** The active `<file>`'s target language, which labels a unit's translation row. */
     targetLanguage?: string;
-    /** Unit id → its §12.4 hints, and node key → how many carry one beneath it. */
+    /** Unit id → its validation hints, and node key → how many carry one beneath it. */
     hints?: ReadonlyMap<string, readonly Hint[]>;
     hintCounts?: ReadonlyMap<string, number>;
-    /** Editing is on and allowed, so a unit's target and state become fields (§12.2). */
+    /** Editing is on and allowed, so a unit's target and state become fields. */
     editing?: boolean;
 }>();
 
 /**
  * Rebuilt per rendered row rather than per unit: `showGeneratorNotes` is off by default,
- * and only the rows on screen — some thirty of them — ever need it (§4.4).
+ * and only the rows on screen — some thirty of them — ever need it.
  */
 function generatorNoteFor(row: Row): string | undefined {
     if (props.settings?.showGeneratorNotes !== true || row.unit === undefined) {
@@ -145,13 +144,13 @@ const offset = computed(() => virtualItems.value[0]?.start ?? 0);
  * Where the tree is scrolled to, as the **first rendered row** rather than a pixel offset.
  *
  * Emitted when that row changes, not on every scroll event: a pixel of movement is not a
- * change worth persisting, and `POLISH-03` throttles on top of this.
+ * change worth persisting, and `usePersistedState` throttles on top of this.
  */
 const firstVisibleRow = computed(() => virtualItems.value[0]?.index ?? 0);
 watch(firstVisibleRow, row => emit('scrolled', row));
 
 /**
- * Puts a saved scroll position back (§11.8).
+ * Puts a saved scroll position back.
  *
  * `scrollToIndex` rather than a `scrollTop`, because row heights are measured lazily as
  * rows render: a restored pixel offset lands wherever the estimates happened to put it,

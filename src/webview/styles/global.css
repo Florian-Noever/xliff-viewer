@@ -2,7 +2,7 @@
     /*
      * VS Code dark-theme defaults — visible ONLY in the Vite dev server. Inside a real
      * webview VS Code injects the live theme values, which override these by inheritance.
-     * Never treat a value here as the actual colour of anything (MASTER_PLAN §11.6).
+     * Never treat a value here as the actual colour of anything.
      */
     --vscode-font-family: ui-sans-serif, system-ui, sans-serif;
     --vscode-font-size: 13px;
@@ -45,8 +45,8 @@
     --row-height: 24px;
 
     /* CSS-only tokens — no TypeScript consumer, so they live here rather than in constants.ts. */
-    /* The label column of a unit's label/value rows (`DEC-034`). Fixed rather than derived
-       from content, which is what lets the box, the hint and the notes line up as three
+    /* The label column of a unit's label/value rows. Fixed rather than derived from
+       content, which is what lets the box, the hint and the notes line up as three
        separate grids. */
     --label-column: 92px;
     --radius-sm: 4px;
@@ -69,7 +69,7 @@ body,
     margin: 0;
 }
 
-/* The tree scrolls inside the shell, so the shell needs a real height to fill (§11.4). */
+/* The tree scrolls inside the shell, so the shell needs a real height to fill. */
 #app {
     display: flex;
     flex-direction: column;
@@ -92,7 +92,7 @@ body {
 /*
  * A forced-colours theme replaces every colour we chose, `--vscode-*` included, so the
  * focus ring has to be named in the system's own palette or it is drawn in the text
- * colour and disappears into what it is outlining (§11.7).
+ * colour and disappears into what it is outlining.
  */
 @media (forced-colors: active) {
     :focus-visible {

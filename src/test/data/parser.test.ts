@@ -53,7 +53,7 @@ describe('document format', () => {
         expect(format.hasBom).toBe(false);
         expect(format.eol).toBe('\n');
         expect(format.hasTrailingNewline).toBe(false);
-        // The corpus uses both "UTF-8" and "utf-8"; the declaration is kept verbatim.
+        // The declaration is kept verbatim, including the case of its encoding name.
         expect(format.declaration).toBe('<?xml version="1.0" encoding="UTF-8"?>');
     });
 });
@@ -73,7 +73,7 @@ describe('the base file', () => {
 });
 
 describe('the large language file', () => {
-    it('matches the corpus facts recorded in §3.5', () => {
+    it('matches the known unit, target and edge-case counts', () => {
         const units = unitsOf(CORPUS.fabrikam);
 
         const withTarget = units.filter(unit => unit.target !== undefined);
@@ -118,7 +118,7 @@ describe('the minimal, non-AL file', () => {
     });
 });
 
-describe('whitespace is never trimmed (§3.6)', () => {
+describe('whitespace is never trimmed', () => {
     const wrap = (unit: string): string =>
         `<?xml version="1.0"?>\n<xliff version="1.2"><file source-language="en"><body>${unit}</body></file></xliff>`;
 
@@ -140,7 +140,7 @@ describe('whitespace is never trimmed (§3.6)', () => {
     });
 });
 
-describe('the §3.4 variants', () => {
+describe('the variants the parser must handle', () => {
     const wrap = (inner: string): string =>
         `<?xml version="1.0"?>\n<xliff version="1.2"><file source-language="en"><body>${inner}</body></file></xliff>`;
 
@@ -224,7 +224,7 @@ describe('the §3.4 variants', () => {
     });
 });
 
-describe('attributes bag (DEC-025)', () => {
+describe('attributes bag', () => {
     it('keeps the namespace attributes the named fields do not model', () => {
         const document = parse(CORPUS.deDe);
         expect(Object.keys(document.attributes)).toEqual([
@@ -233,7 +233,7 @@ describe('attributes bag (DEC-025)', () => {
             'xmlns:xsi',
             'xsi:schemaLocation',
         ]);
-        // Without these the byte-identical round-trip (§7.2) cannot hold.
+        // Without these the byte-identical round-trip cannot hold.
         expect(document.attributes['xmlns:xsi']).toBe('http://www.w3.org/2001/XMLSchema-instance');
     });
 
@@ -262,7 +262,7 @@ describe('entities', () => {
         expect(unit?.source).not.toContain('&amp;');
     });
 
-    it('decodes numeric character references (DEC-026)', () => {
+    it('decodes numeric character references', () => {
         const doc = parseXliff(
             '<?xml version="1.0"?>\n<xliff version="1.2"><file source-language="en"><body>'
             + '<trans-unit id="a"><source>caf&#233;</source></trans-unit>'
@@ -272,8 +272,8 @@ describe('entities', () => {
     });
 
     it('distinguishes a numeric reference from an escaped ampersand', () => {
-        // The heart of DEC-026: without htmlEntities these two produce the *same* model
-        // value, so the serialiser cannot tell them apart and corrupts one of them.
+        // Without htmlEntities these two produce the *same* model value, so the
+        // serialiser cannot tell them apart and corrupts one of them.
         const wrap = (source: string): string =>
             '<?xml version="1.0"?>\n<xliff version="1.2"><file source-language="en"><body>'
             + `<trans-unit id="a"><source>${source}</source></trans-unit>`

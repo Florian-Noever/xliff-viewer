@@ -16,11 +16,10 @@ import type { TransUnitDto } from '../../shared/dto';
 import type { XliffState } from '../../shared/state';
 
 /**
- * One session per open document, owning the parsed model and the payload built from it
- * (MASTER_PLAN §8.2).
+ * One session per open document, owning the parsed model and the payload built from it.
  *
  * Per **document**, not per editor: VS Code allows two editors on one `TextDocument`, and
- * a session each would parse the same 1.3 MB twice on every keystroke. Views attach and
+ * a session each would parse the same text twice on every keystroke. Views attach and
  * detach; the last one out disposes the session.
  */
 
@@ -30,7 +29,7 @@ const REPARSE_DEBOUNCE_MS = 150;
 /** What VS Code calls a UTF-8 file that starts with a byte-order mark. */
 const BOM_ENCODING = 'utf8bom';
 
-/** A unit is identified by its `<file>` **and** its id — XLIFF scopes ids per file (`DEC-028`). */
+/** A unit is identified by its `<file>` **and** its id — XLIFF scopes ids per file. */
 export interface UnitReference {
     readonly fileIndex: number;
     readonly unitId: string;
@@ -40,10 +39,10 @@ export interface UnitReference {
 export interface DocumentSession {
     /** Answers `ready`: post `loading`, then `setDocument` or `error`. */
     sendDocument(): void | Promise<void>;
-    /** An absent `state` means "apply `xliffViewer.stateOnEdit`" (§12.1). */
+    /** An absent `state` means "apply `xliffViewer.stateOnEdit`". */
     updateTarget(unit: UnitReference, value: string, state?: XliffState): void | Promise<void>;
     updateState(unit: UnitReference, state: XliffState): void | Promise<void>;
-    /** Without a unit the document itself is opened — the error pane's "Open as text" (§11.3). */
+    /** Without a unit the document itself is opened — the error pane's "Open as text". */
     openSource(target: NavigationTarget, unit?: UnitReference): void | Promise<void>;
 }
 
@@ -57,16 +56,16 @@ export type SessionState =
          *
          * Carried with the model rather than fetched separately, because the writer trims
          * its edit against whatever text it is handed: give it text the model did not come
-         * from and the edit lands at the wrong offsets and eats content. `REVIEW-01` found
-         * that the writer cannot detect this for itself — a legitimately non-AL-formatted
-         * file also fails a "does this re-serialise to that" check (`DEC-017`).
+         * from and the edit lands at the wrong offsets and eats content. The writer cannot
+         * detect this for itself — a legitimately non-AL-formatted file also fails a "does
+         * this re-serialise to that" check.
          */
         readonly text: string;
     }
     | { readonly kind: 'error'; readonly error: ErrorPayload };
 
 /**
- * What a view is told when the document changes (§8.4).
+ * What a view is told when the document changes.
  *
  * Two kinds, because the answer to "the user typed in another editor" and "we just wrote
  * the target they were editing" are not the same message. The first is a new document; the
@@ -82,9 +81,9 @@ type StateListener = (change: SessionChange) => void;
 /**
  * An edit this session asked for and has not yet seen come back.
  *
- * Matched against the change event by its **span and its text** (§8.4). Never a timer and
- * never a bare boolean: either would swallow an edit that somebody else made in the same
- * tick, which is precisely the event that must not be lost.
+ * Matched against the change event by its **span and its text**. Never a timer and never a
+ * bare boolean: either would swallow an edit that somebody else made in the same tick,
+ * which is precisely the event that must not be lost.
  */
 interface PendingEdit {
     readonly rangeOffset: number;
@@ -102,7 +101,7 @@ export class XliffDocumentSession {
     private state: SessionState | undefined;
     private pending: PendingEdit | undefined;
     private bomWarned = false;
-    /** The last successful parse, kept so a mid-edit syntax error does not blank the view (§7.7). */
+    /** The last successful parse, kept so a mid-edit syntax error does not blank the view. */
     private lastGood: Extract<SessionState, { kind: 'document' }> | undefined;
     private timer: ReturnType<typeof setTimeout> | undefined;
 
@@ -125,11 +124,11 @@ export class XliffDocumentSession {
 
     /**
      * The state to write against: re-parsed first when the document has moved on since the
-     * model was built (§7.6).
+     * model was built.
      *
-     * A re-parse is debounced by 150 ms, so between a keystroke and that timer the cached
-     * model describes text that no longer exists. Editing against it is exactly the
-     * corruption `REVIEW-01` pinned, so the write path asks for this rather than `current`.
+     * A re-parse waits `REPARSE_DEBOUNCE_MS`, so between a keystroke and that timer the
+     * cached model describes text that no longer exists. An edit computed against it lands
+     * at the wrong offsets, so the write path asks for this rather than `current`.
      */
     public synchronise(): SessionState {
         const state = this.current();
@@ -142,8 +141,8 @@ export class XliffDocumentSession {
     }
 
     /**
-     * True the first time this document is edited while the editor will drop its BOM
-     * (`EDIT-01a`), and false ever after.
+     * True the first time this document is edited while the editor will drop its BOM, and
+     * false ever after.
      *
      * Per **document** rather than per view, because two editors on one file are one file:
      * the reader should hear this once, not once each. `TextDocument.encoding` is readonly,
@@ -158,12 +157,11 @@ export class XliffDocumentSession {
     }
 
     /**
-     * Turns the writer's character range into a `WorkspaceEdit` and applies it (§12.1).
+     * Turns the writer's character range into a `WorkspaceEdit` and applies it.
      *
      * **Never `workspace.fs`**: going through the editor is what gives the edit dirty
-     * state, undo, redo, save and hot exit for free (`DEC-001`). `positionAt` reads the
-     * document's current text, so the offsets are converted here and now rather than
-     * carried around.
+     * state, undo, redo, save and hot exit for free. `positionAt` reads the document's
+     * current text, so the offsets are converted here and now rather than carried around.
      */
     public async applyEdit(edit: TextEditRange, unit: UnitReference): Promise<boolean> {
         // Recorded before the edit is applied, because the change event can arrive during
@@ -238,7 +236,7 @@ export class XliffDocumentSession {
      *
      * The model was already mutated by the writer, so all that is stale is the text it was
      * parsed from and the one unit in the payload. Both are corrected here rather than by
-     * re-parsing 1.3 MB to learn what we already know.
+     * re-parsing the whole document to learn what we already know.
      */
     private absorbOwnEdit(event: vscode.TextDocumentChangeEvent): boolean {
         const pending = this.pending;
@@ -309,8 +307,8 @@ export class XliffDocumentSession {
         return projectDocument(model, {
             uri: this.textDocument.uri.toString(),
             fileName: this.fileName(),
-            // A base file is read-only by `DEC-011`; so is anything on a file system that
-            // will not take a write, which the projection cannot see for itself (§12.5).
+            // A base file is always read-only; so is anything on a file system that will not
+            // take a write, which the projection cannot see for itself.
             readOnly: this.isWritable() ? undefined : true,
         });
     }

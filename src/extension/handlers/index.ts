@@ -12,7 +12,7 @@ import type { HandlerContext } from './handlerContext';
 import type { WebviewMessage } from '../../shared/messages';
 
 /**
- * One handler per webview message, and the dispatch that runs them (§8.3, §8.5).
+ * One handler per webview message, and the dispatch that runs them.
  *
  * `HandlerMap` is keyed by `WebviewMessage['type']`, so **adding a message to the union
  * without writing its handler fails to compile.** That is stronger than the `never` check

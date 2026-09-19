@@ -12,7 +12,8 @@ import { computed } from 'vue';
 import type { TransUnitDto } from '@shared/dto';
 
 /**
- * The trans-unit attributes that are not source, target or state (§2.1 — nothing dropped).
+ * The trans-unit attributes that are not source, target or state, so that nothing the file
+ * carries goes unshown.
  *
  * Each chip is only rendered when the file actually carries the attribute, so an ordinary
  * unit shows none of them and the ones that do show stand out.

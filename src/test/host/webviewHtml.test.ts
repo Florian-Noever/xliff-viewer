@@ -36,7 +36,7 @@ describe('getWebviewHtml', () => {
     it('routes both asset URIs through asWebviewUri', async () => {
         const html = await getWebviewHtml(fakeWebview(), EXTENSION_URI);
         // A hand-built path would not resolve in the web host, which serves assets
-        // through a service worker (§14.2).
+        // through a service worker.
         expect(html).toContain('https://cdn.example//ext/public/app.js');
         expect(html).toContain('https://cdn.example//ext/public/styles.css');
     });
@@ -68,7 +68,7 @@ describe('getWebviewHtml', () => {
 });
 
 describe('localResourceRoots', () => {
-    it('covers both public/ and media/ (DEC-024)', () => {
+    it('covers both public/ and media/', () => {
         const roots = localResourceRoots(EXTENSION_URI).map(uri => uri.path);
         expect(roots).toEqual(['/ext/public', '/ext/media']);
     });

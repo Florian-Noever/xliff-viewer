@@ -6,13 +6,11 @@ import { createDocumentSession } from '../../extension/editor/documentView';
 import { assertEqual, assertOk } from './assertions';
 
 /**
- * `EDIT-01` in a real host.
+ * Dirty state, undo and what lands on disk all come from VS Code rather than from us, so
+ * the only way to know they work is to ask the editor. The mocked host tests cover which
+ * edit is produced; this covers what the editor does with it.
  *
- * Dirty state, undo and what lands on disk all come from VS Code rather than from us
- * (`DEC-001`), so the only way to know they work is to ask the editor. The mocked host
- * tests cover which edit is produced; this covers what the editor does with it.
- *
- * Writes to a scratch file it creates and deletes, never to the corpus.
+ * Writes to a scratch file it creates and deletes, never to a fixture.
  */
 
 const UNIT = 'Table 1 - Property 2';
@@ -53,15 +51,14 @@ async function discard(uri: vscode.Uri): Promise<void> {
     }
 }
 
-/** The shape of `Contoso App.g.xlf`: a BOM, CRLF throughout, and a target to edit. */
+/** A file with a BOM, CRLF throughout, and a target to edit. */
 const BOM = '﻿';
 const CRLF_WITH_BOM = BOM + ORIGINAL.split('\n').join('\r\n');
 
 suite('what a real host does to a file we did not write by hand', () => {
-    test('keeps the CRLF and changes only the target, on a file with a BOM (REVIEW-02b)', async () => {
+    test('keeps the CRLF and changes only the target, on a file with a BOM', async () => {
         // `getText()` does not hand back the BOM, so we never see one and never write one.
-        // What lands on disk is the editor's business — and this host drops it (`EDIT-01a`),
-        // which is asserted below so the day it stops doing so is noticed.
+        // What lands on disk is the editor's business; the next test pins that this host drops it.
         const uri = scratchUri('edit-bom.xlf');
         await vscode.workspace.fs.writeFile(uri, new TextEncoder().encode(CRLF_WITH_BOM));
         const document = await vscode.workspace.openTextDocument(uri);
@@ -85,10 +82,9 @@ suite('what a real host does to a file we did not write by hand', () => {
         }
     });
 
-    test('the host, not this extension, is what decides the BOM (EDIT-01a)', async () => {
-        // Pinned because the conclusion is counter-intuitive: VS Code reports the document
-        // as `utf8bom` and still saves it without one. A raw WorkspaceEdit with none of our
-        // code in it does the same, which is what proves whose behaviour it is.
+    test('the host, not this extension, is what decides the BOM', async () => {
+        // VS Code reports the document as `utf8bom` and still saves it without one. A raw
+        // WorkspaceEdit with none of our code in it does the same, so the behaviour is the host's.
         const uri = scratchUri('edit-bom-host.xlf');
         await vscode.workspace.fs.writeFile(uri, new TextEncoder().encode(CRLF_WITH_BOM));
         const document = await vscode.workspace.openTextDocument(uri);
@@ -104,7 +100,7 @@ suite('what a real host does to a file we did not write by hand', () => {
             await document.save();
 
             const saved = new TextDecoder().decode(await vscode.workspace.fs.readFile(uri));
-            assertEqual(saved.startsWith(BOM), false, 'the host kept the BOM — EDIT-01a may be resolved');
+            assertEqual(saved.startsWith(BOM), false, 'the host now keeps the BOM, so the BOM warning on edit can be revisited');
         } finally {
             await discard(uri);
         }
@@ -129,9 +125,9 @@ suite('what a real host does to a file we did not write by hand', () => {
         }
     });
 
-    test('leaves a file alone that is opened and closed without an edit (§7.6)', async () => {
-        // The rule that stops a file whose formatting is not ours from being reformatted
-        // merely by being looked at.
+    test('leaves a file alone that is opened and closed without an edit', async () => {
+        // A file whose formatting is not ours must not be reformatted merely by being
+        // looked at.
         const odd = '<?xml version="1.0"?>\n<xliff version=\'1.2\'><file source-language=\'en-US\' '
             + 'target-language="de-DE"><body><trans-unit id="A"><source>S</source>'
             + '<target state="translated">T</target></trans-unit></body></file></xliff>';
@@ -213,7 +209,7 @@ suite('editing a target, in a real host', () => {
         }
     });
 
-    test('refuses to edit a base file, and leaves it alone (DEC-011)', async () => {
+    test('refuses to edit a base file, and leaves it alone', async () => {
         const base = scratchUri('edit-base.g.xlf');
         await vscode.workspace.fs.writeFile(base, new TextEncoder().encode(ORIGINAL));
         const document = await vscode.workspace.openTextDocument(base);

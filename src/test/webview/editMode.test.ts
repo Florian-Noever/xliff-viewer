@@ -17,11 +17,6 @@ import type { TransUnitDto, XliffDocumentDto, XliffFileDto } from '../../shared/
 import type { WebviewSettings } from '../../shared/settings';
 import type { EditMode } from '../../webview/composables/useEditMode';
 
-/**
- * `EDIT-03`. Read-only is the default; editing is opt-in, and every refusal says which of
- * §12.5's reasons applies rather than leaving the reader to guess.
- */
-
 const unit = (over: Partial<TransUnitDto> = {}): TransUnitDto => ({
     id: 'Table 1 - Property 2',
     source: 'ExampleSourceText',
@@ -90,7 +85,7 @@ function editMode(document?: XliffDocumentDto, settings: WebviewSettings = DEFAU
 }
 
 describe('whether editing is possible at all', () => {
-    it('is off by default, and says so rather than nothing (§11.3)', () => {
+    it('is off by default, and says so rather than nothing', () => {
         const { edit } = editMode();
 
         expect(edit.active.value).toBe(false);
@@ -98,7 +93,7 @@ describe('whether editing is possible at all', () => {
         expect(edit.reason.value).toContain('Turn it on');
     });
 
-    it('starts on when the setting says so (§13)', () => {
+    it('starts on when the setting says so', () => {
         const { edit } = editMode(DOCUMENT, { ...DEFAULT_WEBVIEW_SETTINGS, editMode: true });
 
         expect(edit.active.value).toBe(true);
@@ -118,7 +113,7 @@ describe('whether editing is possible at all', () => {
         expect(edit.wanted.value).toBe(true);
     });
 
-    it('names the base file as the reason, not merely "read-only" (DEC-011)', () => {
+    it('names the base file as the reason, not merely "read-only"', () => {
         const { edit } = editMode({ ...DOCUMENT, isBaseFile: true, readOnly: true });
 
         expect(edit.available.value).toBe(false);
@@ -126,7 +121,7 @@ describe('whether editing is possible at all', () => {
         expect(edit.reason.value).toContain('AL compiler');
     });
 
-    it('tells a read-only file apart from a base file (§12.5)', () => {
+    it('tells a read-only file apart from a base file', () => {
         const { edit } = editMode({ ...DOCUMENT, readOnly: true });
 
         expect(edit.refusal.value).toBe(EditRefusal.readOnly);
@@ -158,7 +153,7 @@ describe('the toggle in the toolbar', () => {
         expect(button.attributes('aria-pressed')).toBe('true');
     });
 
-    it('is disabled on a document that cannot be edited, with the reason on it (§12.5)', () => {
+    it('is disabled on a document that cannot be edited, with the reason on it', () => {
         const { button } = toolbar({ ...DOCUMENT, isBaseFile: true, readOnly: true });
 
         expect(button.attributes('disabled')).toBeDefined();
@@ -166,7 +161,7 @@ describe('the toggle in the toolbar', () => {
     });
 });
 
-describe('remembering a state the reader chose (EDIT-04, §12.3)', () => {
+describe('remembering a state the reader chose', () => {
     it('has nothing to remember until one is chosen', () => {
         const { edit } = editMode();
 
@@ -183,8 +178,8 @@ describe('remembering a state the reader chose (EDIT-04, §12.3)', () => {
     });
 
     it('forgets when a different document arrives', async () => {
-        // §12.3 scopes the exception to "the same session", and unit ids repeat across
-        // files — a choice made in one document must not follow the reader into the next.
+        // Unit ids repeat across files, so a choice made in one document must not follow
+        // the reader into the next.
         const { edit, wrapper } = editMode();
         edit.rememberState('Table 1 - Property 2', XliffState.signedOff);
 
@@ -222,7 +217,7 @@ describe('the card in edit mode', () => {
         return { wrapper, calls };
     }
 
-    it('renders text and no input at all when editing is off (§11.3)', () => {
+    it('renders text and no input at all when editing is off', () => {
         // Not a *disabled* input: that says "you could change this but may not", which is
         // the wrong message in a viewer.
         const { wrapper } = card({}, false);
@@ -266,7 +261,7 @@ describe('the card in edit mode', () => {
         expect(calls).toEqual([]);
     });
 
-    it('does not eat a target that is nothing but a space (DEC-021)', () => {
+    it('does not eat a target that is nothing but a space', () => {
         const { wrapper } = card({ target: ' ', state: XliffState.translated });
 
         expect((wrapper.get('textarea').element as HTMLTextAreaElement).value).toBe(' ');
@@ -293,14 +288,14 @@ describe('the card in edit mode', () => {
         expect(calls).toEqual([]);
     });
 
-    it('grows for a multi-line target rather than hiding it in one row (§12.2)', () => {
+    it('grows for a multi-line target rather than hiding it in one row', () => {
         const { wrapper } = card({ target: 'one\ntwo\nthree' });
 
         expect(wrapper.get('textarea').attributes('rows')).toBe('3');
     });
 
 
-    it('starts at least as wide as the source it translates (EDIT-03a)', () => {
+    it('starts at least as wide as the source it translates', () => {
         // A floor rather than a width: `field-sizing: content` does the sizing, and it does
         // it as the reader types. An `inline-size` here would freeze the field instead.
         const short = card({ source: 'Ab', target: 'Cd' });
@@ -324,7 +319,7 @@ describe('the card in edit mode', () => {
         expect(wrapper.get('textarea').attributes('style')).toContain('min-inline-size: 72ch');
     });
 
-    it('can be folded down to one line, and no further (EDIT-03a)', () => {
+    it('can be folded down to one line, and no further', () => {
         // `resize: vertical` has no floor of its own, so a drag can take a field to nothing.
         // One line rather than the height it opened at: a long target is worth folding away
         // when it is not the one being read.
@@ -343,7 +338,7 @@ describe('the card in edit mode', () => {
         Object.defineProperty(field, 'offsetHeight', { configurable: true, get: () => clientHeight + border });
     }
 
-    it('re-fits its height to what was typed, not to what it was given (EDIT-03a)', async () => {
+    it('re-fits its height to what was typed, not to what it was given', async () => {
         const { wrapper } = card({ target: 'one line' });
         const field = wrapper.get('textarea').element as HTMLTextAreaElement;
         measuring(field, 88, 88);
@@ -356,7 +351,7 @@ describe('the card in edit mode', () => {
         expect(field.style.blockSize).toBe('91px');
     });
 
-    it('rounds up rather than leaving a scrollbar where half a line should be (EDIT-03a)', async () => {
+    it('rounds up rather than leaving a scrollbar where half a line should be', async () => {
         // `scrollHeight` is an integer rounding of a height that is not one, and
         // `clientHeight` is rounded the same way — so a field can overflow by a fraction
         // while the DOM reports that it does not. The pixel is what covers that.
@@ -425,7 +420,7 @@ describe('the card in edit mode', () => {
         expect(calls).toEqual([{ what: 'state', unitId: 'Table 1 - Property 2', value: XliffState.needsReviewTranslation }]);
     });
 
-    it('labels the state control, since a bare dropdown says nothing (§11.7)', () => {
+    it('labels the state control, since a bare dropdown says nothing', () => {
         const { wrapper } = card();
 
         expect(wrapper.get('select').attributes('aria-label')).toBe('Translation state of Caption');

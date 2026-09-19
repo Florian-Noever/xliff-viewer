@@ -6,7 +6,7 @@ import type { AlNodeDto, TransUnitDto, XliffFileDto } from '@shared/dto';
 import type { ComputedRef, WritableComputedRef } from 'vue';
 
 /**
- * The tree, flattened to the rows that are actually visible (MASTER_PLAN §11.4).
+ * The tree, flattened to the rows that are actually visible.
  *
  * Virtualisation needs a flat array, and the array changes on every expansion, so
  * `flattenTree` is a pure function of its inputs and the composable holds it in a
@@ -15,14 +15,14 @@ import type { ComputedRef, WritableComputedRef } from 'vue';
  *
  * Expansion keys off the **node key**, which is the trans-unit id prefix and is stable
  * across a re-parse. That is what lets an external edit rebuild the tree without
- * collapsing what the translator had open (`EDIT-02`).
+ * collapsing what the translator had open.
  *
- * Expansion and focus are held **per `<file>`** (`DEC-020`): switching away and back
- * returns the translator to what they had open, rather than to `defaultExpandDepth`.
+ * Expansion and focus are held **per `<file>`**: switching away and back returns the
+ * translator to what they had open, rather than to `defaultExpandDepth`.
  */
 
 export interface TreeRow {
-    /** The node key: the joined id prefix, and the unit's id where it carries one (`DEC-028`). */
+    /** The node key: the joined id prefix, and the unit's id where it carries one. */
     readonly key: string;
     readonly type: string;
     readonly name?: string;
@@ -32,7 +32,7 @@ export interface TreeRow {
     readonly expanded: boolean;
     /** Present when this node carries a unit — a leaf, usually, but an id can be another's prefix. */
     readonly unit?: TransUnitDto;
-    /** The synthetic object-type level, which is a label rather than a symbol (`DEC-033`). */
+    /** The synthetic object-type level, which is a label rather than a symbol. */
     readonly group?: true;
     /** One-based position among its siblings, for `aria-posinset`. */
     readonly position: number;
@@ -42,12 +42,12 @@ export interface TreeRow {
 
 export interface TreeView {
     readonly rows: ComputedRef<readonly TreeRow[]>;
-    /** Every node of the active file by key — what rebuilds the generator note (§4.4). */
+    /** Every node of the active file by key — what rebuilds the generator note. */
     readonly nodesByKey: ComputedRef<ReadonlyMap<string, AlNodeDto>>;
     /** The row the keyboard is on. Undefined before anything is focused. */
     readonly focusedKey: WritableComputedRef<string | undefined>;
     readonly focusedIndex: ComputedRef<number>;
-    /** True when this file has no AL structure and the flat-list note has not been dismissed (`DEC-022`). */
+    /** True when this file has no AL structure and the flat-list note has not been dismissed. */
     readonly showFlatNote: ComputedRef<boolean>;
     toggle(key: string): void;
     expandAll(): void;
@@ -60,10 +60,10 @@ export interface TreeView {
     /** ←: closes an open node, else steps out to its parent. */
     collapseFocused(): void;
     dismissFlatNote(): void;
-    /** What each `<file>` has open and what it was focused on, for `POLISH-03` to persist. */
+    /** What each `<file>` has open and what it was focused on, in a form that can be persisted. */
     snapshot(): TreeSnapshot;
     /**
-     * Puts a saved expansion back (§11.8).
+     * Puts a saved expansion back.
      *
      * A key that no longer names a node is kept rather than dropped: the set is consulted by
      * lookup, so a stale key opens nothing, and dropping it would lose a branch a re-parse
@@ -81,7 +81,7 @@ export interface TreeSnapshot {
 /**
  * Pure: the same inputs always produce the same rows, in document order.
  *
- * `visible` is the search result (§11.5). When it is present the tree shows only those
+ * `visible` is the filter result. When it is present the tree shows only those
  * keys, and **expansion follows the filter rather than the user**: a node opens because a
  * descendant matched, not because the user opened it. The user's own expansion set is
  * untouched, which is what lets Escape put the tree back exactly as it was.
@@ -147,7 +147,7 @@ export interface TreeSource {
     readonly defaultExpandDepth: ComputedRef<number>;
     /** Identifies the document, so a different one does not inherit this one's state. */
     readonly documentUri: ComputedRef<string | undefined>;
-    /** Keys the search is showing, or undefined when nothing is filtering (§11.5). */
+    /** Keys the filters are showing, or undefined when nothing is filtering. */
     readonly visible?: ComputedRef<ReadonlySet<string> | undefined>;
 }
 
@@ -189,7 +189,7 @@ export function useTreeFlatten(source: TreeSource): TreeView {
 
     // A file seen for the first time opens to the configured depth. A re-parse of one
     // already seen keeps what was open — expansion keys are id prefixes, which survive it —
-    // and so does switching away and back (`DEC-020`).
+    // and so does switching away and back.
     //
     // A different *document* starts over. Its file indices collide with this one's while
     // meaning nothing to each other, so keeping the state would silently show a collapsed
@@ -206,9 +206,8 @@ export function useTreeFlatten(source: TreeSource): TreeView {
                 return;
             }
             const next = new Map(byFile.value);
-            // The object-type level (`DEC-033`) sits above everything the setting was
-            // written for, so it is paid for separately: `defaultExpandDepth: 1` opens the
-            // objects it always opened, with their group above them.
+            // The setting does not count the object-type level, so it is paid for separately:
+            // `defaultExpandDepth: 1` opens the objects, with their group above them.
             const grouped = nodes.some(node => node.group === true) ? 1 : 0;
             next.set(index, { expanded: new Set(keysToDepth(nodes, source.defaultExpandDepth.value + grouped)) });
             byFile.value = next;

@@ -5,19 +5,18 @@ const SEGMENT_SEPARATOR = ' - ';
 /**
  * Rebuilds the `Xliff Generator` note the payload does not carry.
  *
- * `TREE-04` drops it: its whole content is the symbol path, and the names in that path are
- * already on the tree nodes (§4.4). Shipping it as well costs 391 KB on the largest corpus
- * file, so `xliffViewer.showGeneratorNotes` reconstructs it instead — the segment **types**
- * from the id interleaved with the **names** from the nodes:
+ * The payload drops it because its whole content is the symbol path, and the names in that
+ * path are already on the tree nodes. `xliffViewer.showGeneratorNotes` reconstructs it
+ * instead — the segment **types** from the id interleaved with the **names** from the nodes:
  *
  * ```text
  * id     Table 3783554337 - Field 4264183382 - Property 2879900210
- * nodes  Table / PTE Contoso Methods Setup, Field / Contoso Method, Property / Caption
- * note   Table PTE Contoso Methods Setup - Field Contoso Method - Property Caption
+ * nodes  Table / Sales Setup, Field / Quote Nos., Property / Caption
+ * note   Table Sales Setup - Field Quote Nos. - Property Caption
  * ```
  *
- * Exact for every unit whose names parsed, which is 100 % of the corpus. Returns
- * `undefined` for the rest rather than guessing — the caller shows the raw id instead.
+ * Exact for every unit whose names parsed. Returns `undefined` for the rest rather than
+ * guessing — the caller shows the raw id instead.
  */
 export function reconstructGeneratorNote(unitId: string, nodesByKey: ReadonlyMap<string, AlNodeDto>): string | undefined {
     const segments = unitId.split(SEGMENT_SEPARATOR);

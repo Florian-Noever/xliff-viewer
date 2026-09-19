@@ -105,11 +105,11 @@ import type { WebviewSettings } from '@shared/settings';
 import type { Hint } from '../validation';
 
 /**
- * One trans-unit, read-only (MASTER_PLAN §11.3, §2.1, `DEC-034`).
+ * One trans-unit.
  *
  * A **labelled box**: the legend names the translated element and carries its state, and
- * the strings inside are label/value pairs. Two unlabelled lines told apart by colour
- * asked the reader to already know which was the source.
+ * the strings inside are label/value pairs, so no line relies on colour alone to say
+ * which string it is.
  *
  * A description list, not a table and not a `<fieldset>`: `Original` and `[ de-DE ]` are
  * terms and the strings are their descriptions. `<legend>` belongs to form controls, so
@@ -129,15 +129,15 @@ const FIELD_MAX_COLUMNS = 72;
 const props = defineProps<{
     unit: TransUnitDto;
     settings: WebviewSettings;
-    /** The active `<file>`'s target language, which labels the translation row (`DEC-034`). */
+    /** The active `<file>`'s target language, which labels the translation row. */
     targetLanguage?: string;
     /** The node's display name, which is the box's legend. Falls back to the id's last segment. */
     name?: string;
-    /** Reconstructed by the caller when `showGeneratorNotes` is on (§4.4). */
+    /** Reconstructed by the caller when `showGeneratorNotes` is on. */
     generatorNote?: string;
-    /** Editing is on **and** allowed. Read-only renders text, never a disabled input (§11.3). */
+    /** Editing is on **and** allowed. Read-only renders text, never a disabled input. */
     editing?: boolean;
-    /** The §12.4 hints for this unit. Advisory: nothing here blocks or changes anything. */
+    /** The validation hints for this unit. Advisory: nothing here blocks or changes anything. */
     hints?: readonly Hint[];
 }>();
 
@@ -148,8 +148,8 @@ const targetId = useId();
 const editing = computed(() => props.editing === true);
 
 /**
- * How tall the field is, so a multi-line target is not typed into a one-line slot (§12.2).
- * Capped, because one unit must not take the whole viewport.
+ * The rows the field starts with, until `fit` sizes it to its content on mount: enough that
+ * a multi-line target does not open in a one-line slot.
  */
 const targetRows = computed(() => Math.min(8, Math.max(1, (props.unit.target ?? '').split('\n').length)));
 
@@ -177,9 +177,9 @@ const fieldStyle = computed(() => ({
  *
  * `field-sizing: content` does this on its own here, and is what sizes the width. Height is
  * the axis a translator watches while typing, so it is set rather than left to a feature
- * whose behaviour we can only confirm in one engine. `blockSize` goes to `auto` first so the
- * field can shrink back as well as grow, and the border is added because `scrollHeight`
- * counts the padding but not the border that `border-box` includes.
+ * not every browser engine implements. `blockSize` goes to `auto` first so the field can
+ * shrink back as well as grow, and the border is added because `scrollHeight` counts the
+ * padding but not the border that `border-box` includes.
  *
  * The spare pixel is not slop. `scrollHeight` is an integer rounding of a height that is
  * not one — a 13px font at `line-height: normal` puts fractions in every line — so fitting
@@ -213,8 +213,8 @@ function fitOnMount(element: unknown): void {
  * Committed on **blur**, never per keystroke.
  *
  * Every keystroke would be its own `WorkspaceEdit` and therefore its own undo step, which
- * makes Ctrl+Z unusable — the roadmap's own warning. The value is taken verbatim: a target
- * that is a single space is the translation (`DEC-021`), and trimming here would eat it.
+ * makes Ctrl+Z unusable. The value is taken verbatim: a target that is a single space is
+ * the translation, and trimming here would eat it.
  */
 function commitTarget(event: Event): void {
     const value = (event.target as HTMLTextAreaElement).value;
@@ -258,11 +258,11 @@ const visible = computed(() => {
 });
 
 /**
- * The `Developer` note with its `xx-XX=` prefix stripped (§3.7).
+ * The `Developer` note with its `xx-XX=` prefix stripped.
  *
  * Shown only where it tells the reader something new: not when the note had no prefix to
- * strip, and not when the translator has already used the suggestion — which is most of
- * the corpus, and would otherwise print the target twice under every unit.
+ * strip, and not when the translator has already used the suggestion, which would only
+ * print the target a second time.
  */
 const hint = computed(() => {
     const suggestion = props.unit.developerHint;
@@ -358,7 +358,7 @@ const hint = computed(() => {
 }
 
 .target-input {
-    /* The padding and border below, which `min-block-size` and `fitHeight` allow for. */
+    /* The padding and border below, which `min-block-size` and `fit` allow for. */
     --field-chrome: 8px;
     /* `FIELD_MAX_COLUMNS`, which floors the same field from the other side. */
     --field-max-inline: 72ch;

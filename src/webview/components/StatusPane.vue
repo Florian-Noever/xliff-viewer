@@ -26,7 +26,7 @@ import { computed } from 'vue';
 import type { ErrorPayload } from '@shared/messages';
 
 /**
- * The document-level loading and failure surface (MASTER_PLAN §11.3, §7.7).
+ * The document-level loading and failure surface.
  *
  * `pane` blocks the view and is for a document that has never parsed. `banner` sits above
  * a document that is still displayable — a file broken by an edit in progress keeps its

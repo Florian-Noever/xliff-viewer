@@ -10,10 +10,8 @@ import { setWebviewState, webviewState } from '../setup/webview';
 import type { PersistedView } from '../../webview/composables/usePersistedState';
 
 /**
- * `POLISH-03`. MASTER_PLAN §11.8, and with it the removal of `retainContextWhenHidden`
- * (`DEC-030`) — which is why every test here **unmounts** the app before checking. Without
- * the flag that is exactly what a hidden tab does, and a persistence tested without it
- * would be testing nothing.
+ * Without `retainContextWhenHidden`, hiding a tab destroys the webview, which is why every
+ * test here **unmounts** the app before checking.
  */
 
 const WRITE_THROTTLE_MS = 250;
@@ -58,7 +56,7 @@ afterEach(() => {
     restore();
 });
 
-describe('what a hidden tab remembers (§11.8)', () => {
+describe('what a hidden tab remembers', () => {
     it('saves nothing until there is a document to save it for', async () => {
         mount(App, { attachTo: document.body });
         await nextTick();

@@ -22,18 +22,17 @@ import { stateLabel, stateTone } from '../stateTone';
 import type { StateSummary } from '@shared/state';
 
 /**
- * How much of a container is done (MASTER_PLAN §5.4, §11.2).
+ * How much of a container is done.
  *
- * Renders **nothing** when there is nothing translatable underneath: §5.3's rule 4 says a
- * container with no translatable descendants has no state, and a full green bar would be
- * a lie about a folder of `translate="no"` units.
+ * Renders **nothing** when there is nothing translatable underneath: a container with no
+ * translatable descendants has no state, and a full green bar would be a lie about a
+ * folder of `translate="no"` units.
  *
  * The bar is coloured by the *worst* descendant rather than by the percentage — 99 % done
  * with one missing target is a different thing from 99 % done with one needing review.
  *
  * **The counts come first and the bar last**, so the bar ends on the row's own right edge
- * and every bar in the tree lines up. With the bar first, `120/122` and `8/8` pushed their
- * bars to different places and a column of them read as ragged rather than comparable.
+ * and every bar in the tree lines up, however wide its counts are.
  */
 
 const props = defineProps<{ summary: StateSummary }>();

@@ -5,12 +5,11 @@ import { getState, setState } from '../vscode';
 import type { ComputedRef } from 'vue';
 
 /**
- * The view state §11.8 keeps across a hidden tab, through `vscode.setState`.
+ * The view state kept across a hidden tab, through `vscode.setState`.
  *
- * This exists because `POLISH-03` also **removes `retainContextWhenHidden`** (`DEC-030`).
- * Without the flag a hidden tab's webview is destroyed and rebuilt from the host's cached
- * parse on reveal — quickly, measured at 36 ms — but at `defaultExpandDepth`, scrolled to
- * the top, with nothing focused. That is what this puts back.
+ * The webview is not created with `retainContextWhenHidden`, so a hidden tab's webview is
+ * destroyed and rebuilt from the host's cached parse on reveal — at `defaultExpandDepth`,
+ * scrolled to the top, with nothing focused. That is what this puts back.
  *
  * The composable is deliberately ignorant of *what* it is saving. It owns the slot, the
  * timing and the guard; `App.vue` owns the shape, because App is where the pieces are.
@@ -91,9 +90,9 @@ export function usePersistedState(source: PersistedStateSource): void {
 /**
  * Whatever is in the slot, believed only as far as its shape allows.
  *
- * It was written by an older build of this extension, so every field is checked before it
- * is used. A slot that fails any of it is dropped rather than repaired: the cost is one
- * reveal at the default expansion, and the alternative is a half-restored view.
+ * It may have been written by an older build of this extension, so every field is checked
+ * before it is used. A slot that fails any of it is dropped rather than repaired: the cost
+ * is one reveal at the default expansion, and the alternative is a half-restored view.
  */
 function read(): PersistedView | undefined {
     const state = getState<unknown>();

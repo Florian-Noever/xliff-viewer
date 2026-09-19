@@ -95,7 +95,7 @@ describe('flattenTree', () => {
         expect(rows[1].expanded).toBe(false);
     });
 
-    it('attaches the unit to the node whose key is its id (DEC-028)', () => {
+    it('attaches the unit to the node whose key is its id', () => {
         const rows = flattenTree(TREE, new Set(['Table 1']), UNITS);
         const byKey = new Map(rows.map(row => [row.key, row]));
 
@@ -175,7 +175,7 @@ describe('expansion', () => {
 
     it('keeps what was open when the same file is re-parsed', () => {
         // Expansion keys are id prefixes, which survive a re-parse — that is what stops an
-        // external edit collapsing the tree under the translator (EDIT-02).
+        // external edit collapsing the tree under the translator.
         const { tree, active } = view(file(TREE), 0);
         tree.toggle('Table 1');
 
@@ -184,7 +184,7 @@ describe('expansion', () => {
         expect(tree.rows.value).toHaveLength(4);
     });
 
-    it('opens a file it has not seen before to the configured depth (DEC-020)', () => {
+    it('opens a file it has not seen before to the configured depth', () => {
         const { tree, active } = view(file(TREE), 0);
         tree.expandAll();
 
@@ -212,9 +212,8 @@ describe('expansion', () => {
     });
 
     it('starts over for a different document, whose file indices mean something else', () => {
-        // Two documents both have a file 0. Keeping the first one's expansion would name
-        // nodes the second does not have, and the tree would open collapsed for no
-        // visible reason — which is exactly what the dev server showed.
+        // Two documents both have a file 0. Keeping the first one's expansion would name nodes
+        // the second does not have, and the tree would open collapsed for no visible reason.
         const { tree, active, uri } = view(file(TREE), 0);
         tree.expandAll();
         expect(tree.rows.value).toHaveLength(5);
@@ -247,12 +246,12 @@ describe('expansion', () => {
     });
 });
 
-describe('the object-type level (DEC-033)', () => {
+describe('the object-type level', () => {
     const GROUPED: AlNodeDto[] = [{ key: 'type:Table', type: 'Table', name: 'Tables (2)', group: true, children: TREE }];
 
-    it('keeps what defaultExpandDepth always opened, with the group above it', () => {
-        // Depth 1 opened the objects and showed their members. It still does; the level
-        // the setting was never written for is paid for separately.
+    it('opens the same rows as an ungrouped tree, with the group above them', () => {
+        // Depth 1 opens the objects and shows their members; the group level above them
+        // does not count against the setting.
         const plain = view(file(TREE), 1).tree;
         const grouped = view(file(GROUPED), 1).tree;
 
@@ -260,10 +259,9 @@ describe('the object-type level (DEC-033)', () => {
         expect(opened).toEqual(plain.rows.value.map(row => row.key));
     });
 
-    it('shows the objects collapsed at depth zero, which is what depth zero meant', () => {
-        // Before the group level, 0 meant "the objects, none of them opened". It still
-        // does — the group is opened for free, because it is not a level the reader asked
-        // to keep shut.
+    it('shows the objects collapsed at depth zero, with the group open', () => {
+        // Depth 0 means "the objects, none of them opened". The group is opened for free,
+        // because it is not a level the reader asked to keep shut.
         const grouped = view(file(GROUPED), 0).tree;
         const plain = view(file(TREE), 0).tree;
 
@@ -284,7 +282,7 @@ describe('the object-type level (DEC-033)', () => {
     });
 });
 
-describe('an edit does not disturb the tree (EDIT-02)', () => {
+describe('an edit does not disturb the tree', () => {
     it('keeps expansion when a patched unit arrives', () => {
         // `patchUnits` replaces units, never the tree, and expansion is keyed on node keys
         // — so the reseed watcher must not fire and the open nodes must stay open.
@@ -384,7 +382,7 @@ describe('keyboard movement', () => {
     });
 });
 
-describe('the flat-list note (DEC-022)', () => {
+describe('the flat-list note', () => {
     it('appears only for a file with no AL structure', () => {
         expect(view(file(TREE, true)).tree.showFlatNote.value).toBe(false);
         expect(view(file(TREE, false)).tree.showFlatNote.value).toBe(true);

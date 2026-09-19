@@ -2,14 +2,8 @@ import { listFiles } from '@vscode/vsce';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 /**
- * `POLISH-04`. What ships, listed by the packager itself rather than by re-deriving
- * `.vscodeignore`'s glob semantics — which is the one way to be wrong about this while
- * looking right.
- *
- * An **allow-list**, not a deny-list. A deny-list only catches the mistakes already
- * imagined; this one catches the next file dropped at the repository root. The first run of
- * it found two: `CLAUDE.md`, 34 KB of instructions for whoever is editing this project, and
- * `.claude/launch.json`, a dev-server config written during `EDIT-03a`.
+ * What ships, as listed by the packager itself rather than by re-deriving `.vscodeignore`'s
+ * glob semantics. An allow-list, so the next stray file at the repository root fails it.
  */
 
 const SHIPS = [
@@ -28,11 +22,8 @@ const SHIPS = [
 ];
 
 /**
- * The packager's own listing, through its API rather than its CLI.
- *
- * `vsce ls` on the command line runs `vscode:prepublish` first, which rebuilds everything
- * and costs 22 seconds; `listFiles` answers the same question in two. Asked once and shared,
- * because the answer cannot change within a run.
+ * The packager's own listing, through its API rather than `vsce ls`, which runs
+ * `vscode:prepublish` and rebuilds everything first. Asked once: it cannot change within a run.
  */
 let files: readonly string[] = [];
 
@@ -48,19 +39,19 @@ describe('what the VSIX contains', () => {
 
     it('carries both hosts, the webview bundle and the webview shell', () => {
         // Spelled out separately from the list above, because these five are the ones whose
-        // absence makes an installed extension do nothing at all (§14.2, §11.1).
+        // absence makes an installed extension do nothing at all.
         for (const required of ['out/extension.js', 'out/web/extension.js', 'public/app.js', 'public/styles.css', 'media/webview.html']) {
             expect(files).toContain(required);
         }
     });
 
     it('carries no source, no corpus and no test file', () => {
-        // `Examples/` is 3.5 MB of real translation files and belongs in git, not in a
-        // VSIX; `src/` would ship the whole project to every user.
+        // `Examples/` holds test fixtures and belongs in git, not in a VSIX; `src/` would
+        // ship the whole project to every user.
         expect(files.filter(file => file.startsWith('src/'))).toEqual([]);
         expect(files.filter(file => file.startsWith('Examples/'))).toEqual([]);
         expect(files.filter(file => file.startsWith('docs/'))).toEqual([]);
-        // `assets/` is a working folder: four more icons live there that nothing uses.
+        // `assets/` is a working folder that also holds icons nothing uses.
         expect(files.filter(file => file.startsWith('assets/'))).toHaveLength(3);
         expect(files.filter(file => file.endsWith('.ts') || file.endsWith('.map'))).toEqual([]);
         expect(files).not.toContain('index.html');

@@ -6,11 +6,11 @@ import { describe, expect, it } from 'vitest';
 const EXAMPLES = fileURLToPath(new URL('../../../Examples', import.meta.url));
 
 /**
- * The data project runs with no mocks at all. This smoke test also pins the thing
- * every DATA task depends on: the fixture corpus is reachable and intact (§3.5).
+ * The data project runs with no mocks at all. This smoke test also pins what every
+ * data test depends on: the fixture corpus is reachable and intact.
  */
 describe('fixture corpus', () => {
-    it('contains the five expected files', () => {
+    it('contains exactly the expected files', () => {
         const files = readdirSync(EXAMPLES).sort();
         expect(files).toEqual([
             'Contoso App.de-DE.xlf',
@@ -27,7 +27,7 @@ describe('fixture corpus', () => {
         expect(text).toContain('<trans-unit id="1">');
     });
 
-    it('sees the BOM that only the base file carries', () => {
+    it('sees a BOM on the base file and none on the language file', () => {
         const base = readFileSync(`${EXAMPLES}/Contoso App.g.xlf`, 'utf8');
         const language = readFileSync(`${EXAMPLES}/Contoso App.de-DE.xlf`, 'utf8');
         expect(base.charCodeAt(0)).toBe(0xfeff);

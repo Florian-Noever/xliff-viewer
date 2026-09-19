@@ -41,8 +41,8 @@ const shared = {
 };
 
 /**
- * One entry, two bundles (MASTER_PLAN §14.2). The browser bundle deliberately has no
- * node-globals polyfill: needing one means §6.5 has been violated in the source.
+ * One entry, two bundles. The browser bundle deliberately has no node-globals polyfill:
+ * needing one means the source relies on node globals, which the web host does not have.
  */
 const targets = [
     { ...shared, platform: 'node', outfile: 'out/extension.js' },

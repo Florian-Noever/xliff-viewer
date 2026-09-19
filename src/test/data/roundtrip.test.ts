@@ -7,10 +7,8 @@ import { parseXliff } from '../../extension/xliff/parser';
 import { serialiseXliff } from '../../extension/xliff/serialise';
 
 /**
- * **The single most important test in the project** (MASTER_PLAN §15.2).
- *
  * With a whole-file writer, a serialiser bug does not corrupt one element — it rewrites
- * the entire document. If a corpus file will not round-trip, the parser lost information:
+ * the entire document. If a fixture will not round-trip, the parser lost information:
  * fix the parser, never weaken the assertion.
  */
 
@@ -36,11 +34,11 @@ function firstDifference(a: string, b: string): string {
 const CORPUS = readdirSync(EXAMPLES);
 
 describe('round-trip invariant', () => {
-    it('the corpus is the five files the plan describes', () => {
+    it('the corpus holds the expected number of files', () => {
         expect(CORPUS).toHaveLength(5);
     });
 
-    // Asserted per file so a failure names the file (acceptance criterion).
+    // Asserted per file so a failure names the file.
     it.each(CORPUS)('%s is byte-identical after parse → serialise', (name) => {
         const original = read(name);
         const rebuilt = roundTrip(original);
@@ -61,7 +59,7 @@ describe('round-trip invariant', () => {
         expect(roundTrip(original)).toBe(original);
     });
 
-    it('adds no trailing newline, because no corpus file has one', () => {
+    it('adds no trailing newline to a file that has none', () => {
         for (const name of CORPUS) {
             const original = read(name);
             expect(/\r?\n$/.test(original), `${name} unexpectedly ends with a newline`).toBe(false);
@@ -89,7 +87,7 @@ describe('a single edit changes only that target', () => {
             throw new Error('fixture unit has no target');
         }
 
-        // Edit mode replaces the target rather than mutating it (`DEC-025`).
+        // Edit mode replaces the target rather than mutating it.
         unit.target = { ...before, value: 'ZZZ EDITED ZZZ' };
 
         const rebuilt = serialiseXliff(document);
@@ -117,7 +115,7 @@ describe('a single edit changes only that target', () => {
         unit.target = { ...unit.target, value: '', attributes: { state: 'needs-translation' } };
 
         const rebuilt = serialiseXliff(document);
-        // No space before "/>" — 360 targets in the corpus depend on this.
+        // No space before "/>", as AL writes it.
         expect(rebuilt).toContain('<target state="needs-translation"/>');
         expect(rebuilt).not.toContain('<target state="needs-translation" />');
     });
@@ -133,7 +131,7 @@ describe('encoding', () => {
         expect(serialiseXliff(document)).toContain('<source>a &amp; b &lt;c&gt; d</source>');
     });
 
-    it('encodes > even where it is optional, as the corpus does', () => {
+    it('encodes > even where it is optional, as AL does', () => {
         const fabrikam = read('Fabrikam Base.de-DE.xlf');
         expect(fabrikam).toContain('&gt;');
         expect(roundTrip(fabrikam)).toBe(fabrikam);
@@ -145,9 +143,9 @@ describe('encoding', () => {
         expect(serialiseXliff(document)).toContain('id="a &quot;quoted&quot; b"');
     });
 
-    it('writes a numeric character reference back as the literal character (DEC-026)', () => {
-        // A documented, accepted byte change: valid XML, identical meaning. The
-        // alternative silently corrupts the é into visible "&#233;".
+    it('writes a numeric character reference back as the literal character', () => {
+        // A byte change, but valid XML with identical meaning. The alternative silently
+        // corrupts the é into visible "&#233;".
         const rebuilt = roundTrip(wrap('<trans-unit id="a"><source>caf&#233;</source></trans-unit>'));
         expect(rebuilt).toContain('<source>café</source>');
         expect(rebuilt).not.toContain('&amp;#233;');

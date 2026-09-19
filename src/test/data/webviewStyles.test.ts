@@ -4,16 +4,9 @@ import { fileURLToPath, URL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 /**
- * `POLISH-02`. Two §11.7 promises that only a source scan can check — jsdom applies no
- * stylesheet, so a mounted component cannot be asked whether it animates or what it does
- * under a forced-colours theme.
- *
- * They live in the `data` project rather than beside the other webview tests because the
- * webview tsconfig has **no node types**, deliberately: that is what keeps `node:fs` out of
- * `src/webview/`. `import.meta.glob` is the way around it there, and it does not work here
- * — with `?raw` it hands back an **empty string** for a `.css` file, because Vite's CSS
- * pipeline claims the file before the raw loader sees it. A scan written that way checks
- * the one plain stylesheet not at all and reports it clean.
+ * Only a source scan can check motion and forced colours: jsdom applies no stylesheet. It lives
+ * in `data` because the webview tsconfig has no node types, and there `import.meta.glob` with
+ * `?raw` returns an empty string for a `.css` file: Vite's CSS pipeline claims it first.
  */
 
 const WEBVIEW = fileURLToPath(new URL('../../webview', import.meta.url));

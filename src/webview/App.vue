@@ -97,8 +97,8 @@ provideUnitActions({
         const resolved = document.value?.baseFile;
         return resolved === undefined || resolved === null ? resolved : resolved.fileName;
     },
-    // §12.3: a state the reader chose for this unit outranks `stateOnEdit` on a later
-    // edit to its text, so it travels with the message rather than being remembered twice.
+    // A state the reader chose for this unit outranks `stateOnEdit` on a later edit to its
+    // text, so it travels with the message rather than being remembered twice.
     updateTarget: (unitId, value) => updateTarget(unitId, value, edit.chosenState(unitId)),
     updateState: (unitId, state) => {
         edit.rememberState(unitId, state);
@@ -117,8 +117,8 @@ const filter = useStateFilter({
 });
 
 /**
- * Search and the state filter narrow to the intersection (§11.5). They compose as
- * predicates rather than as two finished sets — `ancestorFilter.ts` explains why.
+ * Search and the state filter narrow to the intersection. They compose as predicates
+ * rather than as two finished sets — `ancestorFilter.ts` explains why.
  */
 const filtered = computed(() => visibleNodes(
     activeFile.value?.tree ?? [],
@@ -134,7 +134,8 @@ const tree = useTreeFlatten({
 });
 
 /**
- * §11.8, and with it the removal of `retainContextWhenHidden` (`DEC-030`).
+ * A hidden tab's webview is destroyed, so the view state is saved and put back when it is
+ * rebuilt.
  *
  * The shape lives here rather than in the composable because this is where the pieces are:
  * `usePersistedState` owns the slot, the throttle and the guard, and knows nothing about
