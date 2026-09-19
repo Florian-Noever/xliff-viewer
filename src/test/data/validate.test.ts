@@ -8,8 +8,8 @@ import { validateStructure, validateXml } from '../../extension/xliff/validate';
 
 import type { XliffDocument, XliffFile, XliffGroup, XliffTransUnit } from '../../shared/model';
 
-const EXAMPLES = fileURLToPath(new URL('../../../Examples', import.meta.url));
-const read = (name: string): string => readFileSync(`${EXAMPLES}/${name}`, 'utf8');
+const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
+const read = (name: string): string => readFileSync(`${FIXTURES}/${name}`, 'utf8');
 
 // ── model builders ───────────────────────────────────────────────────────────
 function unit(id: string): XliffTransUnit {
@@ -78,7 +78,7 @@ const UNQUOTED_ATTRIBUTE = `<?xml version="1.0"?>
 
 describe('validateXml', () => {
     it('accepts every file in the corpus', () => {
-        const files = readdirSync(EXAMPLES);
+        const files = readdirSync(FIXTURES);
         expect(files).toHaveLength(5);
         for (const name of files) {
             expect(() => validateXml(read(name)), name).not.toThrow();

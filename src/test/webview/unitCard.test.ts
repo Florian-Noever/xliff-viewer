@@ -124,9 +124,9 @@ describe('MetaChips (nothing dropped)', () => {
     });
 
     it('shows al-object-target', () => {
-        const chips = mount(MetaChips, { props: { unit: unit({ alObjectTarget: 'Page 23584087' }) } });
+        const chips = mount(MetaChips, { props: { unit: unit({ alObjectTarget: 'Page 3033338573' }) } });
 
-        expect(chips.text()).toContain('Page 23584087');
+        expect(chips.text()).toContain('Page 3033338573');
     });
 
     it('explains an untranslatable unit rather than only muting it', () => {
@@ -239,19 +239,19 @@ describe('the Developer hint', () => {
 
 describe('the reconstructed generator note', () => {
     const tree: AlNodeDto[] = [{
-        key: 'Table 3783554337',
+        key: 'Table 3952258696',
         type: 'Table',
         name: 'PTE Contoso Methods Setup',
         children: [{
-            key: 'Table 3783554337 - Field 4264183382',
+            key: 'Table 3952258696 - Field 2985504065',
             type: 'Field',
             name: 'Contoso Method',
-            children: [{ key: 'Table 3783554337 - Field 4264183382 - Property 2879900210', type: 'Property', name: 'Caption', children: [] }],
+            children: [{ key: 'Table 3952258696 - Field 2985504065 - Property 2879900210', type: 'Property', name: 'Caption', children: [] }],
         }],
     }];
 
     it('rebuilds the note the payload does not carry', () => {
-        const note = reconstructGeneratorNote('Table 3783554337 - Field 4264183382 - Property 2879900210', indexNodes(tree));
+        const note = reconstructGeneratorNote('Table 3952258696 - Field 2985504065 - Property 2879900210', indexNodes(tree));
 
         expect(note).toBe('Table PTE Contoso Methods Setup - Field Contoso Method - Property Caption');
     });
@@ -297,7 +297,7 @@ describe('every DTO field is reachable', () => {
             translate: false,
             maxwidth: 50,
             sizeUnit: 'char',
-            alObjectTarget: 'Page 23584087',
+            alObjectTarget: 'Page 3033338573',
             notes: [{ from: 'Developer', value: 'de-DE=Kundin' }],
             developerHint: 'Kundin',
         });
@@ -316,7 +316,7 @@ describe('every DTO field is reachable', () => {
             translate: text.includes('translate="no"'),
             maxwidth: text.includes('max 50 char'),
             sizeUnit: text.includes('char'),
-            alObjectTarget: text.includes('Page 23584087'),
+            alObjectTarget: text.includes('Page 3033338573'),
             notes: text.includes('de-DE=Kundin'),
             developerHint: wrapper.find('.aside').exists(),
             orphaned: true, // covered by its own case below; mutually exclusive with baseSource

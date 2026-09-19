@@ -2,11 +2,10 @@
 /**
  * The document the Vite dev server renders when there is no extension host.
  *
- * **Generated — do not hand-edit.** It is a projection of the example file named by
+ * **Generated — do not hand-edit.** It is a projection of the fixture file named by
  * `DEV_FIXTURE_SOURCE`, trimmed to the root objects listed in `src/shared/devFixture.ts`.
  * `src/test/data/devFixture.test.ts` rebuilds it from that file and fails if this one has
- * drifted, so it cannot decay into invented data — and that test is also how it is
- * regenerated when the selection changes.
+ * drifted, so the dev server always shows what the extension would send.
  *
  * Tree-shaken out of the production bundle: it is reached only under
  * `import.meta.env.DEV`, which Vite replaces with `false` when building.
@@ -33,36 +32,23 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "name": "Tables (1)",
                     "children": [
                         {
-                            "key": "Table 625177701",
+                            "key": "Table 2515662762",
                             "type": "Table",
-                            "name": "PTE Sample Object 1",
+                            "name": "Fabrikam Relay Setup",
                             "children": [
                                 {
-                                    "key": "Table 625177701 - Property 2879900210",
+                                    "key": "Table 2515662762 - Property 532412421",
                                     "type": "Property",
                                     "name": "Caption",
                                     "children": []
                                 },
                                 {
-                                    "key": "Table 625177701 - Method 2334650700",
-                                    "type": "Method",
-                                    "name": "SampleMethod1",
-                                    "children": [
-                                        {
-                                            "key": "Table 625177701 - Method 2334650700 - NamedType 1320836731",
-                                            "type": "NamedType",
-                                            "name": "SampleLabel1",
-                                            "children": []
-                                        }
-                                    ]
-                                },
-                                {
-                                    "key": "Table 625177701 - Field 3558316271",
+                                    "key": "Table 2515662762 - Field 1725856265",
                                     "type": "Field",
-                                    "name": "SampleField1",
+                                    "name": "Description",
                                     "children": [
                                         {
-                                            "key": "Table 625177701 - Field 3558316271 - Property 2879900210",
+                                            "key": "Table 2515662762 - Field 1725856265 - Property 532412421",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
@@ -70,12 +56,12 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Table 625177701 - Field 2062794090",
+                                    "key": "Table 2515662762 - Field 2036185364",
                                     "type": "Field",
-                                    "name": "Sample Field 2",
+                                    "name": "Code",
                                     "children": [
                                         {
-                                            "key": "Table 625177701 - Field 2062794090 - Property 2879900210",
+                                            "key": "Table 2515662762 - Field 2036185364 - Property 532412421",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
@@ -83,12 +69,12 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Table 625177701 - Field 538742209",
+                                    "key": "Table 2515662762 - Field 6222351",
                                     "type": "Field",
-                                    "name": "SampleField3",
+                                    "name": "Status",
                                     "children": [
                                         {
-                                            "key": "Table 625177701 - Field 538742209 - Property 2879900210",
+                                            "key": "Table 2515662762 - Field 6222351 - Property 532412421",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
@@ -96,12 +82,12 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Table 625177701 - Field 2451832060",
+                                    "key": "Table 2515662762 - Field 1346013879",
                                     "type": "Field",
-                                    "name": "SampleField4",
+                                    "name": "Posting Date",
                                     "children": [
                                         {
-                                            "key": "Table 625177701 - Field 2451832060 - Property 2879900210",
+                                            "key": "Table 2515662762 - Field 1346013879 - Property 532412421",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
@@ -109,12 +95,12 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Table 625177701 - Field 1814135443",
+                                    "key": "Table 2515662762 - Field 594630319",
                                     "type": "Field",
-                                    "name": "SampleField5",
+                                    "name": "Document No.",
                                     "children": [
                                         {
-                                            "key": "Table 625177701 - Field 1814135443 - Property 2879900210",
+                                            "key": "Table 2515662762 - Field 594630319 - Property 532412421",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
@@ -122,301 +108,79 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Table 625177701 - Field 318613262",
+                                    "key": "Table 2515662762 - Field 608998249",
                                     "type": "Field",
-                                    "name": "Sample Field 6",
+                                    "name": "Amount",
                                     "children": [
                                         {
-                                            "key": "Table 625177701 - Field 318613262 - Property 2879900210",
+                                            "key": "Table 2515662762 - Field 608998249 - Property 532412421",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
                                         }
                                     ]
-                                }
-                            ]
-                        }
-                    ],
-                    "group": true
-                },
-                {
-                    "key": "type:Codeunit",
-                    "type": "Codeunit",
-                    "name": "Codeunits (1)",
-                    "children": [
-                        {
-                            "key": "Codeunit 4282448380",
-                            "type": "Codeunit",
-                            "name": "PTE Sample Object 2",
-                            "children": [
-                                {
-                                    "key": "Codeunit 4282448380 - NamedType 3233926582",
-                                    "type": "NamedType",
-                                    "name": "SampleLabel2",
-                                    "children": []
                                 },
                                 {
-                                    "key": "Codeunit 4282448380 - NamedType 2596229965",
-                                    "type": "NamedType",
-                                    "name": "SampleLabel3",
-                                    "children": []
-                                },
-                                {
-                                    "key": "Codeunit 4282448380 - NamedType 3702714176",
-                                    "type": "NamedType",
-                                    "name": "SampleLabel4",
-                                    "children": []
-                                },
-                                {
-                                    "key": "Codeunit 4282448380 - NamedType 3065017559",
-                                    "type": "NamedType",
-                                    "name": "SampleLabel5",
-                                    "children": []
-                                },
-                                {
-                                    "key": "Codeunit 4282448380 - NamedType 683140114",
-                                    "type": "NamedType",
-                                    "name": "SampleLabel6",
-                                    "children": []
-                                },
-                                {
-                                    "key": "Codeunit 4282448380 - NamedType 45443497",
-                                    "type": "NamedType",
-                                    "name": "SampleLabel7",
-                                    "children": []
-                                },
-                                {
-                                    "key": "Codeunit 4282448380 - NamedType 1151927708",
-                                    "type": "NamedType",
-                                    "name": "SampleLabel8",
-                                    "children": []
-                                },
-                                {
-                                    "key": "Codeunit 4282448380 - NamedType 514231091",
-                                    "type": "NamedType",
-                                    "name": "SampleLabel9",
-                                    "children": []
-                                },
-                                {
-                                    "key": "Codeunit 4282448380 - Method 2972347317",
-                                    "type": "Method",
-                                    "name": "SampleMethod2",
+                                    "key": "Table 2515662762 - Field 737620728",
+                                    "type": "Field",
+                                    "name": "Quantity",
                                     "children": [
                                         {
-                                            "key": "Codeunit 4282448380 - Method 2972347317 - NamedType 536405291",
-                                            "type": "NamedType",
-                                            "name": "SampleLabel10",
-                                            "children": []
-                                        },
-                                        {
-                                            "key": "Codeunit 4282448380 - Method 2972347317 - NamedType 1174101908",
-                                            "type": "NamedType",
-                                            "name": "SampleLabel11",
+                                            "key": "Table 2515662762 - Field 737620728 - Property 532412421",
+                                            "type": "Property",
+                                            "name": "Caption",
                                             "children": []
                                         }
                                     ]
                                 },
                                 {
-                                    "key": "Codeunit 4282448380 - Method 3610043934",
-                                    "type": "Method",
-                                    "name": "SampleMethod3",
+                                    "key": "Table 2515662762 - Field 1044930314",
+                                    "type": "Field",
+                                    "name": "Unit Price",
                                     "children": [
                                         {
-                                            "key": "Codeunit 4282448380 - Method 3610043934 - NamedType 1811798525",
-                                            "type": "NamedType",
-                                            "name": "SampleLabel12",
+                                            "key": "Table 2515662762 - Field 1044930314 - Property 532412421",
+                                            "type": "Property",
+                                            "name": "Caption",
                                             "children": []
                                         }
                                     ]
                                 },
                                 {
-                                    "key": "Codeunit 4282448380 - Method 3441134911",
-                                    "type": "Method",
-                                    "name": "SampleMethod4",
+                                    "key": "Table 2515662762 - Field 360195871",
+                                    "type": "Field",
+                                    "name": "Location Code",
                                     "children": [
                                         {
-                                            "key": "Codeunit 4282448380 - Method 3441134911 - NamedType 2449495142",
-                                            "type": "NamedType",
-                                            "name": "SampleLabel13",
+                                            "key": "Table 2515662762 - Field 360195871 - Property 532412421",
+                                            "type": "Property",
+                                            "name": "Caption",
                                             "children": []
                                         }
                                     ]
                                 },
                                 {
-                                    "key": "Codeunit 4282448380 - Method 4078831528",
-                                    "type": "Method",
-                                    "name": "SampleMethod5",
+                                    "key": "Table 2515662762 - Field 1209288119",
+                                    "type": "Field",
+                                    "name": "Bin Code",
                                     "children": [
                                         {
-                                            "key": "Codeunit 4282448380 - Method 4078831528 - NamedType 2280586119",
-                                            "type": "NamedType",
-                                            "name": "SampleLabel14",
+                                            "key": "Table 2515662762 - Field 1209288119 - Property 532412421",
+                                            "type": "Property",
+                                            "name": "Caption",
                                             "children": []
                                         }
                                     ]
                                 },
                                 {
-                                    "key": "Codeunit 4282448380 - Method 421560849",
-                                    "type": "Method",
-                                    "name": "SampleMethod6",
+                                    "key": "Table 2515662762 - Field 2886938269",
+                                    "type": "Field",
+                                    "name": "Item No.",
                                     "children": [
                                         {
-                                            "key": "Codeunit 4282448380 - Method 421560849 - NamedType 2918282736",
-                                            "type": "NamedType",
-                                            "name": "SampleLabel15",
-                                            "children": []
-                                        },
-                                        {
-                                            "key": "Codeunit 4282448380 - Method 421560849 - NamedType 3555979353",
-                                            "type": "NamedType",
-                                            "name": "SampleLabel16",
-                                            "children": []
-                                        }
-                                    ]
-                                },
-                                {
-                                    "key": "Codeunit 4282448380 - Method 1059257466",
-                                    "type": "Method",
-                                    "name": "SampleMethod7",
-                                    "children": [
-                                        {
-                                            "key": "Codeunit 4282448380 - Method 1059257466 - NamedType 4193675970",
-                                            "type": "NamedType",
-                                            "name": "SampleLabel17",
-                                            "children": []
-                                        },
-                                        {
-                                            "key": "Codeunit 4282448380 - Method 1059257466 - NamedType 4024766947",
-                                            "type": "NamedType",
-                                            "name": "SampleLabel18",
-                                            "children": []
-                                        }
-                                    ]
-                                },
-                                {
-                                    "key": "Codeunit 4282448380 - Method 2503559723",
-                                    "type": "Method",
-                                    "name": "SampleMethod8",
-                                    "children": [
-                                        {
-                                            "key": "Codeunit 4282448380 - Method 2503559723 - NamedType 367496268",
-                                            "type": "NamedType",
-                                            "name": "SampleLabel19",
-                                            "children": []
-                                        }
-                                    ]
-                                },
-                                {
-                                    "key": "Codeunit 4282448380 - Method 3141256340",
-                                    "type": "Method",
-                                    "name": "SampleMethod9",
-                                    "children": [
-                                        {
-                                            "key": "Codeunit 4282448380 - Method 3141256340 - NamedType 276669022",
-                                            "type": "NamedType",
-                                            "name": "SampleLabel20",
-                                            "children": []
-                                        },
-                                        {
-                                            "key": "Codeunit 4282448380 - Method 3141256340 - NamedType 3933939701",
-                                            "type": "NamedType",
-                                            "name": "SampleLabel21",
-                                            "children": []
-                                        },
-                                        {
-                                            "key": "Codeunit 4282448380 - Method 3141256340 - NamedType 3296243084",
-                                            "type": "NamedType",
-                                            "name": "SampleLabel22",
-                                            "children": []
-                                        }
-                                    ]
-                                },
-                                {
-                                    "key": "Codeunit 4282448380 - Method 2373033540",
-                                    "type": "Method",
-                                    "name": "SampleMethod10",
-                                    "children": [
-                                        {
-                                            "key": "Codeunit 4282448380 - Method 2373033540 - NamedType 2658546467",
-                                            "type": "NamedType",
-                                            "name": "SampleLabel23",
-                                            "children": []
-                                        }
-                                    ]
-                                },
-                                {
-                                    "key": "Codeunit 4282448380 - Method 1735336923",
-                                    "type": "Method",
-                                    "name": "SampleMethod11",
-                                    "children": [
-                                        {
-                                            "key": "Codeunit 4282448380 - Method 1735336923 - NamedType 2020849850",
-                                            "type": "NamedType",
-                                            "name": "SampleLabel24",
-                                            "children": []
-                                        },
-                                        {
-                                            "key": "Codeunit 4282448380 - Method 1735336923 - NamedType 1383153233",
-                                            "type": "NamedType",
-                                            "name": "SampleLabel25",
-                                            "children": []
-                                        }
-                                    ]
-                                },
-                                {
-                                    "key": "Codeunit 4282448380 - Method 3648426774",
-                                    "type": "Method",
-                                    "name": "SampleMethod12",
-                                    "children": [
-                                        {
-                                            "key": "Codeunit 4282448380 - Method 3648426774 - NamedType 745456616",
-                                            "type": "NamedType",
-                                            "name": "SampleLabel26",
-                                            "children": []
-                                        },
-                                        {
-                                            "key": "Codeunit 4282448380 - Method 3648426774 - NamedType 107759999",
-                                            "type": "NamedType",
-                                            "name": "SampleLabel27",
-                                            "children": []
-                                        }
-                                    ]
-                                },
-                                {
-                                    "key": "Codeunit 4282448380 - Method 3010730157",
-                                    "type": "Method",
-                                    "name": "SampleMethod13",
-                                    "children": [
-                                        {
-                                            "key": "Codeunit 4282448380 - Method 3010730157 - NamedType 1083274662",
-                                            "type": "NamedType",
-                                            "name": "SampleLabel28",
-                                            "children": []
-                                        }
-                                    ]
-                                },
-                                {
-                                    "key": "Codeunit 4282448380 - Method 4117214368",
-                                    "type": "Method",
-                                    "name": "SampleMethod14",
-                                    "children": [
-                                        {
-                                            "key": "Codeunit 4282448380 - Method 4117214368 - NamedType 445578045",
-                                            "type": "NamedType",
-                                            "name": "SampleLabel29",
-                                            "children": []
-                                        }
-                                    ]
-                                },
-                                {
-                                    "key": "Codeunit 4282448380 - Method 3479517751",
-                                    "type": "Method",
-                                    "name": "SampleMethod15",
-                                    "children": [
-                                        {
-                                            "key": "Codeunit 4282448380 - Method 3479517751 - NamedType 20925101",
-                                            "type": "NamedType",
-                                            "name": "SampleLabel30",
+                                            "key": "Table 2515662762 - Field 2886938269 - Property 532412421",
+                                            "type": "Property",
+                                            "name": "Caption",
                                             "children": []
                                         }
                                     ]
@@ -432,132 +196,221 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "name": "Pages (1)",
                     "children": [
                         {
-                            "key": "Page 625177701",
+                            "key": "Page 2515662762",
                             "type": "Page",
-                            "name": "PTE Sample Object 1",
+                            "name": "Fabrikam Relay Setup",
                             "children": [
                                 {
-                                    "key": "Page 625177701 - Property 2879900210",
+                                    "key": "Page 2515662762 - Property 532412421",
                                     "type": "Property",
                                     "name": "Caption",
                                     "children": []
                                 },
                                 {
-                                    "key": "Page 625177701 - NamedType 658621718",
-                                    "type": "NamedType",
-                                    "name": "SampleLabel31",
-                                    "children": []
-                                },
-                                {
-                                    "key": "Page 625177701 - Control 3558316271",
+                                    "key": "Page 2515662762 - Control 266367750",
                                     "type": "Control",
-                                    "name": "SampleField1",
+                                    "name": "Name",
                                     "children": [
                                         {
-                                            "key": "Page 625177701 - Control 3558316271 - Property 1295455071",
+                                            "key": "Page 2515662762 - Control 266367750 - Property 532412421",
                                             "type": "Property",
-                                            "name": "ToolTip",
+                                            "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "Page 625177701 - Control 3558316271 - Property 2879900210",
+                                            "key": "Page 2515662762 - Control 266367750 - Property 2904335024",
                                             "type": "Property",
-                                            "name": "Caption",
+                                            "name": "ToolTip",
                                             "children": []
                                         }
                                     ]
                                 },
                                 {
-                                    "key": "Page 625177701 - Control 538742209",
+                                    "key": "Page 2515662762 - Control 1725856265",
                                     "type": "Control",
-                                    "name": "SampleField3",
+                                    "name": "Description",
                                     "children": [
                                         {
-                                            "key": "Page 625177701 - Control 538742209 - Property 1295455071",
+                                            "key": "Page 2515662762 - Control 1725856265 - Property 532412421",
                                             "type": "Property",
-                                            "name": "ToolTip",
+                                            "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "Page 625177701 - Control 538742209 - Property 2879900210",
+                                            "key": "Page 2515662762 - Control 1725856265 - Property 2904335024",
                                             "type": "Property",
-                                            "name": "Caption",
+                                            "name": "ToolTip",
                                             "children": []
                                         }
                                     ]
                                 },
                                 {
-                                    "key": "Page 625177701 - Control 2451832060",
+                                    "key": "Page 2515662762 - Control 2036185364",
                                     "type": "Control",
-                                    "name": "SampleField4",
+                                    "name": "Code",
                                     "children": [
                                         {
-                                            "key": "Page 625177701 - Control 2451832060 - Property 1295455071",
+                                            "key": "Page 2515662762 - Control 2036185364 - Property 532412421",
                                             "type": "Property",
-                                            "name": "ToolTip",
+                                            "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "Page 625177701 - Control 2451832060 - Property 2879900210",
+                                            "key": "Page 2515662762 - Control 2036185364 - Property 2904335024",
                                             "type": "Property",
-                                            "name": "Caption",
+                                            "name": "ToolTip",
                                             "children": []
                                         }
                                     ]
                                 },
                                 {
-                                    "key": "Page 625177701 - Control 2983882716",
+                                    "key": "Page 2515662762 - Control 6222351",
                                     "type": "Control",
-                                    "name": "SampleControl1",
+                                    "name": "Status",
                                     "children": [
                                         {
-                                            "key": "Page 625177701 - Control 2983882716 - Property 1295455071",
+                                            "key": "Page 2515662762 - Control 6222351 - Property 532412421",
                                             "type": "Property",
-                                            "name": "ToolTip",
+                                            "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "Page 625177701 - Control 2983882716 - Property 2879900210",
+                                            "key": "Page 2515662762 - Control 6222351 - Property 2904335024",
                                             "type": "Property",
-                                            "name": "Caption",
+                                            "name": "ToolTip",
                                             "children": []
                                         }
                                     ]
                                 },
                                 {
-                                    "key": "Page 625177701 - Control 318613262",
+                                    "key": "Page 2515662762 - Control 2835827789",
                                     "type": "Control",
-                                    "name": "Sample Field 6",
+                                    "name": "PostingDate",
                                     "children": [
                                         {
-                                            "key": "Page 625177701 - Control 318613262 - Property 1295455071",
+                                            "key": "Page 2515662762 - Control 2835827789 - Property 532412421",
                                             "type": "Property",
-                                            "name": "ToolTip",
+                                            "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "Page 625177701 - Control 318613262 - Property 2879900210",
+                                            "key": "Page 2515662762 - Control 2835827789 - Property 2904335024",
                                             "type": "Property",
-                                            "name": "Caption",
+                                            "name": "ToolTip",
                                             "children": []
                                         }
                                     ]
                                 },
                                 {
-                                    "key": "Page 625177701 - Action 2470525067",
+                                    "key": "Page 2515662762 - Control 2647798643",
+                                    "type": "Control",
+                                    "name": "DocumentNo",
+                                    "children": [
+                                        {
+                                            "key": "Page 2515662762 - Control 2647798643 - Property 532412421",
+                                            "type": "Property",
+                                            "name": "Caption",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Page 2515662762 - Control 2647798643 - Property 2904335024",
+                                            "type": "Property",
+                                            "name": "ToolTip",
+                                            "children": []
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "Page 2515662762 - Control 608998249",
+                                    "type": "Control",
+                                    "name": "Amount",
+                                    "children": [
+                                        {
+                                            "key": "Page 2515662762 - Control 608998249 - Property 532412421",
+                                            "type": "Property",
+                                            "name": "Caption",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Page 2515662762 - Control 608998249 - Property 2904335024",
+                                            "type": "Property",
+                                            "name": "ToolTip",
+                                            "children": []
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "Page 2515662762 - Control 737620728",
+                                    "type": "Control",
+                                    "name": "Quantity",
+                                    "children": [
+                                        {
+                                            "key": "Page 2515662762 - Control 737620728 - Property 532412421",
+                                            "type": "Property",
+                                            "name": "Caption",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Page 2515662762 - Control 737620728 - Property 2904335024",
+                                            "type": "Property",
+                                            "name": "ToolTip",
+                                            "children": []
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "Page 2515662762 - Control 246381216",
+                                    "type": "Control",
+                                    "name": "UnitPrice",
+                                    "children": [
+                                        {
+                                            "key": "Page 2515662762 - Control 246381216 - Property 532412421",
+                                            "type": "Property",
+                                            "name": "Caption",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Page 2515662762 - Control 246381216 - Property 2904335024",
+                                            "type": "Property",
+                                            "name": "ToolTip",
+                                            "children": []
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "Page 2515662762 - Action 4284450207",
                                     "type": "Action",
-                                    "name": "SampleAction1",
+                                    "name": "PrintLabels",
                                     "children": [
                                         {
-                                            "key": "Page 625177701 - Action 2470525067 - Property 1295455071",
+                                            "key": "Page 2515662762 - Action 4284450207 - Property 532412421",
                                             "type": "Property",
-                                            "name": "ToolTip",
+                                            "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "Page 625177701 - Action 2470525067 - Property 2879900210",
+                                            "key": "Page 2515662762 - Action 4284450207 - Property 2904335024",
+                                            "type": "Property",
+                                            "name": "ToolTip",
+                                            "children": []
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "Page 2515662762 - Action 1830722334",
+                                    "type": "Action",
+                                    "name": "Release",
+                                    "children": [
+                                        {
+                                            "key": "Page 2515662762 - Action 1830722334 - Property 532412421",
                                             "type": "Property",
                                             "name": "Caption",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Page 2515662762 - Action 1830722334 - Property 2904335024",
+                                            "type": "Property",
+                                            "name": "ToolTip",
                                             "children": []
                                         }
                                     ]
@@ -573,101 +426,138 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "name": "PageExtensions (2)",
                     "children": [
                         {
-                            "key": "PageExtension 3644751763",
+                            "key": "PageExtension 90699051",
                             "type": "PageExtension",
-                            "name": "PTE Sample Object 3",
+                            "name": "Fabrikam Customer Card Ext.",
                             "children": [
                                 {
-                                    "key": "PageExtension 3644751763 - Action 3682627581",
-                                    "type": "Action",
-                                    "name": "PTE Sample Action 2",
+                                    "key": "PageExtension 90699051 - Control 1642511898",
+                                    "type": "Control",
+                                    "name": "No",
                                     "children": [
                                         {
-                                            "key": "PageExtension 3644751763 - Action 3682627581 - Property 1295455071",
+                                            "key": "PageExtension 90699051 - Control 1642511898 - Property 532412421",
                                             "type": "Property",
-                                            "name": "ToolTip",
+                                            "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "PageExtension 3644751763 - Action 3682627581 - Property 2879900210",
+                                            "key": "PageExtension 90699051 - Control 1642511898 - Property 2904335024",
                                             "type": "Property",
-                                            "name": "Caption",
+                                            "name": "ToolTip",
                                             "children": []
                                         }
                                     ]
                                 },
                                 {
-                                    "key": "PageExtension 3644751763 - Action 25356902",
-                                    "type": "Action",
-                                    "name": "PTE Sample Action 3",
+                                    "key": "PageExtension 90699051 - Control 266367750",
+                                    "type": "Control",
+                                    "name": "Name",
                                     "children": [
                                         {
-                                            "key": "PageExtension 3644751763 - Action 25356902 - Property 1295455071",
-                                            "type": "Property",
-                                            "name": "ToolTip",
-                                            "children": []
-                                        },
-                                        {
-                                            "key": "PageExtension 3644751763 - Action 25356902 - Property 2879900210",
+                                            "key": "PageExtension 90699051 - Control 266367750 - Property 532412421",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "PageExtension 3644751763 - Action 25356902 - Method 1097640306",
+                                            "key": "PageExtension 90699051 - Control 266367750 - Property 2904335024",
+                                            "type": "Property",
+                                            "name": "ToolTip",
+                                            "children": []
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "PageExtension 90699051 - Control 1725856265",
+                                    "type": "Control",
+                                    "name": "Description",
+                                    "children": [
+                                        {
+                                            "key": "PageExtension 90699051 - Control 1725856265 - Property 532412421",
+                                            "type": "Property",
+                                            "name": "Caption",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "PageExtension 90699051 - Control 1725856265 - Property 2904335024",
+                                            "type": "Property",
+                                            "name": "ToolTip",
+                                            "children": []
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "PageExtension 90699051 - Control 2036185364",
+                                    "type": "Control",
+                                    "name": "Code",
+                                    "children": [
+                                        {
+                                            "key": "PageExtension 90699051 - Control 2036185364 - Property 532412421",
+                                            "type": "Property",
+                                            "name": "Caption",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "PageExtension 90699051 - Control 2036185364 - Property 2904335024",
+                                            "type": "Property",
+                                            "name": "ToolTip",
+                                            "children": []
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "PageExtension 90699051 - Action 4039610727",
+                                    "type": "Action",
+                                    "name": "Post",
+                                    "children": [
+                                        {
+                                            "key": "PageExtension 90699051 - Action 4039610727 - Property 532412421",
+                                            "type": "Property",
+                                            "name": "Caption",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "PageExtension 90699051 - Action 4039610727 - Property 2904335024",
+                                            "type": "Property",
+                                            "name": "ToolTip",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "PageExtension 90699051 - Action 4039610727 - Method 1207008682",
                                             "type": "Method",
-                                            "name": "SampleMethod16",
+                                            "name": "OnAction",
                                             "children": [
                                                 {
-                                                    "key": "PageExtension 3644751763 - Action 25356902 - Method 1097640306 - NamedType 3040499163",
+                                                    "key": "PageExtension 90699051 - Action 4039610727 - Method 1207008682 - NamedType 3465996469",
                                                     "type": "NamedType",
-                                                    "name": "SampleLabel32",
+                                                    "name": "PostQst",
                                                     "children": []
                                                 }
                                             ]
-                                        }
-                                    ]
-                                },
-                                {
-                                    "key": "PageExtension 3644751763 - Control 2108575358",
-                                    "type": "Control",
-                                    "name": "PTE Sample Control 2",
-                                    "children": [
-                                        {
-                                            "key": "PageExtension 3644751763 - Control 2108575358 - Property 1295455071",
-                                            "type": "Property",
-                                            "name": "ToolTip",
-                                            "children": []
-                                        }
-                                    ]
-                                },
-                                {
-                                    "key": "PageExtension 3644751763 - Control 1470878741",
-                                    "type": "Control",
-                                    "name": "PTE Sample Control 3",
-                                    "children": [
-                                        {
-                                            "key": "PageExtension 3644751763 - Control 1470878741 - Property 1295455071",
-                                            "type": "Property",
-                                            "name": "ToolTip",
-                                            "children": []
                                         }
                                     ]
                                 }
                             ]
                         },
                         {
-                            "key": "PageExtension 3007055146",
+                            "key": "PageExtension 1619057625",
                             "type": "PageExtension",
-                            "name": "PTE Sample Object 4",
+                            "name": "Fabrikam Customer Card Ext. 2",
                             "children": [
                                 {
-                                    "key": "PageExtension 3007055146 - Control 2577362952",
+                                    "key": "PageExtension 1619057625 - Control 266367750",
                                     "type": "Control",
-                                    "name": "PTE Sample Control 4",
+                                    "name": "Name",
                                     "children": [
                                         {
-                                            "key": "PageExtension 3007055146 - Control 2577362952 - Property 1295455071",
+                                            "key": "PageExtension 1619057625 - Control 266367750 - Property 532412421",
+                                            "type": "Property",
+                                            "name": "Caption",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "PageExtension 1619057625 - Control 266367750 - Property 2904335024",
                                             "type": "Property",
                                             "name": "ToolTip",
                                             "children": []
@@ -675,12 +565,18 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "PageExtension 3007055146 - Control 1939666335",
+                                    "key": "PageExtension 1619057625 - Control 1725856265",
                                     "type": "Control",
-                                    "name": "PTE Sample Control 5",
+                                    "name": "Description",
                                     "children": [
                                         {
-                                            "key": "PageExtension 3007055146 - Control 1939666335 - Property 1295455071",
+                                            "key": "PageExtension 1619057625 - Control 1725856265 - Property 532412421",
+                                            "type": "Property",
+                                            "name": "Caption",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "PageExtension 1619057625 - Control 1725856265 - Property 2904335024",
                                             "type": "Property",
                                             "name": "ToolTip",
                                             "children": []
@@ -688,12 +584,18 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "PageExtension 3007055146 - Control 3852756186",
+                                    "key": "PageExtension 1619057625 - Control 2036185364",
                                     "type": "Control",
-                                    "name": "PTE Sample Control 6",
+                                    "name": "Code",
                                     "children": [
                                         {
-                                            "key": "PageExtension 3007055146 - Control 3852756186 - Property 1295455071",
+                                            "key": "PageExtension 1619057625 - Control 2036185364 - Property 532412421",
+                                            "type": "Property",
+                                            "name": "Caption",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "PageExtension 1619057625 - Control 2036185364 - Property 2904335024",
                                             "type": "Property",
                                             "name": "ToolTip",
                                             "children": []
@@ -701,12 +603,18 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "PageExtension 3007055146 - Control 3215059569",
+                                    "key": "PageExtension 1619057625 - Control 6222351",
                                     "type": "Control",
-                                    "name": "PTE Sample Control 7",
+                                    "name": "Status",
                                     "children": [
                                         {
-                                            "key": "PageExtension 3007055146 - Control 3215059569 - Property 1295455071",
+                                            "key": "PageExtension 1619057625 - Control 6222351 - Property 532412421",
+                                            "type": "Property",
+                                            "name": "Caption",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "PageExtension 1619057625 - Control 6222351 - Property 2904335024",
                                             "type": "Property",
                                             "name": "ToolTip",
                                             "children": []
@@ -714,92 +622,270 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "PageExtension 3007055146 - Control 1639787764",
-                                    "type": "Control",
-                                    "name": "PTE Sample Control 8",
+                                    "key": "PageExtension 1619057625 - Action 4284450207",
+                                    "type": "Action",
+                                    "name": "PrintLabels",
                                     "children": [
                                         {
-                                            "key": "PageExtension 3007055146 - Control 1639787764 - Property 1295455071",
+                                            "key": "PageExtension 1619057625 - Action 4284450207 - Property 532412421",
+                                            "type": "Property",
+                                            "name": "Caption",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "PageExtension 1619057625 - Action 4284450207 - Property 2904335024",
                                             "type": "Property",
                                             "name": "ToolTip",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "PageExtension 1619057625 - Action 4284450207 - Method 1207008682",
+                                            "type": "Method",
+                                            "name": "OnAction",
+                                            "children": [
+                                                {
+                                                    "key": "PageExtension 1619057625 - Action 4284450207 - Method 1207008682 - NamedType 1173589659",
+                                                    "type": "NamedType",
+                                                    "name": "ReleasedMsg",
+                                                    "children": []
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ],
+                    "group": true
+                },
+                {
+                    "key": "type:Codeunit",
+                    "type": "Codeunit",
+                    "name": "Codeunits (1)",
+                    "children": [
+                        {
+                            "key": "Codeunit 4184348254",
+                            "type": "Codeunit",
+                            "name": "Fabrikam Label Mgt.",
+                            "children": [
+                                {
+                                    "key": "Codeunit 4184348254 - Method 2070365322",
+                                    "type": "Method",
+                                    "name": "GetNoneText",
+                                    "children": [
+                                        {
+                                            "key": "Codeunit 4184348254 - Method 2070365322 - NamedType 1660893115",
+                                            "type": "NamedType",
+                                            "name": "NoneLbl",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Codeunit 4184348254 - Method 2070365322 - NamedType 3465996469",
+                                            "type": "NamedType",
+                                            "name": "PostQst",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Codeunit 4184348254 - Method 2070365322 - NamedType 1173589659",
+                                            "type": "NamedType",
+                                            "name": "ReleasedMsg",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Codeunit 4184348254 - Method 2070365322 - NamedType 1422045454",
+                                            "type": "NamedType",
+                                            "name": "BlankFieldErr",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Codeunit 4184348254 - Method 2070365322 - NamedType 947767955",
+                                            "type": "NamedType",
+                                            "name": "ProgressMsg",
                                             "children": []
                                         }
                                     ]
                                 },
                                 {
-                                    "key": "PageExtension 3007055146 - Control 1002091147",
-                                    "type": "Control",
-                                    "name": "PTE Sample Control 9",
+                                    "key": "Codeunit 4184348254 - Method 774755807",
+                                    "type": "Method",
+                                    "name": "FormatRange",
                                     "children": [
                                         {
-                                            "key": "PageExtension 3007055146 - Control 1002091147 - Property 1295455071",
-                                            "type": "Property",
-                                            "name": "ToolTip",
+                                            "key": "Codeunit 4184348254 - Method 774755807 - NamedType 2258608478",
+                                            "type": "NamedType",
+                                            "name": "RangeTxt",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Codeunit 4184348254 - Method 774755807 - NamedType 2086379190",
+                                            "type": "NamedType",
+                                            "name": "NothingToPostMsg",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Codeunit 4184348254 - Method 774755807 - NamedType 1757207888",
+                                            "type": "NamedType",
+                                            "name": "AmountErr",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Codeunit 4184348254 - Method 774755807 - NamedType 3363961757",
+                                            "type": "NamedType",
+                                            "name": "ContinueMsg",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Codeunit 4184348254 - Method 774755807 - NamedType 1174209694",
+                                            "type": "NamedType",
+                                            "name": "TermsLbl",
                                             "children": []
                                         }
                                     ]
                                 },
                                 {
-                                    "key": "PageExtension 3007055146 - Control 1154936467",
-                                    "type": "Control",
-                                    "name": "PTE Sample Control 10",
+                                    "key": "Codeunit 4184348254 - Method 424637325",
+                                    "type": "Method",
+                                    "name": "CheckCarrier",
                                     "children": [
                                         {
-                                            "key": "PageExtension 3007055146 - Control 1154936467 - Property 1295455071",
-                                            "type": "Property",
-                                            "name": "ToolTip",
+                                            "key": "Codeunit 4184348254 - Method 424637325 - NamedType 3997507320",
+                                            "type": "NamedType",
+                                            "name": "NoServiceErr",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Codeunit 4184348254 - Method 424637325 - NamedType 760130590",
+                                            "type": "NamedType",
+                                            "name": "PrintedMsg",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Codeunit 4184348254 - Method 424637325 - NamedType 2507712333",
+                                            "type": "NamedType",
+                                            "name": "RouteBlockedErr",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Codeunit 4184348254 - Method 424637325 - NamedType 3965151784",
+                                            "type": "NamedType",
+                                            "name": "UnreachableErr",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Codeunit 4184348254 - Method 424637325 - NamedType 2928068614",
+                                            "type": "NamedType",
+                                            "name": "DeleteQst",
                                             "children": []
                                         }
                                     ]
                                 },
                                 {
-                                    "key": "PageExtension 3007055146 - Control 1792633084",
-                                    "type": "Control",
-                                    "name": "PTE Sample Control 11",
+                                    "key": "Codeunit 4184348254 - Method 2921939501",
+                                    "type": "Method",
+                                    "name": "GetRelayUrl",
                                     "children": [
                                         {
-                                            "key": "PageExtension 3007055146 - Control 1792633084 - Property 1295455071",
-                                            "type": "Property",
-                                            "name": "ToolTip",
+                                            "key": "Codeunit 4184348254 - Method 2921939501 - NamedType 2277100897",
+                                            "type": "NamedType",
+                                            "name": "RelayUrlTxt",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Codeunit 4184348254 - Method 2921939501 - NamedType 1181928992",
+                                            "type": "NamedType",
+                                            "name": "WeightErr",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Codeunit 4184348254 - Method 2921939501 - NamedType 3068111671",
+                                            "type": "NamedType",
+                                            "name": "SyncDoneMsg",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Codeunit 4184348254 - Method 2921939501 - NamedType 2433232136",
+                                            "type": "NamedType",
+                                            "name": "SelectCarrierMsg",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Codeunit 4184348254 - Method 2921939501 - NamedType 2842952226",
+                                            "type": "NamedType",
+                                            "name": "PlannedMsg",
                                             "children": []
                                         }
                                     ]
                                 },
                                 {
-                                    "key": "PageExtension 3007055146 - Control 2430329701",
-                                    "type": "Control",
-                                    "name": "PTE Sample Control 12",
+                                    "key": "Codeunit 4184348254 - Method 4247756800",
+                                    "type": "Method",
+                                    "name": "PrintBatch",
                                     "children": [
                                         {
-                                            "key": "PageExtension 3007055146 - Control 2430329701 - Property 1295455071",
-                                            "type": "Property",
-                                            "name": "ToolTip",
+                                            "key": "Codeunit 4184348254 - Method 4247756800 - NamedType 1422045454",
+                                            "type": "NamedType",
+                                            "name": "BlankFieldErr",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Codeunit 4184348254 - Method 4247756800 - NamedType 947767955",
+                                            "type": "NamedType",
+                                            "name": "ProgressMsg",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Codeunit 4184348254 - Method 4247756800 - NamedType 2086379190",
+                                            "type": "NamedType",
+                                            "name": "NothingToPostMsg",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Codeunit 4184348254 - Method 4247756800 - NamedType 1757207888",
+                                            "type": "NamedType",
+                                            "name": "AmountErr",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Codeunit 4184348254 - Method 4247756800 - NamedType 3363961757",
+                                            "type": "NamedType",
+                                            "name": "ContinueMsg",
                                             "children": []
                                         }
                                     ]
                                 },
                                 {
-                                    "key": "PageExtension 3007055146 - Control 3068026318",
-                                    "type": "Control",
-                                    "name": "PTE Sample Control 13",
+                                    "key": "Codeunit 4184348254 - Method 2915492949",
+                                    "type": "Method",
+                                    "name": "ResetCounters",
                                     "children": [
                                         {
-                                            "key": "PageExtension 3007055146 - Control 3068026318 - Property 1295455071",
-                                            "type": "Property",
-                                            "name": "ToolTip",
+                                            "key": "Codeunit 4184348254 - Method 2915492949 - NamedType 2507712333",
+                                            "type": "NamedType",
+                                            "name": "RouteBlockedErr",
                                             "children": []
-                                        }
-                                    ]
-                                },
-                                {
-                                    "key": "PageExtension 3007055146 - Control 2899117295",
-                                    "type": "Control",
-                                    "name": "PTE Sample Control 14",
-                                    "children": [
+                                        },
                                         {
-                                            "key": "PageExtension 3007055146 - Control 2899117295 - Property 1295455071",
-                                            "type": "Property",
-                                            "name": "ToolTip",
+                                            "key": "Codeunit 4184348254 - Method 2915492949 - NamedType 3965151784",
+                                            "type": "NamedType",
+                                            "name": "UnreachableErr",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Codeunit 4184348254 - Method 2915492949 - NamedType 2928068614",
+                                            "type": "NamedType",
+                                            "name": "DeleteQst",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Codeunit 4184348254 - Method 2915492949 - NamedType 1181928992",
+                                            "type": "NamedType",
+                                            "name": "WeightErr",
+                                            "children": []
+                                        },
+                                        {
+                                            "key": "Codeunit 4184348254 - Method 2915492949 - NamedType 3068111671",
+                                            "type": "NamedType",
+                                            "name": "SyncDoneMsg",
                                             "children": []
                                         }
                                     ]
@@ -812,101 +898,25 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
             ],
             "units": [
                 {
-                    "id": "Table 625177701 - Property 2879900210",
-                    "source": "Sample text 1",
-                    "target": "Beispieltext 1",
+                    "id": "Table 2515662762 - Property 532412421",
+                    "source": "Fabrikam Relay Setup",
+                    "target": "Fabrikam Relay Einrichtung",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
-                            "value": "de-DE=Beispieltext 1"
+                            "value": "de-DE=Fabrikam Relay Einrichtung"
                         }
                     ],
-                    "developerHint": "Beispieltext 1"
+                    "developerHint": "Fabrikam Relay Einrichtung"
                 },
                 {
-                    "id": "Table 625177701 - Method 2334650700 - NamedType 1320836731",
-                    "source": "Sample text 2 %1 %2",
-                    "target": "Sample text 2 %1 %2",
+                    "id": "Table 2515662762 - Field 1725856265 - Property 532412421",
+                    "source": "Description",
+                    "target": "Beschreibung",
                     "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Sample text 2 %1 %2"
-                        }
-                    ],
-                    "developerHint": "Sample text 2 %1 %2"
-                },
-                {
-                    "id": "Table 625177701 - Field 3558316271 - Property 2879900210",
-                    "source": "Sample text 3",
-                    "target": "Sample text 3",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Sample text 3"
-                        }
-                    ],
-                    "developerHint": "Sample text 3"
-                },
-                {
-                    "id": "Table 625177701 - Field 2062794090 - Property 2879900210",
-                    "source": "Sample text 4",
-                    "target": "Beispieltext 2",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 2"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 2"
-                },
-                {
-                    "id": "Table 625177701 - Field 538742209 - Property 2879900210",
-                    "source": "Sample text 5",
-                    "target": "Sample text 5",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Sample text 5"
-                        }
-                    ],
-                    "developerHint": "Sample text 5"
-                },
-                {
-                    "id": "Table 625177701 - Field 2451832060 - Property 2879900210",
-                    "source": "Sample text 6",
-                    "target": "Sample text 6",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Sample text 6"
-                        }
-                    ],
-                    "developerHint": "Sample text 6"
-                },
-                {
-                    "id": "Table 625177701 - Field 1814135443 - Property 2879900210",
-                    "source": "Sample text 7",
-                    "target": "",
-                    "state": "empty",
-                    "declaredState": "needs-translation",
                     "translate": true,
                     "sizeUnit": "char",
                     "notes": [
@@ -917,549 +927,53 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     ]
                 },
                 {
-                    "id": "Table 625177701 - Field 318613262 - Property 2879900210",
-                    "source": "Sample text 8",
-                    "target": "Beispieltext 3",
+                    "id": "Table 2515662762 - Field 2036185364 - Property 532412421",
+                    "source": "Code",
+                    "target": "Code",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
-                            "value": "de-DE=Beispieltext 3"
+                            "value": "de-DE=Code"
                         }
                     ],
-                    "developerHint": "Beispieltext 3"
+                    "developerHint": "Code"
                 },
                 {
-                    "id": "Codeunit 4282448380 - NamedType 3233926582",
-                    "source": "Sample text 9",
-                    "target": "Beispieltext 4",
+                    "id": "Table 2515662762 - Field 6222351 - Property 532412421",
+                    "source": "Status",
+                    "target": "Status",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
-                            "value": "de-DE=Beispieltext 4|en-US=Sample text 9"
+                            "value": "de-DE=Status"
                         }
                     ],
-                    "developerHint": "Beispieltext 5"
+                    "developerHint": "Status"
                 },
                 {
-                    "id": "Codeunit 4282448380 - NamedType 2596229965",
-                    "source": "Sample text 10",
-                    "target": "Beispieltext 6",
+                    "id": "Table 2515662762 - Field 1346013879 - Property 532412421",
+                    "source": "Posting Date",
+                    "target": "Buchungsdatum",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
-                            "value": "de-DE=Beispieltext 6"
+                            "value": "de-DE=Buchungsdatum"
                         }
                     ],
-                    "developerHint": "Beispieltext 6"
+                    "developerHint": "Buchungsdatum"
                 },
                 {
-                    "id": "Codeunit 4282448380 - NamedType 3702714176",
-                    "source": "Sample text 11 %1",
-                    "target": "Beispieltext 7 %1",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 7 %1|en-US=Sample text 11 %1"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 8 %1 %1"
-                },
-                {
-                    "id": "Codeunit 4282448380 - NamedType 3065017559",
-                    "source": "Sample text 12",
-                    "target": "Beispieltext 9",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 9"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 9"
-                },
-                {
-                    "id": "Codeunit 4282448380 - NamedType 683140114",
-                    "source": "Sample text 13",
-                    "target": "Beispieltext 10",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 10|en-US=Sample text 13"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 11"
-                },
-                {
-                    "id": "Codeunit 4282448380 - NamedType 45443497",
-                    "source": "Sample text 14",
-                    "target": "Beispieltext 12",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 12"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 12"
-                },
-                {
-                    "id": "Codeunit 4282448380 - NamedType 1151927708",
-                    "source": "Sample text 15",
-                    "target": "Beispieltext 13",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 13|en-US=Sample text 15"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 14"
-                },
-                {
-                    "id": "Codeunit 4282448380 - NamedType 514231091",
-                    "source": "Sample text 16",
-                    "target": "Beispieltext 15",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 15"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 15"
-                },
-                {
-                    "id": "Codeunit 4282448380 - Method 2972347317 - NamedType 536405291",
-                    "source": "Sample text 17 %1",
-                    "target": "Beispieltext 16 %1",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 16 %1"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 16 %1"
-                },
-                {
-                    "id": "Codeunit 4282448380 - Method 2972347317 - NamedType 1174101908",
-                    "source": "Sample text 18 ",
-                    "target": "Beispieltext 17 ",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 17 |Beispieltext 19"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 18"
-                },
-                {
-                    "id": "Codeunit 4282448380 - Method 3610043934 - NamedType 1811798525",
-                    "source": "Sample text 19 %1 %2",
-                    "target": "Beispieltext 20 %1 %2",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 20 %1 %2"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 20 %1 %2"
-                },
-                {
-                    "id": "Codeunit 4282448380 - Method 3441134911 - NamedType 2449495142",
-                    "source": "Sample text 20",
-                    "target": "Beispieltext 21",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 21"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 21"
-                },
-                {
-                    "id": "Codeunit 4282448380 - Method 4078831528 - NamedType 2280586119",
-                    "source": "Sample text 21",
-                    "target": "Beispieltext 22",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 22"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 22"
-                },
-                {
-                    "id": "Codeunit 4282448380 - Method 421560849 - NamedType 2918282736",
-                    "source": "Sample text 22 %1 %2",
-                    "target": "Beispieltext 23 %1 %2",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 23 %1 %2|en-US=Sample text 22 %1 %2"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 24 %1 %2 %1 %2"
-                },
-                {
-                    "id": "Codeunit 4282448380 - Method 421560849 - NamedType 3555979353",
-                    "source": "Sample text 23",
-                    "target": "Beispieltext 25",
-                    "state": "translated",
-                    "translate": true,
-                    "maxwidth": 50,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 25|en-US=Sample text 23"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 26"
-                },
-                {
-                    "id": "Codeunit 4282448380 - Method 1059257466 - NamedType 4193675970",
-                    "source": "Sample text 24",
-                    "target": "Beispieltext 27",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 27|en-US=Sample text 24"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 28"
-                },
-                {
-                    "id": "Codeunit 4282448380 - Method 1059257466 - NamedType 4024766947",
-                    "source": "Sample text 25",
-                    "target": "Beispieltext 29",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 29|en-US=Sample text 25"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 30"
-                },
-                {
-                    "id": "Codeunit 4282448380 - Method 2503559723 - NamedType 367496268",
-                    "source": "Sample text 26",
-                    "target": "Beispieltext 31",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 31|en-US=Sample text 26"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 32"
-                },
-                {
-                    "id": "Codeunit 4282448380 - Method 3141256340 - NamedType 276669022",
-                    "source": "Sample text 27 %1",
-                    "target": "Beispieltext 33 %1",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 33 %1|en-US=Sample text 27 %1"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 34 %1 %1"
-                },
-                {
-                    "id": "Codeunit 4282448380 - Method 3141256340 - NamedType 3933939701",
-                    "source": "Sample text 28",
-                    "target": "Beispieltext 35",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 35"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 35"
-                },
-                {
-                    "id": "Codeunit 4282448380 - Method 3141256340 - NamedType 3296243084",
-                    "source": "Sample text 29",
-                    "target": "Beispieltext 36",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 36|en-US=Sample text 29"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 37"
-                },
-                {
-                    "id": "Codeunit 4282448380 - Method 2373033540 - NamedType 2658546467",
-                    "source": "Sample text 30 %1 %3 %2",
-                    "target": "Beispieltext 38 %1 %3 %2",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 38 %1 %3 %2|en-US=Sample text 30 %1 %3 %2"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 39 %1 %3 %2 %1 %3 %2"
-                },
-                {
-                    "id": "Codeunit 4282448380 - Method 1735336923 - NamedType 2020849850",
-                    "source": "Sample text 31 %1 %2",
-                    "target": "Beispieltext 40 %1 %2",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 40 %1 %2|en-US=Sample text 31 %1 %2"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 41 %1 %2 %1 %2"
-                },
-                {
-                    "id": "Codeunit 4282448380 - Method 1735336923 - NamedType 1383153233",
-                    "source": "Sample text 32 %1",
-                    "target": "Beispieltext 42 %1",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 42 %1|en-US=Sample text 32 %1"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 43 %1 %1"
-                },
-                {
-                    "id": "Codeunit 4282448380 - Method 3648426774 - NamedType 745456616",
-                    "source": "Sample text 33 %1",
-                    "target": "Beispieltext 44 %1",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 44 %1|Beispieltext 46 %1"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 45 %1 %1"
-                },
-                {
-                    "id": "Codeunit 4282448380 - Method 3648426774 - NamedType 107759999",
-                    "source": "Sample text 34 %1 %2",
-                    "target": "Beispieltext 47 %1 %2",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 47 %1 %2|en-US=Sample text 34 %1 %2"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 48 %1 %2 %1 %2"
-                },
-                {
-                    "id": "Codeunit 4282448380 - Method 3010730157 - NamedType 1083274662",
-                    "source": "Sample text 35",
-                    "target": "Beispieltext 49",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 49"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 49"
-                },
-                {
-                    "id": "Codeunit 4282448380 - Method 4117214368 - NamedType 445578045",
-                    "source": "Sample text 36 %1",
-                    "target": "Beispieltext 50 %1",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 50 %1|en-US=Sample text 36 %1"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 51 %1 %1"
-                },
-                {
-                    "id": "Codeunit 4282448380 - Method 3479517751 - NamedType 20925101",
-                    "source": "Sample text 37 %1",
-                    "target": "Beispieltext 52 %1",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 52 %1"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 52 %1"
-                },
-                {
-                    "id": "Page 625177701 - Property 2879900210",
-                    "source": "Sample text 1",
-                    "target": "Beispieltext 1",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 1"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 1"
-                },
-                {
-                    "id": "Page 625177701 - NamedType 658621718",
-                    "source": "Sample text 38",
-                    "target": "Beispieltext 53",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 53"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 53"
-                },
-                {
-                    "id": "Page 625177701 - Control 3558316271 - Property 1295455071",
-                    "source": "Sample text 39",
-                    "target": "Beispieltext 54",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 54"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 54"
-                },
-                {
-                    "id": "Page 625177701 - Control 3558316271 - Property 2879900210",
-                    "source": "Sample text 3",
-                    "target": "Beispieltext 55",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 55"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 55"
-                },
-                {
-                    "id": "Page 625177701 - Control 538742209 - Property 1295455071",
-                    "source": "Sample text 40",
-                    "target": "Beispieltext 56",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 56"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 56"
-                },
-                {
-                    "id": "Page 625177701 - Control 538742209 - Property 2879900210",
-                    "source": "Sample text 5",
-                    "target": "Beispieltext 57",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 57"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 57"
-                },
-                {
-                    "id": "Page 625177701 - Control 2451832060 - Property 1295455071",
-                    "source": "Sample text 41",
+                    "id": "Table 2515662762 - Field 594630319 - Property 532412421",
+                    "source": "Document No.",
                     "target": "",
                     "state": "empty",
                     "declaredState": "needs-translation",
@@ -1468,13 +982,357 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "notes": [
                         {
                             "from": "Developer",
-                            "value": "de-DE="
+                            "value": "de-DE=Belegnr."
                         }
                     ],
-                    "developerHint": ""
+                    "developerHint": "Belegnr."
                 },
                 {
-                    "id": "Page 625177701 - Control 2451832060 - Property 2879900210",
+                    "id": "Table 2515662762 - Field 608998249 - Property 532412421",
+                    "source": "Amount",
+                    "target": "Betrag",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Betrag"
+                        }
+                    ],
+                    "developerHint": "Betrag"
+                },
+                {
+                    "id": "Table 2515662762 - Field 737620728 - Property 532412421",
+                    "source": "Quantity",
+                    "target": "Menge",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Menge"
+                        }
+                    ],
+                    "developerHint": "Menge"
+                },
+                {
+                    "id": "Table 2515662762 - Field 1044930314 - Property 532412421",
+                    "source": "Unit Price",
+                    "target": "VK-Preis",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=VK-Preis"
+                        }
+                    ],
+                    "developerHint": "VK-Preis"
+                },
+                {
+                    "id": "Table 2515662762 - Field 360195871 - Property 532412421",
+                    "source": "Location Code",
+                    "target": "Lagerortcode",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Lagerortcode"
+                        }
+                    ],
+                    "developerHint": "Lagerortcode"
+                },
+                {
+                    "id": "Table 2515662762 - Field 1209288119 - Property 532412421",
+                    "source": "Bin Code",
+                    "target": "Lagerplatzcode",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": ""
+                        }
+                    ]
+                },
+                {
+                    "id": "Table 2515662762 - Field 2886938269 - Property 532412421",
+                    "source": "Item No.",
+                    "target": "Artikelnr.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Artikelnr."
+                        }
+                    ],
+                    "developerHint": "Artikelnr."
+                },
+                {
+                    "id": "Page 2515662762 - Property 532412421",
+                    "source": "Fabrikam Relay Setup",
+                    "target": "Fabrikam Relay Einrichtung",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Fabrikam Relay Einrichtung"
+                        }
+                    ],
+                    "developerHint": "Fabrikam Relay Einrichtung"
+                },
+                {
+                    "id": "Page 2515662762 - Control 266367750 - Property 532412421",
+                    "source": "Name",
+                    "target": "Name",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Name"
+                        }
+                    ],
+                    "developerHint": "Name"
+                },
+                {
+                    "id": "Page 2515662762 - Control 266367750 - Property 2904335024",
+                    "source": "Specifies the value of the Name field.",
+                    "target": "Gibt den Wert des Felds Name an.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Gibt den Wert des Felds Name an."
+                        }
+                    ],
+                    "developerHint": "Gibt den Wert des Felds Name an."
+                },
+                {
+                    "id": "Page 2515662762 - Control 1725856265 - Property 532412421",
+                    "source": "Description",
+                    "target": "",
+                    "state": "empty",
+                    "declaredState": "needs-translation",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Beschreibung"
+                        }
+                    ],
+                    "developerHint": "Beschreibung"
+                },
+                {
+                    "id": "Page 2515662762 - Control 1725856265 - Property 2904335024",
+                    "source": "Specifies the value of the Description field.",
+                    "target": "Gibt den Wert des Felds Beschreibung an.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": ""
+                        }
+                    ]
+                },
+                {
+                    "id": "Page 2515662762 - Control 2036185364 - Property 532412421",
+                    "source": "Code",
+                    "target": "Code",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Code"
+                        }
+                    ],
+                    "developerHint": "Code"
+                },
+                {
+                    "id": "Page 2515662762 - Control 2036185364 - Property 2904335024",
+                    "source": "Specifies the value of the Code field.",
+                    "target": "Gibt den Wert des Felds Code an.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Gibt den Wert des Felds Code an."
+                        }
+                    ],
+                    "developerHint": "Gibt den Wert des Felds Code an."
+                },
+                {
+                    "id": "Page 2515662762 - Control 6222351 - Property 532412421",
+                    "source": "Status",
+                    "target": "Status",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Status"
+                        }
+                    ],
+                    "developerHint": "Status"
+                },
+                {
+                    "id": "Page 2515662762 - Control 6222351 - Property 2904335024",
+                    "source": "Specifies the value of the Status field.",
+                    "target": "Gibt den Wert des Felds Status an.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Gibt den Wert des Felds Status an."
+                        }
+                    ],
+                    "developerHint": "Gibt den Wert des Felds Status an."
+                },
+                {
+                    "id": "Page 2515662762 - Control 2835827789 - Property 532412421",
+                    "source": "Posting Date",
+                    "target": "Buchungsdatum",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Buchungsdatum"
+                        }
+                    ],
+                    "developerHint": "Buchungsdatum"
+                },
+                {
+                    "id": "Page 2515662762 - Control 2835827789 - Property 2904335024",
+                    "source": "Specifies the value of the Posting Date field.",
+                    "target": "",
+                    "state": "empty",
+                    "declaredState": "needs-translation",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Gibt den Wert des Felds Buchungsdatum an."
+                        }
+                    ],
+                    "developerHint": "Gibt den Wert des Felds Buchungsdatum an."
+                },
+                {
+                    "id": "Page 2515662762 - Control 2647798643 - Property 532412421",
+                    "source": "Document No.",
+                    "target": "Belegnr.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Belegnr."
+                        }
+                    ],
+                    "developerHint": "Belegnr."
+                },
+                {
+                    "id": "Page 2515662762 - Control 2647798643 - Property 2904335024",
+                    "source": "Specifies the value of the Document No. field.",
+                    "target": "Gibt den Wert des Felds Belegnr. an.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Gibt den Wert des Felds Belegnr. an."
+                        }
+                    ],
+                    "developerHint": "Gibt den Wert des Felds Belegnr. an."
+                },
+                {
+                    "id": "Page 2515662762 - Control 608998249 - Property 532412421",
+                    "source": "Amount",
+                    "target": "Betrag",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": ""
+                        }
+                    ]
+                },
+                {
+                    "id": "Page 2515662762 - Control 608998249 - Property 2904335024",
+                    "source": "Specifies the value of the Amount field.",
+                    "target": "Gibt den Wert des Felds Betrag an.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Gibt den Wert des Felds Betrag an."
+                        }
+                    ],
+                    "developerHint": "Gibt den Wert des Felds Betrag an."
+                },
+                {
+                    "id": "Page 2515662762 - Control 737620728 - Property 532412421",
+                    "source": "Quantity",
+                    "target": "Menge",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Menge"
+                        }
+                    ],
+                    "developerHint": "Menge"
+                },
+                {
+                    "id": "Page 2515662762 - Control 737620728 - Property 2904335024",
+                    "source": "Specifies the value of the Quantity field.",
+                    "target": "Gibt den Wert des Felds Menge an.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Gibt den Wert des Felds Menge an."
+                        }
+                    ],
+                    "developerHint": "Gibt den Wert des Felds Menge an."
+                },
+                {
+                    "id": "Page 2515662762 - Control 246381216 - Property 532412421",
                     "source": "",
                     "target": "",
                     "state": "empty",
@@ -1484,110 +1342,77 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "notes": [
                         {
                             "from": "Developer",
-                            "value": "de-DE="
+                            "value": ""
                         }
-                    ],
-                    "developerHint": ""
+                    ]
                 },
                 {
-                    "id": "Page 625177701 - Control 2983882716 - Property 1295455071",
-                    "source": "Sample text 42",
-                    "target": "Beispieltext 58",
+                    "id": "Page 2515662762 - Control 246381216 - Property 2904335024",
+                    "source": "Specifies the value of the Unit Price field.",
+                    "target": "Gibt den Wert des Felds VK-Preis an.",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
-                            "value": "de-DE=Beispieltext 58"
+                            "value": "de-DE=Gibt den Wert des Felds VK-Preis an."
                         }
                     ],
-                    "developerHint": "Beispieltext 58"
+                    "developerHint": "Gibt den Wert des Felds VK-Preis an."
                 },
                 {
-                    "id": "Page 625177701 - Control 2983882716 - Property 2879900210",
-                    "source": "Sample text 43",
-                    "target": "Beispieltext 59",
+                    "id": "Page 2515662762 - Action 4284450207 - Property 532412421",
+                    "source": "Print Labels",
+                    "target": "Etiketten drucken",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
-                            "value": "de-DE=Beispieltext 59"
+                            "value": "de-DE=Etiketten drucken"
                         }
                     ],
-                    "developerHint": "Beispieltext 59"
+                    "developerHint": "Etiketten drucken"
                 },
                 {
-                    "id": "Page 625177701 - Control 318613262 - Property 1295455071",
-                    "source": "Sample text 44",
-                    "target": "Beispieltext 60",
+                    "id": "Page 2515662762 - Action 4284450207 - Property 2904335024",
+                    "source": "Prints labels for the selected lines.",
+                    "target": "Druckt Etiketten für die ausgewählten Zeilen.",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
-                            "value": "de-DE=Beispieltext 60"
+                            "value": "de-DE=Druckt Etiketten für die ausgewählten Zeilen."
                         }
                     ],
-                    "developerHint": "Beispieltext 60"
+                    "developerHint": "Druckt Etiketten für die ausgewählten Zeilen."
                 },
                 {
-                    "id": "Page 625177701 - Control 318613262 - Property 2879900210",
-                    "source": "Sample text 8",
-                    "target": "Beispieltext 3",
+                    "id": "Page 2515662762 - Action 1830722334 - Property 532412421",
+                    "source": "Release",
+                    "target": "Freigeben",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
                     "notes": [
                         {
                             "from": "Developer",
-                            "value": "de-DE=Beispieltext 3"
+                            "value": "de-DE=Freigeben"
                         }
                     ],
-                    "developerHint": "Beispieltext 3"
+                    "developerHint": "Freigeben"
                 },
                 {
-                    "id": "Page 625177701 - Action 2470525067 - Property 1295455071",
-                    "source": "Sample text 45",
-                    "target": "Beispieltext 61",
+                    "id": "Page 2515662762 - Action 1830722334 - Property 2904335024",
+                    "source": "Releases the document for the next stage.",
+                    "target": "Gibt den Beleg für die nächste Stufe frei.",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 61"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 61"
-                },
-                {
-                    "id": "Page 625177701 - Action 2470525067 - Property 2879900210",
-                    "source": "Sample text 46",
-                    "target": "Beispieltext 62",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 62"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 62"
-                },
-                {
-                    "id": "PageExtension 3644751763 - Action 3682627581 - Property 1295455071",
-                    "source": "Sample text 47",
-                    "target": "",
-                    "state": "empty",
-                    "declaredState": "needs-translation",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "alObjectTarget": "Page 1936673938",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1596,110 +1421,126 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     ]
                 },
                 {
-                    "id": "PageExtension 3644751763 - Action 3682627581 - Property 2879900210",
-                    "source": "Sample text 48",
-                    "target": "Beispieltext 63",
+                    "id": "PageExtension 90699051 - Control 1642511898 - Property 532412421",
+                    "source": "No.",
+                    "target": "Nr.",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 1936673938",
+                    "alObjectTarget": "Page 3033338573",
                     "notes": [
                         {
                             "from": "Developer",
-                            "value": "de-DE=Beispieltext 63"
+                            "value": "de-DE=Nr."
                         }
                     ],
-                    "developerHint": "Beispieltext 63"
+                    "developerHint": "Nr."
                 },
                 {
-                    "id": "PageExtension 3644751763 - Action 25356902 - Property 1295455071",
-                    "source": "Sample text 49",
-                    "target": "Beispieltext 64",
+                    "id": "PageExtension 90699051 - Control 1642511898 - Property 2904335024",
+                    "source": "Specifies the value of the No. field.",
+                    "target": "Gibt den Wert des Felds Nr. an.",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 1936673938",
+                    "alObjectTarget": "Page 3033338573",
                     "notes": [
                         {
                             "from": "Developer",
-                            "value": "de-DE=Beispieltext 64"
+                            "value": "de-DE=Gibt den Wert des Felds Nr. an."
                         }
                     ],
-                    "developerHint": "Beispieltext 64"
+                    "developerHint": "Gibt den Wert des Felds Nr. an."
                 },
                 {
-                    "id": "PageExtension 3644751763 - Action 25356902 - Property 2879900210",
-                    "source": "Sample text 50",
-                    "target": "Beispieltext 65",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "alObjectTarget": "Page 1936673938",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 65"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 65"
-                },
-                {
-                    "id": "PageExtension 3644751763 - Action 25356902 - Method 1097640306 - NamedType 3040499163",
-                    "source": "Sample text 51 %1 %2",
-                    "target": "Beispieltext 66 %1 %2",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "alObjectTarget": "PageExtension 3644751763",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 66 %1 %2"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 66 %1 %2"
-                },
-                {
-                    "id": "PageExtension 3644751763 - Control 2108575358 - Property 1295455071",
-                    "source": "Sample text 52",
-                    "target": "Beispieltext 67",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "alObjectTarget": "Page 1936673938",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 67"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 67"
-                },
-                {
-                    "id": "PageExtension 3644751763 - Control 1470878741 - Property 1295455071",
-                    "source": "Sample text 53",
-                    "target": "Beispieltext 68",
-                    "state": "translated",
-                    "translate": true,
-                    "sizeUnit": "char",
-                    "alObjectTarget": "Page 1936673938",
-                    "notes": [
-                        {
-                            "from": "Developer",
-                            "value": "de-DE=Beispieltext 68"
-                        }
-                    ],
-                    "developerHint": "Beispieltext 68"
-                },
-                {
-                    "id": "PageExtension 3007055146 - Control 2577362952 - Property 1295455071",
-                    "source": "Sample text 54",
+                    "id": "PageExtension 90699051 - Control 266367750 - Property 532412421",
+                    "source": "Name",
                     "target": "",
                     "state": "empty",
                     "declaredState": "needs-translation",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 1434786627",
+                    "alObjectTarget": "Page 3033338573",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Name"
+                        }
+                    ],
+                    "developerHint": "Name"
+                },
+                {
+                    "id": "PageExtension 90699051 - Control 266367750 - Property 2904335024",
+                    "source": "Specifies the value of the Name field.",
+                    "target": "Gibt den Wert des Felds Name an.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "alObjectTarget": "Page 3033338573",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Gibt den Wert des Felds Name an."
+                        }
+                    ],
+                    "developerHint": "Gibt den Wert des Felds Name an."
+                },
+                {
+                    "id": "PageExtension 90699051 - Control 1725856265 - Property 532412421",
+                    "source": "Description",
+                    "target": "Beschreibung",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "alObjectTarget": "Page 3033338573",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Beschreibung"
+                        }
+                    ],
+                    "developerHint": "Beschreibung"
+                },
+                {
+                    "id": "PageExtension 90699051 - Control 1725856265 - Property 2904335024",
+                    "source": "Specifies the value of the Description field.",
+                    "target": "Gibt den Wert des Felds Beschreibung an.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "alObjectTarget": "Page 3033338573",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Gibt den Wert des Felds Beschreibung an."
+                        }
+                    ],
+                    "developerHint": "Gibt den Wert des Felds Beschreibung an."
+                },
+                {
+                    "id": "PageExtension 90699051 - Control 2036185364 - Property 532412421",
+                    "source": "Code",
+                    "target": "Code",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "alObjectTarget": "Page 3033338573",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Code"
+                        }
+                    ],
+                    "developerHint": "Code"
+                },
+                {
+                    "id": "PageExtension 90699051 - Control 2036185364 - Property 2904335024",
+                    "source": "Specifies the value of the Code field.",
+                    "target": "Gibt den Wert des Felds Code an.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "alObjectTarget": "Page 3033338573",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1708,164 +1549,683 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     ]
                 },
                 {
-                    "id": "PageExtension 3007055146 - Control 1939666335 - Property 1295455071",
-                    "source": "Sample text 55",
-                    "target": "Beispieltext 69",
+                    "id": "PageExtension 90699051 - Action 4039610727 - Property 532412421",
+                    "source": "Post",
+                    "target": "Buchen",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 1434786627",
+                    "alObjectTarget": "Page 3033338573",
                     "notes": [
                         {
                             "from": "Developer",
-                            "value": "de-DE=Beispieltext 69"
+                            "value": "de-DE=Buchen"
                         }
                     ],
-                    "developerHint": "Beispieltext 69"
+                    "developerHint": "Buchen"
                 },
                 {
-                    "id": "PageExtension 3007055146 - Control 3852756186 - Property 1295455071",
-                    "source": "Sample text 56",
-                    "target": "Beispieltext 70",
-                    "state": "translated",
+                    "id": "PageExtension 90699051 - Action 4039610727 - Property 2904335024",
+                    "source": "Posts the selected documents.",
+                    "target": "",
+                    "state": "empty",
+                    "declaredState": "needs-translation",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 1434786627",
+                    "alObjectTarget": "Page 3033338573",
                     "notes": [
                         {
                             "from": "Developer",
-                            "value": "de-DE=Beispieltext 70"
+                            "value": "de-DE=Bucht die ausgewählten Belege."
                         }
                     ],
-                    "developerHint": "Beispieltext 70"
+                    "developerHint": "Bucht die ausgewählten Belege."
                 },
                 {
-                    "id": "PageExtension 3007055146 - Control 3215059569 - Property 1295455071",
-                    "source": "Sample text 57",
-                    "target": "Beispieltext 71",
+                    "id": "PageExtension 90699051 - Action 4039610727 - Method 1207008682 - NamedType 3465996469",
+                    "source": "Do you want to post %1 %2?",
+                    "target": "Möchten Sie %1 %2 buchen?",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 1434786627",
+                    "alObjectTarget": "Page 3033338573",
                     "notes": [
                         {
                             "from": "Developer",
-                            "value": "de-DE=Beispieltext 71"
+                            "value": "%1 = Record, %2 = Value"
                         }
                     ],
-                    "developerHint": "Beispieltext 71"
+                    "developerHint": "%1 = Record, %2 = Value"
                 },
                 {
-                    "id": "PageExtension 3007055146 - Control 1639787764 - Property 1295455071",
-                    "source": "Sample text 58",
-                    "target": "Beispieltext 72",
+                    "id": "PageExtension 1619057625 - Control 266367750 - Property 532412421",
+                    "source": "Name",
+                    "target": "Name",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 1434786627",
+                    "alObjectTarget": "Page 3033338573",
                     "notes": [
                         {
                             "from": "Developer",
-                            "value": "de-DE=Beispieltext 72"
+                            "value": "de-DE=Name"
                         }
                     ],
-                    "developerHint": "Beispieltext 72"
+                    "developerHint": "Name"
                 },
                 {
-                    "id": "PageExtension 3007055146 - Control 1002091147 - Property 1295455071",
-                    "source": "Sample text 59",
-                    "target": "Beispieltext 73",
+                    "id": "PageExtension 1619057625 - Control 266367750 - Property 2904335024",
+                    "source": "Specifies the value of the Name field.",
+                    "target": "Gibt den Wert des Felds Name an.",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 1434786627",
+                    "alObjectTarget": "Page 3033338573",
                     "notes": [
                         {
                             "from": "Developer",
-                            "value": "de-DE=Beispieltext 73"
+                            "value": "de-DE=Gibt den Wert des Felds Name an."
                         }
                     ],
-                    "developerHint": "Beispieltext 73"
+                    "developerHint": "Gibt den Wert des Felds Name an."
                 },
                 {
-                    "id": "PageExtension 3007055146 - Control 1154936467 - Property 1295455071",
-                    "source": "Sample text 60",
-                    "target": "Beispieltext 74",
+                    "id": "PageExtension 1619057625 - Control 1725856265 - Property 532412421",
+                    "source": "Description",
+                    "target": "Beschreibung",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 1434786627",
+                    "alObjectTarget": "Page 3033338573",
                     "notes": [
                         {
                             "from": "Developer",
-                            "value": "de-DE=Beispieltext 74"
+                            "value": "de-DE=Beschreibung"
                         }
                     ],
-                    "developerHint": "Beispieltext 74"
+                    "developerHint": "Beschreibung"
                 },
                 {
-                    "id": "PageExtension 3007055146 - Control 1792633084 - Property 1295455071",
-                    "source": "Sample text 61",
-                    "target": "Beispieltext 75",
+                    "id": "PageExtension 1619057625 - Control 1725856265 - Property 2904335024",
+                    "source": "Specifies the value of the Description field.",
+                    "target": "Gibt den Wert des Felds Beschreibung an.",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 1434786627",
+                    "alObjectTarget": "Page 3033338573",
                     "notes": [
                         {
                             "from": "Developer",
-                            "value": "de-DE=Beispieltext 75"
+                            "value": "de-DE=Gibt den Wert des Felds Beschreibung an."
                         }
                     ],
-                    "developerHint": "Beispieltext 75"
+                    "developerHint": "Gibt den Wert des Felds Beschreibung an."
                 },
                 {
-                    "id": "PageExtension 3007055146 - Control 2430329701 - Property 1295455071",
-                    "source": "Sample text 62",
-                    "target": "Beispieltext 76",
+                    "id": "PageExtension 1619057625 - Control 2036185364 - Property 532412421",
+                    "source": "Code",
+                    "target": "Code",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 1434786627",
+                    "alObjectTarget": "Page 3033338573",
                     "notes": [
                         {
                             "from": "Developer",
-                            "value": "de-DE=Beispieltext 76"
+                            "value": "de-DE=Code"
                         }
                     ],
-                    "developerHint": "Beispieltext 76"
+                    "developerHint": "Code"
                 },
                 {
-                    "id": "PageExtension 3007055146 - Control 3068026318 - Property 1295455071",
-                    "source": "Sample text 63",
-                    "target": "Beispieltext 77",
-                    "state": "translated",
+                    "id": "PageExtension 1619057625 - Control 2036185364 - Property 2904335024",
+                    "source": "Specifies the value of the Code field.",
+                    "target": "",
+                    "state": "empty",
+                    "declaredState": "needs-translation",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 1434786627",
+                    "alObjectTarget": "Page 3033338573",
                     "notes": [
                         {
                             "from": "Developer",
-                            "value": "de-DE=Beispieltext 77"
+                            "value": ""
                         }
-                    ],
-                    "developerHint": "Beispieltext 77"
+                    ]
                 },
                 {
-                    "id": "PageExtension 3007055146 - Control 2899117295 - Property 1295455071",
-                    "source": "Sample text 64",
-                    "target": "Beispieltext 78",
+                    "id": "PageExtension 1619057625 - Control 6222351 - Property 532412421",
+                    "source": "Status",
+                    "target": "Status",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 1434786627",
+                    "alObjectTarget": "Page 3033338573",
                     "notes": [
                         {
                             "from": "Developer",
-                            "value": "de-DE=Beispieltext 78"
+                            "value": "de-DE=Status"
                         }
                     ],
-                    "developerHint": "Beispieltext 78"
+                    "developerHint": "Status"
+                },
+                {
+                    "id": "PageExtension 1619057625 - Control 6222351 - Property 2904335024",
+                    "source": "Specifies the value of the Status field.",
+                    "target": "Gibt den Wert des Felds Status an.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "alObjectTarget": "Page 3033338573",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Gibt den Wert des Felds Status an."
+                        }
+                    ],
+                    "developerHint": "Gibt den Wert des Felds Status an."
+                },
+                {
+                    "id": "PageExtension 1619057625 - Action 4284450207 - Property 532412421",
+                    "source": "Print Labels",
+                    "target": "Etiketten drucken",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "alObjectTarget": "Page 3033338573",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Etiketten drucken"
+                        }
+                    ],
+                    "developerHint": "Etiketten drucken"
+                },
+                {
+                    "id": "PageExtension 1619057625 - Action 4284450207 - Property 2904335024",
+                    "source": "Prints labels for the selected lines.",
+                    "target": "Druckt Etiketten für die ausgewählten Zeilen.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "alObjectTarget": "Page 3033338573",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Druckt Etiketten für die ausgewählten Zeilen."
+                        }
+                    ],
+                    "developerHint": "Druckt Etiketten für die ausgewählten Zeilen."
+                },
+                {
+                    "id": "PageExtension 1619057625 - Action 4284450207 - Method 1207008682 - NamedType 1173589659",
+                    "source": "%1 %2 has been released.",
+                    "target": "%1 %2 wurde freigegeben.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "alObjectTarget": "Page 3033338573",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "%1 = Record, %2 = Value"
+                        }
+                    ],
+                    "developerHint": "%1 = Record, %2 = Value"
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 2070365322 - NamedType 1660893115",
+                    "source": "none",
+                    "target": "keine",
+                    "state": "translated",
+                    "translate": true,
+                    "maxwidth": 50,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=keine|en-US=none"
+                        }
+                    ],
+                    "developerHint": "keine|en-US=none"
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 2070365322 - NamedType 3465996469",
+                    "source": "Do you want to post %1 %2?",
+                    "target": "Möchten Sie %1 %2 buchen?",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "%1 = Record, %2 = Value"
+                        }
+                    ],
+                    "developerHint": "%1 = Record, %2 = Value"
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 2070365322 - NamedType 1173589659",
+                    "source": "%1 %2 has been released.",
+                    "target": "%1 %2 wurde freigegeben.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "%1 = Record, %2 = Value"
+                        }
+                    ],
+                    "developerHint": "%1 = Record, %2 = Value"
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 2070365322 - NamedType 1422045454",
+                    "source": "The %1 field must not be blank.",
+                    "target": "Das Feld %1 darf nicht leer sein.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "%1 = Record"
+                        }
+                    ],
+                    "developerHint": "%1 = Record"
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 2070365322 - NamedType 947767955",
+                    "source": "Processing %1 of %2...",
+                    "target": "Verarbeite %1 von %2...",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "%1 = Record, %2 = Value"
+                        }
+                    ],
+                    "developerHint": "%1 = Record, %2 = Value"
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 774755807 - NamedType 2258608478",
+                    "source": "From %1 %2 to %3 %4",
+                    "target": "Von %1 %2 bis %3 %4 (%1 %2 bis %3 %4)",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "%1 = Record, %2 = Value, %3 = Limit, %4 = Error"
+                        }
+                    ],
+                    "developerHint": "%1 = Record, %2 = Value, %3 = Limit, %4 = Error"
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 774755807 - NamedType 2086379190",
+                    "source": "Nothing to post.",
+                    "target": "",
+                    "state": "empty",
+                    "declaredState": "needs-translation",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Es gibt nichts zu buchen."
+                        }
+                    ],
+                    "developerHint": "Es gibt nichts zu buchen."
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 774755807 - NamedType 1757207888",
+                    "source": "The amount must be > 0.",
+                    "target": "Der Betrag muss > 0 sein.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Der Betrag muss > 0 sein."
+                        }
+                    ],
+                    "developerHint": "Der Betrag muss > 0 sein."
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 774755807 - NamedType 3363961757",
+                    "source": "Press <Enter> to continue.",
+                    "target": "Drücken Sie <Eingabe>, um fortzufahren.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Drücken Sie <Eingabe>, um fortzufahren."
+                        }
+                    ],
+                    "developerHint": "Drücken Sie <Eingabe>, um fortzufahren."
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 774755807 - NamedType 1174209694",
+                    "source": "Terms & Conditions",
+                    "target": "Geschäftsbedingungen & Konditionen",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Geschäftsbedingungen & Konditionen"
+                        }
+                    ],
+                    "developerHint": "Geschäftsbedingungen & Konditionen"
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 424637325 - NamedType 3997507320",
+                    "source": "Carrier %1 has no service %2.",
+                    "target": "Spediteur %1 hat keinen Service.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "%1 = Record, %2 = Value"
+                        }
+                    ],
+                    "developerHint": "%1 = Record, %2 = Value"
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 424637325 - NamedType 760130590",
+                    "source": "%1 labels were printed.",
+                    "target": "%1 Etiketten wurden gedruckt.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "%1 = Record"
+                        }
+                    ],
+                    "developerHint": "%1 = Record"
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 424637325 - NamedType 2507712333",
+                    "source": "Route %1 is blocked.",
+                    "target": "Route %1 ist gesperrt.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "%1 = Record"
+                        }
+                    ],
+                    "developerHint": "%1 = Record"
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 424637325 - NamedType 3965151784",
+                    "source": "Could not reach %1. Error: %2",
+                    "target": "",
+                    "state": "empty",
+                    "declaredState": "needs-translation",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "%1 = Record, %2 = Value"
+                        }
+                    ],
+                    "developerHint": "%1 = Record, %2 = Value"
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 424637325 - NamedType 2928068614",
+                    "source": "Do you want to delete %1?",
+                    "target": "Möchten Sie %1 löschen?",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "%1 = Record"
+                        }
+                    ],
+                    "developerHint": "%1 = Record"
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 2921939501 - NamedType 2277100897",
+                    "source": "https://relay.fabrikam.example/api?sv=2024-05-04&sig=Q29udG9zbw",
+                    "target": "https://relay.fabrikam.example/api?sv=2024-05-04&sig=Q29udG9zbw",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=https://relay.fabrikam.example/api?sv=2024-05-04&sig=Q29udG9zbw"
+                        }
+                    ],
+                    "developerHint": "https://relay.fabrikam.example/api?sv=2024-05-04&sig=Q29udG9zbw"
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 2921939501 - NamedType 1181928992",
+                    "source": "Weight %1 exceeds the limit of %2.",
+                    "target": "Gewicht %1 überschreitet das Limit von %2.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "%1 = Record, %2 = Value"
+                        }
+                    ],
+                    "developerHint": "%1 = Record, %2 = Value"
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 2921939501 - NamedType 3068111671",
+                    "source": "Synchronization finished.",
+                    "target": "Synchronisierung abgeschlossen.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Synchronisierung abgeschlossen."
+                        }
+                    ],
+                    "developerHint": "Synchronisierung abgeschlossen."
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 2921939501 - NamedType 2433232136",
+                    "source": "Select a carrier first.",
+                    "target": "Wählen Sie zuerst einen Spediteur aus.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Wählen Sie zuerst einen Spediteur aus."
+                        }
+                    ],
+                    "developerHint": "Wählen Sie zuerst einen Spediteur aus."
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 2921939501 - NamedType 2842952226",
+                    "source": "%1 of %2 stops were planned.",
+                    "target": "%1 von %2 Stopps wurden geplant.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "%1 = Record, %2 = Value"
+                        }
+                    ],
+                    "developerHint": "%1 = Record, %2 = Value"
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 4247756800 - NamedType 1422045454",
+                    "source": "The %1 field must not be blank.",
+                    "target": "",
+                    "state": "empty",
+                    "declaredState": "needs-translation",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "%1 = Record"
+                        }
+                    ],
+                    "developerHint": "%1 = Record"
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 4247756800 - NamedType 947767955",
+                    "source": "Processing %1 of %2...",
+                    "target": "Verarbeite %1 von %2...",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "%1 = Record, %2 = Value"
+                        }
+                    ],
+                    "developerHint": "%1 = Record, %2 = Value"
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 4247756800 - NamedType 2086379190",
+                    "source": "Nothing to post.",
+                    "target": "Es gibt nichts zu buchen.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Es gibt nichts zu buchen."
+                        }
+                    ],
+                    "developerHint": "Es gibt nichts zu buchen."
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 4247756800 - NamedType 1757207888",
+                    "source": "The amount must be > 0.",
+                    "target": "Der Betrag muss > 0 sein.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": ""
+                        }
+                    ]
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 4247756800 - NamedType 3363961757",
+                    "source": "Press <Enter> to continue.",
+                    "target": "Drücken Sie <Eingabe>, um fortzufahren.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Drücken Sie <Eingabe>, um fortzufahren."
+                        }
+                    ],
+                    "developerHint": "Drücken Sie <Eingabe>, um fortzufahren."
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 2915492949 - NamedType 2507712333",
+                    "source": "Route %1 is blocked.",
+                    "target": "Route %1 ist gesperrt.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "%1 = Record"
+                        }
+                    ],
+                    "developerHint": "%1 = Record"
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 2915492949 - NamedType 3965151784",
+                    "source": "Could not reach %1. Error: %2",
+                    "target": "%1 konnte nicht erreicht werden. Fehler: %2",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "%1 = Record, %2 = Value"
+                        }
+                    ],
+                    "developerHint": "%1 = Record, %2 = Value"
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 2915492949 - NamedType 2928068614",
+                    "source": "Do you want to delete %1?",
+                    "target": "",
+                    "state": "empty",
+                    "declaredState": "needs-translation",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "%1 = Record"
+                        }
+                    ],
+                    "developerHint": "%1 = Record"
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 2915492949 - NamedType 1181928992",
+                    "source": "Weight %1 exceeds the limit of %2.",
+                    "target": "Gewicht %1 überschreitet das Limit von %2.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "%1 = Record, %2 = Value"
+                        }
+                    ],
+                    "developerHint": "%1 = Record, %2 = Value"
+                },
+                {
+                    "id": "Codeunit 4184348254 - Method 2915492949 - NamedType 3068111671",
+                    "source": "Synchronization finished.",
+                    "target": "Synchronisierung abgeschlossen.",
+                    "state": "translated",
+                    "translate": true,
+                    "sizeUnit": "char",
+                    "notes": [
+                        {
+                            "from": "Developer",
+                            "value": "de-DE=Synchronisierung abgeschlossen."
+                        }
+                    ],
+                    "developerHint": "Synchronisierung abgeschlossen."
                 }
             ],
             "hasAlIds": true

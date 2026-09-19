@@ -11,13 +11,13 @@ import { iterateUnits } from '../../shared/model';
 
 import type { XliffDocument, XliffTransUnit } from '../../shared/model';
 
-const EXAMPLES = fileURLToPath(new URL('../../../Examples', import.meta.url));
-const read = (name: string): string => readFileSync(`${EXAMPLES}/${name}`, 'utf8');
+const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
+const read = (name: string): string => readFileSync(`${FIXTURES}/${name}`, 'utf8');
 
 const LANGUAGE_FILE = 'Contoso App.de-DE.xlf';
 const LARGE_FILE = 'Fabrikam Base.de-DE.xlf';
 const BASE_FILE = 'Contoso App.g.xlf';
-const MINIMAL_FILE = 'test.xlf';
+const MINIMAL_FILE = 'minimal.xlf';
 
 /** Narrows without a `!` assertion, which the project's lint rules forbid. */
 function required<T>(value: T | null | undefined, what: string): T {
@@ -246,7 +246,7 @@ describe('a line break a translator typed', () => {
         // A CRLF document with an LF inside a target: the target keeps what was typed and
         // the file keeps what it had. Mixing the two would rewrite every line.
         //
-        // `test.xlf` rather than a corpus file, because the assertion counts line endings
+        // `minimal.xlf` rather than a larger fixture, because the assertion counts line endings
         // and every target in it is one line — a target that already spans two would make
         // the count depend on the fixture rather than on the writer.
         const source = read(MINIMAL_FILE).split('\n').join('\r\n');

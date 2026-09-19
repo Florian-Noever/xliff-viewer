@@ -124,7 +124,7 @@ export interface AlSegment {
  * No `summary`: the roll-up runs in the webview, so this carries structure only.
  */
 export interface AlNode {
-    /** The joined id prefix, e.g. `Table 3783554337 - Field 4264183382`. Stable identity for expansion state. */
+    /** The joined id prefix, e.g. `Table 834123014 - Field 3421458895`. Stable identity for expansion state. */
     readonly key: string;
     readonly segment: AlSegment;
     readonly depth: number;

@@ -14,14 +14,14 @@ import {
 import { parseXliff } from '../../extension/xliff/parser';
 import { iterateUnits } from '../../shared/model';
 
-const EXAMPLES = fileURLToPath(new URL('../../../Examples', import.meta.url));
-const unitsOf = (name: string) => [...iterateUnits(parseXliff(readFileSync(`${EXAMPLES}/${name}`, 'utf8')))];
+const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
+const unitsOf = (name: string) => [...iterateUnits(parseXliff(readFileSync(`${FIXTURES}/${name}`, 'utf8')))];
 
 describe('segmentTypes', () => {
     it('splits an AL id into type and hash', () => {
-        expect(segmentTypes('Table 3783554337 - Field 4264183382 - Property 2879900210')).toEqual([
-            { type: 'Table', hash: '3783554337' },
-            { type: 'Field', hash: '4264183382' },
+        expect(segmentTypes('Table 3952258696 - Field 2985504065 - Property 2879900210')).toEqual([
+            { type: 'Table', hash: '3952258696' },
+            { type: 'Field', hash: '2985504065' },
             { type: 'Property', hash: '2879900210' },
         ]);
     });
@@ -30,14 +30,14 @@ describe('segmentTypes', () => {
         // id="1" is a legal XLIFF id carrying no AL structure.
         expect(segmentTypes('1')).toEqual([{ type: '1', hash: '' }]);
         expect(hasAlStructure('1')).toBe(false);
-        expect(hasAlStructure('Table 3783554337 - Property 2879900210')).toBe(true);
+        expect(hasAlStructure('Table 3952258696 - Property 2879900210')).toBe(true);
     });
 });
 
 describe('namesFromNote', () => {
     it('extracts one name per segment', () => {
         expect(namesFromNote(
-            'Table 3783554337 - Field 4264183382 - Property 2879900210',
+            'Table 3952258696 - Field 2985504065 - Property 2879900210',
             'Table PTE Contoso Methods Setup - Field Contoso Method - Property Caption',
         )).toEqual(['PTE Contoso Methods Setup', 'Contoso Method', 'Caption']);
     });
@@ -45,14 +45,14 @@ describe('namesFromNote', () => {
     it('keeps an object name that itself contains the separator', () => {
         // The whole reason for the anchored regex: splitting on " - " breaks such a name.
         expect(namesFromNote(
-            'Report 1614869194 - Property 2879900210',
+            'Report 4004390371 - Property 2879900210',
             'Report PTE Sales - Quote - Property Caption',
         )).toEqual(['PTE Sales - Quote', 'Caption']);
     });
 
     it('handles a name with both a separator and dots', () => {
         expect(namesFromNote(
-            'Report 2423768636 - NamedType 17661673',
+            'Report 1361272465 - NamedType 1870740906',
             'Report PTE Calc. Plan - Plan. Wksh. - NamedType Text011Lbl',
         )).toEqual(['PTE Calc. Plan - Plan. Wksh.', 'Text011Lbl']);
     });
@@ -86,8 +86,8 @@ describe('names for every corpus unit', () => {
     // The regression guard for the whole naming approach. It is an exact count on
     // purpose: a percentage threshold would let a regression hide.
     it.each([
-        ['Contoso App.g.xlf', 1098],
-        ['Fabrikam Base.de-DE.xlf', 2511],
+        ['Contoso App.g.xlf', 500],
+        ['Fabrikam Base.de-DE.xlf', 2500],
     ])('%s: every one of %i units yields names', (file, expected) => {
         const units = unitsOf(file);
         expect(units).toHaveLength(expected);

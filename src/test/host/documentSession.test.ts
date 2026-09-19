@@ -30,8 +30,8 @@ import type * as vscode from 'vscode';
 import type { SessionState } from '../../extension/editor/documentSession';
 import type { ExtensionMessage } from '../../shared/messages';
 
-const EXAMPLES = fileURLToPath(new URL('../../../Examples', import.meta.url));
-const read = (name: string): string => readFileSync(`${EXAMPLES}/${name}`, 'utf8');
+const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
+const read = (name: string): string => readFileSync(`${FIXTURES}/${name}`, 'utf8');
 
 function openDocument(name: string, text = read(name)): FakeTextDocument {
     return new FakeTextDocument(`/w/${name}`, text);
@@ -73,7 +73,7 @@ describe('opening a document', () => {
 
         expect(posted.map(message => message.type)).toEqual([ExtensionMessageType.loading, ExtensionMessageType.setDocument]);
         const [document] = documents(posted);
-        expect(document.type === ExtensionMessageType.setDocument && document.payload.files[0].units).toHaveLength(2511);
+        expect(document.type === ExtensionMessageType.setDocument && document.payload.files[0].units).toHaveLength(2500);
     });
 
     it('reports a base file as read-only', () => {
@@ -358,7 +358,7 @@ describe('reacting to an external edit', () => {
 describe('the registry', () => {
     it('hands two editors of one document the same session', () => {
         const registry = new DocumentSessionRegistry();
-        const document = openDocument('test.xlf');
+        const document = openDocument('minimal.xlf');
 
         expect(registry.acquire(document as unknown as vscode.TextDocument))
             .toBe(registry.acquire(document as unknown as vscode.TextDocument));
@@ -368,7 +368,7 @@ describe('the registry', () => {
 
     it('keeps the session alive while a second editor still holds it', () => {
         const registry = new DocumentSessionRegistry();
-        const document = openDocument('test.xlf');
+        const document = openDocument('minimal.xlf');
         const session = registry.acquire(document as unknown as vscode.TextDocument);
         registry.acquire(document as unknown as vscode.TextDocument);
 
@@ -409,7 +409,7 @@ describe('the registry', () => {
 
 describe('opening the raw file', () => {
     it('opens the document itself with the built-in editor', async () => {
-        const session = sessionFor(openDocument('test.xlf'));
+        const session = sessionFor(openDocument('minimal.xlf'));
         const { facade } = view(session);
 
         await facade.openSource('text');

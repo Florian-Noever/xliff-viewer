@@ -8,8 +8,8 @@ import { parseXliff } from '../../extension/xliff/parser';
 import { validateStructure } from '../../extension/xliff/validate';
 import { iterateUnits } from '../../shared/model';
 
-const EXAMPLES = fileURLToPath(new URL('../../../Examples', import.meta.url));
-const read = (name: string): string => readFileSync(`${EXAMPLES}/${name}`, 'utf8');
+const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
+const read = (name: string): string => readFileSync(`${FIXTURES}/${name}`, 'utf8');
 const parse = (name: string) => parseXliff(read(name));
 const unitsOf = (name: string) => [...iterateUnits(parse(name))];
 
@@ -17,16 +17,16 @@ const CORPUS = {
     baseFile: 'Contoso App.g.xlf',
     enUs: 'Contoso App.en-US.xlf',
     deDe: 'Contoso App.de-DE.xlf',
-    fabrikam: 'Fabrikam Base.de-DE.xlf',
-    minimal: 'test.xlf',
+    large: 'Fabrikam Base.de-DE.xlf',
+    minimal: 'minimal.xlf',
 } as const;
 
 describe('unit counts', () => {
     it.each([
-        [CORPUS.baseFile, 1098],
-        [CORPUS.enUs, 1098],
-        [CORPUS.deDe, 1098],
-        [CORPUS.fabrikam, 2511],
+        [CORPUS.baseFile, 500],
+        [CORPUS.enUs, 500],
+        [CORPUS.deDe, 500],
+        [CORPUS.large, 2500],
         [CORPUS.minimal, 1],
     ])('%s has %i units', (name, expected) => {
         expect(unitsOf(name)).toHaveLength(expected);
@@ -74,12 +74,12 @@ describe('the base file', () => {
 
 describe('the large language file', () => {
     it('matches the known unit, target and edge-case counts', () => {
-        const units = unitsOf(CORPUS.fabrikam);
+        const units = unitsOf(CORPUS.large);
 
         const withTarget = units.filter(unit => unit.target !== undefined);
-        expect(units).toHaveLength(2511);
-        expect(withTarget).toHaveLength(2511);
-        expect(withTarget.filter(unit => unit.target?.value === '')).toHaveLength(360);
+        expect(units).toHaveLength(2500);
+        expect(withTarget).toHaveLength(2500);
+        expect(withTarget.filter(unit => unit.target?.value === '')).toHaveLength(362);
         expect(units.filter(unit => unit.source === '')).toHaveLength(8);
         expect(withTarget.filter(unit => unit.target?.value === ' ')).toHaveLength(10);
         expect(units.filter(unit => unit.maxwidth !== undefined)).toHaveLength(1);
@@ -87,18 +87,18 @@ describe('the large language file', () => {
     });
 
     it('records the states the file declares', () => {
-        const states = unitsOf(CORPUS.fabrikam)
+        const states = unitsOf(CORPUS.large)
             .map(unit => unit.target?.state)
             .filter((state): state is string => state !== undefined);
         const counts = states.reduce<Record<string, number>>((acc, state) => {
             acc[state] = (acc[state] ?? 0) + 1;
             return acc;
         }, {});
-        expect(counts).toEqual({ translated: 2151, 'needs-translation': 360 });
+        expect(counts).toEqual({ translated: 2138, 'needs-translation': 362 });
     });
 
     it('carries al-object-target on the units that have it', () => {
-        expect(unitsOf(CORPUS.fabrikam).filter(unit => unit.alObjectTarget !== undefined)).toHaveLength(656);
+        expect(unitsOf(CORPUS.large).filter(unit => unit.alObjectTarget !== undefined)).toHaveLength(790);
     });
 
 });
@@ -257,7 +257,7 @@ describe('attributes bag', () => {
 
 describe('entities', () => {
     it('decodes the predefined entities', () => {
-        const unit = unitsOf(CORPUS.fabrikam).find(u => u.source.includes('sig='));
+        const unit = unitsOf(CORPUS.large).find(u => u.source.includes('sig='));
         expect(unit?.source).toContain('&');
         expect(unit?.source).not.toContain('&amp;');
     });

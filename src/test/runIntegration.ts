@@ -24,7 +24,7 @@ async function main(): Promise<void> {
     await runTests({
         extensionDevelopmentPath: shellSafe(extensionDevelopmentPath),
         extensionTestsPath: shellSafe(extensionTestsPath),
-        // Open the repo itself so the tests can resolve Examples/test.xlf.
+        // Open the repo itself so the tests can resolve the fixtures in src/test/fixtures/xliff.
         launchArgs: [shellSafe(extensionDevelopmentPath), '--disable-extensions'],
     });
 }

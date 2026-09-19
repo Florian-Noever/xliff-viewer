@@ -45,9 +45,9 @@ describe('what the VSIX contains', () => {
         }
     });
 
-    it('carries no source, no corpus and no test file', () => {
-        // `Examples/` holds test fixtures and belongs in git, not in a VSIX; `src/` would
-        // ship the whole project to every user.
+    it('carries no source, no fixture and no example file', () => {
+        // `src/` would ship the whole project, fixtures included, to every user. `Examples/`
+        // holds files for trying the extension by hand, which are nobody else's business.
         expect(files.filter(file => file.startsWith('src/'))).toEqual([]);
         expect(files.filter(file => file.startsWith('Examples/'))).toEqual([]);
         expect(files.filter(file => file.startsWith('docs/'))).toEqual([]);

@@ -11,11 +11,11 @@ import { XliffState } from '../../shared/state';
 
 import type { XliffDocumentDto } from '../../shared/dto';
 
-const EXAMPLES = fileURLToPath(new URL('../../../Examples', import.meta.url));
+const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
 
 /** Rebuilds the fixture straight from the corpus, keeping only the units it selects. */
 function rebuild(): XliffDocumentDto {
-    const model = parseXliff(readFileSync(`${EXAMPLES}/${DEV_FIXTURE_SOURCE}`, 'utf8'));
+    const model = parseXliff(readFileSync(`${FIXTURES}/${DEV_FIXTURE_SOURCE}`, 'utf8'));
     const trimmed = {
         ...model,
         files: model.files.map(file => ({
@@ -68,11 +68,11 @@ describe('the dev-server fixture', () => {
     });
 
     it('keeps the two objects that share a hash apart', () => {
-        // Table 625177701 and Page 625177701 are the same name under two object types:
+        // Table 2515662762 and Page 2515662762 are the same name under two object types:
         // the case the tree must not merge, visible on the dev server.
         const shared = DEV_DOCUMENT.files[0].tree
             .flatMap(group => group.children)
-            .filter(node => node.key.endsWith('625177701'));
+            .filter(node => node.key.endsWith('2515662762'));
 
         expect(shared).toHaveLength(2);
         expect(shared.map(node => node.type).sort()).toEqual(['Page', 'Table']);

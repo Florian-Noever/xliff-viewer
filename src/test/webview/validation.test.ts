@@ -139,7 +139,7 @@ describe('the same-as-source check', () => {
 describe('the example files, which the hints have to be quiet on', () => {
     // Read the way `App.test.ts` reads sources: this project runs under jsdom, where
     // `import.meta.url` is not a file URL and `node:fs` has nothing to resolve against.
-    const files: Record<string, string> = import.meta.glob('../../../Examples/*.xlf', { query: '?raw', import: 'default', eager: true });
+    const files: Record<string, string> = import.meta.glob('../fixtures/xliff/*.xlf', { query: '?raw', import: 'default', eager: true });
 
     it('finds exactly one placeholder mistake across the example files, and no false maxwidth', () => {
         // Run through the real parser and projection, not a regex over the text. The one
@@ -160,13 +160,13 @@ describe('the example files, which the hints have to be quiet on', () => {
             }
         }
 
-        expect(units).toBe(5806);
+        expect(units).toBe(4001);
         expect(counts.placeholders).toBe(1);
         expect(counts.maxwidth).toBe(0);
         expect(counts.statedButEmpty).toBe(0);
         // Off by default for this reason: many targets are legitimately identical to their
         // source, and en-US against en-US is not a translation at all.
-        expect(counts.sameAsSource).toBe(304);
+        expect(counts.sameAsSource).toBe(132);
     });
 
     it('is quiet on a base file, which has no targets to be wrong about', () => {

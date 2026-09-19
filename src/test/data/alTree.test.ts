@@ -9,11 +9,11 @@ import { iterateUnits } from '../../shared/model';
 
 import type { XliffNote, XliffTransUnit } from '../../shared/model';
 
-const EXAMPLES = fileURLToPath(new URL('../../../Examples', import.meta.url));
-const CORPUS = ['Contoso App.g.xlf', 'Contoso App.en-US.xlf', 'Contoso App.de-DE.xlf', 'Fabrikam Base.de-DE.xlf', 'test.xlf'];
+const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
+const CORPUS = ['Contoso App.g.xlf', 'Contoso App.en-US.xlf', 'Contoso App.de-DE.xlf', 'Fabrikam Base.de-DE.xlf', 'minimal.xlf'];
 /** Every corpus file but the hand-written one, whose single id has no AL structure. */
-const AL_CORPUS = CORPUS.filter(name => name !== 'test.xlf');
-const unitsOf = (name: string) => [...iterateUnits(parseXliff(readFileSync(`${EXAMPLES}/${name}`, 'utf8')))];
+const AL_CORPUS = CORPUS.filter(name => name !== 'minimal.xlf');
+const unitsOf = (name: string) => [...iterateUnits(parseXliff(readFileSync(`${FIXTURES}/${name}`, 'utf8')))];
 
 function unit(id: string, generatorNote?: string): XliffTransUnit {
     const notes: XliffNote[] = generatorNote === undefined
@@ -27,7 +27,7 @@ describe('the large corpus file', () => {
     const roots = buildAlTree(units);
 
     it('yields the known number of root objects', () => {
-        expect(roots).toHaveLength(227);
+        expect(roots).toHaveLength(230);
     });
 
     it('places every unit on exactly one node', () => {
@@ -132,7 +132,7 @@ describe('shape', () => {
     });
 
     it('handles an id with no AL structure as a single flat node', () => {
-        const roots = buildAlTree(unitsOf('test.xlf'));
+        const roots = buildAlTree(unitsOf('minimal.xlf'));
 
         expect(roots).toHaveLength(1);
         expect(roots[0].key).toBe('1');
@@ -220,7 +220,7 @@ describe('the object-type level', () => {
 
     it('keeps a Table and a Page of one name apart, in different groups', () => {
         // The hash is of the *name*, so those two collide on hash alone.
-        const tree = grouped('Table 69043486 - Property 1', 'Page 69043486 - Property 1');
+        const tree = grouped('Table 1950013021 - Property 1', 'Page 1950013021 - Property 1');
 
         expect(tree.map(node => node.key)).toEqual(['type:Table', 'type:Page']);
         expect(tree.every(node => node.children.length === 1)).toBe(true);
@@ -230,7 +230,7 @@ describe('the object-type level', () => {
         const tree = groupByObjectType(buildAlTree(unitsOf('Fabrikam Base.de-DE.xlf')));
 
         expect(tree).toHaveLength(9);
-        expect(tree.reduce((sum, group) => sum + group.children.length, 0)).toBe(227);
+        expect(tree.reduce((sum, group) => sum + group.children.length, 0)).toBe(230);
     });
 });
 

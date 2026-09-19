@@ -12,8 +12,8 @@ import { serialiseXliff } from '../../extension/xliff/serialise';
  * fix the parser, never weaken the assertion.
  */
 
-const EXAMPLES = fileURLToPath(new URL('../../../Examples', import.meta.url));
-const read = (name: string): string => readFileSync(`${EXAMPLES}/${name}`, 'utf8');
+const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
+const read = (name: string): string => readFileSync(`${FIXTURES}/${name}`, 'utf8');
 const roundTrip = (text: string): string => serialiseXliff(parseXliff(text));
 
 /** Reports the first differing line, so a failure says where rather than just "not equal". */
@@ -31,7 +31,7 @@ function firstDifference(a: string, b: string): string {
     return 'identical line-by-line but not byte-identical (line endings or trailing newline)';
 }
 
-const CORPUS = readdirSync(EXAMPLES);
+const CORPUS = readdirSync(FIXTURES);
 
 describe('round-trip invariant', () => {
     it('the corpus holds the expected number of files', () => {
@@ -55,7 +55,7 @@ describe('round-trip invariant', () => {
     });
 
     it('round-trips the namespace-less, non-AL file', () => {
-        const original = read('test.xlf');
+        const original = read('minimal.xlf');
         expect(roundTrip(original)).toBe(original);
     });
 
@@ -132,9 +132,9 @@ describe('encoding', () => {
     });
 
     it('encodes > even where it is optional, as AL does', () => {
-        const fabrikam = read('Fabrikam Base.de-DE.xlf');
-        expect(fabrikam).toContain('&gt;');
-        expect(roundTrip(fabrikam)).toBe(fabrikam);
+        const large = read('Fabrikam Base.de-DE.xlf');
+        expect(large).toContain('&gt;');
+        expect(roundTrip(large)).toBe(large);
     });
 
     it('encodes double quotes inside attribute values', () => {

@@ -130,10 +130,10 @@ describe('COMPLETE_STATES', () => {
     });
 });
 
-const EXAMPLES = fileURLToPath(new URL('../../../Examples', import.meta.url));
+const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
 
 function unitsOf(name: string): XliffTransUnit[] {
-    return [...iterateUnits(parseXliff(readFileSync(`${EXAMPLES}/${name}`, 'utf8')))];
+    return [...iterateUnits(parseXliff(readFileSync(`${FIXTURES}/${name}`, 'utf8')))];
 }
 
 const asUnitState = (each: XliffTransUnit): UnitState => ({ state: effectiveState(each), translate: each.translate });
@@ -171,21 +171,21 @@ describe('effectiveState', () => {
     });
 
     it('is unknown for a target that declares no state at all', () => {
-        // The `test.xlf` fixture is exactly this. `unknown` rather than `translated`,
+        // The `minimal.xlf` fixture is exactly this. `unknown` rather than `translated`,
         // because `unknown` cannot hide behind a green badge.
         expect(effectiveState(unit('a', target('t')))).toBe(XliffState.unknown);
-        expect(effectiveState(unitsOf('test.xlf')[0])).toBe(XliffState.unknown);
+        expect(effectiveState(unitsOf('minimal.xlf')[0])).toBe(XliffState.unknown);
     });
 });
 
 describe('the corpus, summarised', () => {
     it('reports the large language file exactly', () => {
         expect(summaryOf('Fabrikam Base.de-DE.xlf')).toEqual({
-            total: 2511,
-            translatable: 2511,
-            byState: { empty: 360, translated: 2151 },
+            total: 2500,
+            translatable: 2500,
+            byState: { empty: 362, translated: 2138 },
             worst: XliffState.empty,
-            translatedCount: 2151,
+            translatedCount: 2138,
             percent: 86,
         });
     });
@@ -196,7 +196,7 @@ describe('the corpus, summarised', () => {
         expect(summary.worst).toBe(XliffState.missing);
         expect(summary.percent).toBe(0);
         expect(summary.translatedCount).toBe(0);
-        expect(summary.byState).toEqual({ missing: 1098 });
+        expect(summary.byState).toEqual({ missing: 500 });
     });
 
     it('reports the outliers in a mostly translated file', () => {
@@ -350,7 +350,7 @@ describe('summariseTree', () => {
         const rootTranslated = roots.reduce((sum, node) => sum + (rolled.get(node.key)?.translatedCount ?? 0), 0);
 
         expect(rootTotals).toBe(units.length);
-        expect(rootTranslated).toBe(2151);
+        expect(rootTranslated).toBe(2138);
     });
 
 });
