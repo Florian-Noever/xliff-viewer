@@ -114,7 +114,7 @@ Not finding one is a normal state, not an error: the viewer works fully without 
 
 ## 🚦 Status
 
-Not published, and buildable into an installable VSIX today: `bun run package` (or `npm run package`) writes one at the repository root.
+Not published, and buildable into an installable VSIX today: `npm run package` writes one at the repository root.
 
 | Phase | State |
 | --- | --- |
@@ -160,24 +160,24 @@ The XML is parsed **once, in the host** — the webview never sees it. The whole
 
 ### Build commands
 
-Either package manager works — the scripts run through `npm-run-all`, which spawns whichever one invoked them, and nothing in the source or the build config is bun-specific.
+npm, and nothing else — packaging needs it regardless, since `vsce` shells out to it.
 
 ```bash
-bun install              # or: npm install
+npm ci                   # install exactly what package-lock.json pins
 
-bun run compile          # check-types + lint + esbuild (both targets) + vite build
-bun run watch            # all four watchers, which is what F5 starts
-bun run check-types      # tsc for the host and tests, vue-tsc for the webview
-bun run lint             # eslint src
-bun run test             # vitest: data, host, webview, then the perf budgets
-bun run test:integration # @vscode/test-electron and @vscode/test-web
-bun run dev:webview      # the webview alone, against a real corpus fixture
-bun run package          # vsce package
+npm run compile          # check-types + lint + esbuild (both targets) + vite build
+npm run watch            # all four watchers, which is what F5 starts
+npm run check-types      # tsc for the host and tests, vue-tsc for the webview
+npm run lint             # eslint src
+npm test                 # vitest: data, host, webview, then the perf budgets
+npm run test:integration # @vscode/test-electron and @vscode/test-web
+npm run dev:webview      # the webview alone, against a real corpus fixture
+npm run package          # vsce package
 ```
 
-`bun run dev:webview` serves the UI with no extension host behind it, rendering a real projection of one of the corpus files. A drift test rebuilds that fixture from the corpus and fails if it has been hand-edited, so the dev server always shows what the extension actually sends.
+`npm run dev:webview` serves the UI with no extension host behind it, rendering a real projection of one of the corpus files. A drift test rebuilds that fixture from the corpus and fails if it has been hand-edited, so the dev server always shows what the extension actually sends.
 
-**`bun.lock` is the committed lockfile.** `npm install` resolves the same dependency ranges and works, but writes its own `package-lock.json`, which is git-ignored — so an npm install is reproducible against `package.json`, not byte-for-byte against a lockfile.
+**Install scripts are opt-in.** npm 11 runs a dependency's install script only when `allowScripts` in `package.json` approves it. Two are: `@playwright/browser-chromium`, which downloads the browser the web integration tests run in, and `esbuild`. Without the first, those tests cannot start — and they **hang** rather than fail, so if they ever sit silent after a dependency update, check `npm install-scripts ls` first. `keytar` and `@vscode/vsce-sign` are denied: they serve publishing, which this project does not do.
 
 ### Tests
 

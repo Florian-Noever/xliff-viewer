@@ -21,7 +21,7 @@ vitest.config.ts
 eslint.config.mjs
 vsc-extension-quickstart.md
 index.html
-bun.lock
+package-lock.json
 **/tsconfig.json
 **/*.ts
 **/*.map
