@@ -32,19 +32,13 @@ export interface DocumentView extends DocumentSession, vscode.Disposable {
      * What the panel is told when the document changes.
      *
      * A re-parse re-announces the base file and the pairing markers too, because a
-     * `setDocument` replaces the payload they were attached to — leaving them out is how
-     * `REVIEW-02a` found the view losing its base file on the first keystroke. Our own
-     * edit is one unit and says only that (§8.4).
+     * `setDocument` replaces the payload they were attached to, and the view would otherwise
+     * lose its base file on the first keystroke. Our own edit is one unit and says only that.
      */
     apply(change: SessionChange): void;
 }
 
-/**
- * Answers `ready` for a panel that has nothing yet.
- *
- * Editing is not wired — `EDIT-01` owns it. It throws rather than doing nothing, so an
- * action that should not be reachable yet says so instead of failing silently (§12.5).
- */
+/** Answers `ready` for a panel that has nothing yet. */
 export function createDocumentSession(
     session: XliffDocumentSession,
     post: (message: ExtensionMessage) => void,
@@ -55,7 +49,7 @@ export function createDocumentSession(
 
     // Which units this panel has been told are orphaned or source-changed, per `<file>`.
     // `patchUnits` can only *set* a marker; clearing one means sending the unit again
-    // without it, which needs knowing what was sent (§9.3).
+    // without it, which needs knowing what was sent.
     const marked = new Map<number, ReadonlySet<string>>();
 
     const announcePairing = (dto: XliffDocumentDto): void => {
@@ -83,8 +77,8 @@ export function createDocumentSession(
             const state = session.current();
             postInitialState(state, session, post);
 
-            // §9.2: resolution is async and must not hold up the document. The webview
-            // shows the tree first and learns about the base file when it is known.
+            // Resolution is async and must not hold up the document. The webview shows
+            // the tree first and learns about the base file when it is known.
             if (state.kind === 'document') {
                 announcePairing(state.dto);
             }
@@ -111,8 +105,8 @@ export function createDocumentSession(
             state: stateAfterEdit(session, value, state),
         })),
         updateState: (unit, state) => write(session, unit, edit => setState(edit.model, edit.text, unit.unitId, state)),
-        // Two targets since `DEC-032`: the unit's own "Go to source", and the raw XML for
-        // the error pane, which has no unit to name (§11.3).
+        // Two targets: the unit's own "Go to source", and the raw XML for the error pane,
+        // which has no unit to name.
         openSource: (target, unit) => (target === NavigationTarget.base
             ? showInBaseFile(baseFiles, session, unit)
             : revealAsText(session.uri, unit?.unitId)),
@@ -120,13 +114,12 @@ export function createDocumentSession(
 }
 
 /**
- * What a target's state becomes when its text is edited (§12.3).
+ * What a target's state becomes when its text is edited.
  *
  * Three rules, in this order:
  *
  * 1. **Clearing wins outright.** An empty target cannot be translated, reviewed or signed
- *    off, whatever anybody chose, so it becomes `needs-translation`. §12.3 states this
- *    without an exception and it is the one that cannot be argued with.
+ *    off, whatever anybody chose, so it becomes `needs-translation`.
  * 2. **An explicit state is obeyed.** The webview sends one when the reader picked a state
  *    for this unit in this session, which is what `stateOnEdit` is not allowed to overrule.
  * 3. **Otherwise `xliffViewer.stateOnEdit`**, read at edit time so changing it takes effect
@@ -139,14 +132,14 @@ function stateAfterEdit(session: XliffDocumentSession, value: string, chosen: Xl
     return chosen ?? readSettings(session.uri).stateOnEdit;
 }
 
-/** The model and the exact text it was parsed from, which the writer needs together (§7.6). */
+/** The model and the exact text it was parsed from, which the writer needs together. */
 type EditableState = Extract<SessionState, { kind: 'document' }>;
 
 /**
- * The one path that changes a file (MASTER_PLAN §12.1).
+ * The one path that changes a file.
  *
  * Everything it refuses, it refuses **before** touching the model, and says why: a viewer
- * that silently does nothing is worse than one that explains itself (§12.5).
+ * that silently does nothing is worse than one that explains itself.
  */
 async function write(
     session: XliffDocumentSession,
@@ -165,8 +158,8 @@ async function write(
             : 'This file is read-only.');
         return;
     }
-    // `DEC-038`: the parser drops comments, so writing this document would delete them.
-    // Refusing costs an edit; the alternative costs somebody's comment.
+    // The parser drops comments, so writing this document would delete them. Refusing
+    // costs an edit; the alternative costs somebody's comment.
     if (containsComment(state.text)) {
         void vscode.window.showInformationMessage('This file contains XML comments, which this editor does not preserve. Edit it as text instead.');
         return;
@@ -183,7 +176,7 @@ async function write(
     }
 
     // `null` is the writer saying the text would not change — a target set to what it
-    // already says. Applying an empty edit would dirty the document for nothing (§7.6).
+    // already says. Applying an empty edit would dirty the document for nothing.
     if (edit === null) {
         return;
     }
@@ -191,7 +184,7 @@ async function write(
     const applied = await session.applyEdit(edit, unit);
 
     // Said after the first edit rather than on open: a reader who never edits has nothing
-    // to be warned about, and this is only true of a file that gets saved (`EDIT-01a`).
+    // to be warned about, and this is only true of a file that gets saved.
     if (applied && session.claimBomWarning()) {
         void vscode.window.showWarningMessage(
             'This file begins with a UTF-8 byte-order mark, which VS Code does not write back when it saves. '
@@ -201,8 +194,8 @@ async function write(
 }
 
 /**
- * §10.2. Everything that can go wrong here is a normal state, not an error: no resolver,
- * no base file, or a base file that does not carry this unit. Each says so plainly.
+ * Everything that can go wrong here is a normal state, not an error: no resolver, no base
+ * file, or a base file that does not carry this unit. Each says so plainly.
  */
 async function showInBaseFile(
     baseFiles: BaseFileResolver | undefined,
@@ -216,7 +209,7 @@ async function showInBaseFile(
 
     const state = session.current();
     if (state.kind === 'document' && state.dto.isBaseFile) {
-        // Resolving a base file's base file would find the document itself (§9.2).
+        // Resolving a base file's base file would find the document itself.
         void vscode.window.showInformationMessage('This file is the base file.');
         return;
     }
@@ -233,7 +226,7 @@ async function showInBaseFile(
     }
 }
 
-/** Posts `baseFile` once resolution finishes. Not finding one is a result, not a failure (§9.2). */
+/** Posts `baseFile` once resolution finishes. Not finding one is a result, not a failure. */
 async function announceBaseFile(
     baseFiles: BaseFileResolver,
     baseIndex: BaseFileIndex | undefined,
@@ -268,12 +261,11 @@ async function announceBaseFile(
 }
 
 /**
- * Marks the units the base file no longer agrees with, and unmarks the ones it now does
- * (§9.3).
+ * Marks the units the base file no longer agrees with, and unmarks the ones it now does.
  *
  * Sent as `patchUnits` rather than a fresh `setDocument`: a language file in step with its
  * base produces nothing at all, and one that has drifted produces only the units that
- * drifted. Re-sending the whole document to mark three of them would cost 773 KB.
+ * drifted.
  *
  * An **empty** `sources` map means there is nothing to compare against — no base file, or
  * one that could not be read. That unmarks rather than freezing what was marked before:
@@ -321,7 +313,7 @@ const EMPTY: ReadonlySet<string> = new Set();
  * The first state a panel receives.
  *
  * On a failure that follows a good parse the last good document goes first, so a panel
- * opened while the file is broken still has something behind the error pane (§7.7).
+ * opened while the file is broken still has something behind the error pane.
  */
 function postInitialState(state: SessionState, session: XliffDocumentSession, post: (message: ExtensionMessage) => void): void {
     if (state.kind === 'error') {
@@ -337,8 +329,8 @@ function postInitialState(state: SessionState, session: XliffDocumentSession, po
  * A later state, for a panel that is already showing this document.
  *
  * **A failure sends only the failure.** Re-sending the last good document here would put
- * 1.2 MB on the wire for every keystroke that leaves the file unparseable, to redeliver
- * what the panel is already displaying.
+ * the whole document on the wire for every keystroke that leaves the file unparseable, to
+ * redeliver what the panel is already displaying.
  */
 function postUpdate(state: SessionState, post: (message: ExtensionMessage) => void): void {
     post(state.kind === 'document'

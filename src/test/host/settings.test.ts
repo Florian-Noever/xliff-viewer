@@ -24,7 +24,7 @@ describe('readSettings', () => {
         });
     });
 
-    it('reads every §13 key', () => {
+    it('reads every setting key', () => {
         setConfigOverride('xliffViewer.baseFile', 'Translations/*.g.xlf');
         setConfigOverride('xliffViewer.editMode', true);
         setConfigOverride('xliffViewer.stateOnEdit', 'signed-off');

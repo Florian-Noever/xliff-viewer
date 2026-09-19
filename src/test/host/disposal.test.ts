@@ -15,8 +15,8 @@ import {
 import type { ExtensionMessage } from '../../shared/messages';
 
 /**
- * `REVIEW-02` asks for twenty editors opened and closed, because a leak of one listener
- * per editor is invisible until someone works through an app's translations for an hour.
+ * Twenty editors opened and closed, because a leak of one listener per editor is invisible
+ * in any single one and only adds up over a long session.
  */
 
 const TEMPLATE = '<script nonce="%NONCE%" src="%SCRIPT_URI%"></script><link href="%CSS_URI%"><meta content="%CSP_SOURCE%">';

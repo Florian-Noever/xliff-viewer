@@ -10,20 +10,18 @@ import type {
 } from '../../shared/model';
 
 /**
- * Model → text, byte-faithful (MASTER_PLAN §7.2, `DEC-017`).
+ * Model → text, byte-faithful.
  *
- * Not `XMLBuilder`: measured during planning, it reformats 100 % of lines (294 % with
- * `format: true`, because it indents inside `xml:space="preserve"` content). A
- * format-specific serialiser reproduces the whole corpus byte-for-byte instead.
+ * Not `XMLBuilder`: it reformats every line, and with `format: true` it also indents inside
+ * `xml:space="preserve"` content.
  *
- * Everything here is driven by the `attributes` bag rather than the named fields
- * (`DEC-025`) — that is what carries `xmlns:xsi`, `xsi:schemaLocation` and anything else
- * we never enumerated.
+ * Everything here is driven by the `attributes` bag rather than the named fields — that is
+ * what carries `xmlns:xsi`, `xsi:schemaLocation` and anything else we never enumerated.
  */
 
 const INDENT = '  ';
 
-/** Text content: the corpus encodes `>` even where it is optional, so match that. */
+/** Text content: AL encodes `>` even where XML makes it optional, so match that. */
 function encodeText(value: string): string {
     return value
         .replace(/&/g, '&amp;')
@@ -44,8 +42,7 @@ function renderAttributes(attributes: XliffAttributes): string {
 
 /**
  * A leaf element on one line. Empty content produces the self-closing form with **no
- * space** before `/>` — which is what AL itself emits, and what 362 targets and 256
- * notes in the corpus depend on.
+ * space** before `/>`, which is what AL itself emits.
  */
 function renderLeaf(tag: string, attributes: XliffAttributes, value: string, depth: number): string {
     const open = `${INDENT.repeat(depth)}<${tag}${renderAttributes(attributes)}`;
@@ -105,7 +102,7 @@ function renderFile(file: XliffFile, depth: number): string[] {
 /**
  * Serialises the whole document. The `format` record is reproduced exactly — BOM,
  * declaration, line ending and trailing newline are facts about the file, never
- * preferences to normalise (§7.2).
+ * preferences to normalise.
  */
 export function serialiseXliff(document: XliffDocument): string {
     const lines = [

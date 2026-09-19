@@ -36,10 +36,8 @@ import type { XliffDocumentDto, XliffFileDto } from '@shared/dto';
 import type { StateSummary } from '@shared/state';
 
 /**
- * The file bar (MASTER_PLAN §11.2).
- *
  * Languages and `original` come from the **active** `XliffFileDto`, not from the document:
- * a document may hold several, and `DEC-020` lets the user switch between them.
+ * a document may hold several, and only one is shown at a time.
  */
 
 const props = defineProps<{
@@ -54,15 +52,15 @@ const emit = defineEmits<{ 'update:fileIndex': [index: number] }>();
  * The app the translation belongs to, which is what a translator is working on — the file
  * name is where it happens to live, and goes in the smaller line beneath.
  *
- * `original` is optional in XLIFF and absent from `test.xlf`, so a file that does not
- * declare one keeps its name as the title rather than showing a blank heading.
+ * `original` is optional in XLIFF, so a file that does not declare one keeps its name as
+ * the title rather than showing a blank heading.
  */
 const title = computed(() => props.file.original ?? props.document.fileName);
 const subtitle = computed(() => (props.file.original === undefined ? undefined : props.document.fileName));
 
 /**
- * XLIFF allows several `<file>` elements and `DEC-020` shows one at a time. AL emits
- * exactly one, so for every corpus file the switcher is not rendered at all.
+ * XLIFF allows several `<file>` elements; AL emits exactly one, so for an AL file the
+ * switcher is not rendered at all.
  *
  * `original` alone is not enough to tell two apart — a document may hold the same app in
  * two languages — so the target language is always part of the label.
@@ -73,8 +71,8 @@ function describe(option: XliffFileDto): string {
 }
 
 /**
- * `undefined` means resolution has not run, `null` means it ran and found nothing
- * (`NAV-01`). Only the second is worth saying out loud.
+ * `undefined` means resolution has not run, `null` means it ran and found nothing.
+ * Only the second is worth saying out loud.
  */
 const baseFile = computed(() => {
     if (props.document.baseFile === undefined) {

@@ -17,20 +17,20 @@ import type {
 } from '../../shared/model';
 
 /**
- * Options per MASTER_PLAN §7.3. Each is load-bearing:
+ * Each option is load-bearing:
  *
  * - `preserveOrder` keeps element **and** attribute order, which is what makes the
- *   byte-faithful serialiser possible (§7.2).
- * - `trimValues: false` honours `xml:space="preserve"` (§3.6). A target of `'   '` is
- *   three spaces, not an empty string.
+ *   byte-faithful serialiser possible.
+ * - `trimValues: false` honours `xml:space="preserve"`. A target of `'   '` is three
+ *   spaces, not an empty string.
  * - `parseTagValue` / `parseAttributeValue: false` stop `"00123"` becoming a number.
  * - `processEntities` + `htmlEntities` together decode both named entities and numeric
  *   character references — see the note below, which is load-bearing.
  *
  * `attributesGroupName` is *not* set: under `preserveOrder` fast-xml-parser always uses
- * `:@` and ignores that option. §7.3 lists it, but it is inert.
+ * `:@` and ignores that option.
  *
- * ## Why `htmlEntities` is required, not optional (`DEC-026`)
+ * ## Why `htmlEntities` is required, not optional
  *
  * `processEntities` alone decodes `&amp;` but leaves `&#233;` verbatim. That makes the
  * model **ambiguous**: `caf&#233;` and `caf&amp;#233;` both produce the text
@@ -40,10 +40,11 @@ import type {
  * With `htmlEntities` the two become distinct — `café` and `caf&#233;` — and each
  * serialises correctly. The cost is that a numeric reference is written back as the
  * literal character: valid XML, identical meaning, different bytes. Correctness beats
- * byte-identity here, and no corpus file contains one.
+ * byte-identity here.
  *
- * Residual gaps, both accepted under `DEC-017`'s first-save normalisation:
- * - `&quot;` / `&apos;` in *text* decode and are written literally. No corpus file has either.
+ * Residual gaps:
+ * - `&quot;` / `&apos;` in *text* decode and are written literally, so the first save
+ *   changes those bytes.
  * - An **undefined** entity (`&bogus;`) cannot round-trip — it is indistinguishable from
  *   `&amp;bogus;` — but such a document is not well-formed XML in the first place.
  */
@@ -100,7 +101,7 @@ function elementsNamed(node: FxpNode, tag: string): FxpNode[] {
 
 /**
  * Concatenated text of a leaf element. An empty element parses to `[]` rather than a
- * `#text` node, which is how `<source/>` and `<target …/>` arrive (§3.4).
+ * `#text` node, which is how `<source/>` and `<target …/>` arrive.
  */
 function textOf(node: FxpNode): string {
     let text = '';
@@ -155,7 +156,7 @@ function toTarget(node: FxpNode): XliffTarget {
     return {
         attributes,
         // Kept verbatim: a value the spec does not define is resolved to `unknown` by
-        // the state layer, not rejected here (§5.1).
+        // the state layer, not rejected here.
         state: optional(attributes, 'state'),
         stateQualifier: optional(attributes, 'state-qualifier'),
         value: textOf(node),
@@ -166,8 +167,8 @@ function toTransUnit(node: FxpNode): XliffTransUnit {
     const attributes = attributesOf(node);
     const id = optional(attributes, 'id') ?? '';
 
-    // DATA-02 cannot check this: XliffTransUnit holds one source and one target by
-    // construction, so a violation would produce a model that looks correct.
+    // Checked here, not by validateStructure: XliffTransUnit holds one source and one target
+    // by construction, so a violation would produce a model that looks correct.
     const sources = elementsNamed(node, 'source');
     const targets = elementsNamed(node, 'target');
     if (sources.length !== 1) {
@@ -212,7 +213,7 @@ function toBody(node: FxpNode): XliffBody {
     return {
         attributes: attributesOf(node),
         groups: elementsNamed(node, 'group').map(toGroup),
-        // Units may sit directly in <body> without a group (§3.4).
+        // Units may sit directly in <body> without a group.
         units: elementsNamed(node, 'trans-unit').map(toTransUnit),
     };
 }
@@ -237,7 +238,7 @@ function toFile(node: FxpNode): XliffFile {
 /**
  * Parses document text into the model. Validation runs first and its error propagates —
  * a document that is not well-formed is never turned into a model, because a whole-file
- * writer would then rewrite the file from a misreading of it (§7.7, `DEC-017`).
+ * writer would then rewrite the file from a misreading of it.
  *
  * @throws {XliffParseError} for anything this module rejects. `fast-xml-parser`'s own
  * guards can also surface as a plain `Error` — its nested-tag limit is the reachable one —

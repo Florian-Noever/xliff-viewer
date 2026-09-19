@@ -1,12 +1,12 @@
 /**
- * Which whitespace in a target is worth showing (`DEC-021`, §3.6).
+ * Which whitespace in a target is worth showing.
  *
- * `xml:space="preserve"` is on every AL unit, so a leading space is data. But 55 corpus
- * targets have edge whitespace and marking all of them would train the reader to ignore
- * the marker, so only the load-bearing cases are marked:
+ * `xml:space="preserve"` is on every AL unit, so a leading space is data. But marking
+ * every target with edge whitespace would train the reader to ignore the marker, so only
+ * the load-bearing cases are marked:
  *
- * - a target that is **nothing but** whitespace — ten of them in the corpus, deliberate
- *   "this caption renders blank" translations that would otherwise look empty;
+ * - a target that is **nothing but** whitespace, such as a deliberate "this caption
+ *   renders blank" translation, which would otherwise look empty;
  * - edge whitespace that **differs from the source's**, which is where a translation
  *   silently gains or loses a space.
  */
@@ -52,7 +52,7 @@ export function loadBearingWhitespace(source: string, target: string | undefined
         : WhitespaceReason.edges;
 }
 
-/** Why this target is marked when others are not — `DEC-021` requires the rule be stated. */
+/** Why this target is marked when others are not, so the marker explains itself. */
 export function whitespaceExplanation(reason: WhitespaceReason): string {
     return reason === WhitespaceReason.only
         ? 'This target is only whitespace. Spaces are shown where they change the meaning.'

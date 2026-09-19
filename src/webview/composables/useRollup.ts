@@ -7,7 +7,7 @@ import type { StateSummary } from '@shared/state';
 import type { ComputedRef } from 'vue';
 
 /**
- * The state roll-up, computed here in the webview (`DEC-016`, §6.2).
+ * The state roll-up, computed here in the webview.
  *
  * It is a thin composable on purpose. The arithmetic lives once in `src/shared/state.ts`
  * and is shared with the host; reimplementing any of it here is how the two ends start
@@ -15,7 +15,7 @@ import type { ComputedRef } from 'vue';
  *
  * `TransUnitDto` satisfies `UnitState` structurally — it carries `state` and `translate` —
  * so the DTO's own unit index is the roll-up's input with no conversion in between. That
- * is the whole reason `DEC-028` put `state` on the DTO rather than shipping summaries.
+ * is why the DTO carries `state` rather than the host shipping summaries.
  */
 
 export interface Rollup {
@@ -32,7 +32,7 @@ export interface RollupSource {
 
 export function useRollup(source: RollupSource): Rollup {
     // Both are `computed`, so a re-render costs nothing and only a new document or a file
-    // switch pays for the walk — measured at 0.8 ms over 4029 nodes.
+    // switch pays for the walk.
     const byKey = computed(() => summariseTree(source.file.value?.tree ?? [], source.unitsById.value));
     const file = computed(() => summariseUnits(source.file.value?.units ?? []));
 

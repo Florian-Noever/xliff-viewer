@@ -7,25 +7,10 @@ import { appNameOf, fileNameOf } from './uriNames';
 import { SETTINGS_SECTION } from '../../shared/settings';
 
 /**
- * Finding the `.g.xlf` that pairs with a language file (MASTER_PLAN §9.2).
+ * Finding the `.g.xlf` that pairs with a language file.
  *
  * Not finding one is **not a failure**. The viewer works fully without a base file; the
- * affordances that need one are simply disabled with a reason (§9.2).
- *
- * ## What the third-party steps turned out to be
- *
- * §9.2 listed XLIFF Sync and NAB AL Tools as steps 2 and 3. Verified against their
- * published manifests (`DEC-031`):
- *
- * - **XLIFF Sync has `xliffSync.baseFile`**, a string. Its default is `.g.xlf` — a *suffix*,
- *   not a path — and the extension replaces it with a real file name once the user answers
- *   its prompt. So the value is read as a path first and as a name fragment second.
- * - **NAB AL Tools has no base-file setting at all.** It finds the generated file by the
- *   same convention this resolver's own steps 4–6 already implement, so step 3 is not a
- *   thing to read; it is a thing we already do.
- *
- * `DEC-019`'s precedence — XLIFF Sync wins over NAB — therefore cannot arise in practice.
- * It stays correct and stays implemented in the ordering; there is simply no second value.
+ * affordances that need one are simply disabled with a reason.
  */
 
 const XLIFF_SYNC_SECTION = 'xliffSync';
@@ -56,7 +41,7 @@ export class BaseFileResolver implements vscode.Disposable {
     private readonly subscriptions: vscode.Disposable[] = [];
 
     public constructor() {
-        // §9.4: a base file appearing, moving or being deleted changes every answer.
+        // A base file appearing, moving or being deleted changes every answer.
         const watcher = vscode.workspace.createFileSystemWatcher(`**/*${BASE_SUFFIX}`);
         this.subscriptions.push(
             watcher,
@@ -86,7 +71,7 @@ export class BaseFileResolver implements vscode.Disposable {
 
     /**
      * `isBaseFile` short-circuits the whole thing: a `.g.xlf` has no base of its own, and
-     * looking for one would resolve it to itself (§9.2).
+     * looking for one would resolve it to itself.
      */
     public async resolve(uri: vscode.Uri, isBaseFile: boolean): Promise<BaseFileResolution> {
         if (isBaseFile) {
@@ -109,7 +94,6 @@ export class BaseFileResolver implements vscode.Disposable {
         return resolution;
     }
 
-    /** §9.2's order. First hit wins. */
     private async search(uri: vscode.Uri): Promise<BaseFileResolution> {
         const fromSetting = await this.fromOurSetting(uri);
         if (fromSetting !== undefined) {
@@ -121,6 +105,8 @@ export class BaseFileResolver implements vscode.Disposable {
             return { uri: fromSync, source: BaseFileSource.xliffSync };
         }
 
+        // NAB AL Tools has no base-file setting to read: it finds the generated file by the
+        // same conventions as the steps below.
         const folder = parentOf(uri);
         const siblings = await readFolder(folder);
 
@@ -159,7 +145,7 @@ export class BaseFileResolver implements vscode.Disposable {
      * Step 2: XLIFF Sync's own setting, read defensively.
      *
      * A missing key, a renamed key or an unexpected type is "not configured", never an
-     * error (§9.2) — and we never write it back.
+     * error — and we never write it back.
      */
     private async fromXliffSync(uri: vscode.Uri): Promise<vscode.Uri | undefined> {
         const raw: unknown = vscode.workspace.getConfiguration(XLIFF_SYNC_SECTION, uri).get(XLIFF_SYNC_BASE_FILE);
@@ -219,11 +205,10 @@ async function readFolder(folder: vscode.Uri): Promise<string[]> {
 }
 
 /**
- * §9.2's last step searches the **whole workspace**, so in a workspace holding several
- * apps the first hit is as likely to belong to another one. A base file from the wrong app
- * marks every unit orphaned (§9.3) — a confidently wrong answer, which is worse than none.
- * So the app's own name decides among the candidates, and only a single candidate is taken
- * on trust.
+ * The last resort searches the **whole workspace**, so in a workspace holding several apps
+ * the first hit is as likely to belong to another one. A base file from the wrong app marks
+ * every unit orphaned — a confidently wrong answer, which is worse than none. So the app's
+ * own name decides among the candidates, and only a single candidate is taken on trust.
  */
 async function bestUnderTranslations(appName: string): Promise<vscode.Uri | undefined> {
     let candidates: vscode.Uri[];

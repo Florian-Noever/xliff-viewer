@@ -6,13 +6,13 @@ import { findUnitLine, revealAsText, revealInBaseFile } from '../../extension/se
 import { assertEqual, assertOk } from './assertions';
 
 /**
- * `REVIEW-02a`: navigation against a workspace that **lacks** what it needs.
+ * Navigation against a workspace that **lacks** what it needs.
  *
- * These are the first services that touch the workspace rather than one document, and
- * `workspace.fs`, `readDirectory` and `findFiles` are exactly where the web host differs
- * from the desktop one. Compiling for both proves nothing about either — so this suite
- * runs in both, and the repository itself is the fixture: a base file that pairs, a unit
- * the base file does not carry, and a base file that is not there at all.
+ * These services touch the workspace rather than one document, and `workspace.fs`,
+ * `readDirectory` and `findFiles` are exactly where the web host differs from the desktop
+ * one. Compiling for both proves nothing about either — so this suite runs in both, and the
+ * repository itself is the fixture: a base file that pairs, a unit the base file does not
+ * carry, and a base file that is not there at all.
  */
 
 const KNOWN_UNIT = 'Table 3783554337 - Property 2879900210';

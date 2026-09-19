@@ -3,11 +3,11 @@ import { generatorNote, namesFromNote, SEGMENT_SEPARATOR } from './names';
 import type { AlNode, XliffTransUnit } from '../../shared/model';
 
 /**
- * Builds the object → member → unit hierarchy from trans-unit ids (MASTER_PLAN §4.5, §7.4).
+ * Builds the object → member → unit hierarchy from trans-unit ids.
  *
- * **The tree comes from the id, never from the note** (`DEC-003`). The hash in each
- * segment is stable, unique and language-independent; names are display text that may be
- * missing, ambiguous, or contain the ` - ` separator itself.
+ * **The tree comes from the id, never from the note.** The hash in each segment is stable,
+ * unique and language-independent; names are display text that may be missing, ambiguous,
+ * or contain the ` - ` separator itself.
  */
 
 interface MutableAlNode {
@@ -21,9 +21,9 @@ interface MutableAlNode {
 /**
  * Groups units into a tree.
  *
- * Takes **units rather than a document** so the caller chooses the scope: `DEC-020` makes
- * the DTO per-`<file>`, and XLIFF scopes ids to their `<file>`, so a document-wide tree
- * would merge two files' hierarchies and let identical ids collide.
+ * Takes **units rather than a document** so the caller chooses the scope: the DTO is
+ * per-`<file>`, and XLIFF scopes ids to their `<file>`, so a document-wide tree would
+ * merge two files' hierarchies and let identical ids collide.
  *
  * One pass, O(units × depth). Children keep first-appearance order — file order is
  * meaningful and is never re-sorted here.
@@ -77,19 +77,18 @@ export function buildAlTree(units: Iterable<XliffTransUnit>): AlNode[] {
 }
 
 /**
- * The namespace a group key lives in (`DEC-033`).
+ * The namespace a group key lives in.
  *
  * A trans-unit id is ` - `-separated `<SymbolType> <hash>` segments, so it cannot contain a
- * colon — verified against the whole corpus, where no id contains one at all. That is what
- * keeps `DEC-028`'s invariant true: a node carries a unit exactly when its key **is** that
- * unit's id, and a group carries none.
+ * colon and no group key can equal one: a node carries a unit exactly when its key **is**
+ * that unit's id, and a group carries none.
  */
 export const OBJECT_TYPE_GROUP_PREFIX = 'type:';
 
 /**
- * Wraps the roots in one node per object type (`DEC-033`).
+ * Wraps the roots in one node per object type.
  *
- * A file's 230 objects are otherwise one flat list in file order, and finding "the tables"
+ * A file's objects are otherwise one flat list in file order, and finding "the tables"
  * means scrolling past everything else. The type is already in every id, so this adds a
  * level rather than information.
  *

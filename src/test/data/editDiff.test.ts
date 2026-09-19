@@ -8,13 +8,8 @@ import { setTarget } from '../../extension/xliff/writer';
 import { iterateUnits } from '../../shared/model';
 
 /**
- * MASTER_PLAN §1.4's hardest criterion, file by file: **a save round-trip changes only the
- * bytes the user actually edited.**
- *
- * `roundtrip.test.ts` proves the no-op case — parse then serialise reproduces the file. This
- * proves the case that can lose work: an edit made through the **real write path**, offsets
- * and all, applied to the original text. `REVIEW-02b` required it demonstrated on every
- * corpus file rather than on one, because the five differ in the ways that break writers —
+ * An edit made through the real write path changes only the bytes it edits; `roundtrip.test.ts`
+ * covers the no-op case. Every fixture runs, because they differ in the ways that break writers:
  * a BOM, CRLF, no namespace, a self-closing target, no targets at all.
  */
 
@@ -62,7 +57,7 @@ function differences(before: string, after: string): [number, string, string][] 
     return rows;
 }
 
-describe('§1.4: one edit changes only what was edited', () => {
+describe('one edit changes only what was edited', () => {
     for (const name of CORPUS) {
         it(`holds for ${name}`, () => {
             const original = read(name);
@@ -138,7 +133,7 @@ describe('§1.4: one edit changes only what was edited', () => {
 
     it('narrows the edit to the element, not to the file', () => {
         // If the trimmed range ever spans more than the edited element, the serialiser has
-        // drifted from the file's own formatting and `DATA-04` is what actually broke.
+        // drifted from the file's own formatting.
         const original = read('Fabrikam Base.de-DE.xlf');
         const document = parseXliff(original);
         const [unit] = [...iterateUnits(document)];

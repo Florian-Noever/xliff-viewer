@@ -97,7 +97,7 @@ describe('opening a document', () => {
         expect(document.type === ExtensionMessageType.setDocument && document.payload.readOnly).toBe(false);
     });
 
-    it('reports a document on a read-only file system as read-only (§12.5)', () => {
+    it('reports a document on a read-only file system as read-only', () => {
         setWritableFileSystem('file', false);
         const session = sessionFor(openDocument('Contoso App.de-DE.xlf'));
         const { posted, send } = view(session);
@@ -171,8 +171,8 @@ describe('a document that will not parse', () => {
 
 describe('what a failing re-parse puts on the wire', () => {
     it('sends only the failure to a view that already has the document', () => {
-        // Re-sending the last good DTO here cost 1175 KB per failing keystroke burst on
-        // the large file, to redeliver what the panel was already displaying.
+        // The panel already displays the last good document; re-sending it would cost a
+        // whole DTO per failing keystroke burst.
         vi.useFakeTimers();
         const document = openDocument('Fabrikam Base.de-DE.xlf');
         const session = sessionFor(document);
@@ -189,7 +189,7 @@ describe('what a failing re-parse puts on the wire', () => {
         expect(JSON.stringify(posted).length).toBeLessThan(1024);
     });
 
-    it('still gives a view that has nothing the last good document first (§7.7)', () => {
+    it('still gives a view that has nothing the last good document first', () => {
         vi.useFakeTimers();
         const document = openDocument('Contoso App.de-DE.xlf');
         const session = sessionFor(document);
@@ -430,7 +430,7 @@ describe('opening the raw file', () => {
     });
 });
 
-describe('writing a target (EDIT-01)', () => {
+describe('writing a target', () => {
     const LANGUAGE = `<?xml version="1.0" encoding="utf-8"?>
 <xliff version="1.2">
   <file source-language="en-US" target-language="de-DE" original="App">
@@ -463,7 +463,7 @@ describe('writing a target (EDIT-01)', () => {
         expect(applied(document, LANGUAGE)).toBe(LANGUAGE.replace('ExampleTranslation', 'NewTranslation'));
     });
 
-    it('writes through a WorkspaceEdit rather than the file system (§12.1)', async () => {
+    it('writes through a WorkspaceEdit rather than the file system', async () => {
         const document = openDocument('language.xlf', LANGUAGE);
         const { facade } = view(sessionFor(document));
 
@@ -474,7 +474,7 @@ describe('writing a target (EDIT-01)', () => {
     });
 
     it('does nothing at all when the target already says that', async () => {
-        // An empty edit would dirty the document for no reason (§7.6).
+        // An empty edit would dirty the document for no reason.
         const document = openDocument('language.xlf', LANGUAGE);
         const { facade } = view(sessionFor(document));
 
@@ -503,9 +503,8 @@ describe('writing a target (EDIT-01)', () => {
     });
 
     it('re-parses first when the document moved on since the model was built', async () => {
-        // The corruption `REVIEW-01` pinned: the writer trims against the text it is given,
-        // so a model built from text that no longer exists lands its edit in the wrong place.
-        // The re-parse is debounced, so this window is reachable by typing.
+        // The writer trims against the text it is given, so a model built from stale text lands
+        // its edit in the wrong place. The re-parse is debounced, so typing can reach this window.
         vi.useFakeTimers();
         const document = openDocument('language.xlf', LANGUAGE);
         const session = sessionFor(document);
@@ -522,7 +521,7 @@ describe('writing a target (EDIT-01)', () => {
     });
 });
 
-describe('what the write path refuses (EDIT-01)', () => {
+describe('what the write path refuses', () => {
     const BASE = `<?xml version="1.0" encoding="utf-8"?>
 <xliff version="1.2">
   <file source-language="en-US" target-language="en-US" original="App">
@@ -547,7 +546,7 @@ describe('what the write path refuses (EDIT-01)', () => {
 </xliff>
 `;
 
-    it('refuses a base file, and says whose it is (DEC-011)', async () => {
+    it('refuses a base file, and says whose it is', async () => {
         const document = openDocument('App.g.xlf', BASE);
         const { facade } = view(sessionFor(document));
 
@@ -557,7 +556,7 @@ describe('what the write path refuses (EDIT-01)', () => {
         expect(flushInfoMessages()[0]).toContain('base file');
     });
 
-    it('refuses a read-only file system (§12.5)', async () => {
+    it('refuses a read-only file system', async () => {
         setWritableFileSystem('file', false);
         const document = openDocument('language.xlf', WITH_COMMENT.replace('  <!-- somebody wrote this by hand -->\n', ''));
         const { facade } = view(sessionFor(document));
@@ -568,7 +567,7 @@ describe('what the write path refuses (EDIT-01)', () => {
         expect(flushInfoMessages()[0]).toBe('This file is read-only.');
     });
 
-    it('refuses a document that does not parse (§7.7)', async () => {
+    it('refuses a document that does not parse', async () => {
         const document = openDocument('language.xlf', '<xliff version="1.2"><file>');
         const { facade } = view(sessionFor(document));
 
@@ -578,7 +577,7 @@ describe('what the write path refuses (EDIT-01)', () => {
         expect(flushInfoMessages()[0]).toContain('until it parses');
     });
 
-    it('refuses a document carrying XML comments rather than deleting them (DEC-038)', async () => {
+    it('refuses a document carrying XML comments rather than deleting them', async () => {
         // The parser drops comments, so this write would silently take them with it.
         const document = openDocument('language.xlf', WITH_COMMENT);
         const { facade } = view(sessionFor(document));
@@ -599,7 +598,7 @@ describe('what the write path refuses (EDIT-01)', () => {
         expect(flushErrorMessages()[0]).toContain('Table 9 - Property 9');
     });
 });
-describe('recognising our own edit (EDIT-02)', () => {
+describe('recognising our own edit', () => {
     const LANGUAGE = `<?xml version="1.0" encoding="utf-8"?>
 <xliff version="1.2">
   <file source-language="en-US" target-language="de-DE" original="App">
@@ -632,7 +631,7 @@ describe('recognising our own edit (EDIT-02)', () => {
     }
 
     it('answers its own edit with a patch, never a whole document', async () => {
-        // Re-sending 1.2 MB after a keystroke is what costs the view its focus and scroll.
+        // Re-sending the whole document per keystroke is what costs the view its focus and scroll.
         const { facade, posted } = edited(LANGUAGE);
 
         await facade.updateTarget(UNIT, 'EditedTranslation');
@@ -681,9 +680,8 @@ describe('recognising our own edit (EDIT-02)', () => {
     });
 
     it('does not swallow an external edit that lands between recording ours and seeing it', async () => {
-        // The race §8.4 forbids suppressing blindly. Our edit is recorded, then somebody
-        // else's arrives *first*. The assertion has to land inside that window: once our
-        // own change also arrives, the re-parse it triggers would hide the difference.
+        // Our edit is recorded, then somebody else's arrives *first*. The assertion must land in
+        // that window: once ours arrives too, the re-parse it triggers would hide the difference.
         vi.useFakeTimers();
         const { document, facade, posted } = edited(LANGUAGE);
 
@@ -738,7 +736,7 @@ describe('recognising our own edit (EDIT-02)', () => {
         expect(before).toBe(document.getText());
     });
 
-    it('tells every view of the document, not only the one that asked (REVIEW-02b)', async () => {
+    it('tells every view of the document, not only the one that asked', async () => {
         // Two editors share one session. A patch that reached only the editing view would
         // leave the other showing a target the file no longer has.
         const document = openDocument('language.xlf', LANGUAGE);
@@ -769,7 +767,7 @@ describe('recognising our own edit (EDIT-02)', () => {
         expect(document.getText()).toBe(LANGUAGE.replace('ExampleTranslation', 'Second'));
     });
 });
-describe('the BOM a save does not keep (EDIT-01a)', () => {
+describe('the BOM a save does not keep', () => {
     const LANGUAGE = `<?xml version="1.0" encoding="utf-8"?>
 <xliff version="1.2">
   <file source-language="en-US" target-language="de-DE" original="App">
@@ -817,7 +815,7 @@ describe('the BOM a save does not keep (EDIT-01a)', () => {
         expect(flushWarningMessages()).toHaveLength(1);
     });
 
-    it('stays quiet for a file with no BOM, which is every AL language file', async () => {
+    it('stays quiet for a file with no BOM', async () => {
         const document = openDocument('language.xlf', LANGUAGE);
         const { facade } = view(sessionFor(document));
 
@@ -836,7 +834,7 @@ describe('the BOM a save does not keep (EDIT-01a)', () => {
     });
 });
 
-describe('what an edit does to the state (EDIT-04, §12.3)', () => {
+describe('what an edit does to the state', () => {
     const LANGUAGE = `<?xml version="1.0" encoding="utf-8"?>
 <xliff version="1.2">
   <file source-language="en-US" target-language="de-DE" original="App">
@@ -922,8 +920,7 @@ describe('what an edit does to the state (EDIT-04, §12.3)', () => {
     });
 
     it('lets clearing outrank even a state the reader chose', async () => {
-        // An empty target cannot be signed off, whatever anybody picked. §12.3 states the
-        // clearing rule without an exception, and this is why.
+        // An empty target cannot be signed off, whatever anybody picked.
         const { document, facade } = opened();
 
         await facade.updateTarget(UNIT, '', XliffState.signedOff);
@@ -949,7 +946,7 @@ describe('what an edit does to the state (EDIT-04, §12.3)', () => {
     });
 });
 
-describe('when base-file resolution itself fails (REVIEW-03)', () => {
+describe('when base-file resolution itself fails', () => {
     it('says there is no base file rather than leaving the question open', async () => {
         // `null` and `undefined` are different answers on this message: `null` means
         // resolution ran and found nothing, which the header states out loud; `undefined`

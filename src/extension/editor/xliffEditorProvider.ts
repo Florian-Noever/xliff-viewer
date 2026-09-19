@@ -15,8 +15,8 @@ import type { HandlerContext } from '../handlers/handlerContext';
 import type { ExtensionMessage } from '../../shared/messages';
 
 /**
- * Wraps a `TextDocument` rather than owning its own model (`DEC-001`), so dirty state,
- * undo/redo, save, hot exit and "Reopen with Text Editor" all come from VS Code.
+ * Wraps a `TextDocument` rather than owning its own model, so dirty state, undo/redo,
+ * save, hot exit and "Reopen with Text Editor" all come from VS Code.
  *
  * The provider owns no parsing itself — it acquires the document's session, connects one
  * webview to it, and drops both when the panel closes.
@@ -44,11 +44,8 @@ export class XliffEditorProvider implements vscode.CustomTextEditorProvider {
 
     public static register(context: vscode.ExtensionContext): vscode.Disposable {
         const provider = new XliffEditorProvider(context.extensionUri);
-        // No `retainContextWhenHidden` (`DEC-030`). A hidden tab's webview is destroyed and
-        // rebuilt from the host's cached parse on reveal — 36 ms against a 400 ms budget —
-        // and `POLISH-03`'s `vscode.setState` puts back what that costs: expansion, focus,
-        // scroll, search, filter and the edit toggle. The flag was kept until the
-        // persistence existed precisely so the reveal would not lose them.
+        // No `retainContextWhenHidden`: a hidden tab's webview is rebuilt from the cached parse
+        // on reveal, and puts its view state back from `vscode.setState`.
         const registration = vscode.window.registerCustomEditorProvider(XliffEditorProvider.viewType, provider, {
             supportsMultipleEditorsPerDocument: true,
         });
@@ -114,7 +111,7 @@ export class XliffEditorProvider implements vscode.CustomTextEditorProvider {
             view,
             // A change reaches every view of this document, including the ones that did
             // not cause it. The view decides what each kind is worth saying: a re-parse is
-            // a document, our own edit is one unit (§8.4).
+            // a document, our own edit is one unit.
             session.attach((change) => {
                 view.apply(change);
             }),

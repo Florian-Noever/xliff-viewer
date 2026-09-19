@@ -27,7 +27,7 @@ describe('segmentTypes', () => {
     });
 
     it('keeps a segment with no hash rather than dropping it', () => {
-        // test.xlf uses id="1" — a legal XLIFF id carrying no AL structure.
+        // id="1" is a legal XLIFF id carrying no AL structure.
         expect(segmentTypes('1')).toEqual([{ type: '1', hash: '' }]);
         expect(hasAlStructure('1')).toBe(false);
         expect(hasAlStructure('Table 3783554337 - Property 2879900210')).toBe(true);
@@ -43,8 +43,7 @@ describe('namesFromNote', () => {
     });
 
     it('keeps an object name that itself contains the separator', () => {
-        // The whole reason for the anchored regex: splitting on " - " gives the wrong
-        // answer for part of the corpus.
+        // The whole reason for the anchored regex: splitting on " - " breaks such a name.
         expect(namesFromNote(
             'Report 4233182435 - Property 2879900210',
             'Report Contoso Orders - Summary - Property Caption',
@@ -83,9 +82,9 @@ describe('namesFromNote', () => {
     });
 });
 
-describe('the 100 % corpus guarantee', () => {
-    // This is the regression guard for the whole naming approach (§4.4). It is an exact
-    // count on purpose: a percentage threshold would let a regression hide.
+describe('names for every corpus unit', () => {
+    // The regression guard for the whole naming approach. It is an exact count on
+    // purpose: a percentage threshold would let a regression hide.
     it.each([
         ['Contoso App.g.xlf', 500],
         ['Fabrikam Base.de-DE.xlf', 2500],
@@ -141,8 +140,7 @@ describe('developerHint', () => {
     });
 
     it('returns free text whole, without inventing a language', () => {
-        // The corpus contains this exact note. An unanchored prefix rule would read
-        // "%1 " as a language and mangle it (§3.7).
+        // An unanchored prefix rule would read "%1 " as a language and mangle the note.
         expect(developerHint('%1 = Document No.')).toEqual({ text: '%1 = Document No.' });
         expect(developerHint('Erstellt am')).toEqual({ text: 'Erstellt am' });
         expect(developerHint('Verkauf - Auftragsbestätigung %1')).toEqual({

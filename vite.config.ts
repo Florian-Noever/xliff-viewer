@@ -4,17 +4,15 @@ import vue from '@vitejs/plugin-vue';
 
 /**
  * Two HTML files, each with one job:
- *   media/webview.html — the host's template. Placeholders are filled in at runtime
- *                        (TOOL-05), following gob-numberingtool-vscode. `build.lib`
- *                        never processes HTML, so Vite does not touch it.
+ *   media/webview.html — the host's template. Placeholders are filled in at runtime.
+ *                        `build.lib` never processes HTML, so Vite does not touch it.
  *   index.html         — the Vite dev-server entry for `dev:webview`. No placeholders,
  *                        not shipped in the VSIX.
  */
 export default defineConfig(({ mode }) => ({
     plugins: [vue()],
     // Vue's bundler build reads process.env.NODE_ENV, which does not exist in a webview.
-    // Without this the built bundle throws "process is not defined" and renders nothing —
-    // invisible in dev and under Vitest, because both define it already. (gob does the same.)
+    // Dev and Vitest define it already, so only the built bundle would throw without this.
     define: {
         'process.env.NODE_ENV': JSON.stringify(mode === 'development' ? 'development' : 'production'),
     },
@@ -27,7 +25,7 @@ export default defineConfig(({ mode }) => ({
     // to that same name and would otherwise try to copy the folder into itself.
     publicDir: false,
     build: {
-        // One IIFE bundle, no code splitting: the webview CSP forbids dynamic imports (§11.1).
+        // One IIFE bundle, no code splitting: the webview CSP forbids dynamic imports.
         lib: {
             entry: fileURLToPath(new URL('./src/webview/main.ts', import.meta.url)),
             formats: ['iife'],

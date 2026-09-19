@@ -5,11 +5,8 @@ import { serialiseXliff } from '../../extension/xliff/serialise';
 import { validateStructure } from '../../extension/xliff/validate';
 
 /**
- * Behaviour on input the corpus does not contain, pinned by `REVIEW-01`.
- *
- * Some of these assert something we would rather not do. They are here so the loss is
- * **visible and deliberate** rather than discovered by a user — every one is recorded in
- * STATUS.md's Known Issues with the task that would change it.
+ * Behaviour on input no fixture contains. Some of these pin a loss we would rather not have,
+ * so that it stays visible and deliberate.
  */
 
 const wrap = (inner: string): string =>
@@ -48,21 +45,19 @@ describe('shapes AL never emits but XLIFF allows', () => {
     });
 });
 
-describe('known losses — deliberate and recorded', () => {
-    it('DROPS XML comments, which is why a document with one is never written (DEC-038)', () => {
+describe('known losses, pinned deliberately', () => {
+    it('DROPS XML comments, which is why a document with one is never written', () => {
         const text = wrap('      <!-- reviewed by AB -->\n      <trans-unit id="a">\n        <source>s</source>\n      </trans-unit>');
 
-        // Content loss, not formatting normalisation — which is exactly why the write path
-        // refuses such a document rather than rewriting it (`DEC-038`). Asserted so that the
-        // day someone preserves comments, this test fails and tells them the guard can go.
+        // Content loss, not formatting normalisation, so the write path refuses such a
+        // document. Once comments survive the round-trip, this fails and the guard can go.
         expect(roundTrip(text)).not.toContain('reviewed by AB');
     });
 
     it('converts CDATA to escaped text', () => {
         const text = wrap('      <trans-unit id="a">\n        <source><![CDATA[<b>x</b>]]></source>\n      </trans-unit>');
 
-        // Same characters, different encoding — a byte change, not a meaning change.
-        // Falls under DEC-017's first-save normalisation.
+        // Same characters, different encoding: a byte change on the first save, not a meaning change.
         expect(parseXliff(text).files[0].body.units[0].source).toBe('<b>x</b>');
         expect(roundTrip(text)).toContain('<source>&lt;b&gt;x&lt;/b&gt;</source>');
     });

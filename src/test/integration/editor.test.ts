@@ -50,7 +50,7 @@ suite('XLIFF custom editor', () => {
         assertOk(editors, 'no customEditors contribution');
         assertEqual(editors.length, 1, 'expected exactly one custom editor');
         assertEqual(editors[0].viewType, VIEW_TYPE, 'wrong viewType');
-        // Must stay "default" or "Reopen with Text Editor" disappears (§8.1).
+        // Must stay "default" or "Reopen with Text Editor" disappears.
         assertEqual(editors[0].priority, 'default', 'priority must be "default"');
         assertArrayEqual(
             editors[0].selector.map(entry => entry.filenamePattern).sort(),
@@ -69,9 +69,9 @@ suite('XLIFF custom editor', () => {
         await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
     });
 
-    test('every corpus file opens with the custom editor', async () => {
-        // REVIEW-02: the host is where a parse failure would surface, and the web host is
-        // where it would surface differently. Five files, both hosts, one test.
+    test('every example file opens with the custom editor', async () => {
+        // The host is where a parse failure would surface, and the web host is where it
+        // would surface differently; this suite runs in both.
         for (const name of CORPUS) {
             await vscode.commands.executeCommand('vscode.openWith', exampleUri(name), VIEW_TYPE);
 
@@ -83,7 +83,7 @@ suite('XLIFF custom editor', () => {
         }
     });
 
-    test('every corpus file still opens as plain text', async () => {
+    test('every example file still opens as plain text', async () => {
         for (const name of CORPUS) {
             const document = await vscode.workspace.openTextDocument(exampleUri(name));
             assertContains(document.getText(), '<xliff', `${name} did not load as XLIFF text`);

@@ -6,17 +6,17 @@ import type { XliffState } from '@shared/state';
 import type { ComputedRef, Ref } from 'vue';
 
 /**
- * Whether the user is editing, and when not, why not (MASTER_PLAN §11.3, §12.5, §13).
+ * Whether the user is editing, and when not, why not.
  *
  * **Read-only is the default and editing is opt-in.** Two separate questions live here and
  * are deliberately not collapsed into one boolean: whether the document *can* be edited,
  * which the host decides, and whether the user has asked to, which the toggle decides. A
- * single flag would leave the GUI unable to say which of the two is stopping it — and §12.5
- * asks for the reason, not just the refusal.
+ * single flag would leave the GUI able to refuse but unable to say which of the two is
+ * stopping it.
  */
 
 export const EditRefusal = {
-    /** A `.g.xlf`: the AL compiler owns it (`DEC-011`). */
+    /** A `.g.xlf`: the AL compiler owns it. */
     baseFile: 'baseFile',
     /** The file, or the file system under it, will not take a write. */
     readOnly: 'readOnly',
@@ -40,12 +40,12 @@ export interface EditMode {
     readonly active: ComputedRef<boolean>;
     /** Why editing is not happening, or undefined when it is. */
     readonly refusal: ComputedRef<EditRefusal | undefined>;
-    /** The same, in a sentence (§12.5). */
+    /** The same, in a sentence. */
     readonly reason: ComputedRef<string | undefined>;
     toggle(): void;
     /**
      * Records that the reader picked a state for this unit, so a later edit to its text
-     * does not quietly replace their choice with `stateOnEdit` (§12.3).
+     * does not quietly replace their choice with `stateOnEdit`.
      */
     rememberState(unitId: string, state: XliffState): void;
     /** The state they picked for this unit, or undefined to let `stateOnEdit` decide. */
@@ -60,15 +60,14 @@ export interface EditModeSource {
 export function useEditMode(source: EditModeSource): EditMode {
     const wanted = ref(false);
 
-    // Keyed by unit and reset when the document changes. §12.3 scopes the exception to
-    // "the same session", and unit ids repeat across files — a choice made in one document
-    // must not follow the reader into the next.
+    // Keyed by unit and reset when the document changes: unit ids repeat across files, and
+    // a choice made in one document must not follow the reader into the next.
     const chosen = new Map<string, XliffState>();
     watch(() => source.document.value?.uri, () => {
         chosen.clear();
     });
 
-    // §13: the setting seeds the toggle rather than owning it. Watching the value means a
+    // The setting seeds the toggle rather than owning it. Watching the value means a
     // change in settings re-seeds, while the user's own toggle survives everything else the
     // host posts — settings arrive again on every configuration change.
     watch(() => source.settings.value.editMode, (setting) => {

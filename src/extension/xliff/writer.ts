@@ -5,30 +5,27 @@ import { iterateUnits } from '../../shared/model';
 import type { XliffDocument, XliffTransUnit } from '../../shared/model';
 
 /**
- * Model mutation → the smallest text edit that expresses it (MASTER_PLAN §7.6).
+ * Model mutation → the smallest text edit that expresses it.
  *
  * The order is fixed: **mutate the model, serialise the whole document, then trim.**
  * Serialising everything and narrowing afterwards is what keeps the writer honest — it
- * cannot produce an edit the serialiser would not also produce, so `DATA-04`'s
+ * cannot produce an edit the serialiser would not also produce, so the serialiser's
  * round-trip invariant covers the write path too.
  *
  * No `vscode` import: this returns plain character offsets and the host converts them
- * with `document.positionAt` (§6.1).
+ * with `document.positionAt`.
  */
 
 /**
- * Whether the text carries an XML comment (`DEC-038`).
+ * Whether the text carries an XML comment.
  *
- * The parser discards comments — verified, not assumed: a document with two survives the
- * round trip byte-perfect except that both are gone. Reading a file that has one is
- * harmless; **writing it would delete them**, which is why the write path asks first.
+ * The parser discards comments. Reading a file that has one is harmless; **writing it would
+ * delete them**, which is why the write path asks first. Preserving them would need ordered
+ * children in the model.
  *
- * This is permanent, not a stopgap. Preserving comments needs ordered children in the model,
- * and no AL-generated file has ever carried one — `DEC-038` weighs the two.
- *
- * `<!--` cannot open anything but a comment in a well-formed XLIFF document: the corpus has
- * no CDATA (§3.3), and the same characters inside a text node are entity-escaped. A false
- * positive would refuse an edit, never destroy one, which is the direction to err in.
+ * Outside a comment, `<!--` can only appear inside CDATA, which AL does not emit; in a text
+ * node the same characters are entity-escaped. A false positive would refuse an edit, never
+ * destroy one, which is the direction to err in.
  */
 export function containsComment(text: string): boolean {
     return text.includes('<!--');
@@ -56,7 +53,7 @@ function isHighSurrogate(code: number): boolean {
  * Narrows a whole-document rewrite to the region that actually changed.
  *
  * Returns `null` when nothing changed — that is what stops a file whose formatting does
- * not match ours from being rewritten merely by being opened (§7.6).
+ * not match ours from being rewritten merely by being opened.
  */
 export function trimToEdit(currentText: string, nextText: string): TextEditRange | null {
     if (currentText === nextText) {
@@ -106,9 +103,8 @@ function findUnit(document: XliffDocument, unitId: string): XliffTransUnit {
  * the document text would be unchanged.
  *
  * The target is **replaced**, never mutated in place, so its `attributes` bag and its
- * named fields cannot drift apart (`DEC-025`). A unit with no `<target>` gains one; the
- * serialiser places it after `<source>` and indents it, so there is no insertion point to
- * compute here.
+ * named fields cannot drift apart. A unit with no `<target>` gains one; the serialiser
+ * places it after `<source>` and indents it, so there is no insertion point to compute here.
  *
  * @throws {XliffParseError} when no unit has that id.
  */

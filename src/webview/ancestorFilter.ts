@@ -1,7 +1,7 @@
 import type { AlNodeDto } from '@shared/dto';
 
 /**
- * The one ancestor rule, shared by search and by the state filter (MASTER_PLAN §11.5).
+ * The one ancestor rule, shared by search and by the state filter.
  *
  * "A matching leaf forces its ancestors visible" is easy to write twice and get subtly
  * different twice, so it is written once and both callers hand it a predicate.

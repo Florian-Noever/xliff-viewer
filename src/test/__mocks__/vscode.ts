@@ -1,10 +1,9 @@
 /**
  * Hand-written stand-in for the `vscode` module, aliased in by the `host` Vitest project.
- * Style follows gob-numberingtool-vscode (DEC-023): record what was called, expose
- * `flush*` helpers to assert on it, `set*` helpers to arrange state, and `resetMocks()`
- * between tests. No auto-mocking library.
+ * It records what was called, exposes `flush*` helpers to assert on it, `set*` helpers to
+ * arrange state, and `resetMocks()` between tests. No auto-mocking library.
  *
- * Only the surface the host actually uses is modelled. Extend it when a task needs more —
+ * Only the surface the host actually uses is modelled. Extend it when a test needs more —
  * and only that much.
  */
 
@@ -176,7 +175,7 @@ export const ProgressLocation = { SourceControl: 1, Window: 10, Notification: 15
 
 export const TextEditorRevealType = { Default: 0, InCenter: 1, InCenterIfOutsideViewport: 2, AtTop: 3 } as const;
 
-/** What the extension asked for when it registered its editor — `DEC-030` is about one flag. */
+/** What the extension asked for when it registered its editor, options included. */
 export const customEditorRegistrations: { viewType: string; options?: unknown }[] = [];
 
 export const window = {
@@ -296,13 +295,13 @@ export const workspace = {
             return Promise.resolve({ type: 1, size: content.length });
         },
     },
-    /** Matches virtual file paths against a `**` / `*` glob. Enough for the resolver tests. */
     createFileSystemWatcher: (_pattern: string): FakeFileSystemWatcher => new FakeFileSystemWatcher(),
     getWorkspaceFolder: (_uri: Uri): { uri: Uri } | undefined =>
         (workspaceRoot === undefined ? undefined : { uri: workspaceRoot }),
     get workspaceFolders(): { uri: Uri }[] | undefined {
         return workspaceRoot === undefined ? undefined : [{ uri: workspaceRoot }];
     },
+    /** Matches virtual file paths against a `**` / `*` glob. Enough for the resolver tests. */
     findFiles: (pattern: string): Promise<Uri[]> => {
         // One pass with a replacer: expanding `**` in an earlier pass would leave `*`
         // characters that a later single-`*` pass would rewrite again.
@@ -328,12 +327,8 @@ export const workspace = {
     },
     applyEdit: async (edit: WorkspaceEdit): Promise<boolean> => {
         appliedEdits.push(...edit.entries);
-        // The real `applyEdit` rewrites the document and fires the change event; `EDIT-02`
-        // exists to recognise that event, so the mock has to produce it.
-        //
-        // And it does so **after yielding**, as the real one does. That gap is the whole
-        // point: it is where somebody else's edit can land between us recording ours and
-        // ours coming back, which is the race §8.4 forbids suppressing blindly.
+        // As the real one does, rewrite the document and fire the change event only after
+        // yielding: another edit can land in that gap, before the session sees its own.
         await Promise.resolve();
         for (const entry of edit.entries) {
             const document = editableDocuments.get(entry.uri);
@@ -365,7 +360,7 @@ export interface ConfigurationChangeEvent {
     affectsConfiguration(section: string, scope?: unknown): boolean;
 }
 
-/** What VS Code reports for one replaced span, which is what `EDIT-02` matches against. */
+/** What VS Code reports for one replaced span; a session matches these against its own edit. */
 export interface ContentChange {
     readonly rangeOffset: number;
     readonly rangeLength: number;
@@ -380,7 +375,7 @@ export interface TextDocumentChangeEvent {
 /** Enough of a `TextDocument` for a session: an identity and its text. */
 export class FakeTextDocument {
     public readonly uri: Uri;
-    /** What the editor detected on read. `utf8bom` is the case `EDIT-01a` warns about. */
+    /** What the editor detected on read. The session warns that a save drops a `utf8bom` BOM. */
     public encoding: string;
     private text: string;
 
@@ -490,13 +485,13 @@ export function fireConfigurationChange(...sections: string[]): void {
     }
 }
 
-/** Fires `onDidChangeTextDocument`. `changes` defaults to one entry — zero means "no content changed". */
 /**
- * Fires a change event.
+ * Fires `onDidChangeTextDocument`.
  *
  * `changes` is either how many anonymous changes to report — enough for tests that only
- * care that *something* changed — or the actual spans, which `EDIT-02` needs because it
- * decides whether an edit was its own by comparing them.
+ * care that *something* changed, and zero means "no content changed" — or the actual
+ * spans, which a session needs because it decides whether an edit was its own by comparing
+ * them.
  */
 export function fireTextDocumentChange(
     document: { readonly uri: Uri },
@@ -519,12 +514,12 @@ export function removeVirtualFile(path: string): void {
     delete virtualFiles[path.split(BACKSLASH).join(FORWARD)];
 }
 
-/** Sets the single workspace folder `getWorkspaceFolder` reports. */
 /** Which QuickPick entry the next `showQuickPick` returns; undefined means cancelled. */
 export function setQuickPickResult(index: number | undefined): void {
     quickPickChoice = index;
 }
 
+/** Sets the single workspace folder `getWorkspaceFolder` reports. */
 export function setWorkspaceRoot(path: string | undefined): void {
     workspaceRoot = path === undefined ? undefined : Uri.file(path);
 }

@@ -15,11 +15,7 @@ import {
     setWorkspaceRoot,
 } from '../__mocks__/vscode';
 
-/**
- * §9.2's six steps. The third-party ones were verified against the published manifests
- * rather than guessed (`DEC-031`), and what that turned up shapes these tests: XLIFF Sync
- * has a key, NAB AL Tools has none.
- */
+/** XLIFF Sync declares a base-file setting; NAB AL Tools declares none, so it has no tests here. */
 
 const WORKSPACE = '/w';
 const uri = (path: string): vscode.Uri => vscode.Uri.file(path);
@@ -62,7 +58,7 @@ describe('appNameOf', () => {
     });
 });
 
-describe('the conventions (§9.2 steps 4–6)', () => {
+describe('the conventions', () => {
     it('finds the sibling .g.xlf', async () => {
         workspaceWith('/w/Translations/App.de-DE.xlf', '/w/Translations/App.g.xlf');
 
@@ -97,8 +93,8 @@ describe('the conventions (§9.2 steps 4–6)', () => {
     });
 
     it('picks the base file named after this app when several apps share the workspace', async () => {
-        // REVIEW-02a: taking the first hit here paired a translation with another app's
-        // base file, which marks every unit orphaned (§9.3) — a confidently wrong answer.
+        // Taking the first hit would pair the translation with another app's base file,
+        // which marks every unit orphaned — a confidently wrong answer.
         workspaceWith(
             '/w/loose/App.de-DE.xlf',
             '/w/other/Translations/Other.g.xlf',
@@ -130,14 +126,14 @@ describe('the conventions (§9.2 steps 4–6)', () => {
         expect(flushLogs().some(line => line.startsWith('error'))).toBe(false);
     });
 
-    it('does not look for a base file for a base file (§9.2)', async () => {
+    it('does not look for a base file for a base file', async () => {
         workspaceWith('/w/T/App.g.xlf', '/w/T/Other.g.xlf');
 
         expect((await resolver.resolve(uri('/w/T/App.g.xlf'), true)).uri).toBeUndefined();
     });
 });
 
-describe('our own setting (§9.2 step 1)', () => {
+describe('our own setting', () => {
     it('overrides the sibling', async () => {
         workspaceWith('/w/T/App.de-DE.xlf', '/w/T/App.g.xlf', '/w/elsewhere/Chosen.g.xlf');
         setConfigOverride('xliffViewer.baseFile', '/w/elsewhere/Chosen.g.xlf');
@@ -170,7 +166,7 @@ describe('our own setting (§9.2 step 1)', () => {
     });
 });
 
-describe('XLIFF Sync (§9.2 step 2)', () => {
+describe('XLIFF Sync', () => {
     it('uses its setting when it names a real file', async () => {
         workspaceWith('/w/T/App.de-DE.xlf', '/w/T/App.g.xlf', '/w/T/Sync Chose This.g.xlf');
         setConfigOverride('xliffSync.baseFile', 'Sync Chose This.g.xlf');
@@ -219,7 +215,7 @@ describe('XLIFF Sync (§9.2 step 2)', () => {
     });
 });
 
-describe('caching and invalidation (§9.4)', () => {
+describe('caching and invalidation', () => {
     it('answers from cache rather than searching twice', async () => {
         workspaceWith('/w/T/App.de-DE.xlf', '/w/T/App.g.xlf');
         const document = uri('/w/T/App.de-DE.xlf');

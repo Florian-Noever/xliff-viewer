@@ -8,12 +8,12 @@ import type { Hint } from '../validation';
 import type { ComputedRef, Ref } from 'vue';
 
 /**
- * The §12.4 hints, per unit and rolled up the tree (`POLISH-01`).
+ * The validation hints, per unit and rolled up the tree.
  *
  * Both maps are `computed`, so a keystroke costs nothing: they are rebuilt when the file,
  * its units or the two validation settings change, and not otherwise. That matters — an
- * edit patches one unit and the whole document's hints are recomputed, which is 4707 units
- * of the corpus at once rather than once per render.
+ * edit patches one unit yet recomputes the whole document's hints, which must happen once
+ * per change rather than once per render.
  *
  * The roll-up counts **units carrying at least one hint**, not hints: a container saying
  * "3" should mean three translations to look at, not one translation with three problems.
@@ -68,7 +68,7 @@ function collect(units: readonly TransUnitDto[], options: Parameters<typeof hint
 }
 
 /**
- * A node carries a unit exactly when its key is that unit's id (`DEC-028`), so a leaf is
+ * A node carries a unit exactly when its key is that unit's id, so a leaf is
  * counted by looking itself up — the same identity `summariseTree` walks on.
  */
 function countNode(node: AlNodeDto, byUnit: ReadonlyMap<string, readonly Hint[]>, counts: Map<string, number>): number {

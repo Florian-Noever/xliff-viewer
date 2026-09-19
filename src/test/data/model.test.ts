@@ -34,7 +34,7 @@ describe('iterateUnits', () => {
         expect([...iterateUnits(doc)].map(u => u.id)).toEqual(['body-1', 'outer-1', 'inner-1']);
     });
 
-    it('walks every file, not just the first (DEC-020)', () => {
+    it('walks every file, not just the first', () => {
         const doc = document([
             { attributes: {}, sourceLanguage: 'en-US', body: { attributes: {}, units: [unit('a')], groups: [] } },
             { attributes: {}, sourceLanguage: 'en-US', body: { attributes: {}, units: [unit('b')], groups: [] } },
@@ -51,8 +51,8 @@ describe('iterateUnits', () => {
 
 describe('the attributes bag', () => {
     it('can carry attributes the named fields do not model', () => {
-        // The corpus puts these on <xliff>; without the bag they would be lost and the
-        // byte-identical round-trip (§7.2) would fail on every AL-generated file.
+        // AL puts these on <xliff>; without the bag they would be lost and the
+        // byte-identical round-trip would fail on every AL-generated file.
         const doc = document([]);
         const withNamespaces: XliffDocument = {
             ...doc,

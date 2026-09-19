@@ -166,7 +166,7 @@ describe('setTarget', () => {
         const unit = units[0];
         const target = required(unit.target, 'a target');
 
-        // A target carrying an attribute we never enumerated (DEC-025).
+        // A target carrying an attribute we never enumerated.
         unit.target = { ...target, attributes: { ...target.attributes, 'custom-attr': 'keep-me' } };
         const baseline = serialiseXliff(document);
 
@@ -227,10 +227,8 @@ describe('the round-trip stays green after a write', () => {
 });
 
 /**
- * `EDIT-03a`. The field lets a translator press Enter, so a target can hold a real line
- * break. It is worth pinning that one survives: nothing in the corpus has one — AL writes
- * its own line break as a literal backslash inside a single-line string — so no existing
- * test would notice if the write path started normalising or escaping them.
+ * The field lets a translator press Enter, so a target can hold a real line break. AL writes
+ * its own as a literal backslash in a single-line string, so only these tests cover a real one.
  */
 describe('a line break a translator typed', () => {
     const TYPED = 'Erste Zeile\nZweite Zeile';

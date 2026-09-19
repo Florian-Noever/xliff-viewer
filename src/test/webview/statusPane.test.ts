@@ -75,9 +75,8 @@ describe('variants', () => {
 });
 
 describe('theming', () => {
-    it('takes every colour from a VS Code variable, so both themes work (§11.6)', () => {
-        // jsdom cannot render a theme; what it can prove is that no colour is hardcoded,
-        // which is the actual requirement.
+    it('takes every colour from a VS Code variable, so both themes work', () => {
+        // jsdom cannot render a theme; what it can prove is that no colour is hardcoded.
         const styles = SOURCE.split('<style')[1] ?? '';
         const literals = styles.match(/(?<![\w-])(#[0-9a-fA-F]{3,8}|rgba?\(|hsla?\()/g) ?? [];
 
@@ -86,7 +85,7 @@ describe('theming', () => {
         expect(styles).toContain('--vscode-errorForeground');
     });
 
-    it('spins only when the viewer has not asked for reduced motion (§11.7)', () => {
+    it('spins only when the viewer has not asked for reduced motion', () => {
         const styles = SOURCE;
         expect(styles).toContain('prefers-reduced-motion: no-preference');
     });

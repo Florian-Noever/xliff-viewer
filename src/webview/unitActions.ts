@@ -5,7 +5,7 @@ import type { XliffState } from '@shared/state';
 import type { InjectionKey } from 'vue';
 
 /**
- * What a unit card can ask the host to do (MASTER_PLAN §10).
+ * What a unit card can ask the host to do.
  *
  * Provided once by `App.vue` and injected where it is needed, rather than passed down
  * through `UnitTree` and `TreeRow` as a prop neither of them uses. Those two carry the
@@ -14,9 +14,9 @@ import type { InjectionKey } from 'vue';
 
 export interface UnitActions {
     open(target: NavigationTarget, unitId: string): void;
-    /** Undefined while resolution has not run; null when it ran and found nothing (§9.2). */
+    /** Undefined while resolution has not run; null when it ran and found nothing. */
     baseFileName(): string | null | undefined;
-    /** Commits a target (§12.1). Called on blur, never per keystroke. */
+    /** Commits a target. Called on blur, never per keystroke. */
     updateTarget(unitId: string, value: string): void;
     updateState(unitId: string, state: XliffState): void;
 }

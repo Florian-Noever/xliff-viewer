@@ -6,7 +6,4 @@ public
 .vscode-test-web/
 *.vsix
 .env
-
-# The durable planning documents. Kept on disk and read by every session, but not part of
-# the published repository — see CLAUDE.md for what lives in them.
 docs/

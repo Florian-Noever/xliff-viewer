@@ -106,7 +106,7 @@ describe('useStateFilter', () => {
         expect(filter.predicate.value).toBeUndefined();
     });
 
-    it('offers one chip per state the file actually has, worst first (§5.2)', () => {
+    it('offers one chip per state the file actually has, worst first', () => {
         const filter = filterOnly();
 
         expect(filter.chips.value.map(chip => chip.state)).toEqual([
@@ -159,7 +159,7 @@ describe('useStateFilter', () => {
 });
 
 describe('the chips in the toolbar', () => {
-    it('are toggle buttons that say whether they are on (§11.7)', async () => {
+    it('are toggle buttons that say whether they are on', async () => {
         const wrapper = open();
         await nextTick();
 
@@ -206,7 +206,7 @@ describe('search and filter together', () => {
         await nextTick();
     }
 
-    it('shows only the units matching both (§11.5)', async () => {
+    it('shows only the units matching both', async () => {
         const wrapper = open();
         await nextTick();
 

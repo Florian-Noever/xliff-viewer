@@ -107,7 +107,7 @@ describe('the toolbar', () => {
         expect(wrapper.get('.match-count').text()).toBe('no matches');
     });
 
-    it('focuses the box on Ctrl+F (§11.7)', async () => {
+    it('focuses the box on Ctrl+F', async () => {
         const wrapper = open();
         await nextTick();
 
@@ -143,7 +143,7 @@ describe('searching the tree', () => {
         expect(rowKeys(wrapper)).toEqual(['Vendor', 'Caption']);
     });
 
-    it('restores the tree, and the expansion the user had, when the search is cleared (§11.7)', async () => {
+    it('restores the tree, and the expansion the user had, when the search is cleared', async () => {
         const wrapper = open();
         await nextTick();
         await wrapper.findAll('.chevron')[0].trigger('click'); // collapse "Customer"

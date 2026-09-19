@@ -6,7 +6,7 @@ import { parseXliff } from '../xliff/parser';
 import { iterateUnits } from '../../shared/model';
 
 /**
- * What a base file says each unit's source is (MASTER_PLAN §9.3).
+ * What a base file says each unit's source is.
  *
  * Parsed on first need rather than on open, and **the model is dropped immediately**: all
  * that survives is an id → source map. A base file is the same size as the language file
@@ -26,7 +26,7 @@ export class BaseFileIndex implements vscode.Disposable {
      *
      * Regenerating `App.g.xlf` while a translator has `App.de-DE.xlf` open is the normal
      * workflow, not an edge case — dropping the cache is not enough, because the markers
-     * already on screen were computed from the old one (§9.3).
+     * already on screen were computed from the old one.
      */
     public readonly onDidChange: vscode.Event<vscode.Uri> = this.changed.event;
 
@@ -91,7 +91,7 @@ export interface UnitComparison {
     readonly id: string;
     /** The base no longer has this id at all. */
     readonly orphaned?: boolean;
-    /** The base's source, when it is not ours. Exact equality — a trailing space is a change (§3.6). */
+    /** The base's source, when it is not ours. Exact equality — a trailing space is a change. */
     readonly baseSource?: string;
 }
 

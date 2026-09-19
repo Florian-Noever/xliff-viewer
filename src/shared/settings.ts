@@ -1,5 +1,5 @@
 /**
- * The settings both runtimes need to agree on (MASTER_PLAN §13).
+ * The settings both runtimes need to agree on.
  *
  * The keys live here so the host reads and the webview consumes the same names; the
  * reading itself is `src/extension/services/settings.ts`, which is the only place allowed
@@ -10,7 +10,7 @@ import { XliffState } from './state';
 
 export const SETTINGS_SECTION = 'xliffViewer';
 
-/** Every §13 key, unqualified. `validation.enabled` really does contain a dot. */
+/** Every setting key, unqualified. `validation.enabled` really does contain a dot. */
 export const SettingKey = {
     baseFile: 'baseFile',
     editMode: 'editMode',
@@ -36,9 +36,9 @@ export interface WebviewSettings {
     readonly defaultExpandDepth: number;
     readonly validationEnabled: boolean;
     /**
-     * Its own key rather than a case of `validationEnabled`, because §12.4 calls this hint
-     * weak and wants it off (`DEC-037`). It is right about 132 of the corpus's translated
-     * units — proper nouns and identifiers a translator left alone on purpose.
+     * Its own key rather than a case of `validationEnabled`, because this hint is weak and
+     * off by default: a target equal to its source is often a proper noun or identifier a
+     * translator left alone on purpose.
      */
     readonly validationSameAsSource: boolean;
 }

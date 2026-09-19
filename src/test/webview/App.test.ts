@@ -76,8 +76,7 @@ describe('the file header', () => {
     });
 
     it('keeps the file name as the title when the file declares no app', async () => {
-        // `original` is optional in XLIFF, and `test.xlf` has none. A blank heading would
-        // be worse than a repeated name.
+        // `original` is optional in XLIFF. A blank heading would be worse than a repeated name.
         const wrapper = mountWithDocument({
             ...DOCUMENT,
             files: [{ ...DOCUMENT.files[0], original: undefined }],
@@ -88,7 +87,7 @@ describe('the file header', () => {
         expect(wrapper.find('.file-name').exists()).toBe(false);
     });
 
-    it('marks a read-only document, so nobody wonders why editing is absent (§12.5)', async () => {
+    it('marks a read-only document, so nobody wonders why editing is absent', async () => {
         const wrapper = mountWithDocument({ ...DOCUMENT, isBaseFile: true, readOnly: true });
         await nextTick();
         expect(wrapper.get('.tag').text()).toBe('base file · read-only');
@@ -100,7 +99,7 @@ describe('the file header', () => {
         expect(wrapper.get('.tag').text()).toBe('read-only');
     });
 
-    it('shows the file-level percentage (§5.4)', async () => {
+    it('shows the file-level percentage', async () => {
         // One translated of two translatable is 50 %.
         const wrapper = mountWithDocument();
         await nextTick();
@@ -139,7 +138,7 @@ describe('failure', () => {
         expect(wrapper.text()).not.toContain('Waiting for a document');
     });
 
-    it('leaves the document readable behind a banner (§7.7)', async () => {
+    it('leaves the document readable behind a banner', async () => {
         const wrapper = mountWithDocument();
         send(error);
         await nextTick();
@@ -162,7 +161,7 @@ describe('failure', () => {
 });
 
 describe('theming', () => {
-    it('hardcodes no colour anywhere in the webview (§11.6)', () => {
+    it('hardcodes no colour anywhere in the webview', () => {
         // global.css is exempt: its literals are the dev-server fallbacks that a real
         // webview overrides with the live theme.
         const sources = import.meta.glob('../../webview/**/*.{vue,css}', { query: '?raw', import: 'default', eager: true });

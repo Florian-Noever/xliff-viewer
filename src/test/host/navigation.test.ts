@@ -6,8 +6,8 @@ import { Logger } from '../../extension/services/logger';
 import { flushExecutedCommands, flushLogs, resetMocks, setVirtualFile } from '../__mocks__/vscode';
 
 /**
- * §10.2 and §10.3. There are no offsets in the model (`DEC-017`), so a unit's line is
- * found by searching the text — which makes *what* is searched for the whole story.
+ * There are no offsets in the model, so a unit's line is found by searching the text —
+ * which makes *what* is searched for the whole story.
  */
 
 const DOCUMENT = [
@@ -78,7 +78,7 @@ describe('findUnitLine', () => {
 });
 
 describe('revealAsText', () => {
-    it('asks for the built-in editor rather than ours (§10.3)', async () => {
+    it('asks for the built-in editor rather than ours', async () => {
         await revealAsText(vscode.Uri.file('/w/App.de-DE.xlf'));
 
         expect(flushExecutedCommands()).toEqual([

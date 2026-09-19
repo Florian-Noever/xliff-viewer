@@ -2,11 +2,11 @@
 /**
  * The document the Vite dev server renders when there is no extension host.
  *
- * **Generated — do not hand-edit.** It is a real projection of
- * `Examples/Fabrikam Base.de-DE.xlf`, trimmed to the 5 root objects named in
- * `src/shared/devFixture.ts`. `src/test/data/devFixture.test.ts` rebuilds it from the
- * corpus and fails if this file has drifted, so it cannot decay into invented data — and
- * that test is also how it is regenerated when the selection changes.
+ * **Generated — do not hand-edit.** It is a projection of the example file named by
+ * `DEV_FIXTURE_SOURCE`, trimmed to the root objects listed in `src/shared/devFixture.ts`.
+ * `src/test/data/devFixture.test.ts` rebuilds it from that file and fails if this one has
+ * drifted, so it cannot decay into invented data — and that test is also how it is
+ * regenerated when the selection changes.
  *
  * Tree-shaken out of the production bundle: it is reached only under
  * `import.meta.env.DEV`, which Vite replaces with `false` when building.

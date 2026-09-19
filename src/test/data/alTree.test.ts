@@ -26,7 +26,7 @@ describe('the large corpus file', () => {
     const units = unitsOf('Fabrikam Base.de-DE.xlf');
     const roots = buildAlTree(units);
 
-    it('yields exactly 230 root objects', () => {
+    it('yields the known number of root objects', () => {
         expect(roots).toHaveLength(230);
     });
 
@@ -52,7 +52,7 @@ describe('the large corpus file', () => {
 describe('grouping is by hash, never by name', () => {
     it('keeps the ambiguous "Table PTE Contoso Zone" object as one root', () => {
         // Its note reads "Table PTE Contoso Zone - Field Code - Property Caption", which a
-        // name-based split could read as an object called "PTE Contoso Zone - Field Code" (§4.4).
+        // name-based split could read as an object called "PTE Contoso Zone - Field Code".
         const roots = buildAlTree(unitsOf('Fabrikam Base.de-DE.xlf'));
         const table = roots.filter(node => node.segment.name === 'PTE Contoso Zone' && node.segment.type === 'Table');
 
@@ -62,8 +62,7 @@ describe('grouping is by hash, never by name', () => {
 
     it('separates same-name objects that also share a hash', () => {
         // The AL hash is derived from the symbol NAME, so "Table PTE Contoso Zone" and
-        // "Page PTE Contoso Zone" are both hash 69043486. Keying on the hash alone would merge
-        // them — several root hashes are shared across object types in this one file.
+        // "Page PTE Contoso Zone" share a hash. Keying on the hash alone would merge them.
         const roots = buildAlTree(unitsOf('Fabrikam Base.de-DE.xlf'));
         const named = roots.filter(node => node.segment.name === 'PTE Contoso Zone');
 
@@ -171,7 +170,7 @@ describe('shape', () => {
 });
 
 
-describe('the object-type level (DEC-033)', () => {
+describe('the object-type level', () => {
     const grouped = (...ids: string[]) => groupByObjectType(buildAlTree(ids.map(id => unit(id))));
 
     it('wraps the roots in one node per type', () => {
@@ -209,7 +208,6 @@ describe('the object-type level (DEC-033)', () => {
     });
 
     it('leaves a root alone when its id has no type to group by', () => {
-        // `test.xlf`'s only id is `1`; there is nothing to call the group.
         const tree = grouped('Table 1 - Property 9', '1');
 
         expect(tree.map(node => node.key)).toEqual(['type:Table', '1']);
@@ -220,14 +218,14 @@ describe('the object-type level (DEC-033)', () => {
     });
 
     it('keeps a Table and a Page of one name apart, in different groups', () => {
-        // §4.5: the hash is of the *name*, so those two collide on hash alone.
+        // The hash is of the *name*, so those two collide on hash alone.
         const tree = grouped('Table 69043486 - Property 1', 'Page 69043486 - Property 1');
 
         expect(tree.map(node => node.key)).toEqual(['type:Table', 'type:Page']);
         expect(tree.every(node => node.children.length === 1)).toBe(true);
     });
 
-    it('groups the large corpus file into the nine types it actually has', () => {
+    it('groups the large corpus file into its known object types, keeping every root', () => {
         const tree = groupByObjectType(buildAlTree(unitsOf('Fabrikam Base.de-DE.xlf')));
 
         expect(tree).toHaveLength(9);
@@ -237,8 +235,8 @@ describe('the object-type level (DEC-033)', () => {
 
 describe('a group key can never be a unit id', () => {
     it('holds against every id in the corpus', () => {
-        // `DEC-028`'s invariant is that a node carries a unit exactly when its key IS that
-        // unit's id. A group carries none, so its key must be one no id can produce.
+        // A node carries a unit exactly when its key IS that unit's id. A group carries
+        // none, so its key must be one no id can produce.
         for (const name of CORPUS) {
             for (const each of unitsOf(name)) {
                 expect(each.id.includes(':'), `${name}: ${each.id}`).toBe(false);

@@ -15,10 +15,8 @@ export function clearPostedMessages(): void {
 }
 
 /**
- * The one `setState` slot a webview gets, as a real value rather than a no-op.
- *
- * `POLISH-03` is about what survives the webview being destroyed and rebuilt, so a test has
- * to be able to write the slot, throw the component away, and read what a fresh mount finds.
+ * The one `setState` slot a webview gets, as a real value rather than a no-op, so a test
+ * can write the slot, throw the component away, and read what a fresh mount finds.
  */
 let state: unknown;
 
@@ -30,9 +28,9 @@ export function setWebviewState(value: unknown): void {
     state = value;
 }
 
-// Every test starts with an empty slot. `POLISH-03` made mounting the app *write* one, so
-// without this a test inherits whatever the previous test left behind — and a filter test
-// would start with the last test's filter applied.
+// Every test starts with an empty slot. Mounting the app *writes* one, so without this a
+// test inherits whatever the previous test left behind — a filter test would start with
+// the last test's filter applied.
 beforeEach(() => {
     state = undefined;
     postedMessages.length = 0;

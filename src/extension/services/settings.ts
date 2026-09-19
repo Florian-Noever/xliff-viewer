@@ -7,19 +7,19 @@ import type { WebviewSettings } from '../../shared/settings';
 import type { XliffState } from '../../shared/state';
 
 /**
- * The only place that reads configuration (MASTER_PLAN §13).
+ * The only place that reads this extension's configuration.
  *
- * Nothing else calls `workspace.getConfiguration`: a setting read in two places is a
- * setting that will be defaulted differently in two places.
+ * Nothing else reads an `xliffViewer.*` key: a setting read in two places is a setting
+ * that will be defaulted differently in two places.
  *
  * Every read is defensive. `package.json` declares defaults and types, but a user can put
  * a string where a number belongs, and VS Code hands it over unchanged.
  */
 
 export interface XliffViewerSettings extends WebviewSettings {
-    /** Empty when unset — an absolute or workspace-relative path, or a glob (§9.2). */
+    /** Empty when unset — an absolute or workspace-relative path, or a glob. */
     readonly baseFile: string;
-    /** Applied when a target is edited without an explicit state (§12.1). */
+    /** Applied when a target is edited without an explicit state. */
     readonly stateOnEdit: XliffState;
 }
 
@@ -75,7 +75,7 @@ function readDepth(configuration: vscode.WorkspaceConfiguration): number {
     return Math.max(0, Math.floor(value));
 }
 
-/** Only the ten states the spec allows in a file — never a synthetic one (§5.1). */
+/** Only the ten states the spec allows in a file — never a synthetic one. */
 function readStateOnEdit(configuration: vscode.WorkspaceConfiguration): XliffState {
     const value: unknown = configuration.get(SettingKey.stateOnEdit);
     return isSpecState(value) ? value : DEFAULT_STATE_ON_EDIT;

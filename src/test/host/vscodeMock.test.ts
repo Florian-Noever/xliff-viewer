@@ -7,7 +7,7 @@ afterEach(() => {
     resetMocks();
 });
 
-/** Smoke test for the mock itself: the host tasks build on every helper below. */
+/** Smoke test for the mock itself: the host tests build on every helper below. */
 describe('vscode mock', () => {
     it('resolves the aliased module rather than the real extension host', () => {
         expect(typeof vscode.workspace.getConfiguration).toBe('function');

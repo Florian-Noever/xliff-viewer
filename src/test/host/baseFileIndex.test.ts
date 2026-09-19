@@ -6,8 +6,8 @@ import { Logger } from '../../extension/services/logger';
 import { fireFileWatcher, flushLogs, resetMocks, setVirtualFile } from '../__mocks__/vscode';
 
 /**
- * §9.3. The comparison is exact string equality on source, never trimmed — a trailing
- * space is a change, because `xml:space="preserve"` makes it one (§3.6).
+ * The comparison is exact string equality on source, never trimmed — a trailing space is
+ * a change, because `xml:space="preserve"` makes it one.
  */
 
 const BASE = vscode.Uri.file('/w/App.g.xlf');
@@ -53,7 +53,7 @@ describe('BaseFileIndex', () => {
         expect(flushLogs().filter(line => line.includes('Indexed'))).toHaveLength(0);
     });
 
-    it('re-reads after the base file changes on disk (§9.4)', async () => {
+    it('re-reads after the base file changes on disk', async () => {
         setVirtualFile('/w/App.g.xlf', document([['a', 'A']]));
         await index.sourcesOf(BASE);
 
@@ -102,7 +102,7 @@ describe('compareToBase', () => {
         expect(compareToBase([unit('a', 'Client')], base)).toEqual([{ id: 'a', baseSource: 'Customer' }]);
     });
 
-    it('treats a trailing space as a change, because xml:space says it is one (§3.6)', () => {
+    it('treats a trailing space as a change, because xml:space says it is one', () => {
         expect(compareToBase([unit('a', 'Customer ')], base)).toEqual([{ id: 'a', baseSource: 'Customer' }]);
     });
 

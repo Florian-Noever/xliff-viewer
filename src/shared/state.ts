@@ -1,11 +1,11 @@
 /**
- * The translation-state domain and its roll-up (MASTER_PLAN §5.1 … §5.4, `DEC-005`).
+ * The translation-state domain and its roll-up.
  *
- * The roll-up lives here, in `src/shared/`, because the **webview** computes it
- * (`DEC-016`): shipping a summary per node made the DTO larger than the source file.
+ * The roll-up lives here, in `src/shared/`, because the **webview** computes it, so the
+ * DTO does not have to ship a summary per node.
  *
- * An `as const` object rather than a TypeScript `enum` (§14.5): this crosses the
- * `postMessage` boundary and is serialised to JSON.
+ * An `as const` object rather than a TypeScript `enum`: this crosses the `postMessage`
+ * boundary and is serialised to JSON.
  */
 
 import type { XliffTransUnit } from './model';
@@ -33,9 +33,8 @@ export const XliffState = {
 export type XliffState = typeof XliffState[keyof typeof XliffState];
 
 /**
- * Worst first. **The single source of truth for roll-up, sorting and colour** (§5.2) —
- * getting this order wrong silently corrupts every roll-up, so it is copied literally
- * from the plan and asserted entry-by-entry in the tests.
+ * Worst first. **The single source of truth for roll-up, sorting and colour** — getting
+ * this order wrong silently corrupts every roll-up, so the tests assert it entry by entry.
  */
 export const STATE_SEVERITY = [
     XliffState.missing,
@@ -95,26 +94,25 @@ export function isSpecState(value: unknown): value is XliffState {
     return typeof value === 'string' && (SPEC_STATES as readonly string[]).includes(value);
 }
 
-/** The worse of two states, by §5.2. */
+/** The worse of two states, by `STATE_SEVERITY`. */
 export function worstState(a: XliffState, b: XliffState): XliffState {
     return stateRank(a) <= stateRank(b) ? a : b;
 }
 
-// ── Roll-up (§5.3, §5.4) ─────────────────────────────────────────────────────
+// ── Roll-up ──────────────────────────────────────────────────────────────────
 
 /**
- * The effective state of one unit (§5.3, rule 2).
+ * The effective state of one unit.
  *
  * The declared `state` is the least of the three signals. A unit with no `<target>` is
  * `missing` whatever it declares, and an **empty target is `empty` even when it declares
- * `translated`** — 362 corpus units declare `needs-translation` and are empty, and it is
- * the emptiness a translator needs to see.
+ * `translated`** — it is the emptiness a translator needs to see.
  *
  * Empty means exactly `''`. A target holding a single space is a translation, not an
- * empty one (§3.6) — the corpus has ten.
+ * empty one.
  *
- * A target that holds text but declares **no** state is `unknown`, not `translated`
- * (`DEC-027`): the file never claimed the unit was done, so it must not look done.
+ * A target that holds text but declares **no** state is `unknown`, not `translated`: the
+ * file never claimed the unit was done, so it must not look done.
  */
 export function effectiveState(unit: XliffTransUnit): XliffState {
     if (unit.target === undefined) {
@@ -126,7 +124,7 @@ export function effectiveState(unit: XliffTransUnit): XliffState {
     return isSpecState(unit.target.state) ? unit.target.state : XliffState.unknown;
 }
 
-/** What a roll-up needs to know about a unit. `TransUnitDto` will satisfy it structurally. */
+/** What a roll-up needs to know about a unit. `TransUnitDto` satisfies it structurally. */
 export interface UnitState {
     readonly state: XliffState;
     /** `translate="no"` → false. Excluded from `translatable`, `worst` and `percent`. */
@@ -145,7 +143,7 @@ export interface SummaryNode {
     readonly children: readonly SummaryNode[];
 }
 
-/** §5.4. Every node carries one, including the file root. */
+/** Every node carries one, including the file root. */
 export interface StateSummary {
     /** Every descendant unit, translatable or not. */
     readonly total: number;
@@ -153,7 +151,7 @@ export interface StateSummary {
     readonly translatable: number;
     /** Counts every descendant, so it sums to `total` — untranslatable units are shown, so they are counted. */
     readonly byState: Readonly<Partial<Record<XliffState, number>>>;
-    /** The worst translatable descendant. **Undefined, never a green state, when there are none** (§5.3, rule 4). */
+    /** The worst translatable descendant. **Undefined, never a green state, when there are none.** */
     readonly worst: XliffState | undefined;
     /** `translated`, `signed-off` or `final`, among translatable descendants. */
     readonly translatedCount: number;
@@ -245,8 +243,8 @@ export function summariseUnits(units: Iterable<UnitState>): StateSummary {
  * the same function usable over a filtered view.
  *
  * Returns a `key → summary` map rather than writing onto the nodes: `AlNode` is readonly,
- * and a map is what "computed once per load and cached" (§5.3, rule 5) means for an
- * immutable tree. Keys are stable, so the map survives re-renders.
+ * so the result is computed once per load and cached beside the tree. Keys are stable, so
+ * the map survives re-renders.
  */
 export function summariseTree(nodes: readonly SummaryNode[], states: ReadonlyMap<string, UnitState>): ReadonlyMap<string, StateSummary> {
     const summaries = new Map<string, StateSummary>();

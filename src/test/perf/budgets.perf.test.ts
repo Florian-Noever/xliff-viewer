@@ -24,17 +24,12 @@ import type { XliffDocumentDto } from '../../shared/dto';
 import type { UnitState } from '../../shared/state';
 
 /**
- * Every wall-clock row of MASTER_PLAN §16, in one file.
+ * Every wall-clock budget, in one file.
  *
  * They live apart from the tests of the same code for one reason: they are the only
- * assertions in the suite whose result depends on what else the machine is doing. Run
- * alongside the other three Vitest projects they measured 65 ms against a 60 ms budget
- * while measuring 23 ms alone — a timing assertion that fails because another project is
- * busy is not an assertion. The `perf` project runs them one file at a time, after
- * everything else.
- *
- * Keeping them together also matches how they are used: a review checkpoint has to check
- * §16 against a fresh measurement, and §16 is one table.
+ * assertions in the suite whose result depends on what else the machine is doing, and a
+ * timing assertion that fails because another project is busy is not an assertion. The
+ * `perf` project runs them one file at a time, after everything else.
  */
 
 const EXAMPLES = fileURLToPath(new URL('../../../Examples', import.meta.url));
@@ -53,7 +48,7 @@ function fastest(attempts: number, run: () => void): number {
     return best;
 }
 
-describe('§16, measured on the realistic worst case', () => {
+describe('performance budgets on the large example file', () => {
     it('validates in under 60 ms', () => {
         expect(fastest(5, () => validateXml(text))).toBeLessThan(60);
     });
@@ -68,7 +63,7 @@ describe('§16, measured on the realistic worst case', () => {
     });
 
     it('builds the AL tree in under 60 ms', () => {
-        // Including the object-type level (`DEC-033`), because that is what ships.
+        // Including the object-type level, because that is what ships.
         const units = [...iterateUnits(parseXliff(text))];
         expect(fastest(3, () => groupByObjectType(buildAlTree(units)))).toBeLessThan(60);
     });
@@ -83,9 +78,9 @@ describe('§16, measured on the realistic worst case', () => {
         expect(fastest(3, () => summariseTree(roots, states))).toBeLessThan(40);
     });
 
-    it('hints the whole document in under 40 ms (POLISH-01)', () => {
+    it('hints the whole document in under 40 ms', () => {
         // Against the roll-up's budget, since it is the same shape of work: one pass over
-        // every unit, recomputed when the document changes and not per keystroke. Measured
+        // every unit, recomputed when the document changes and not per keystroke. Timed
         // with the same-as-source check **on**, which is the expensive case — it is the only
         // one that fires in bulk, and off by default precisely because it does.
         const dto = projectDocument(parseXliff(text), { uri: 'file:///x', fileName: LARGE });
@@ -107,9 +102,8 @@ describe('§16, measured on the realistic worst case', () => {
     });
 
     it('turns a keystroke into a filtered tree in under 50 ms', () => {
-        // §11.5's budget, measured over the webview's own pure code: the index is built
-        // once per document, so a keystroke is the matcher, the ancestor walk and the
-        // re-flatten — not the index.
+        // Timed over the webview's own pure code: the index is built once per document, so
+        // a keystroke is the matcher, the ancestor walk and the re-flatten — not the index.
         const file = projectDocument(parseXliff(text), { uri: 'file:///x', fileName: LARGE }).files[0];
         const unitsById = new Map(file.units.map(unit => [unit.id, unit]));
         const index = buildSearchIndex(file.tree, unitsById);
@@ -125,8 +119,7 @@ describe('§16, measured on the realistic worst case', () => {
 
     it('deserialises the payload and flattens the first screen in under 100 ms', () => {
         // The webview half of first paint, before Vue renders anything: `JSON.parse` on the
-        // wire format, then the flatten that `defaultExpandDepth` seeds. Measured here
-        // rather than driven by hand in a browser, so `UI-07`'s extra level is watched.
+        // wire format, then the flatten that `defaultExpandDepth` seeds.
         const payload = JSON.stringify(projectDocument(parseXliff(text), { uri: 'file:///x', fileName: LARGE }));
 
         expect(fastest(3, () => {
@@ -138,8 +131,8 @@ describe('§16, measured on the realistic worst case', () => {
     });
 
     it('builds the search index once per document in under 100 ms', () => {
-        // Not a §16 row: the number that matters is the keystroke above, and this is the
-        // work that would land on it if the index were ever rebuilt per character.
+        // The number that matters is the keystroke above; this is the work that would land
+        // on it if the index were ever rebuilt per character.
         const file = projectDocument(parseXliff(text), { uri: 'file:///x', fileName: LARGE }).files[0];
         const unitsById = new Map(file.units.map(unit => [unit.id, unit]));
 
@@ -148,7 +141,7 @@ describe('§16, measured on the realistic worst case', () => {
     });
 
     it('turns an edit into a WorkspaceEdit in under 100 ms', async () => {
-        // §12.1's whole path, not just the writer: the freshness check, the model mutation,
+        // The whole edit path, not just the writer: the freshness check, the model mutation,
         // a whole-document serialise, and the trim down to one changed line.
         const document = new FakeTextDocument(`/w/${LARGE}`, text);
         const session = new XliffDocumentSession(document as unknown as vscode.TextDocument);

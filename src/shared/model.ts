@@ -1,16 +1,15 @@
 /**
- * The raw XLIFF 1.2 model — a faithful mirror of the XML, not a convenience view
- * (MASTER_PLAN §7.1). The AL tree (§7.4) is derived from it; the DTOs (§7.5) are
- * projected from it. There are **no offsets** anywhere: the document is read whole,
- * edited as a model, and written whole (`DEC-017`).
+ * The raw XLIFF 1.2 model — a faithful mirror of the XML, not a convenience view. The AL
+ * tree is derived from it; the DTOs are projected from it. There are **no offsets**
+ * anywhere: the document is read whole, edited as a model, and written whole.
  *
  * ## Why every element carries an `attributes` bag
  *
- * §7.2 requires the serialiser to reproduce a file byte-for-byte, and §3.3 requires
- * unknown attributes to survive a round-trip untouched. The named fields below cannot
- * satisfy that on their own: the corpus puts `xmlns:xsi` and `xsi:schemaLocation` on
- * `<xliff>`, and neither is a named field. Storing only what we name would silently
- * drop them and fail the round-trip on every AL-generated file.
+ * The serialiser reproduces a file byte-for-byte, and unknown attributes must survive a
+ * round-trip untouched. The named fields below cannot do that on their own: AL puts
+ * `xmlns:xsi` and `xsi:schemaLocation` on `<xliff>`, and neither is a named field. Storing
+ * only what we name would silently drop them and fail the round-trip on every
+ * AL-generated file.
  *
  * So `attributes` is the source of truth for serialisation — verbatim, decoded, in
  * document order — and the named fields are conveniences the parser derives from it.
@@ -23,17 +22,14 @@ export type XliffAttributes = Readonly<Record<string, string>>;
 export type Eol = '\n' | '\r\n';
 
 /**
- * Document facts the serialiser must reproduce exactly (§7.2). These are observations
- * about the file as it was read, never formatting preferences — do not normalise them.
+ * Document facts the serialiser must reproduce exactly. These are observations about the
+ * file as it was read, never formatting preferences — do not normalise them.
  */
 export interface DocumentFormat {
-    /** Only `Contoso App.g.xlf` in the corpus has one. */
     readonly hasBom: boolean;
-    /** The `<?xml … ?>` declaration verbatim — the corpus contains both `UTF-8` and `utf-8`. */
+    /** The `<?xml … ?>` declaration verbatim, down to the case of its encoding name. */
     readonly declaration: string;
-    /** The corpus is LF except the `.g.xlf`, which is CRLF. */
     readonly eol: Eol;
-    /** No corpus file ends with a newline. */
     readonly hasTrailingNewline: boolean;
 }
 
@@ -42,7 +38,7 @@ export interface XliffNote {
     readonly from?: string;
     readonly annotates?: string;
     readonly priority?: number;
-    /** Never trimmed (§3.6). */
+    /** Never trimmed. */
     readonly value: string;
 }
 
@@ -55,20 +51,20 @@ export interface XliffTarget {
     /** The raw `state` attribute, or undefined when absent. May be a value the spec does not define — resolving it to an `XliffState` happens in `state.ts`, not here. */
     readonly state?: string;
     readonly stateQualifier?: string;
-    /** Never trimmed. A single space is a legitimate translation (§3.6). */
+    /** Never trimmed. A single space is a legitimate translation. */
     readonly value: string;
 }
 
 export interface XliffTransUnit {
     readonly attributes: XliffAttributes;
     readonly id: string;
-    /** `translate="no"` → false. Such units are excluded from roll-ups (§5.3). */
+    /** `translate="no"` → false. Such units are excluded from roll-ups. */
     readonly translate: boolean;
     readonly sizeUnit?: string;
     readonly xmlSpace?: string;
     readonly maxwidth?: number;
     readonly alObjectTarget?: string;
-    /** Never trimmed. May be empty — the corpus has 8 self-closing `<source/>`. */
+    /** Never trimmed. May be empty. */
     readonly source: string;
     /** Absent when the unit has no `<target>` at all — every unit of a `.g.xlf`. Mutable: this is what edit mode replaces. */
     target?: XliffTarget;
@@ -103,30 +99,29 @@ export interface XliffDocument {
     readonly attributes: XliffAttributes;
     readonly version: string;
     readonly xmlns?: string;
-    /** XLIFF 1.2 allows several; AL emits exactly one (`DEC-020`). */
+    /** XLIFF 1.2 allows several; AL emits exactly one. */
     readonly files: readonly XliffFile[];
     readonly format: DocumentFormat;
 }
 
-// ── The derived AL view model (§7.4) ─────────────────────────────────────────
+// ── The derived AL view model ────────────────────────────────────────────────
 // Everything above mirrors the XML. What follows is derived from trans-unit ids and
 // is what the GUI renders; the raw model stays the thing that gets written back.
 
 /** One `<SymbolType> <hash>` step of a trans-unit id. `name` is display text only. */
 export interface AlSegment {
-    /** An open string — never an enum of allowed AL kinds (§4.2). */
+    /** An open string — never an enum of allowed AL kinds. */
     readonly type: string;
     /** The numeric hash. Stable and language-independent; the tree groups by it. */
     readonly hash: string;
-    /** From the generator note, absent when it could not be parsed (§4.4). */
+    /** From the generator note, absent when it could not be parsed. */
     readonly name?: string;
 }
 
 /**
  * A node of the object → member → unit hierarchy.
  *
- * No `summary`: the roll-up runs in the webview (`DEC-016`), so this carries structure
- * only.
+ * No `summary`: the roll-up runs in the webview, so this carries structure only.
  */
 export interface AlNode {
     /** The joined id prefix, e.g. `Table 3783554337 - Field 4264183382`. Stable identity for expansion state. */

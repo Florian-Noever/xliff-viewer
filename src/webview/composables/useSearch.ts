@@ -5,14 +5,14 @@ import type { NodePredicate } from '../ancestorFilter';
 import type { ComputedRef, Ref } from 'vue';
 
 /**
- * Search over everything a unit carries (MASTER_PLAN §11.5).
+ * Search over everything a unit carries.
  *
- * It runs in the webview over the DTOs already in memory (§6.2) — there is no round trip
- * to the host for a keystroke.
+ * It runs in the webview over the DTOs already in memory — there is no round trip to the
+ * host for a keystroke.
  *
- * The index is built **once per tree**, not per keystroke. Lowercasing 2500 sources,
- * targets, names and notes on every character typed is the obvious way to make a fast
- * search slow, and the roadmap says so.
+ * The index is built **once per tree**, not per keystroke. Lowercasing every source,
+ * target, name and note on every character typed is the obvious way to make a fast
+ * search slow.
  */
 
 /** Long enough to swallow a fast typist's burst, short enough to feel like live filtering. */
@@ -41,14 +41,6 @@ export interface SearchSource {
 }
 
 /**
- * Everything about one node a query can match, lowercased and joined.
- *
- * A group node (`DEC-033`) matches **nothing**. It carries no translation, and matching it
- * on its own label would show a group whose children the filter then hides — a row that
- * opens onto nothing. It still appears whenever one of its objects matches, by the ancestor
- * rule, which is the behaviour a reader expects from typing a type name anyway.
- */
-/**
  * Written as an escape, not as the character itself: a literal NUL in a source file is
  * invisible to a reader, makes every text tool treat this file as binary, and survives no
  * whitespace-normalising step. It separates the fields so a query cannot match across the
@@ -56,6 +48,14 @@ export interface SearchSource {
  */
 const FIELD_SEPARATOR = '\u0000';
 
+/**
+ * Everything about one node a query can match, lowercased and joined.
+ *
+ * A group node matches **nothing**. It carries no translation, and matching it on its own
+ * label would show a group whose children the filter then hides — a row that opens onto
+ * nothing. It still appears whenever one of its objects matches, by the ancestor rule,
+ * which is the behaviour a reader expects from typing a type name anyway.
+ */
 function haystack(node: AlNodeDto, unit: TransUnitDto | undefined): string {
     if (node.group === true) {
         return '';

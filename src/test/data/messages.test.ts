@@ -103,7 +103,7 @@ describe('isExtensionMessage', () => {
 });
 
 describe('the constants that cross the boundary', () => {
-    it('are plain string maps whose key is its own value (§14.5)', () => {
+    it('are plain string maps whose key is its own value', () => {
         // Not a TS enum: an enum is neither JSON-safe nor esbuild-safe across files, and a
         // key that drifts from its value makes a message unmatchable on the far side.
         for (const map of [ExtensionMessageType, WebviewMessageType, NavigationTarget, NotifyKind]) {
@@ -113,9 +113,9 @@ describe('the constants that cross the boundary', () => {
         }
     });
 
-    it('names navigation targets exactly as §8.3 does', () => {
-        // Two since `DEC-032`: the unit's own "Go to source", and the document-level
-        // escape hatch the error pane offers when nothing parses.
+    it('names exactly the base and text navigation targets', () => {
+        // The unit's own "Go to source", and the document-level escape hatch the error
+        // pane offers when nothing parses.
         expect(Object.values(NavigationTarget).sort()).toEqual(['base', 'text']);
     });
 });

@@ -13,16 +13,15 @@ import { stateLabel, StateTone, stateTone } from '../stateTone';
 import type { XliffState } from '@shared/state';
 
 /**
- * One unit's translation state (MASTER_PLAN §11.6).
+ * One unit's translation state.
  *
  * The dot carries the colour and the text carries the meaning, so the badge still reads
- * correctly in a high-contrast theme and for anyone who cannot separate the four tones
- * (§11.7).
+ * correctly in a high-contrast theme and for anyone who cannot separate the four tones.
  */
 
 const props = defineProps<{
     state: XliffState;
-    /** `translate="no"`: not part of any roll-up, and shown muted rather than coloured (§5.3). */
+    /** `translate="no"`: not part of any roll-up, and shown muted rather than coloured. */
     muted?: boolean;
 }>();
 
@@ -32,9 +31,8 @@ const title = computed(() => (props.muted === true ? `translate="no" — ${state
 </script>
 
 <style scoped>
-/* No background, and so no padding or radius either: those existed only to sit inside one.
-   The toolbar's state chips read the same way, and a row that is already highlighted on
-   hover does not need a second filled surface on top of it. */
+/* No background: the toolbar's state chips read the same way, and a row that is already
+   highlighted on hover does not need a second filled surface on top of it. */
 .state-badge {
     display: inline-flex;
     align-items: center;

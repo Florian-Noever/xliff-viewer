@@ -34,18 +34,10 @@
             "type": "npm",
             "script": "watch:vite",
             "group": "build",
-            // A background task with no matcher never reports itself ready, so F5 waits for
-            // `vite build --watch` to exit — which it never does. The `background` section
-            // is what releases the launch; the patterns are vite's own, verified against
-            // its output rather than guessed:
-            //
-            //     watching for file changes...
-            //     build started...
-            //     built in 828ms.
-            //
-            // `pattern` is required by the schema but deliberately matches nothing: vite is
-            // bundling here, and type errors belong to `watch:tsc`. A matcher that claimed
-            // to parse rollup's errors and did not would be worse than none.
+            // A background task with no matcher never reports itself ready, so F5 would wait
+            // for `vite build --watch` to exit. `background` matches vite's own watch output.
+            // `pattern` is required by the schema but deliberately matches nothing: vite only
+            // bundles here, and type errors belong to `watch:tsc`.
             "problemMatcher": {
                 "owner": "vite",
                 "source": "vite",
@@ -88,12 +80,8 @@
             "type": "npm",
             "script": "watch:vue-tsc",
             "group": "build",
-            // `watch:tsc` covers the host and src/shared; `tsc` does not check .vue files at
-            // all, so without this a webview type error only appears at the next
-            // `check-types`. `vue-tsc` is tsc with a plugin and prints tsc's own watch
-            // messages verbatim, so `$tsc-watch` reads it unchanged — verified against a real
-            // run: "Starting compilation in watch mode..." then "Found 0 errors. Watching
-            // for file changes."
+            // `watch:tsc` covers the host and src/shared, and `tsc` cannot check .vue files.
+            // `vue-tsc` prints tsc's own watch messages verbatim, so `$tsc-watch` reads them.
             "problemMatcher": "$tsc-watch",
             "isBackground": true,
             "label": "npm: watch:vue-tsc",

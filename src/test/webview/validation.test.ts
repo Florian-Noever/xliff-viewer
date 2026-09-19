@@ -18,9 +18,8 @@ import type { WebviewSettings } from '../../shared/settings';
 import type { Hint } from '../../webview/validation';
 
 /**
- * `POLISH-01`. MASTER_PLAN §12.4: hints in the GUI that never block an edit and never
- * change a value. Everything here is about what they say and when they stay quiet — a hint
- * that fires on a translation a translator meant is worse than no hint at all.
+ * Hints never block an edit or change a value. A hint that fires on a translation a
+ * translator meant is worse than no hint at all.
  */
 
 const unit = (over: Partial<TransUnitDto> = {}): TransUnitDto => ({
@@ -49,7 +48,7 @@ describe('what a unit is never checked for', () => {
         expect(hintsFor(unit({ target: undefined, state: XliffState.missing, maxwidth: 1, sizeUnit: 'char' }), TRANSLATING)).toEqual([]);
     });
 
-    it('says nothing about a unit the file marks untranslatable (§5.4)', () => {
+    it('says nothing about a unit the file marks untranslatable', () => {
         const over = { translate: false, source: 'Uses %1', target: 'Uses nothing' };
         expect(hintsFor(unit(over), TRANSLATING)).toEqual([]);
         expect(kinds(hintsFor(unit({ ...over, translate: true }), TRANSLATING))).toEqual([HintKind.placeholders]);
@@ -92,12 +91,12 @@ describe('the placeholder check', () => {
     });
 
     it('compares them as sets, so reordering and repeating are not mistakes', () => {
-        // §12.4 asks for "present in source but missing from target, or vice versa". A
-        // corpus unit deliberately uses each of %1…%4 twice; counting would flag it.
+        // A mismatch is a placeholder present on one side only; a translation may use one
+        // twice on purpose, which counting would flag.
         expect(hintsFor(unit({ source: 'Bin: %1 - Max: %2', target: 'Max: %2 %2 - Bin: %1 %1' }), TRANSLATING)).toEqual([]);
     });
 
-    it('reads #1 as a placeholder too, since §12.4 lists it', () => {
+    it('reads #1 as a placeholder too', () => {
         expect(kinds(hintsFor(unit({ source: 'Row #1', target: 'Zeile' }), TRANSLATING))).toEqual([HintKind.placeholders]);
     });
 });
@@ -119,7 +118,7 @@ describe('the empty-but-finished check', () => {
     });
 });
 
-describe('the same-as-source check (DEC-037)', () => {
+describe('the same-as-source check', () => {
     const same = { source: 'Contoso', target: 'Contoso' };
 
     it('is off unless it is asked for', () => {
@@ -128,8 +127,8 @@ describe('the same-as-source check (DEC-037)', () => {
     });
 
     it('stays quiet when the file translates a language into itself', () => {
-        // `Contoso App.en-US.xlf` declares en-US on both sides and repeats its source in
-        // all 500 units. Saying so 500 times helps nobody.
+        // A file with the same language on both sides is expected to repeat its source;
+        // saying so on every unit helps nobody.
         const asked = { sourceLanguage: 'en-US', targetLanguage: 'en-US', sameAsSource: true };
 
         expect(hintsFor(unit(same), asked)).toEqual([]);
@@ -137,15 +136,14 @@ describe('the same-as-source check (DEC-037)', () => {
     });
 });
 
-describe('the corpus, which is what the hints have to be quiet on', () => {
+describe('the example files, which the hints have to be quiet on', () => {
     // Read the way `App.test.ts` reads sources: this project runs under jsdom, where
     // `import.meta.url` is not a file URL and `node:fs` has nothing to resolve against.
     const files: Record<string, string> = import.meta.glob('../../../Examples/*.xlf', { query: '?raw', import: 'default', eager: true });
 
-    it('finds exactly one placeholder mistake in 4001 units, and no false maxwidth', () => {
-        // Measured through the real parser and the real projection, not a regex over the
-        // text. The corpus carries one `maxwidth` and its target fits inside it — the plan's
-        // acceptance criterion expected an overrun that is not there.
+    it('finds exactly one placeholder mistake across the example files, and no false maxwidth', () => {
+        // Run through the real parser and projection, not a regex over the text. The one
+        // `maxwidth` in these fixtures has a target that fits inside it.
         const counts: Record<string, number> = { placeholders: 0, maxwidth: 0, sameAsSource: 0, statedButEmpty: 0 };
         let units = 0;
 
@@ -166,8 +164,8 @@ describe('the corpus, which is what the hints have to be quiet on', () => {
         expect(counts.placeholders).toBe(1);
         expect(counts.maxwidth).toBe(0);
         expect(counts.statedButEmpty).toBe(0);
-        // Off by default for exactly this reason: many targets are
-        // legitimately identical, and en-US against en-US is not a translation at all.
+        // Off by default for this reason: many targets are legitimately identical to their
+        // source, and en-US against en-US is not a translation at all.
         expect(counts.sameAsSource).toBe(132);
     });
 

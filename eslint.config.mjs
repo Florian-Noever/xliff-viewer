@@ -1,11 +1,6 @@
 import tseslint from 'typescript-eslint';
 import pluginVue from 'eslint-plugin-vue';
 
-/**
- * Rule set ported from gob-numberingtool-vscode; formatting from al-actionimage-viewer.
- * Where the two disagree the stricter one wins (MASTER_PLAN §14.5).
- */
-
 const NODE_BUILTINS = [
     'fs', 'node:fs', 'fs/promises', 'node:fs/promises',
     'path', 'node:path', 'os', 'node:os',
@@ -15,7 +10,7 @@ const NODE_BUILTINS = [
 ];
 
 const BOUNDARY_MESSAGE =
-    'MASTER_PLAN §6.1: src/extension and src/webview must not import each other. Shared code belongs in src/shared.';
+    'src/extension and src/webview must not import each other. Shared code belongs in src/shared.';
 
 export default tseslint.config(
     {
@@ -34,7 +29,7 @@ export default tseslint.config(
             '@typescript-eslint': tseslint.plugin,
         },
         rules: {
-            // ── Formatting (al-actionimage-viewer) ───────────────────────────
+            // ── Formatting ───────────────────────────────────────────────────
             indent: ['warn', 4, { SwitchCase: 1 }],
             quotes: ['warn', 'single', { avoidEscape: true }],
             semi: 'warn',
@@ -108,7 +103,7 @@ export default tseslint.config(
             parserOptions: {
                 projectService: true,
                 tsconfigRootDir: import.meta.dirname,
-                // The project service does not recognise .vue without this (§14.5 risk note).
+                // The project service does not recognise .vue without this.
                 extraFileExtensions: ['.vue'],
             },
         },
@@ -141,7 +136,7 @@ export default tseslint.config(
         },
     },
 
-    // ── Layer boundaries (MASTER_PLAN §6.1, DEC-014) ─────────────────────────
+    // ── Layer boundaries ─────────────────────────────────────────────────────
     {
         files: ['src/shared/**/*.ts'],
         rules: {
@@ -149,15 +144,15 @@ export default tseslint.config(
                 paths: [
                     ...NODE_BUILTINS.map(name => ({
                         name,
-                        message: 'MASTER_PLAN §6.5: src/shared must load in both runtimes — no node builtins.',
+                        message: 'No node builtins in src/shared: it loads in the webview and the web host too. Use web-standard APIs instead.',
                     })),
                     {
                         name: 'vscode',
-                        message: 'MASTER_PLAN §6.1: src/shared must not import vscode — it is imported by the webview too.',
+                        message: 'src/shared must not import vscode: the webview imports it too. Keep vscode calls in src/extension.',
                     },
                 ],
                 patterns: [
-                    { group: ['**/extension/**', '**/webview/**'], message: 'MASTER_PLAN §6.1: src/shared may not depend on either runtime.' },
+                    { group: ['**/extension/**', '**/webview/**'], message: 'src/shared may not depend on either runtime. Move what both need into src/shared.' },
                 ],
             }],
         },
@@ -168,7 +163,7 @@ export default tseslint.config(
             'no-restricted-imports': ['error', {
                 paths: NODE_BUILTINS.map(name => ({
                     name,
-                    message: 'MASTER_PLAN §6.5: the extension ships for the web host — use vscode.workspace.fs, Uri.joinPath, findFiles, TextEncoder/TextDecoder.',
+                    message: 'No node builtins: the extension ships for the web host too. Use vscode.workspace.fs, Uri.joinPath, findFiles, TextEncoder/TextDecoder.',
                 })),
                 patterns: [
                     { group: ['**/webview/**'], message: BOUNDARY_MESSAGE },
@@ -181,10 +176,10 @@ export default tseslint.config(
         rules: {
             'no-restricted-imports': ['error', {
                 paths: [
-                    ...NODE_BUILTINS.map(name => ({ name, message: 'MASTER_PLAN §6.5: no node builtins.' })),
+                    ...NODE_BUILTINS.map(name => ({ name, message: 'No node builtins in the data layer: it ships for the web host too. Use web-standard APIs instead.' })),
                     {
                         name: 'vscode',
-                        message: 'MASTER_PLAN §6.1: the data layer must stay pure so it is testable with no mocks.',
+                        message: 'The data layer must not import vscode, so it stays testable without mocks. Keep vscode calls outside src/extension/xliff.',
                     },
                 ],
                 patterns: [
@@ -198,10 +193,10 @@ export default tseslint.config(
         rules: {
             'no-restricted-imports': ['error', {
                 paths: [
-                    ...NODE_BUILTINS.map(name => ({ name, message: 'MASTER_PLAN §6.5: no node builtins in the webview.' })),
+                    ...NODE_BUILTINS.map(name => ({ name, message: 'No node builtins in the webview: it runs in a browser.' })),
                     {
                         name: 'vscode',
-                        message: 'MASTER_PLAN §11.3: the webview talks to the host only through src/webview/vscode.ts.',
+                        message: 'The webview talks to the host only through src/webview/vscode.ts: import that instead.',
                     },
                 ],
                 patterns: [

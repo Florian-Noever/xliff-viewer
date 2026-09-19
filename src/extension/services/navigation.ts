@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import { Logger } from './logger';
 
 /**
- * Getting back to the file (MASTER_PLAN §10.2, §10.3).
+ * Getting back to the file.
  *
  * The viewer hides the XML on purpose, so the way back to it has to be reliable: "open as
  * text" is available for every unit, in every host, whatever state the document is in.
@@ -17,9 +17,8 @@ const OPEN_WITH_COMMAND = 'vscode.openWith';
  * does not contain it.
  *
  * Searches the document text rather than remembering an offset: there are none in the
- * model (`DEC-017`), and one remembered here would be wrong after the first edit. It is
- * O(document) per call — fine for a click, which is why the risk note says never to call
- * it while rendering.
+ * model, and one remembered here would be wrong after the first edit. It is O(document)
+ * per call — fine for a click, but never to be called while rendering.
  */
 export function findUnitLine(text: string, unitId: string): number | undefined {
     const index = indexOfUnit(text, unitId);
@@ -66,7 +65,7 @@ function escapeRegex(value: string): string {
  * cursor on its line.
  *
  * `vscode.openWith` with `default` rather than `showTextDocument`, because our own editor
- * claims `.xlf` and this is the documented way to ask for a different one (§10.3).
+ * claims `.xlf` and this is the documented way to ask for a different one.
  */
 export async function revealAsText(uri: vscode.Uri, unitId?: string): Promise<void> {
     await vscode.commands.executeCommand(OPEN_WITH_COMMAND, uri, DEFAULT_EDITOR);
@@ -95,10 +94,10 @@ export async function revealAsText(uri: vscode.Uri, unitId?: string): Promise<vo
 }
 
 /**
- * Opens the resolved base file at the same unit (§10.2).
+ * Opens the resolved base file at the same unit.
  *
  * As text, not in this viewer: revealing a unit inside our own tree needs a message the
- * protocol does not have, and the escape hatch the user asked for is the XML anyway.
+ * protocol does not have, and this escape hatch is meant to reach the XML anyway.
  * Returns false when the base file does not contain the id, so the caller can say so.
  */
 export async function revealInBaseFile(baseUri: vscode.Uri, unitId: string): Promise<boolean> {

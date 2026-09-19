@@ -9,7 +9,7 @@ function createNonce(): string {
     return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
-/** Directories the webview may load resources from (MASTER_PLAN §11.1, DEC-024). */
+/** Directories the webview may load resources from. */
 export function localResourceRoots(extensionUri: vscode.Uri): vscode.Uri[] {
     return [
         vscode.Uri.joinPath(extensionUri, BUNDLE),
@@ -20,7 +20,7 @@ export function localResourceRoots(extensionUri: vscode.Uri): vscode.Uri[] {
 /**
  * Reads the shell template and fills in its four placeholders. Asset URIs always go
  * through `asWebviewUri` — the web host serves them over a service worker, so a
- * hand-built path does not resolve there (§14.2).
+ * hand-built path does not resolve there.
  */
 export async function getWebviewHtml(webview: vscode.Webview, extensionUri: vscode.Uri): Promise<string> {
     const templateUri = vscode.Uri.joinPath(extensionUri, ...TEMPLATE);

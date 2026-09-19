@@ -50,7 +50,7 @@ describe('stateTone', () => {
 });
 
 describe('StateBadge', () => {
-    it('names the state as well as colouring it (§11.7)', () => {
+    it('names the state as well as colouring it', () => {
         const badge = mount(StateBadge, { props: { state: XliffState.needsTranslation } });
 
         expect(badge.text()).toBe('needs translation');
@@ -66,9 +66,9 @@ describe('StateBadge', () => {
         expect(toneOf(XliffState.missing)).toBe('tone-absent');
     });
 
-    it('is a dot and a word, and nothing else to draw (UI-08)', () => {
-        // The background went so the badge reads like the toolbar's state chips. jsdom
-        // cannot see a colour, but it can see that nothing was left needing one.
+    it('is a dot and a word, and nothing else to draw', () => {
+        // No background, so the badge reads like the toolbar's state chips. jsdom cannot
+        // see a colour, but it can see that nothing is left needing one.
         const badge = mount(StateBadge, { props: { state: XliffState.translated } });
 
         expect(badge.get('.dot').attributes('aria-hidden')).toBe('true');
@@ -76,7 +76,7 @@ describe('StateBadge', () => {
         expect(badge.element.children).toHaveLength(2);
     });
 
-    it('mutes an untranslatable unit and says why (§5.3)', () => {
+    it('mutes an untranslatable unit and says why', () => {
         const badge = mount(StateBadge, { props: { state: XliffState.missing, muted: true } });
 
         expect(badge.classes()).toContain('tone-muted');
@@ -104,9 +104,8 @@ describe('ProgressBar', () => {
         expect(bar.get('[role="progressbar"]').attributes('aria-label')).toBe('2 of 3 translated');
     });
 
-    it('puts the counts before the bar, so a column of bars lines up (UI-08b)', () => {
-        // With the bar first, `120/122` and `8/8` pushed their bars to different places.
-        // Nothing else would catch this being swapped back: it is pure order.
+    it('puts the counts before the bar, so a column of bars lines up', () => {
+        // With the bar first, `120/122` and `8/8` would push their bars to different places.
         const bar = mount(ProgressBar, { props: { summary: summary([unit('a', XliffState.translated)]) } });
 
         expect([...bar.element.children].map(child => child.className)).toEqual(['counts', 'track']);
@@ -125,7 +124,7 @@ describe('ProgressBar', () => {
         expect(absent.get('.fill').classes()).toContain('tone-absent');
     });
 
-    it('renders nothing when nothing underneath is translatable (§5.3, rule 4)', () => {
+    it('renders nothing when nothing underneath is translatable', () => {
         const bar = mount(ProgressBar, {
             props: { summary: summary([unit('a', XliffState.missing, false)]) },
         });
@@ -211,7 +210,7 @@ describe('useRollup', () => {
         expect(rollup.file.value.percent).toBe(67);
     });
 
-    it('feeds the DTO straight in — TransUnitDto is already a UnitState (DEC-028)', () => {
+    it('feeds the DTO straight in — TransUnitDto is already a UnitState', () => {
         // If this ever needs a conversion step, the DTO has drifted from the roll-up.
         expect(summariseUnits(units)).toEqual(rollupOf(file).file.value);
     });
