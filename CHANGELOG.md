@@ -4,9 +4,19 @@ All notable changes to **XLIFF Viewer** are documented in this file.
 
 ---
 
+## [1.0.1] – 2026-09-30
+
+The first version on Open VSX.
+
+### Fixed
+
+- The *Q & A* link leads to the repository's issues. The manifest named it `github`, which is not a URL: the Visual Studio Marketplace linked *Q & A* to nowhere, and Open VSX refused 1.0.0 outright
+
+---
+
 ## [1.0.0] – 2026-09-30
 
-The first release, on the Visual Studio Marketplace and Open VSX.
+The first release, on the Visual Studio Marketplace.
 
 ### Added
 
