@@ -6,7 +6,8 @@ import { PreprocessorState } from './alDirectives';
  * Only what the outline needs: comments are dropped, strings and quoted names are read as
  * one token each — so a brace inside either is never structure — and lines the
  * preprocessor switches off produce nothing. Never throws: a string or a quoted name that is
- * not closed ends at its line, and a comment that is not closed ends the text.
+ * not closed ends at its line, and a verbatim string or a comment that is not closed ends
+ * the text. A line ends at any of the line breaks the compiler knows, CR alone included.
  */
 
 export const AlTokenKind = {
@@ -28,14 +29,20 @@ export interface AlToken {
     readonly value: string;
 }
 
-const IDENTIFIER = /[\p{L}_][\p{L}\p{N}_]*/uy;
+/** A letter or `_`, then letters, digits, combining marks, connectors and format characters. */
+const IDENTIFIER = /[\p{L}_][\p{L}\p{M}\p{N}\p{Pc}\p{Cf}]*/uy;
 const NUMBER = /\d+(?:\.\d+)?/y;
 const TWO_CHARACTER = new Set([':=', '::', '..', '<=', '>=', '<>', '+=', '-=', '*=', '/=']);
-const LINE_FEED = 10;
+const LINE_BREAK = /[\n\r\u0085\u2028\u2029]/g;
 
+function isLineBreak(code: number): boolean {
+    return code === 0x0a || code === 0x0d || code === 0x85 || code === 0x2028 || code === 0x2029;
+}
+
+/** Where the line `from` is on ends: at its first line break, or at the end of the text. */
 function lineEnd(text: string, from: number): number {
-    const end = text.indexOf('\n', from);
-    return end < 0 ? text.length : end;
+    LINE_BREAK.lastIndex = from;
+    return LINE_BREAK.exec(text)?.index ?? text.length;
 }
 
 /** Reads a `'…'` string or a `"…"` name, a doubled quote standing for one, ending at its line. */
@@ -52,13 +59,30 @@ function readQuoted(text: string, start: number, quote: string): { readonly end:
             }
             return { end: index + 1, value };
         }
-        if (character === '\n' || character === '\r') {
+        if (isLineBreak(text.charCodeAt(index))) {
             break;
         }
         value += character;
         index++;
     }
     return { end: index, value };
+}
+
+/** Reads an `@'…'` string, which may span lines; a doubled quote stands for one. */
+function readVerbatim(text: string, start: number): { readonly end: number; readonly value: string } {
+    let value = '';
+    let index = start + 2;
+    while (index < text.length) {
+        if (text[index] === '\'') {
+            if (text[index + 1] !== '\'') {
+                return { end: index + 1, value };
+            }
+            index++;
+        }
+        value += text[index];
+        index++;
+    }
+    return { end: text.length, value };
 }
 
 /** Tokenises AL source; `symbols` are the preprocessor symbols the app defines. */
@@ -71,7 +95,7 @@ export function tokenizeAl(text: string, symbols: Iterable<string> = []): AlToke
     while (index < text.length) {
         const code = text.charCodeAt(index);
 
-        if (code === LINE_FEED) {
+        if (isLineBreak(code)) {
             index++;
             lineStart = true;
             continue;
@@ -103,6 +127,12 @@ export function tokenizeAl(text: string, symbols: Iterable<string> = []): AlToke
         }
 
         const character = text[index];
+        if (character === '@' && text[index + 1] === '\'') {
+            const { end, value } = readVerbatim(text, index);
+            tokens.push({ kind: AlTokenKind.string, start: index, end, value });
+            index = end;
+            continue;
+        }
         if (character === '\'' || character === '"') {
             const { end, value } = readQuoted(text, index, character);
             tokens.push({ kind: character === '"' ? AlTokenKind.quoted : AlTokenKind.string, start: index, end, value });

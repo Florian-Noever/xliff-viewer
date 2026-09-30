@@ -4,7 +4,7 @@ import { fileURLToPath, URL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { alNameHash } from '../../extension/xliff/alNameHash';
-import { generatorNote, namesFromNote } from '../../extension/xliff/names';
+import { generatorNote, readGeneratorNote } from '../../extension/xliff/names';
 import { parseXliff } from '../../extension/xliff/parser';
 import { canonicalPath, canonicalSegment, parseUnitId } from '../../extension/xliff/unitId';
 import { iterateUnits } from '../../shared/model';
@@ -115,10 +115,12 @@ describe('every corpus id', () => {
 
     it.each(CORPUS)('%s: carries in every segment the hash of the name its note gives', (file) => {
         for (const unit of unitsOf(file)) {
-            const names = namesFromNote(unit.id, generatorNote(unit));
-            expect(names, unit.id).not.toBeNull();
-            parseUnitId(unit.id).forEach((segment, index) => {
-                expect(segment.hash, `${unit.id} #${index}`).toBe(alNameHash(names?.[index] ?? ''));
+            const segments = parseUnitId(unit.id);
+            const reading = readGeneratorNote(segments, generatorNote(unit));
+            expect(reading, unit.id).toBeDefined();
+            const names = reading === undefined ? [] : [reading.declaring.name, ...reading.names];
+            segments.forEach((segment, index) => {
+                expect(segment.hash, `${unit.id} #${index}`).toBe(alNameHash(names.at(index) ?? ''));
             });
         }
     });

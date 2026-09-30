@@ -1,8 +1,9 @@
 import { alNameHash } from './alNameHash';
-import { generatorNote, namesFromNote } from './names';
-import { canonicalHash, canonicalSegment, parseUnitId } from './unitId';
-import { SEGMENT_SEPARATOR } from '../../shared/unitPath';
+import { generatorNote, readGeneratorNote } from './names';
+import { canonicalHash, canonicalSegment, parseUnitId, readableName } from './unitId';
+import { NAMESPACE_TYPE, SEGMENT_SEPARATOR } from '../../shared/unitPath';
 
+import type { GeneratorNoteReading } from './names';
 import type { UnitIdSegment } from './unitId';
 import type { AlNode, XliffTransUnit } from '../../shared/model';
 
@@ -14,9 +15,6 @@ import type { AlNode, XliffTransUnit } from '../../shared/model';
  * or contain the ` - ` separator itself.
  */
 
-/** The segment type AL puts in front of an object's path when it names the object's namespace. */
-export const NAMESPACE_TYPE = 'Namespace';
-
 interface MutableAlNode {
     key: string;
     segment: { type: string; hash: string; name?: string };
@@ -26,8 +24,6 @@ interface MutableAlNode {
     /** Whether `segment.name` was confirmed by the segment's hash. */
     verified?: boolean;
 }
-
-const DIGITS = /^\d+$/;
 
 /**
  * Groups units into a tree.
@@ -52,7 +48,7 @@ export function buildAlTree(units: Iterable<XliffTransUnit>): AlNode[] {
 
     for (const unit of units) {
         const segments = parseUnitId(unit.id);
-        const noteNames = namesFromNote(unit.id, generatorNote(unit));
+        const noteNames = namesByDepth(segments, readGeneratorNote(segments, generatorNote(unit)));
 
         let path = '';
         let siblings = roots;
@@ -71,7 +67,7 @@ export function buildAlTree(units: Iterable<XliffTransUnit>): AlNode[] {
                 siblings.push(node);
             }
 
-            nameNode(node, segment, noteNames?.[depth]);
+            nameNode(node, segment, noteNames.at(depth));
             parentSiblings = siblings;
             siblings = node.children;
         }
@@ -94,6 +90,25 @@ export function buildAlTree(units: Iterable<XliffTransUnit>): AlNode[] {
 }
 
 /**
+ * The note's name for each of the id's segments, by depth.
+ *
+ * The root's is left out when the note's object is of another type: a folded extension's
+ * note names the extension, not the object its id is filed under.
+ */
+function namesByDepth(segments: readonly UnitIdSegment[], reading: GeneratorNoteReading | undefined): readonly (string | undefined)[] {
+    if (reading === undefined) {
+        return [];
+    }
+    const namespaced = segments.at(0)?.type === NAMESPACE_TYPE;
+    const root = segments.at(namespaced ? 1 : 0);
+    return [
+        ...(namespaced ? [reading.declaring.namespace] : []),
+        root?.type === reading.declaring.type ? reading.declaring.name : undefined,
+        ...reading.names,
+    ];
+}
+
+/**
  * Names a node, preferring what is certain.
  *
  * A readable id names its segment outright — unless the name is all digits, which is how
@@ -107,8 +122,9 @@ function nameNode(node: MutableAlNode, segment: UnitIdSegment, noteName: string 
         return;
     }
 
-    if (segment.name !== undefined && !DIGITS.test(segment.name)) {
-        node.segment = { ...node.segment, name: segment.name };
+    const readable = readableName(segment);
+    if (readable !== undefined) {
+        node.segment = { ...node.segment, name: readable };
         node.verified = true;
         return;
     }
@@ -138,14 +154,14 @@ function freeze(node: MutableAlNode): AlNode {
  * The prefix of a group key.
  *
  * A container's key is a canonical path of `<Type> <hash>` segments and a unit's key is its
- * id, and neither can begin with a lowercase word and a colon — so no group key can equal a
- * node's key: a node carries a unit exactly when its key **is** that unit's id, and a group
- * carries none.
+ * id, read from an XML attribute — and no XML 1.0 document can carry the control character
+ * U+001F, which every group key starts with. So no group key can equal a node's key: a node
+ * carries a unit exactly when its key **is** that unit's id, and a group carries none.
  */
-export const OBJECT_TYPE_GROUP_PREFIX = 'type:';
+export const OBJECT_TYPE_GROUP_PREFIX = '\u001ftype:';
 
 /** The key of the group holding the objects that have no namespace, in a file where others do. */
-export const NO_NAMESPACE_GROUP_KEY = 'namespace:';
+export const NO_NAMESPACE_GROUP_KEY = '\u001fnamespace:';
 
 /** True for a root that names a namespace rather than an object. */
 export function isNamespaceNode(node: AlNode): boolean {

@@ -72,15 +72,18 @@ describe('isWebviewMessage', () => {
 
 describe('isExtensionMessage', () => {
     it('accepts every variant of the union', () => {
-        const messages: unknown[] = [
+        const messages = [
             { type: ExtensionMessageType.loading, payload: { message: 'Parsing…' } },
             { type: ExtensionMessageType.setDocument, payload: { uri: 'file:///x', fileName: 'x.xlf', isBaseFile: false, readOnly: false, files: [] } },
             { type: ExtensionMessageType.patchUnits, payload: { fileIndex: 0, units: [] } },
             { type: ExtensionMessageType.baseFile, payload: { uri: 'file:///b', fileName: 'b.g.xlf' } },
+            { type: ExtensionMessageType.alSource, payload: { available: false } },
             { type: ExtensionMessageType.settings, payload: DEFAULT_WEBVIEW_SETTINGS },
             { type: ExtensionMessageType.error, payload: { message: 'broken', line: 2, col: 3 } },
         ];
 
+        // One sample per type, so a variant cannot be added without being accepted here.
+        expect(new Set(messages.map(message => message.type))).toEqual(new Set(Object.values(ExtensionMessageType)));
         for (const message of messages) {
             expect(isExtensionMessage(message), JSON.stringify(message).slice(0, 40)).toBe(true);
         }

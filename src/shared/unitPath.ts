@@ -1,6 +1,9 @@
 /** What joins the segments of a trans-unit id: `Table 1 - Field 2 - Property 3`. */
 export const SEGMENT_SEPARATOR = ' - ';
 
+/** The segment type AL puts in front of an object's path, in a namespaced app, to name its namespace. */
+export const NAMESPACE_TYPE = 'Namespace';
+
 /**
  * Splits a trans-unit id into the text of its segments.
  *

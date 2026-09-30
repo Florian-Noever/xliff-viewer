@@ -129,9 +129,10 @@ describe('goToSource, when the AL source declares the unit', () => {
 
         const [offered] = flushQuickPicks();
         expect(outcome).toBe(SourceOutcome.declaration);
-        expect(offered).toHaveLength(2);
-        expect(offered.map(item => item.description).sort()).toEqual([`${APP}/src/Copy/Order.Table.al:3`, `${ORDER_FILE}:3`]);
-        expect(`${shownSelection(ORDER).path}:3`).toBe(offered[1].description);
+        expect(offered.map(item => item.label)).toEqual(['Order.Table.al:3', 'Order.Table.al:3']);
+        // The folder is what tells two such files apart, relative to the workspace.
+        expect(offered.map(item => item.description).sort()).toEqual(['app/src/Copy/Order.Table.al', 'app/src/Order.Table.al']);
+        expect(shownSelection(ORDER).path).toBe(`/w/${offered[1].description}`);
     });
 
     it('does nothing more when the choice is cancelled', async () => {

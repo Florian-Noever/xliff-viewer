@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import { unitTarget } from '../../extension/al/alTarget';
-import { listAlFiles } from '../../extension/services/alFileListing';
+import { listAlFiles, walkAlFiles } from '../../extension/services/alFileListing';
 import { alScopeFor } from '../../extension/services/alScope';
 import { AlSourceIndex, AlSourceIndexes } from '../../extension/services/alSourceIndex';
 import { BaseFileResolver } from '../../extension/services/baseFileResolver';
@@ -80,6 +80,16 @@ suite('AL source, in whichever host this is', () => {
         const expected = alFilesOf(contosoApp(), CONTOSO_MANIFEST).length + alFilesOf(NORTHWIND, NORTHWIND_MANIFEST).length;
 
         assertEqual(listing.files.length, expected, `the listing by ${listing.via} found the wrong number of files`);
+    });
+
+    test('walking the folder finds exactly what searching it does', async () => {
+        // Both hosts here can search, so the walk — what a host without search depends on —
+        // is only ever run by asking for it.
+        const searched = (await listAlFiles(workspaceUri(...AL))).files.map(uri => uri.toString()).sort();
+        const walked = (await walkAlFiles(workspaceUri(...AL))).map(uri => uri.toString()).sort();
+
+        assertEqual(walked.length, searched.length, 'the walk found a different number of files');
+        assertEqual(walked.join(' | '), searched.join(' | '), 'the walk and the search found different files');
     });
 
     test('finds the app a file belongs to, with its preprocessor symbols', async () => {

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { outlineAl, scanHeaders } from '../../extension/al/alOutline';
 import { canonicalPropertyName, declaresMember, isTransparent } from '../../extension/al/alSymbolKinds';
 import {
-    API_PAGE, CODEUNIT, CUSTOMIZATION, DIRECTIVES, DOTNET_AND_ADDIN, ENUM, INTERFACE, PAGE, PAGE_EXTENSION,
+    API_PAGE, CODEUNIT, CUSTOMIZATION, DIRECTIVES, DOTNET_AND_ADDIN, EDGES, ENUM, INTERFACE, PAGE, PAGE_EXTENSION,
     PROFILE_AND_PERMISSIONS, QUERY, REPORT, SNIPPETS, TABLE, TWO_OBJECTS, XMLPORT,
 } from '../fixtures/alSnippets';
 
@@ -180,6 +180,44 @@ describe('methods and variables', () => {
     });
 });
 
+describe('what a structural reading most easily gets wrong', () => {
+    it('reads a method past a bracketed return type, its locals and body included', () => {
+        const method = named(EDGES, 'procedure', 'GetCode');
+
+        expect(method?.variables.map(variable => variable.name.text)).toEqual(['LocalLbl']);
+        expect(slice(EDGES, method?.range)?.endsWith('end;')).toBe(true);
+        // The body is code: nothing in it is a property or a member of the object.
+        expect(outlineAl(EDGES).objects[0].properties).toEqual([]);
+        expect(all(EDGES).some(each => each.keyword === 'exit' || each.keyword === 'message')).toBe(false);
+    });
+
+    it('reads a list return type, and attributes on variables, of the object and of a method', () => {
+        const [codeunit] = outlineAl(EDGES).objects;
+
+        expect(codeunit.variables.map(variable => variable.name.text)).toEqual(['IsVisible', 'AfterLbl']);
+        expect(named(EDGES, 'procedure', 'GetList')?.variables.map(variable => variable.name.text)).toEqual(['Customer', 'ListLbl']);
+    });
+
+    it('reads a verbatim string as text, so what follows it is still found', () => {
+        expect(named(EDGES, 'procedure', 'After')?.variables.map(variable => variable.name.text)).toEqual(['AfterMethodLbl']);
+        expect(outlineAl(EDGES).objects.map(object => object.name?.text)).toEqual(['Contoso Edges', 'Contoso Views Ext.', 'Contoso Labels']);
+    });
+
+    it('keeps the section an add with no anchor sits in', () => {
+        const view = named(EDGES, 'view', 'OpenOnes');
+
+        expect(view?.section).toBe('views');
+        expect(view !== undefined && declaresMember(view, 'View')).toBe(true);
+    });
+
+    it('reads a report label in its multilanguage form as a label', () => {
+        const labels = all(EDGES).find(each => each.keyword === 'labels');
+
+        expect(labels?.properties.map(property => property.name.text)).toEqual(['CompanyCaption', 'TotalLbl']);
+        expect(slice(EDGES, labels?.properties[0].name.range)).toBe('CompanyCaption');
+    });
+});
+
 describe('preprocessor directives', () => {
     it('reads the branch the symbols select, and only that one', () => {
         const clean = named(DIRECTIVES, 'field', 'Code');
@@ -194,6 +232,13 @@ describe('preprocessor directives', () => {
 });
 
 describe('line endings', () => {
+    it('reads the branch the symbols select in CRLF text too', () => {
+        const text = DIRECTIVES.replace(/\n/g, '\r\n');
+
+        expect(all(text, ['CLEAN']).find(each => each.name?.text === 'Code')?.properties.map(property => property.name.text)).toEqual(['Caption']);
+        expect(outlineAl(text).objects[0].children[0].children.map(child => child.name?.text)).toEqual(['Code', 'Kept']);
+    });
+
     it('gives exact offsets in CRLF text', () => {
         const text = PAGE.replace(/\n/g, '\r\n');
         const field = all(text).find(each => each.keyword === 'field' && each.name?.text === 'No.');
@@ -217,6 +262,13 @@ describe('tolerance', () => {
         for (let length = 0; length <= text.length; length++) {
             expect(() => outlineAl(text.slice(0, length)), `at ${length}`).not.toThrow();
         }
+    });
+
+    it('skips blocks nested past any real depth, rather than overflowing', () => {
+        const text = `table 1 X ${'a {'.repeat(10000)}${'}'.repeat(10000)}`;
+
+        expect(() => outlineAl(text)).not.toThrow();
+        expect(outlineAl(text).objects.map(object => object.name?.text)).toEqual(['X']);
     });
 
     it('closes a block at the next brace when a member is cut short', () => {

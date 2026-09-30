@@ -345,7 +345,69 @@ export const TWO_OBJECTS = `TABLE 50111 Plain { fields { FIELD(1; Code; Code[20]
 codeunit 50112 Helper { procedure Help() begin end; }
 `;
 
+/**
+ * What a structural reading most easily gets wrong: brackets in a return type, attributes on
+ * variables, a verbatim string over several lines, an add with no anchor, and a report label
+ * in its multilanguage form.
+ */
+export const EDGES = `codeunit 50113 "Contoso Edges"
+{
+    var
+        [InDataSet]
+        IsVisible: Boolean;
+        AfterLbl: Label 'After';
+
+    procedure GetCode(): Code[20]
+    var
+        LocalLbl: Label 'Local';
+    begin
+        if Rec.Caption = '' then
+            exit('');
+    end;
+
+    procedure GetList() Result: List of [Text]
+    var
+        [SecurityFiltering(SecurityFilter::Filtered)]
+        Customer: Record Customer;
+        ListLbl: Label 'List';
+    begin
+        Message(@'Line one {
+#if CLEAN
+line two }');
+    end;
+
+    procedure After()
+    var
+        AfterMethodLbl: Label 'After method';
+    begin
+    end;
+}
+
+pageextension 50114 "Contoso Views Ext." extends "Customer List"
+{
+    views
+    {
+        addfirst
+        {
+            view(OpenOnes)
+            {
+                Caption = 'Open';
+            }
+        }
+    }
+}
+
+report 50115 "Contoso Labels"
+{
+    labels
+    {
+        label(CompanyCaption; ENU = 'Company', DEU = 'Firma')
+        TotalLbl = 'Total', Comment = 'A total';
+    }
+}
+`;
+
 export const SNIPPETS: Readonly<Record<string, string>> = {
     TABLE, PAGE, PAGE_EXTENSION, REPORT, CODEUNIT, ENUM, INTERFACE, XMLPORT, QUERY, PROFILE_AND_PERMISSIONS,
-    CUSTOMIZATION, DOTNET_AND_ADDIN, API_PAGE, DIRECTIVES, TWO_OBJECTS,
+    CUSTOMIZATION, DOTNET_AND_ADDIN, API_PAGE, DIRECTIVES, TWO_OBJECTS, EDGES,
 };

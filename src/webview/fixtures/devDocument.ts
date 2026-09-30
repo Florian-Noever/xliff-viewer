@@ -27,7 +27,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
             "datatype": "xml",
             "tree": [
                 {
-                    "key": "type:Table",
+                    "key": "\u001ftype:Table",
                     "type": "Table",
                     "name": "Tables (1)",
                     "children": [
@@ -191,7 +191,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "group": true
                 },
                 {
-                    "key": "type:Page",
+                    "key": "\u001ftype:Page",
                     "type": "Page",
                     "name": "Pages (1)",
                     "children": [
@@ -421,7 +421,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "group": true
                 },
                 {
-                    "key": "type:PageExtension",
+                    "key": "\u001ftype:PageExtension",
                     "type": "PageExtension",
                     "name": "PageExtensions (2)",
                     "children": [
@@ -659,7 +659,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "group": true
                 },
                 {
-                    "key": "type:Codeunit",
+                    "key": "\u001ftype:Codeunit",
                     "type": "Codeunit",
                     "name": "Codeunits (1)",
                     "children": [

@@ -19,7 +19,9 @@ export interface UnitIdSegment {
     readonly name?: string;
 }
 
-const HASH = /^-?\d+$/;
+/** A hash runs from -1 to 4294967294, so -1 is the only negative one. */
+const HASH = /^(?:-1|\d+)$/;
+const DIGITS = /^\d+$/;
 
 /** Reads a trans-unit id into its segments. */
 export function parseUnitId(id: string): UnitIdSegment[] {
@@ -41,6 +43,14 @@ function unquote(value: string): string {
     return value.length >= 2 && value.startsWith('"') && value.endsWith('"')
         ? value.slice(1, -1).replace(/""/g, '"')
         : value;
+}
+
+/**
+ * The name a readable id gives the segment — except the digits it gives an API procedure's
+ * caption, which are the procedure's method id and not its name.
+ */
+export function readableName(segment: UnitIdSegment): string | undefined {
+    return segment.name !== undefined && !(segment.type === 'Method' && DIGITS.test(segment.name)) ? segment.name : undefined;
 }
 
 /** The hash as written, or the one AL writes for the readable name; empty when there is no value. */

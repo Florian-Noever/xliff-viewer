@@ -5,8 +5,9 @@ import { Logger } from './logger';
 /**
  * Getting back to the file.
  *
- * The viewer hides the XML on purpose, so the way back to it has to be reliable: "open as
- * text" is available for every unit, in every host, whatever state the document is in.
+ * The viewer hides the XML on purpose, so the way back to it has to be reliable: the error
+ * pane's "open as text" works in every host, whatever state the document is in, and "Go to
+ * source" lands here whenever it falls back to a base file.
  */
 
 const DEFAULT_EDITOR = 'default';

@@ -3,12 +3,13 @@ import { fileURLToPath, URL } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
+import { alNameHash } from '../../extension/xliff/alNameHash';
 import {
     developerHint,
     developerNote,
     generatorNote,
     hasAlStructure,
-    namesFromNote,
+    readGeneratorNote,
 } from '../../extension/xliff/names';
 import { parseXliff } from '../../extension/xliff/parser';
 import { parseUnitId } from '../../extension/xliff/unitId';
@@ -16,6 +17,14 @@ import { iterateUnits } from '../../shared/model';
 
 const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
 const unitsOf = (name: string) => [...iterateUnits(parseXliff(readFileSync(`${FIXTURES}/${name}`, 'utf8')))];
+const h = alNameHash;
+
+const read = (id: string, note: string | undefined) => readGeneratorNote(parseUnitId(id), note);
+/** The declaring object's name, then one per segment after the root. */
+const namesOf = (id: string, note: string | undefined): string[] | undefined => {
+    const reading = read(id, note);
+    return reading === undefined ? undefined : [reading.declaring.name, ...reading.names];
+};
 
 describe('hasAlStructure', () => {
     it('accepts a hashed AL id', () => {
@@ -33,58 +42,79 @@ describe('hasAlStructure', () => {
     });
 });
 
-describe('namesFromNote', () => {
-    it('extracts one name per segment', () => {
-        expect(namesFromNote(
+describe('readGeneratorNote', () => {
+    it('reads the declaring object, then one name per segment after it', () => {
+        expect(read(
             'Table 3783554337 - Field 4264183382 - Property 2879900210',
             'Table PTE Contoso Methods Setup - Field Contoso Method - Property Caption',
-        )).toEqual(['PTE Contoso Methods Setup', 'Contoso Method', 'Caption']);
+        )).toEqual({ declaring: { type: 'Table', name: 'PTE Contoso Methods Setup' }, names: ['Contoso Method', 'Caption'] });
     });
 
     it('keeps an object name that itself contains the separator', () => {
-        // The whole reason for the anchored regex: splitting on " - " breaks such a name.
-        expect(namesFromNote(
+        // The whole reason for anchoring on types: splitting on " - " breaks such a name.
+        expect(namesOf(
             'Report 4233182435 - Property 2879900210',
             'Report Contoso Orders - Summary - Property Caption',
         )).toEqual(['Contoso Orders - Summary', 'Caption']);
     });
 
     it('handles a name with both a separator and dots', () => {
-        expect(namesFromNote(
+        expect(namesOf(
             'Report 4136116345 - NamedType 3401550051',
             'Report Contoso Calc. Lines - Req. Wksh. - NamedType Text042Lbl',
         )).toEqual(['Contoso Calc. Lines - Req. Wksh.', 'Text042Lbl']);
     });
 
     it('handles a four-segment path', () => {
-        expect(namesFromNote(
+        expect(namesOf(
             'PageExtension 1 - Action 2 - Method 3 - NamedType 4',
             'PageExtension Cust List - Action Approve - Method OnAction - NamedType Msg001',
         )).toEqual(['Cust List', 'Approve', 'OnAction', 'Msg001']);
     });
 
-    it('returns null rather than guessing when the note does not match', () => {
-        expect(namesFromNote('Table 1 - Property 2', 'Page Something - Property Caption')).toBeNull();
-        expect(namesFromNote('Table 1 - Property 2', 'nonsense')).toBeNull();
+    it('takes the split whose names hash to the id, where a name holds a later anchor', () => {
+        // The first split reads the report as "Sales"; only the second one's names are the id's.
+        expect(namesOf(
+            `Report ${h('Sales - Property List')} - Property ${h('Caption')}`,
+            'Report Sales - Property List - Property Caption',
+        )).toEqual(['Sales - Property List', 'Caption']);
     });
 
-    it('returns null for a missing or empty note, without throwing', () => {
-        expect(namesFromNote('Table 1 - Property 2', undefined)).toBeNull();
-        expect(namesFromNote('Table 1 - Property 2', '')).toBeNull();
+    it('leaves the root\'s type open: a folded extension\'s note names the extension', () => {
+        expect(read(
+            `Table ${h('Contoso Item')} - Field ${h('Extra')} - Property ${h('Caption')}`,
+            'TableExtension Contoso Item Ext. - Field Extra - Property Caption',
+        )).toEqual({ declaring: { type: 'TableExtension', name: 'Contoso Item Ext.' }, names: ['Extra', 'Caption'] });
     });
 
-    it('anchors on the types of a readable id, quoted names and all', () => {
-        expect(namesFromNote(
-            'Namespace Contoso.Sales - Report "Sales - Quote" - Property Caption',
-            'Namespace Contoso.Sales - Report Sales - Quote - Property Caption',
-        )).toEqual(['Contoso.Sales', 'Sales - Quote', 'Caption']);
+    it('reads a namespaced note, whether the id is readable or hashed', () => {
+        const note = 'Namespace Contoso.Sales - Report Sales - Quote - Property Caption';
+        const expected = { declaring: { type: 'Report', name: 'Sales - Quote', namespace: 'Contoso.Sales' }, names: ['Caption'] };
+
+        expect(read('Namespace Contoso.Sales - Report "Sales - Quote" - Property Caption', note)).toEqual(expected);
+        expect(read(`Namespace ${h('Contoso.Sales')} - Report ${h('Sales - Quote')} - Property ${h('Caption')}`, note)).toEqual(expected);
     });
 
-    it('escapes regex metacharacters in a segment type', () => {
-        // A type containing a dot must match literally, not as "any character".
-        expect(namesFromNote('Trans. 1 - Property 2', 'TransX Name - Property Caption')).toBeNull();
-        expect(namesFromNote('Trans. 1 - Property 2', 'Trans. Name - Property Caption'))
-            .toEqual(['Name', 'Caption']);
+    it('returns undefined rather than guessing when the note does not fit the id', () => {
+        expect(read('Table 1 - Field 2 - Property 3', 'Table Customer - Property Caption')).toBeUndefined();
+        expect(read('Table 1 - Property 2', 'nonsense')).toBeUndefined();
+    });
+
+    it('returns undefined for a missing or empty note, without throwing', () => {
+        expect(read('Table 1 - Property 2', undefined)).toBeUndefined();
+        expect(read('Table 1 - Property 2', '')).toBeUndefined();
+    });
+
+    it('finds an anchor literally, a type with regex metacharacters included', () => {
+        expect(read('Table 1 - Fi.ld 2 - Property 3', 'Table Customer - FiXld Name - Property Caption')).toBeUndefined();
+        expect(namesOf('Table 1 - Fi.ld 2 - Property 3', 'Table Customer - Fi.ld Name - Property Caption')).toEqual(['Customer', 'Name', 'Caption']);
+    });
+
+    it('settles on a note full of separators rather than weighing every split', () => {
+        // Unbounded, two thousand anchors per level would be millions of splits to weigh.
+        const note = `Table ${'A - Field '.repeat(2000)}B - Field C - Property Caption`;
+
+        expect(read('Table 1 - Field 2 - Field 3 - Property 4', note)).toBeDefined();
     });
 });
 
@@ -98,21 +128,19 @@ describe('names for every corpus unit', () => {
         const units = unitsOf(file);
         expect(units).toHaveLength(expected);
 
-        const named = units.filter(unit => namesFromNote(unit.id, generatorNote(unit)) !== null);
+        const named = units.filter(unit => read(unit.id, generatorNote(unit)) !== undefined);
         expect(named).toHaveLength(expected);
     });
 
     it('produces one name per id segment, for every unit', () => {
         for (const unit of unitsOf('Fabrikam Base.de-DE.xlf')) {
-            const names = namesFromNote(unit.id, generatorNote(unit));
-            expect(names, unit.id).not.toBeNull();
-            expect(names, unit.id).toHaveLength(parseUnitId(unit.id).length);
+            expect(namesOf(unit.id, generatorNote(unit)), unit.id).toHaveLength(parseUnitId(unit.id).length);
         }
     });
 
     it('never yields an empty name', () => {
         for (const unit of unitsOf('Contoso App.g.xlf')) {
-            for (const name of namesFromNote(unit.id, generatorNote(unit)) ?? []) {
+            for (const name of namesOf(unit.id, generatorNote(unit)) ?? []) {
                 expect(name.length, unit.id).toBeGreaterThan(0);
             }
         }

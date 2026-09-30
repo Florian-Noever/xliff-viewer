@@ -1,6 +1,7 @@
 import { alNameHash } from '../xliff/alNameHash';
-import { canonicalHash, parseUnitId } from '../xliff/unitId';
-import { SEGMENT_SEPARATOR } from '../../shared/unitPath';
+import { readGeneratorNote } from '../xliff/names';
+import { canonicalHash, parseUnitId, readableName } from '../xliff/unitId';
+import { NAMESPACE_TYPE } from '../../shared/unitPath';
 
 /**
  * What a trans-unit asks the AL source for.
@@ -38,13 +39,6 @@ export interface UnitTarget {
     readonly readable: boolean;
 }
 
-const NAMESPACE = 'Namespace';
-const DIGITS = /^\d+$/;
-
-function escapeRegex(value: string): string {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 /**
  * Reads a unit's id, generator note and `al-object-target` into what to look for, or
  * undefined for an id that carries no AL structure.
@@ -55,18 +49,16 @@ export function unitTarget(id: string, generatorNote?: string, alObjectTarget?: 
         return undefined;
     }
 
-    const namespaceSegment = segments[0].type === NAMESPACE ? segments[0] : undefined;
+    const namespaceSegment = segments[0].type === NAMESPACE_TYPE ? segments[0] : undefined;
     const [rootSegment, ...rest] = namespaceSegment === undefined ? segments : segments.slice(1);
     if (rootSegment === undefined) {
         return undefined;
     }
 
-    // An all-digit name in a readable id is an API procedure's method id, not its name.
-    const nameOf = (name: string | undefined): string | undefined => (name === undefined || DIGITS.test(name) ? undefined : name);
-    const note = readNote(generatorNote, rest.map(segment => segment.type));
+    const note = readGeneratorNote(segments, generatorNote);
 
     const namespace = namespaceSegment === undefined ? undefined : {
-        type: NAMESPACE,
+        type: NAMESPACE_TYPE,
         hash: canonicalHash(namespaceSegment),
         name: namespaceSegment.name ?? verified(note?.declaring.namespace, canonicalHash(namespaceSegment)),
     };
@@ -74,12 +66,12 @@ export function unitTarget(id: string, generatorNote?: string, alObjectTarget?: 
     const root = {
         type: rootSegment.type,
         hash: rootHash,
-        name: nameOf(rootSegment.name) ?? (note?.declaring.type === rootSegment.type ? verified(note.declaring.name, rootHash) : undefined),
+        name: readableName(rootSegment) ?? (note?.declaring.type === rootSegment.type ? verified(note.declaring.name, rootHash) : undefined),
     };
     const path = rest.map((segment, index) => ({
         type: segment.type,
         hash: canonicalHash(segment),
-        name: nameOf(segment.name) ?? note?.names[index],
+        name: readableName(segment) ?? note?.names.at(index),
     }));
 
     const objectTarget = /^(\S+) (-?\d+)$/.exec(alObjectTarget ?? '');
@@ -96,26 +88,4 @@ export function unitTarget(id: string, generatorNote?: string, alObjectTarget?: 
 /** A name, if its hash is the one the id carries. */
 function verified(name: string | undefined, hash: string): string | undefined {
     return name !== undefined && alNameHash(name) === hash ? name : undefined;
-}
-
-/**
- * Reads the note with the root's type left open — it names the declaring object, whose
- * type a folded id does not carry — and the types after it taken from the id.
- */
-function readNote(note: string | undefined, types: readonly string[]): { readonly declaring: DeclaringObject; readonly names: readonly string[] } | undefined {
-    if (note === undefined || note === '') {
-        return undefined;
-    }
-    const anchors = types.map((type, index) => `${escapeRegex(type)} ${index === types.length - 1 ? '(.+)' : '(.+?)'}`);
-    const pattern = [`(?:${NAMESPACE} (\\S+)${escapeRegex(SEGMENT_SEPARATOR)})?(\\S+) ${types.length === 0 ? '(.+)' : '(.+?)'}`, ...anchors]
-        .join(escapeRegex(SEGMENT_SEPARATOR));
-    const match = new RegExp(`^${pattern}$`).exec(note);
-    if (match === null) {
-        return undefined;
-    }
-    const [, namespace, type, name, ...names] = match;
-    return {
-        declaring: { type, name, ...(namespace === undefined ? {} : { namespace }) },
-        names,
-    };
 }

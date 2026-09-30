@@ -4,8 +4,12 @@
  * Evaluated rather than stripped: source commonly holds both branches of an `#if`, and
  * reading both would put two declarations where the compiler sees one — and unbalance the
  * braces when the branches differ. Symbols come from `app.json`'s `preprocessorSymbols` and
- * are compared ignoring case. `#region`, `#pragma` and anything unknown change nothing.
+ * are compared exactly, as the compiler compares them. `#region`, `#pragma` and anything
+ * unknown change nothing.
  */
+
+/** Deeper than any real expression; beyond it, an expression counts as unreadable. */
+const MAX_NESTING = 64;
 
 interface Branch {
     /** Whether the enclosing code is live at all. */
@@ -20,7 +24,7 @@ export class PreprocessorState {
     private readonly stack: Branch[] = [];
 
     public constructor(symbols: Iterable<string>) {
-        this.symbols = new Set([...symbols].map(symbol => symbol.toLowerCase()));
+        this.symbols = new Set(symbols);
     }
 
     /** Whether code at this point is compiled. */
@@ -30,7 +34,8 @@ export class PreprocessorState {
 
     /** Applies one directive line, given without its leading `#`. */
     public apply(line: string): void {
-        const match = /^\s*([A-Za-z]+)\s*(.*)$/.exec(line.replace(/\/\/.*$/, ''));
+        // `s`: a line is read in one pass whatever it holds, never by backtracking.
+        const match = /^\s*([A-Za-z]+)\s*(.*)$/s.exec(line.replace(/\/\/.*$/s, ''));
         if (match === null) {
             return;
         }
@@ -61,12 +66,12 @@ export class PreprocessorState {
                 break;
             case 'define':
                 if (this.active && argument !== '') {
-                    this.symbols.add(argument.toLowerCase());
+                    this.symbols.add(argument);
                 }
                 break;
             case 'undef':
                 if (this.active) {
-                    this.symbols.delete(argument.toLowerCase());
+                    this.symbols.delete(argument);
                 }
                 break;
             default:
@@ -75,44 +80,66 @@ export class PreprocessorState {
     }
 
     /**
-     * `not`, `and`, `or` and parentheses over symbols. An expression that cannot be read
-     * counts as true, so the first branch is the one read — a guess, but a consistent one.
+     * `not`, `=`, `<>`, `and`, `or`, parentheses, `true` and `false` over symbols, in
+     * that order of precedence. An expression that cannot be read counts as true, so the first
+     * branch is the one read — a guess, but a consistent one.
      */
     private evaluate(expression: string): boolean {
-        const words = expression.match(/\(|\)|[^\s()]+/g) ?? [];
+        const words = expression.match(/<>|[()=]|[^\s()=<>]+/g) ?? [];
         let position = 0;
+        let depth = 0;
         const peek = (): string | undefined => words[position]?.toLowerCase();
+        const nested = (read: () => boolean | undefined): boolean | undefined => {
+            if (depth >= MAX_NESTING) {
+                return undefined;
+            }
+            depth++;
+            const value = read();
+            depth--;
+            return value;
+        };
 
         const primary = (): boolean | undefined => {
             const word = peek();
             if (word === '(') {
                 position++;
-                const value = or();
+                const value = nested(or);
                 if (peek() !== ')') {
                     return undefined;
                 }
                 position++;
                 return value;
             }
-            if (word === undefined || word === ')' || word === 'and' || word === 'or' || word === 'not') {
+            if (word === undefined || word === ')' || word === '=' || word === '<>' || word === 'and' || word === 'or' || word === 'not') {
                 return undefined;
             }
+            const symbol = words[position];
             position++;
-            return this.symbols.has(word);
+            return word === 'true' || word === 'false' ? word === 'true' : this.symbols.has(symbol);
         };
         const not = (): boolean | undefined => {
             if (peek() === 'not') {
                 position++;
-                const value = not();
+                const value = nested(not);
                 return value === undefined ? undefined : !value;
             }
             return primary();
         };
-        const and = (): boolean | undefined => {
+        const equality = (): boolean | undefined => {
             let value = not();
-            while (value !== undefined && peek() === 'and') {
+            while (value !== undefined && (peek() === '=' || peek() === '<>')) {
+                const equal = peek() === '=';
                 position++;
                 const right = not();
+                value = right === undefined ? undefined : (value === right) === equal;
+            }
+            return value;
+        };
+        const and = (): boolean | undefined => {
+            let value = equality();
+            while (value !== undefined && peek() === 'and') {
+                position++;
+                const right = equality();
                 value = right === undefined ? undefined : value && right;
             }
             return value;

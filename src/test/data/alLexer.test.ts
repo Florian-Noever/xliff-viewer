@@ -36,6 +36,28 @@ describe('tokenizeAl', () => {
         expect(values('field(3; Größe; Decimal)')).toContain('Größe');
     });
 
+    it('reads a name written with combining marks whole', () => {
+        const decomposed = 'Gro\u0308\u00dfe';
+
+        expect(values(`field(3; ${decomposed}; Decimal)`)).toContain(decomposed);
+    });
+
+    it('reads a verbatim string as one token, across lines, braces and directives', () => {
+        const text = "x := @'first {\n#if X\nit''s }';\ny";
+
+        expect(values(text)).toEqual(['x', ':=', "first {\n#if X\nit's }", ';', 'y']);
+        expect(tokenizeAl(text)[2].kind).toBe(AlTokenKind.string);
+    });
+
+    it('ends an unclosed verbatim string at the end of the text', () => {
+        expect(values("a @'b\n}\n{")).toEqual(['a', 'b\n}\n{']);
+    });
+
+    it('ends a line at a carriage return alone, as the compiler does', () => {
+        expect(values('// c\rtable 1 X\r{\r}')).toEqual(['table', '1', 'X', '{', '}']);
+        expect(values('#if A\rkept\r#else\rdropped\r#endif', ['A'])).toEqual(['kept']);
+    });
+
     it('keeps two-character operators together, and a range apart from its numbers', () => {
         expect(values('x := 1..10; Enum::Open <> y')).toEqual(['x', ':=', '1', '..', '10', ';', 'Enum', '::', 'Open', '<>', 'y']);
         expect(values('1.5')).toEqual(['1.5']);
@@ -48,6 +70,11 @@ describe('tokenizeAl', () => {
 
     it('ends an unclosed block comment at the end of the text', () => {
         expect(values('a /* b\n c')).toEqual(['a']);
+    });
+
+    it('evaluates a directive in CRLF text, arguments and all', () => {
+        expect(values('#if CLEAN\r\nkept\r\n#else\r\ndropped\r\n#endif\r\nafter', ['CLEAN'])).toEqual(['kept', 'after']);
+        expect(values('#define X\r\n#if X\r\nkept\r\n#endif')).toEqual(['kept']);
     });
 
     it('gives exact offsets in CRLF text', () => {
@@ -108,10 +135,24 @@ describe('PreprocessorState', () => {
         expect(holds('(A or B) and C', 'A')).toBe(false);
     });
 
-    it('compares symbols ignoring case', () => {
-        const preprocessor = state('Clean');
-        preprocessor.apply('if CLEAN');
-        expect(preprocessor.active).toBe(true);
+    it('compares symbols exactly, as the compiler does', () => {
+        expect(activeAfter(['if CLEAN'], ['Clean'])).toEqual([false]);
+        expect(activeAfter(['if Clean'], ['Clean'])).toEqual([true]);
+    });
+
+    it('reads true and false as values, not symbols', () => {
+        expect(activeAfter(['if true', 'endif', 'if false', 'endif', 'if not false'], [])).toEqual([true, true, false, true, true]);
+    });
+
+    it('compares with = and <>, below not and above and', () => {
+        expect(activeAfter(['if A = B', 'endif', 'if A <> B', 'endif', 'if A=B'], ['A'])).toEqual([false, true, true, true, false]);
+        expect(activeAfter(['if not A = B'], ['A'])).toEqual([true]);
+        expect(activeAfter(['if A = B and C'], ['C'])).toEqual([true]);
+    });
+
+    it('reads a condition nested past any real depth as one it cannot parse, without throwing', () => {
+        expect(() => activeAfter([`if ${'('.repeat(100000)}A`, 'endif', `if ${'not '.repeat(100000)}A`], [])).not.toThrow();
+        expect(activeAfter([`if ${'('.repeat(100000)}A`], [])).toEqual([true]);
     });
 
     it('keeps a nested #if off when its parent is off, whatever its own condition', () => {
