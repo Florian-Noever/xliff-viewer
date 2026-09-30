@@ -266,6 +266,29 @@ describe('the reconstructed generator note', () => {
         expect(reconstructGeneratorNote('Table 9', indexNodes(tree))).toBeUndefined();
     });
 
+    it('starts with the namespace and skips the levels the tree adds', () => {
+        const id = 'Namespace Contoso.Sales - Report "Contoso Sales - Quote" - Property Caption';
+        const namespaced: AlNodeDto[] = [{
+            key: 'Namespace 1',
+            type: 'Namespace',
+            name: 'Contoso.Sales',
+            children: [{
+                key: 'type:Namespace 1/Report',
+                type: 'Report',
+                name: 'Reports (1)',
+                group: true,
+                children: [{
+                    key: 'Namespace 1 - Report 2',
+                    type: 'Report',
+                    name: 'Contoso Sales - Quote',
+                    children: [{ key: id, type: 'Property', name: 'Caption', children: [] }],
+                }],
+            }],
+        }];
+
+        expect(reconstructGeneratorNote(id, indexNodes(namespaced))).toBe('Namespace Contoso.Sales - Report Contoso Sales - Quote - Property Caption');
+    });
+
     it('reaches the card when the setting is on', () => {
         const wrapper = mount(UnitCard, {
             props: {

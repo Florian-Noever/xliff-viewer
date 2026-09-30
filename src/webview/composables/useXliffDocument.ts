@@ -1,6 +1,7 @@
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue';
 
 import { DEV_DOCUMENT } from '../fixtures/devDocument';
+import { DEV_NAMESPACED_DOCUMENT } from '../fixtures/devNamespacedDocument';
 import { stateLabel } from '../stateTone';
 import { isVscode, postMessage } from '../vscode';
 
@@ -206,9 +207,9 @@ export function useXliffDocument(options: XliffDocumentOptions = {}): XliffDocum
         postMessage({ type: WebviewMessageType.ready });
 
         // No host to answer `ready`: the Vite dev server renders a bundled sample document
-        // so the UI can be built in a browser.
+        // so the UI can be built in a browser — the namespaced one when the URL asks for it.
         if (import.meta.env.DEV && !isVscode) {
-            document.value = DEV_DOCUMENT;
+            document.value = new URLSearchParams(window.location.search).has('namespaced') ? DEV_NAMESPACED_DOCUMENT : DEV_DOCUMENT;
         }
     });
 

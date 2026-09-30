@@ -11,6 +11,9 @@ import { splitUnitId } from './unitPath';
 
 export const DEV_FIXTURE_SOURCE = 'Fabrikam Base.de-DE.xlf';
 
+/** The namespaced sample, shown whole when the dev server's URL asks for `?namespaced`. */
+export const DEV_NAMESPACED_SOURCE = 'Northwind App.de-DE.xlf';
+
 /**
  * Five root objects, chosen for what they cover rather than for being first:
  *

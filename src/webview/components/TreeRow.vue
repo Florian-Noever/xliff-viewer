@@ -27,7 +27,7 @@
         <span v-if="row.group !== true" class="type">{{ row.type }}</span>
         <!-- A unit's name is its box's legend, so the row does not repeat it —
              unless there is no box, which is a tree rendered before its settings arrived. -->
-        <span v-if="row.unit === undefined || settings === undefined" class="name">{{ label }}</span>
+        <span v-if="row.unit === undefined || settings === undefined" class="name" :class="{ 'is-muted': withoutNamespace }">{{ label }}</span>
         <UnitCard
             v-else
             class="card"
@@ -71,6 +71,7 @@ import { Icon } from '../icons';
 import { useUnitActions } from '../unitActions';
 
 import { NavigationTarget } from '@shared/messages';
+import { lastSegmentLabel } from '@shared/unitPath';
 
 import type { TreeRow } from '../composables/useTreeFlatten';
 import type { Hint } from '../validation';
@@ -141,7 +142,10 @@ function isPlainClick(event: MouseEvent): boolean {
  * Showing the hash is better than showing nothing: it is what the id says, and it is what
  * a search of the raw file will match.
  */
-const label = computed(() => props.row.name ?? props.row.key.split(' - ').pop() ?? props.row.key);
+const label = computed(() => props.row.name ?? lastSegmentLabel(props.row.key));
+
+/** The group of objects that have no namespace, in a file where the others have one. */
+const withoutNamespace = computed(() => props.row.group === true && props.row.type === 'Namespace');
 
 /** Units, not hints: "3" should mean three translations to look at, not one with three faults. */
 const hintTitle = computed(() => {
@@ -292,6 +296,11 @@ const pairing = computed(() => {
     background: var(--vscode-editorWidget-background);
     color: var(--vscode-descriptionForeground);
     font-size: calc(var(--font) * 0.85);
+}
+
+.name.is-muted {
+    color: var(--vscode-descriptionForeground);
+    font-style: italic;
 }
 
 .name {

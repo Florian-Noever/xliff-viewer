@@ -98,6 +98,7 @@ import { translationLabel, translations } from '../translations';
 import { useUnitActions } from '../unitActions';
 
 import { isSpecState, SPEC_STATES } from '@shared/state';
+import { lastSegmentLabel } from '@shared/unitPath';
 import { loadBearingWhitespace, whitespaceExplanation, whitespaceParts, WhitespaceReason } from '../whitespace';
 
 import type { TransUnitDto } from '@shared/dto';
@@ -237,7 +238,7 @@ function commitState(event: Event): void {
     }
 }
 
-const name = computed(() => props.name ?? props.unit.id.split(' - ').pop() ?? props.unit.id);
+const name = computed(() => props.name ?? lastSegmentLabel(props.unit.id));
 const rows = computed(() => translations(props.unit, props.targetLanguage));
 
 const whitespace = computed(() => loadBearingWhitespace(props.unit.source, props.unit.target));

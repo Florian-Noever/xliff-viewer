@@ -2,6 +2,7 @@ import { computed, ref, watch } from 'vue';
 
 import { indexNodes } from '../generatorNote';
 
+import type { NodeIndex } from '../generatorNote';
 import type { AlNodeDto, TransUnitDto, XliffFileDto } from '@shared/dto';
 import type { ComputedRef, WritableComputedRef } from 'vue';
 
@@ -42,8 +43,8 @@ export interface TreeRow {
 
 export interface TreeView {
     readonly rows: ComputedRef<readonly TreeRow[]>;
-    /** Every node of the active file by key — what rebuilds the generator note. */
-    readonly nodesByKey: ComputedRef<ReadonlyMap<string, AlNodeDto>>;
+    /** Every node of the active file by key, with its parent — what rebuilds the generator note. */
+    readonly nodesByKey: ComputedRef<NodeIndex>;
     /** The row the keyboard is on. Undefined before anything is focused. */
     readonly focusedKey: WritableComputedRef<string | undefined>;
     readonly focusedIndex: ComputedRef<number>;
@@ -206,10 +207,11 @@ export function useTreeFlatten(source: TreeSource): TreeView {
                 return;
             }
             const next = new Map(byFile.value);
-            // The setting does not count the object-type level, so it is paid for separately:
-            // `defaultExpandDepth: 1` opens the objects, with their group above them.
-            const grouped = nodes.some(node => node.group === true) ? 1 : 0;
-            next.set(index, { expanded: new Set(keysToDepth(nodes, source.defaultExpandDepth.value + grouped)) });
+            // The setting does not count the levels above the objects, so they are paid for
+            // separately: `defaultExpandDepth: 1` opens the objects, with their type group —
+            // and in a namespaced file their namespace — above them.
+            const above = source.file.value?.namespaced === true ? 2 : nodes.some(node => node.group === true) ? 1 : 0;
+            next.set(index, { expanded: new Set(keysToDepth(nodes, source.defaultExpandDepth.value + above)) });
             byFile.value = next;
         },
         // Synchronous: the expansion set and the rows must agree within one tick, or a
