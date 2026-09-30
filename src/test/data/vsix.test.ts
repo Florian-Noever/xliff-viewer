@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+
 import { listFiles } from '@vscode/vsce';
 import { beforeAll, describe, expect, it } from 'vitest';
 
@@ -21,6 +23,9 @@ const SHIPS = [
     'public/styles.css',
 ];
 
+/** Build output, which the packager can only list once it exists. */
+const BUILT = ['out/extension.js', 'out/web/extension.js', 'public/app.js', 'public/styles.css'];
+
 /**
  * The packager's own listing, through its API rather than `vsce ls`, which runs
  * `vscode:prepublish` and rebuilds everything first. Asked once: it cannot change within a run.
@@ -28,6 +33,10 @@ const SHIPS = [
 let files: readonly string[] = [];
 
 beforeAll(async () => {
+    const unbuilt = BUILT.filter(path => !existsSync(path));
+    if (unbuilt.length > 0) {
+        throw new Error(`Not built: ${unbuilt.join(', ')}. Run npm run bundle and npm run build:webview first, as npm test does.`);
+    }
     const listed = await listFiles({ cwd: process.cwd() });
     files = listed.map(file => file.split('\\').join('/')).sort();
 }, 60_000);
