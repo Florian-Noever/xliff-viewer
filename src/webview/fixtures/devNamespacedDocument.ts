@@ -32,7 +32,7 @@ export const DEV_NAMESPACED_DOCUMENT: XliffDocumentDto = {
                     "name": "Northwind.Common",
                     "children": [
                         {
-                            "key": "type:Namespace 1040856956/Table",
+                            "key": "\u001ftype:Namespace 1040856956/Table",
                             "type": "Table",
                             "name": "Tables (1)",
                             "children": [
@@ -105,7 +105,7 @@ export const DEV_NAMESPACED_DOCUMENT: XliffDocumentDto = {
                     "name": "Northwind.Sales",
                     "children": [
                         {
-                            "key": "type:Namespace 2410125799/Table",
+                            "key": "\u001ftype:Namespace 2410125799/Table",
                             "type": "Table",
                             "name": "Tables (1)",
                             "children": [
@@ -197,7 +197,7 @@ export const DEV_NAMESPACED_DOCUMENT: XliffDocumentDto = {
                             "group": true
                         },
                         {
-                            "key": "type:Namespace 2410125799/Page",
+                            "key": "\u001ftype:Namespace 2410125799/Page",
                             "type": "Page",
                             "name": "Pages (2)",
                             "children": [
@@ -289,7 +289,7 @@ export const DEV_NAMESPACED_DOCUMENT: XliffDocumentDto = {
                             "group": true
                         },
                         {
-                            "key": "type:Namespace 2410125799/Report",
+                            "key": "\u001ftype:Namespace 2410125799/Report",
                             "type": "Report",
                             "name": "Reports (1)",
                             "children": [
@@ -328,7 +328,7 @@ export const DEV_NAMESPACED_DOCUMENT: XliffDocumentDto = {
                             "group": true
                         },
                         {
-                            "key": "type:Namespace 2410125799/Enum",
+                            "key": "\u001ftype:Namespace 2410125799/Enum",
                             "type": "Enum",
                             "name": "Enums (1)",
                             "children": [
@@ -369,7 +369,7 @@ export const DEV_NAMESPACED_DOCUMENT: XliffDocumentDto = {
                             "group": true
                         },
                         {
-                            "key": "type:Namespace 2410125799/PageExtension",
+                            "key": "\u001ftype:Namespace 2410125799/PageExtension",
                             "type": "PageExtension",
                             "name": "PageExtensions (2)",
                             "children": [
@@ -495,7 +495,7 @@ export const DEV_NAMESPACED_DOCUMENT: XliffDocumentDto = {
                     "name": "Northwind.Purchasing",
                     "children": [
                         {
-                            "key": "type:Namespace 72377445/Table",
+                            "key": "\u001ftype:Namespace 72377445/Table",
                             "type": "Table",
                             "name": "Tables (1)",
                             "children": [
@@ -544,12 +544,12 @@ export const DEV_NAMESPACED_DOCUMENT: XliffDocumentDto = {
                     ]
                 },
                 {
-                    "key": "namespace:",
+                    "key": "\u001fnamespace:",
                     "type": "Namespace",
                     "name": "(no namespace)",
                     "children": [
                         {
-                            "key": "type:namespace:/Codeunit",
+                            "key": "\u001ftype:\u001fnamespace:/Codeunit",
                             "type": "Codeunit",
                             "name": "Codeunits (1)",
                             "children": [
@@ -591,7 +591,7 @@ export const DEV_NAMESPACED_DOCUMENT: XliffDocumentDto = {
                     "name": "Northwind.Logistics.Warehousing.Outbound.Shipping.Documents.Printing.Templates.Configuration.Validation.Rules",
                     "children": [
                         {
-                            "key": "type:Namespace 2744279762/Codeunit",
+                            "key": "\u001ftype:Namespace 2744279762/Codeunit",
                             "type": "Codeunit",
                             "name": "Codeunits (1)",
                             "children": [

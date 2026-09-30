@@ -111,7 +111,10 @@ async function revealDeclaration(documents: ReadonlyMap<string, vscode.TextDocum
     editor.revealRange(selection, vscode.TextEditorRevealType.InCenter);
 }
 
-/** Several declarations fit equally well — two apps in one workspace, say — so the reader picks. */
+/**
+ * Several declarations fit equally well — two apps in one workspace, say — so the reader
+ * picks. Such files are usually named alike, so the folder is what tells them apart.
+ */
 async function pickDeclaration(documents: ReadonlyMap<string, vscode.TextDocument>, locations: readonly UnitLocation[]): Promise<UnitLocation | undefined> {
     const items = locations.flatMap((location) => {
         const document = documents.get(location.file);
@@ -119,11 +122,12 @@ async function pickDeclaration(documents: ReadonlyMap<string, vscode.TextDocumen
             return [];
         }
         const line = document.positionAt(location.range.start).line + 1;
-        return [{ label: fileNameOf(document.uri), description: `${document.uri.path}:${line}`, location }];
+        return [{ label: `${fileNameOf(document.uri)}:${line}`, description: vscode.workspace.asRelativePath(document.uri), location }];
     });
     const chosen = await vscode.window.showQuickPick(items, {
         title: 'Several AL declarations match this unit',
         placeHolder: 'Choose the one to open',
+        matchOnDescription: true,
     });
     return chosen?.location;
 }

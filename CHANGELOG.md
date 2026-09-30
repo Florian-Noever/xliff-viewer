@@ -22,13 +22,14 @@ Nothing has been published yet. This section is what the extension does today; i
 - XLIFF 1.2 parsed with `fast-xml-parser` in `preserveOrder` mode, which is what makes a byte-faithful serialiser possible
 - **Validated before every parse.** `XMLParser` recovers silently from unclosed tags, mismatched tags, truncated documents and unquoted attributes; with a whole-file writer, a silent mis-parse would rewrite the document. A file that fails validation is never written
 - The document's own formatting is a fact to reproduce, not to normalise: BOM, XML declaration, line ending and trailing newline are all captured and replayed
-- **Byte-identical round trip** — parse then serialise reproduces every file in `Examples/` exactly, asserted per file
+- **Byte-identical round trip** — parse then serialise reproduces every corpus file exactly, asserted per file
 - Whole-document writes are trimmed against the current text into a minimal `TextEdit`, so a one-word change is a one-line edit
 
 **The tree**
 - Hierarchy built from the trans-unit **id**, never from the display note: object → member → translated element, at any depth
 - Display names come from the `Xliff Generator` note through an anchored regex keyed on the id's segment types — exact for **100 %** of both large corpus files, including object names that contain the ` - ` separator
 - Objects are grouped by symbol type: `Tables (16)`, `PageExtensions (89)`, first-appearance order
+- **AL 18's namespaced ids** (`TranslationsWithNamespaces`) — readable, quoted names such as `Report "Sales - Quote"`, a `Namespace` segment, and the hashed form AL falls back to for long or non-ASCII ids. They are read with a quote-aware grammar and merged on AL's own name hash, so an object is one node whichever form its ids take. A namespaced file gets a namespace level above the object types, plus "(no namespace)"
 - **Rolled-up state** on every container, coloured by the worst translatable descendant rather than by the percentage; `translate="no"` units are excluded from the roll-up but still shown
 - Two synthetic states beyond the spec's ten: `missing` (no `<target>` at all) and `empty` (a `<target>` with no text). A target that carries text but declares no state is `unknown` rather than assumed done
 - Virtualised with measured row heights, so a 2 511-unit file scrolls at full speed
@@ -53,7 +54,9 @@ Nothing has been published yet. This section is what the extension does today; i
 - Third-party settings are read defensively and **never written**; a missing or renamed key is "not configured", never an error
 - Units the base file no longer carries are marked *orphaned*; units whose source has since changed show what the base now says
 - Markers travel as a patch, so a translation in step with its base costs nothing on the wire
-- *Go to source* opens the base file at the same unit
+- *Go to source* opens the **AL declaration** of the unit in the app's own source. That is the `Caption`, `ToolTip` or label itself, else the member or object that declares it, with a pick when several match equally well. It falls back to the unit in the base file, or in a `.g.xlf` to the file itself, with a notice that closes after five seconds
+- AL source is read by a structural scanner — tokens, an evaluated preprocessor and a tolerant outline — and every match is verified against AL's name hash. It needs no AL tooling, runs on the desktop and the web, and lists files by search or, where a host has no search, by walking the folder
+- The button's tooltip says where it will go: the AL source, the base file, the file itself — or, when it is disabled, why
 - Both caches are watcher-driven: regenerating the base file while a translation is open re-marks it
 
 **Edit mode**
@@ -96,6 +99,7 @@ Nothing has been published yet. This section is what the extension does today; i
 
 ### Known limitations
 
+- **Go to source reads AL with a structural scanner, not the AL compiler.** Every match is verified against the id's hash, so it never opens a wrong declaration silently. Where it cannot place a unit exactly, it opens the member or the object that declares it, and where it finds nothing, it says so and shows the base file. A translation file kept outside its app's folder is searched in the whole workspace, without the app's `#if` symbols
 - **A document containing an XML comment cannot be edited.** The parser drops comments, and a whole-document write would delete one a person added by hand, so such a file is refused rather than silently rewritten — it still opens, searches and navigates normally. This is deliberate and settled: preserving them would mean restructuring the model, and no AL-generated file contains one
 - **A carriage return inside a `<source>` or `<target>` becomes a line feed.** XML requires every conformant parser to normalise it, so the information is gone before we see it. It cannot arise from editing here — the editor writes line feeds — and no corpus file contains one
 - `<alt-trans>`, `<context-group>` and inline tags (`<g>`, `<ph>`) are not modelled. None occurs anywhere in the corpus

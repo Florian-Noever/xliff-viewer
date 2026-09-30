@@ -24,8 +24,11 @@ export type NodeIndex = ReadonlyMap<string, IndexedNode>;
  * ```
  *
  * A namespace is a node like any other, so a namespaced unit's note starts with it, as the
- * compiler writes it. Exact for every unit whose names are known. Returns `undefined` for
- * the rest rather than guessing — the caller shows the raw id instead.
+ * compiler writes it. Exact for every unit whose names are known — except one the compiler
+ * files under another object than the one that declares it, an extension's element filed
+ * under the object it extends: the file's note names the extension, this one the object.
+ * Returns `undefined` rather than guessing where a name is missing — the caller shows the
+ * raw id instead.
  */
 export function reconstructGeneratorNote(unitId: string, index: NodeIndex): string | undefined {
     const parts: string[] = [];

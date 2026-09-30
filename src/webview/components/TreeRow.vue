@@ -72,7 +72,7 @@ import { sourceAction } from '../sourceAction';
 import { useUnitActions } from '../unitActions';
 
 import { NavigationTarget } from '@shared/messages';
-import { lastSegmentLabel } from '@shared/unitPath';
+import { lastSegmentLabel, NAMESPACE_TYPE } from '@shared/unitPath';
 
 import type { TreeRow } from '../composables/useTreeFlatten';
 import type { Hint } from '../validation';
@@ -146,7 +146,7 @@ function isPlainClick(event: MouseEvent): boolean {
 const label = computed(() => props.row.name ?? lastSegmentLabel(props.row.key));
 
 /** The group of objects that have no namespace, in a file where the others have one. */
-const withoutNamespace = computed(() => props.row.group === true && props.row.type === 'Namespace');
+const withoutNamespace = computed(() => props.row.group === true && props.row.type === NAMESPACE_TYPE);
 
 /** Units, not hints: "3" should mean three translations to look at, not one with three faults. */
 const hintTitle = computed(() => {

@@ -1,4 +1,5 @@
 import { AlTokenKind, tokenizeAl } from './alLexer';
+import { isTransparentKeyword } from './alSymbolKinds';
 
 import type { AlToken } from './alLexer';
 
@@ -9,7 +10,8 @@ import type { AlToken } from './alLexer';
  * report labels. No expression, type or binding is read: a method's body is skipped by
  * counting `begin` and `case` against `end`, and a property's value by finding its `;`.
  * Tolerant by design — an unknown construct is stepped over, a missing brace ends a block at
- * the next one, and nothing throws.
+ * the next one, and nothing throws: blocks nested deeper than any real source are skipped
+ * whole rather than read.
  */
 
 export interface AlRange {
@@ -96,6 +98,8 @@ const METHOD_KEYWORDS = new Set(['procedure', 'trigger', 'event']);
 const MODIFIERS = new Set(['local', 'internal', 'protected']);
 const OPENERS = new Set(['(', '[']);
 const CLOSERS = new Set([')', ']']);
+/** Deeper than any real AL; below it, a block is skipped rather than read. */
+const MAX_DEPTH = 100;
 
 /** Reads every declaration in the text; `symbols` are the app's preprocessor symbols. */
 export function outlineAl(text: string, symbols: Iterable<string> = []): AlOutline {
@@ -110,11 +114,15 @@ export function scanHeaders(text: string, symbols: Iterable<string> = []): AlOut
 class OutlineReader {
     private readonly tokens: readonly AlToken[];
     private readonly headersOnly: boolean;
+    /** What `current()` answers past the last token, so no caller needs to ask. */
+    private readonly past: AlToken;
     private index = 0;
 
     public constructor(tokens: readonly AlToken[], headersOnly: boolean) {
         this.tokens = tokens;
         this.headersOnly = headersOnly;
+        const end = tokens.at(-1)?.end ?? 0;
+        this.past = { kind: AlTokenKind.punctuation, start: end, end, value: '' };
     }
 
     public read(): AlOutline {
@@ -149,7 +157,7 @@ class OutlineReader {
         if (namespace !== undefined) {
             object.namespace = namespace;
         }
-        if (this.current()?.kind === AlTokenKind.number) {
+        if (this.current().kind === AlTokenKind.number) {
             object.id = Number.parseInt(this.current().value, 10);
             this.index++;
         }
@@ -169,15 +177,17 @@ class OutlineReader {
             }
         }
 
-        object.range = { start, end: this.headersOnly ? this.skipBlock() : this.readBody(object, undefined) };
+        object.range = { start, end: this.headersOnly ? this.skipBlock() : this.readBody(object, undefined, 0) };
         return object;
     }
 
     /** Reads `{ … }` into `into`, returning the offset just past the closing brace. */
-    private readBody(into: Building, section: string | undefined): number {
-        const open = this.current();
-        if (open === undefined || !this.is('{')) {
+    private readBody(into: Building, section: string | undefined, depth: number): number {
+        if (!this.is('{')) {
             return this.lastEnd();
+        }
+        if (depth > MAX_DEPTH) {
+            return this.skipBlock();
         }
         this.index++;
 
@@ -193,22 +203,27 @@ class OutlineReader {
             }
 
             const word = this.word();
-            const next = this.tokens[this.index + 1] as AlToken | undefined;
+            const next = this.peek(1);
             if (word !== undefined && MODIFIERS.has(word)) {
                 this.index++;
             } else if (word !== undefined && METHOD_KEYWORDS.has(word)) {
                 into.children.push(this.readMethod(word, section));
             } else if (word === 'var') {
                 this.readVariables(into.variables);
-            } else if (this.isName() && next?.kind === AlTokenKind.punctuation && next.value === '=') {
+            } else if (this.isName() && next.kind === AlTokenKind.punctuation && next.value === '=') {
                 into.properties.push(this.readProperty());
-            } else if (word !== undefined && next?.kind === AlTokenKind.punctuation && next.value === '{') {
-                const child = this.declaration(AlDeclarationKind.section, word, token.start, word);
+            } else if (word !== undefined && next.kind === AlTokenKind.punctuation && next.value === '{') {
+                // `addfirst { … }` without an anchor adds to the section it sits in, so it
+                // keeps that section rather than naming one.
+                const inner = isTransparentKeyword(word) ? section : word;
+                const child = this.declaration(AlDeclarationKind.section, word, token.start, inner);
                 this.index++;
-                child.range = { start: token.start, end: this.readBody(child, word) };
+                child.range = { start: token.start, end: this.readBody(child, inner, depth + 1) };
                 into.children.push(child);
-            } else if (word !== undefined && next?.kind === AlTokenKind.punctuation && next.value === '(') {
-                into.children.push(this.readMember(word, section));
+            } else if (section === 'labels' && word === 'label' && next.kind === AlTokenKind.punctuation && next.value === '(') {
+                into.properties.push(this.readLabel());
+            } else if (word !== undefined && next.kind === AlTokenKind.punctuation && next.value === '(') {
+                into.children.push(this.readMember(word, section, depth));
             } else {
                 this.index++;
             }
@@ -217,8 +232,20 @@ class OutlineReader {
         return this.lastEnd();
     }
 
+    /** A report label in its multilanguage form, `label(Name; ENU = '…', DEU = '…')`, read as `Name = '…';`. */
+    private readLabel(): AlProperty {
+        const keyword = this.current();
+        this.index++;
+        const name = this.readArguments().find(argument => argument.length === 1
+            && (argument[0].kind === AlTokenKind.identifier || argument[0].kind === AlTokenKind.quoted));
+        if (this.is(';')) {
+            this.index++;
+        }
+        return { name: this.nameOf(name?.[0] ?? keyword), range: { start: keyword.start, end: this.lastEnd() } };
+    }
+
     /** `field(1; "No."; Code[20]) { … }` — named by its first argument that is a name. */
-    private readMember(keyword: string, section: string | undefined): Building {
+    private readMember(keyword: string, section: string | undefined, depth: number): Building {
         const start = this.current().start;
         this.index++;
 
@@ -230,7 +257,7 @@ class OutlineReader {
         }
 
         if (this.is('{')) {
-            member.range = { start, end: this.readBody(member, section) };
+            member.range = { start, end: this.readBody(member, section, depth + 1) };
         } else {
             if (this.is(';')) {
                 this.index++;
@@ -304,7 +331,12 @@ class OutlineReader {
                 hasBody = after === 'var' || after === 'begin';
                 break;
             }
-            if (this.is('{') || this.is('}') || this.is('[') || (word !== undefined && (METHOD_KEYWORDS.has(word) || MODIFIERS.has(word)))) {
+            // A bracket here belongs to the return type — `Code[20]`, `List of [Text]`.
+            if (this.is('[')) {
+                this.skipBalanced();
+                continue;
+            }
+            if (this.is('{') || this.is('}') || (word !== undefined && (METHOD_KEYWORDS.has(word) || MODIFIERS.has(word)))) {
                 break;
             }
             this.index++;
@@ -329,6 +361,10 @@ class OutlineReader {
 
         while (this.index < this.tokens.length) {
             const restart = this.index;
+            // `[InDataSet]`, `[SecurityFiltering(…)]` — attributes belong to the variable.
+            while (this.is('[')) {
+                this.skipBalanced();
+            }
             const names: AlToken[] = [];
             while (this.isName()) {
                 names.push(this.current());
@@ -344,7 +380,7 @@ class OutlineReader {
             }
             this.index++;
 
-            const type = this.current()?.value.toLowerCase() ?? '';
+            const type = this.current().value.toLowerCase();
             const end = this.skipStatement();
             for (const name of names) {
                 into.push({ name: this.nameOf(name), type, range: { start: name.start, end } });
@@ -480,23 +516,28 @@ class OutlineReader {
     }
 
     private current(): AlToken {
-        return this.tokens[this.index];
+        return this.peek(0);
+    }
+
+    /** The token `offset` places on, or an empty one past the end. */
+    private peek(offset: number): AlToken {
+        return this.tokens.at(this.index + offset) ?? this.past;
     }
 
     /** The current token as a lowercased keyword, when it is an identifier. */
     private word(): string | undefined {
-        const token = this.tokens[this.index] as AlToken | undefined;
-        return token?.kind === AlTokenKind.identifier ? token.value.toLowerCase() : undefined;
+        const token = this.current();
+        return token.kind === AlTokenKind.identifier ? token.value.toLowerCase() : undefined;
     }
 
     private is(punctuation: string): boolean {
-        const token = this.tokens[this.index] as AlToken | undefined;
-        return token?.kind === AlTokenKind.punctuation && token.value === punctuation;
+        const token = this.current();
+        return token.kind === AlTokenKind.punctuation && token.value === punctuation;
     }
 
     private isName(at = this.index): boolean {
-        const token = this.tokens[at] as AlToken | undefined;
-        return token?.kind === AlTokenKind.identifier || token?.kind === AlTokenKind.quoted;
+        const token = this.tokens.at(at) ?? this.past;
+        return token.kind === AlTokenKind.identifier || token.kind === AlTokenKind.quoted;
     }
 
     /** The end of the token before the current one — where a declaration cut short ends. */

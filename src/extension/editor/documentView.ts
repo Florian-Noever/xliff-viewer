@@ -1,18 +1,16 @@
 import * as vscode from 'vscode';
 
-import { Logger } from '../services/logger';
 import { compareToBase } from '../services/baseFileIndex';
 import { goToSource } from '../services/goToSource';
+import { Logger } from '../services/logger';
 import { revealAsText } from '../services/navigation';
 import { readSettings } from '../services/settings';
+import { fileNameOf } from '../services/uriNames';
 import { generatorNote } from '../xliff/names';
 import { containsComment, setState, setTarget } from '../xliff/writer';
-
+import { ExtensionMessageType, NavigationTarget } from '../../shared/messages';
 import { iterateFileUnits } from '../../shared/model';
 import { XliffState } from '../../shared/state';
-import { fileNameOf } from '../services/uriNames';
-
-import { ExtensionMessageType, NavigationTarget } from '../../shared/messages';
 
 import type { DocumentSession, SessionChange, SessionState, UnitReference, XliffDocumentSession } from './documentSession';
 import type { TextEditRange } from '../xliff/writer';
@@ -79,12 +77,20 @@ export function createDocumentSession(
     }
 
     // Whether there is AL source to go to is a fact about the app, not the document: it is
-    // told once per `ready`, and again only when the app's AL files come or go.
+    // told once per `ready`, and again only when the app's AL files come or go. Answers can
+    // overtake each other, so only the answer to the latest question is posted.
     const alIndex = alSources?.forFile(session.uri);
+    let alQuestions = 0;
     const announceAl = (): void => {
-        if (alIndex !== undefined) {
-            void announceAlSource(alIndex, session, post);
+        if (alIndex === undefined) {
+            return;
         }
+        const question = ++alQuestions;
+        void hasAlSource(alIndex, session).then((available) => {
+            if (question === alQuestions && !disposed) {
+                post({ type: ExtensionMessageType.alSource, payload: { available } });
+            }
+        });
     };
     void alIndex?.then((index) => {
         if (index !== undefined && !disposed) {
@@ -257,19 +263,14 @@ function findUnit(units: Iterable<XliffTransUnit>, unitId: string): XliffTransUn
     return undefined;
 }
 
-/** Posts `alSource`: whether the app has AL files at all. Having none is an answer, not a failure. */
-async function announceAlSource(
-    alIndex: Promise<AlSourceIndex | undefined>,
-    session: XliffDocumentSession,
-    post: (message: ExtensionMessage) => void,
-): Promise<void> {
-    let available = false;
+/** Whether the app has AL files at all. Having none is an answer, not a failure. */
+async function hasAlSource(alIndex: Promise<AlSourceIndex | undefined>, session: XliffDocumentSession): Promise<boolean> {
     try {
-        available = await (await alIndex)?.hasAlFiles() ?? false;
+        return await (await alIndex)?.hasAlFiles() ?? false;
     } catch (error: unknown) {
         Logger.warn(`Looking for AL source failed for ${session.uri.path}: ${error instanceof Error ? error.message : 'unknown error'}`);
+        return false;
     }
-    post({ type: ExtensionMessageType.alSource, payload: { available } });
 }
 
 /** Posts `baseFile` once resolution finishes. Not finding one is a result, not a failure. */

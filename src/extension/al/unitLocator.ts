@@ -1,4 +1,4 @@
-import { canonicalPropertyName, declaresMember, EXTENDED_KEYWORD, isTransparent, objectKeyword } from './alSymbolKinds';
+import { canonicalPropertyName, declaresMember, extendedKeyword, extensionKeywords, isTransparent, objectKeyword } from './alSymbolKinds';
 import { alNameHash } from '../xliff/alNameHash';
 
 import type { IndexedObject } from './alHeaderIndex';
@@ -44,16 +44,31 @@ export interface Candidate {
 
 const RANK: Readonly<Record<LocatePrecision, number>> = { exact: 3, member: 2, object: 1 };
 
+/** A declared name that hashes to the segment's — what the compiler itself wrote. */
+function hashed(declared: string, segment: TargetSegment): boolean {
+    return alNameHash(declared) === segment.hash;
+}
+
 /** A declared name matches a segment by its hash, or by the name the id or note gives, in any case. */
 function named(declared: string, segment: TargetSegment): boolean {
-    return alNameHash(declared) === segment.hash || segment.name?.toLowerCase() === declared.toLowerCase();
+    return hashed(declared, segment) || segment.name?.toLowerCase() === declared.toLowerCase();
+}
+
+/** Declarations whose name hashes to the segment's first, then those that only match it by name — each in source order. */
+function hashFirst(declarations: readonly AlDeclaration[], segment: TargetSegment): AlDeclaration[] {
+    const byHash = (each: AlDeclaration): boolean => each.name !== undefined && hashed(each.name.text, segment);
+    return [...declarations.filter(byHash), ...declarations.filter(each => !byHash(each))];
+}
+
+/** Of objects with one name, those without a namespace, when there are any. */
+function preferGlobal(objects: readonly IndexedObject[]): readonly IndexedObject[] {
+    const global = objects.filter(object => object.namespace === undefined);
+    return global.length > 0 ? global : objects;
 }
 
 function namedObject(object: IndexedObject, segment: TargetSegment): boolean {
     return object.nameHash === segment.hash || segment.name?.toLowerCase() === object.name.toLowerCase();
 }
-
-const extensionsOf = (keyword: string): readonly string[] => Object.keys(EXTENDED_KEYWORD).filter(each => EXTENDED_KEYWORD[each] === keyword);
 
 /** The objects a unit may be declared in, most certain first, each once. */
 export function candidateObjects(target: UnitTarget, index: readonly IndexedObject[]): Candidate[] {
@@ -69,9 +84,12 @@ export function candidateObjects(target: UnitTarget, index: readonly IndexedObje
     const rootKind = objectKeyword(target.root.type);
     const declaring = target.declaring;
     if (declaring !== undefined) {
-        add(1, index.filter(object => object.kind === objectKeyword(declaring.type)
-            && object.name.toLowerCase() === declaring.name.toLowerCase()
-            && (declaring.namespace === undefined || object.namespace?.toLowerCase() === declaring.namespace.toLowerCase())));
+        const byName = index.filter(object => object.kind === objectKeyword(declaring.type) && object.name.toLowerCase() === declaring.name.toLowerCase());
+        const declaringNamespace = declaring.namespace?.toLowerCase();
+        add(1, declaringNamespace !== undefined
+            ? byName.filter(object => object.namespace?.toLowerCase() === declaringNamespace)
+            // A namespaced app's note names every namespace, so a note without one names a global object.
+            : target.readable ? preferGlobal(byName) : byName);
     }
 
     const roots = index.filter(object => object.kind === rootKind && namedObject(object, target.root));
@@ -86,14 +104,21 @@ export function candidateObjects(target: UnitTarget, index: readonly IndexedObje
     const objectTarget = target.objectTarget;
     if (objectTarget !== undefined) {
         const targetKind = objectKeyword(objectTarget.type);
-        add(3, EXTENDED_KEYWORD[targetKind] === undefined
-            ? index.filter(object => extensionsOf(targetKind).includes(object.kind) && object.targetHash === objectTarget.hash)
-            : index.filter(object => object.kind === targetKind && object.nameHash === objectTarget.hash));
+        if (extendedKeyword(targetKind) === undefined) {
+            // A base object stands for its extensions. AL matches names in any case, so an
+            // `extends` spelt differently from the declaration still names the object.
+            const extensions = extensionKeywords(targetKind);
+            const declared = new Set(index.filter(object => object.kind === targetKind && object.nameHash === objectTarget.hash).map(object => object.name.toLowerCase()));
+            add(3, index.filter(object => extensions.includes(object.kind)
+                && (object.targetHash === objectTarget.hash || (object.target !== undefined && declared.has(object.target.toLowerCase())))));
+        } else {
+            add(3, index.filter(object => object.kind === targetKind && object.nameHash === objectTarget.hash));
+        }
     }
 
-    if (EXTENDED_KEYWORD[rootKind] !== undefined) {
-        const rootTargets = new Set(roots.map(object => object.targetHash).filter(hash => hash !== undefined));
-        add(4, index.filter(object => object.kind === rootKind && object.targetHash !== undefined && rootTargets.has(object.targetHash)));
+    if (extendedKeyword(rootKind) !== undefined) {
+        const rootTargets = new Set(roots.flatMap(object => (object.target === undefined ? [] : [object.target.toLowerCase()])));
+        add(4, index.filter(object => object.kind === rootKind && object.target !== undefined && rootTargets.has(object.target.toLowerCase())));
     }
 
     return candidates;
@@ -109,7 +134,7 @@ interface Reached {
  * Walks a unit's path through one object, returning the deepest point reached — the whole
  * path when `depth` equals its length.
  */
-export function walkObject(object: AlObject, path: readonly TargetSegment[]): Reached {
+function walkObject(object: AlObject, path: readonly TargetSegment[]): Reached {
     const start: Reached = { range: object.name?.range ?? object.range, depth: 0, declaration: object };
     return walk(object, path, 0, start);
 }
@@ -143,13 +168,18 @@ function walk(container: AlDeclaration, path: readonly TargetSegment[], index: n
                 .find(each => named(each.name.text, segment));
             return label === undefined ? reached : at(label.name.range, container);
         }
-        case 'RequestPage': {
+        case 'RequestPage':
+        case 'RequestPageExtension': {
             const page = container.children.find(child => child.keyword === 'requestpage');
-            return page === undefined ? reached : walk(page, path, index + 1, at(page.range, page));
+            if (page === undefined) {
+                return reached;
+            }
+            // Its keyword stands for the request page, rather than the whole block it opens.
+            return walk(page, path, index + 1, at({ start: page.range.start, end: page.range.start + page.keyword.length }, page));
         }
         case 'Method': {
             let best = reached;
-            const methods = container.children.filter(child => child.kind === 'method' && child.name !== undefined && named(child.name.text, segment));
+            const methods = hashFirst(container.children.filter(child => child.kind === 'method' && child.name !== undefined && named(child.name.text, segment)), segment);
             // A trigger of the request page is filed under its report.
             const fallback = methods.length === 0
                 ? container.children.filter(child => child.keyword === 'requestpage').flatMap(page => page.children)
@@ -166,7 +196,7 @@ function walk(container: AlDeclaration, path: readonly TargetSegment[], index: n
         }
         default: {
             let best = reached;
-            for (const member of membersOf(container, segment)) {
+            for (const member of hashFirst(membersOf(container, segment), segment)) {
                 const result = walk(member, path, index + 1, at(member.name?.range ?? member.range, member));
                 if (result.depth === path.length) {
                     return result;

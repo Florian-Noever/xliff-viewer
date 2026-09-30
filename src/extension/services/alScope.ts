@@ -25,7 +25,9 @@ const MAX_ASCENT = 32;
 /** The app a file belongs to, else its workspace folder; undefined outside both. */
 export async function alScopeFor(file: vscode.Uri): Promise<AlScope | undefined> {
     const workspaceFolder = vscode.workspace.getWorkspaceFolder(file)?.uri;
-    let folder = vscode.Uri.joinPath(file, '..');
+    // A joined URI keeps the query, and for some file systems — `git:`, say — the query is
+    // what names the file. Every `app.json` probed beside a diff would then "exist".
+    let folder = vscode.Uri.joinPath(file.with({ query: '', fragment: '' }), '..');
 
     for (let step = 0; step < MAX_ASCENT; step++) {
         const manifest = vscode.Uri.joinPath(folder, MANIFEST);
@@ -44,7 +46,8 @@ export async function alScopeFor(file: vscode.Uri): Promise<AlScope | undefined>
 
 async function isFile(uri: vscode.Uri): Promise<boolean> {
     try {
-        return (await vscode.workspace.fs.stat(uri)).type === vscode.FileType.File;
+        // A bit set, not a value: a linked file is `File | SymbolicLink`.
+        return ((await vscode.workspace.fs.stat(uri)).type & vscode.FileType.File) !== 0;
     } catch {
         return false;
     }

@@ -77,10 +77,14 @@ export class Range {
 export class Uri {
     public readonly scheme: string;
     public readonly path: string;
+    public readonly query: string;
+    public readonly fragment: string;
 
-    private constructor(scheme: string, path: string) {
+    private constructor(scheme: string, path: string, query = '', fragment = '') {
         this.scheme = scheme;
         this.path = path;
+        this.query = query;
+        this.fragment = fragment;
     }
 
     public get fsPath(): string {
@@ -111,12 +115,26 @@ export class Uri {
             }
         }
         const joined = parts.join('/');
-        return new Uri(base.scheme, joined === '' ? '/' : joined);
+        // As the real one does, a joined URI keeps its base's query and fragment.
+        return new Uri(base.scheme, joined === '' ? '/' : joined, base.query, base.fragment);
+    }
+
+    public with(change: { readonly scheme?: string; readonly path?: string; readonly query?: string; readonly fragment?: string }): Uri {
+        return new Uri(change.scheme ?? this.scheme, change.path ?? this.path, change.query ?? this.query, change.fragment ?? this.fragment);
     }
 
     public toString(): string {
         return `${this.scheme}://${this.path}`;
     }
+}
+
+function withoutTrailingSlash(path: string): string {
+    return path.endsWith('/') ? path.slice(0, -1) : path;
+}
+
+function isWithin(path: string, folder: string): boolean {
+    const base = withoutTrailingSlash(folder);
+    return path === base || path.startsWith(`${base}/`);
 }
 
 /** A glob relative to a folder, as `findFiles` and watchers take it. */
@@ -379,8 +397,15 @@ export const workspace = {
         },
     },
     createFileSystemWatcher: (pattern: string | RelativePattern): FakeFileSystemWatcher => new FakeFileSystemWatcher(pattern),
-    getWorkspaceFolder: (_uri: Uri): { uri: Uri } | undefined =>
-        (workspaceRoot === undefined ? undefined : { uri: workspaceRoot }),
+    /** The folder only for a URI inside it, as the real one answers. */
+    getWorkspaceFolder: (uri: Uri): { uri: Uri } | undefined =>
+        (workspaceRoot?.scheme === uri.scheme && isWithin(uri.path, workspaceRoot.path) ? { uri: workspaceRoot } : undefined),
+    asRelativePath: (pathOrUri: Uri | string): string => {
+        const path = typeof pathOrUri === 'string' ? pathOrUri : pathOrUri.path;
+        return workspaceRoot !== undefined && isWithin(path, workspaceRoot.path) && path !== workspaceRoot.path
+            ? path.slice(withoutTrailingSlash(workspaceRoot.path).length + 1)
+            : path;
+    },
     get workspaceFolders(): { uri: Uri }[] | undefined {
         return workspaceRoot === undefined ? undefined : [{ uri: workspaceRoot }];
     },
@@ -389,11 +414,12 @@ export const workspace = {
      * Finds nothing at all when search is switched off, as a host without a search
      * provider does.
      */
-    findFiles: (pattern: string | RelativePattern): Promise<Uri[]> => {
+    findFiles: (pattern: string | RelativePattern, _exclude?: unknown, maxResults?: number): Promise<Uri[]> => {
         if (!searchAvailable) {
             return Promise.resolve([]);
         }
-        return Promise.resolve(Object.keys(virtualFiles).filter(path => patternMatches(pattern, path)).map(path => Uri.file(path)));
+        const found = Object.keys(virtualFiles).filter(path => patternMatches(pattern, path)).map(path => Uri.file(path));
+        return Promise.resolve(maxResults === undefined ? found : found.slice(0, maxResults));
     },
     applyEdit: async (edit: WorkspaceEdit): Promise<boolean> => {
         appliedEdits.push(...edit.entries);

@@ -253,6 +253,74 @@ describe('candidate tiers', () => {
         expect((locate(namespaces, 'Table Order - Property Caption') as { readonly location?: { readonly file: string } }).location?.file).toBe('Old.al');
     });
 
+    it('prefers the global object, for a readable id whose note names no namespace either', () => {
+        // A namespaced app's note names every namespace, so one without names a global object.
+        const namespaces = {
+            'Old.al': 'table 1 Order { Caption = \'Old\'; }',
+            'Sales.al': 'namespace Contoso.Sales; table 2 Order { Caption = \'Sales\'; }',
+        };
+        const result = locate(namespaces, 'Table Order - Property Caption', 'Table Order - Property Caption');
+
+        expect(result.kind === 'found' ? result.location.file : result.kind).toBe('Old.al');
+    });
+
+    it('opens the object the id names when the note\'s name holds a later anchor', () => {
+        const reports = {
+            'A.al': 'report 1 Sales { Caption = \'Sales\'; }',
+            'B.al': 'report 2 "Sales - Property List" { Caption = \'List\'; }',
+        };
+        const result = locate(reports, `Report ${h('Sales - Property List')} - Property ${h('Caption')}`, 'Report Sales - Property List - Property Caption');
+
+        expect(result.kind === 'found' ? [result.location.file, result.location.tier] : result.kind).toEqual(['B.al', 1]);
+    });
+
+    it('finds a report extension\'s request page trigger, and selects the keyword for the request page', () => {
+        const sources = {
+            'Ext.al': 'reportextension 3 "Contoso Quote Ext." extends "Sales - Quote" { requestpage { trigger OnOpenPage() var OpenedLbl: Label \'Opened\'; begin end; } }',
+        };
+        const root = `ReportExtension ${h('Contoso Quote Ext.')} - RequestPageExtension ${h('Sales - Quote')}`;
+
+        expect(textAt(sources, locate(sources, `${root} - Method ${h('OnOpenPage')} - NamedType ${h('OpenedLbl')}`))).toBe('OpenedLbl');
+        expect(textAt(sources, locate(sources, `${root} - Method ${h('OnClosePage')} - NamedType ${h('ClosedLbl')}`))).toBe('requestpage');
+    });
+
+    it('finds an extension whose extends names its object in another case', () => {
+        const sources = {
+            'Setup.al': 'table 1 "Contoso Setup" { }',
+            'Ext.al': 'tableextension 2 "Contoso Setup Ext." extends "contoso setup" { fields { field(10; Region; Code[10]) { Caption = \'Region\'; } } }',
+        };
+        const result = locate(sources, `Table ${h('Contoso Setup')} - Field ${h('Region')} - Property ${h('Caption')}`, undefined, `Table ${h('Contoso Setup')}`);
+
+        expect(textAt(sources, result)).toBe('Caption');
+        expect(result.kind === 'found' ? result.location.tier : undefined).toBe(3);
+    });
+
+    it('tries the overload whose name hashes to the id before one that matches only in another case', () => {
+        const sources = {
+            'Mgt.al': 'codeunit 4 Mgt { procedure Foo() var DoneMsg: Label \'Big\'; begin end; procedure foo(A: Integer) var DoneMsg: Label \'Small\'; begin end; }',
+        };
+        const result = locate(sources, `Codeunit ${h('Mgt')} - Method ${h('foo')} - NamedType ${h('DoneMsg')}`, 'Codeunit Mgt - Method foo - NamedType DoneMsg');
+
+        expect(result.kind === 'found' ? sources['Mgt.al'].indexOf('Small') > result.location.range.start && result.location.range.start > sources['Mgt.al'].indexOf('foo(') : result.kind).toBe(true);
+    });
+
+    it('finds a view added with no anchor', () => {
+        const sources = {
+            'Views.al': 'pageextension 5 "Contoso Views" extends "Customer List" { views { addfirst { view(OpenOnes) { Caption = \'Open\'; } } } }',
+        };
+
+        expect(textAt(sources, locate(sources, `PageExtension ${h('Contoso Views')} - View ${h('OpenOnes')} - Property ${h('Caption')}`))).toBe('Caption');
+    });
+
+    it('finds nothing, and throws nothing, for a segment type that names something every object has', () => {
+        // A member to test the type against is what reaches the kind table.
+        const sources = { 'Order.al': 'table 1 Order { Caption = \'Order\'; fields { field(1; Code; Code[10]) { } } }' };
+
+        for (const type of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) {
+            expect(() => locate(sources, `Table ${h('Order')} - ${type} ${h('X')} - Property ${h('Caption')}`), type).not.toThrow();
+        }
+    });
+
     it('reads a codeunit\'s labels past attributes and protected variables', () => {
         const codeunit = { 'Mgt.al': CODEUNIT };
         const root = `Codeunit ${h('Contoso Mgt.')}`;

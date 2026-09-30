@@ -34,22 +34,33 @@ interface FileEntry {
     readonly objects: readonly IndexedObject[];
 }
 
-/** Files read at once while building. */
+/** Files read, or checked, at once. */
 const BATCH = 8;
 /** A second miss this soon after a refresh does not refresh again. */
 const REFRESH_INTERVAL_MS = 2000;
+/**
+ * In an app with no AL file at all, a miss is what every click is, and listing again means
+ * searching and then walking the whole folder; so it is done this seldom.
+ */
+const EMPTY_REFRESH_INTERVAL_MS = 30000;
+/** How often a build reads again what a watcher dropped while it was reading. */
+const BUILD_PASSES = 3;
+/** The modification time of an entry whose file could not even be stat'ed. */
+const UNKNOWN_MTIME = -1;
 
 export class AlSourceIndex implements vscode.Disposable {
-    public readonly scope: AlScope;
+    private current: AlScope;
     private readonly changed = new vscode.EventEmitter<void>();
     private readonly subscriptions: vscode.Disposable[] = [];
     private readonly entries = new Map<string, FileEntry>();
     private listing: Promise<readonly vscode.Uri[]> | undefined;
     private building: Promise<readonly IndexedObject[]> | undefined;
     private lastRefresh = 0;
+    /** When the current listing was taken. */
+    private listedAt = 0;
 
     public constructor(scope: AlScope) {
-        this.scope = scope;
+        this.current = scope;
         const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(scope.folder, '**/*.al'));
         this.subscriptions.push(
             watcher,
@@ -61,6 +72,24 @@ export class AlSourceIndex implements vscode.Disposable {
                 this.forgetListing();
             }),
         );
+    }
+
+    public get scope(): AlScope {
+        return this.current;
+    }
+
+    /**
+     * Takes the app's preprocessor symbols as `app.json` says them now.
+     *
+     * `#if` decides which objects a file declares, so new symbols drop every entry and the
+     * next build reads the files again.
+     */
+    public useSymbols(symbols: readonly string[]): void {
+        if (symbols.length === this.current.symbols.length && symbols.every((symbol, at) => symbol === this.current.symbols[at])) {
+            return;
+        }
+        this.current = { ...this.current, symbols };
+        this.entries.clear();
     }
 
     /** Fires when files come or go, so whether AL source exists can be asked again. */
@@ -93,7 +122,13 @@ export class AlSourceIndex implements vscode.Disposable {
     /** Finds where a unit is declared, refreshing once when it is not found at all. */
     public async locate(target: UnitTarget): Promise<AlLocateOutcome> {
         const first = await this.locateOnce(target);
-        if (first.result.kind !== 'notFound' || Date.now() - this.lastRefresh < REFRESH_INTERVAL_MS) {
+        if (first.result.kind !== 'notFound') {
+            return first;
+        }
+        const recent = (await this.files()).length === 0
+            ? Date.now() - this.listedAt < EMPTY_REFRESH_INTERVAL_MS
+            : Date.now() - this.lastRefresh < REFRESH_INTERVAL_MS;
+        if (recent) {
             return first;
         }
         await this.refresh();
@@ -106,16 +141,24 @@ export class AlSourceIndex implements vscode.Disposable {
     }
 
     private async files(): Promise<readonly vscode.Uri[]> {
-        this.listing ??= listAlFiles(this.scope.folder).then(listing => listing.files);
+        if (this.listing === undefined) {
+            this.listedAt = Date.now();
+            this.listing = listAlFiles(this.scope.folder).then(listing => listing.files);
+        }
         return this.listing;
     }
 
     private async build(): Promise<readonly IndexedObject[]> {
         const files = await this.files();
-        const missing = files.filter(uri => !this.entries.has(uri.toString()));
-        if (missing.length > 0) {
-            // A large app takes visible time to read, and this runs on a click.
-            await vscode.window.withProgress({ location: vscode.ProgressLocation.Window, title: 'Indexing AL objects…' }, () => this.readAll(missing));
+        const unread = (): vscode.Uri[] => files.filter(uri => !this.entries.has(uri.toString()));
+        if (unread().length > 0) {
+            // A large app takes visible time to read, and this runs on a click. A watcher can
+            // drop an entry while the others are being read, so what it dropped is read again.
+            await vscode.window.withProgress({ location: vscode.ProgressLocation.Window, title: 'Indexing AL objects…' }, async () => {
+                for (let pass = 0; pass < BUILD_PASSES && unread().length > 0; pass++) {
+                    await this.readAll(unread());
+                }
+            });
         }
         return files.flatMap(uri => this.entries.get(uri.toString())?.objects ?? []);
     }
@@ -127,12 +170,17 @@ export class AlSourceIndex implements vscode.Disposable {
     }
 
     private async readEntry(uri: vscode.Uri): Promise<void> {
-        try {
-            const [text, stat] = await Promise.all([readText(uri), vscode.workspace.fs.stat(uri)]);
-            this.entries.set(uri.toString(), { mtime: stat.mtime, objects: indexedObjects(uri.toString(), scanHeaders(text, this.scope.symbols)) });
-        } catch (error: unknown) {
-            Logger.warn(`Could not read ${uri.path}: ${error instanceof Error ? error.message : 'unknown error'}`);
+        const key = uri.toString();
+        const [text, stat] = await Promise.allSettled([readText(uri), vscode.workspace.fs.stat(uri)]);
+        const mtime = stat.status === 'fulfilled' ? stat.value.mtime : UNKNOWN_MTIME;
+        if (text.status === 'fulfilled') {
+            this.entries.set(key, { mtime, objects: indexedObjects(key, scanHeaders(text.value, this.current.symbols)) });
+            return;
         }
+        // Remembered as declaring nothing, so a file that cannot be read is not read again on
+        // every click. A refresh retries it once its modification time moves.
+        this.entries.set(key, { mtime, objects: [] });
+        Logger.warn(`Could not read ${uri.path}: ${text.reason instanceof Error ? text.reason.message : 'unknown error'}`);
     }
 
     /** Lists the files again, and forgets every entry whose file changed or went. */
@@ -140,25 +188,28 @@ export class AlSourceIndex implements vscode.Disposable {
         this.lastRefresh = Date.now();
         const before = new Set((await this.files()).map(uri => uri.toString()));
         this.listing = undefined;
-        const current = new Set((await this.files()).map(uri => uri.toString()));
+        const listed = new Set((await this.files()).map(uri => uri.toString()));
         // Where no watcher fires, this is the only way to learn that files came or went.
-        if (current.size !== before.size || [...current].some(key => !before.has(key))) {
+        if (listed.size !== before.size || [...listed].some(key => !before.has(key))) {
             this.changed.fire();
         }
 
-        await Promise.all([...this.entries].map(async ([key, entry]) => {
-            if (!current.has(key)) {
-                this.entries.delete(key);
-                return;
-            }
-            try {
-                if ((await vscode.workspace.fs.stat(vscode.Uri.parse(key))).mtime !== entry.mtime) {
+        const entries = [...this.entries];
+        for (let start = 0; start < entries.length; start += BATCH) {
+            await Promise.all(entries.slice(start, start + BATCH).map(async ([key, entry]) => {
+                if (!listed.has(key)) {
+                    this.entries.delete(key);
+                    return;
+                }
+                try {
+                    if ((await vscode.workspace.fs.stat(vscode.Uri.parse(key))).mtime !== entry.mtime) {
+                        this.entries.delete(key);
+                    }
+                } catch {
                     this.entries.delete(key);
                 }
-            } catch {
-                this.entries.delete(key);
-            }
-        }));
+            }));
+        }
     }
 
     private async locateOnce(target: UnitTarget): Promise<AlLocateOutcome> {
@@ -202,6 +253,8 @@ export class AlSourceIndexes implements vscode.Disposable {
             index = new AlSourceIndex(scope);
             this.indexes.set(key, index);
         }
+        // Asked on every click, so a changed `app.json` counts from the next one on.
+        index.useSymbols(scope.symbols);
         return index;
     }
 

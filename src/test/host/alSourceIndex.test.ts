@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { unitTarget } from '../../extension/al/alTarget';
 import { AlListingPath, listAlFiles } from '../../extension/services/alFileListing';
+import { goToSource, SourceOutcome } from '../../extension/services/goToSource';
 import { alScopeFor } from '../../extension/services/alScope';
 import { AlSourceIndex, AlSourceIndexes } from '../../extension/services/alSourceIndex';
 import { Logger } from '../../extension/services/logger';
@@ -11,6 +12,7 @@ import {
     fireFileWatcher,
     flushFileReads,
     flushLogs,
+    flushProgress,
     flushProgressTitles,
     removeVirtualFile,
     resetMocks,
@@ -43,6 +45,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+    vi.restoreAllMocks();
     resetMocks();
 });
 
@@ -71,6 +74,36 @@ describe('alScopeFor', () => {
         setVirtualFile('/w/Translations/Contoso.de-DE.xlf', '<xliff/>');
 
         expect((await alScopeFor(uri('/w/Translations/Contoso.de-DE.xlf')))?.folder.path).toBe('/w');
+    });
+
+    it('takes a linked app.json for one, since a file type is a set of bits', async () => {
+        setVirtualFile(`${APP}/app.json`, JSON.stringify({ preprocessorSymbols: ['CLEAN'] }));
+        const stat = vscode.workspace.fs.stat;
+        vi.spyOn(vscode.workspace.fs, 'stat').mockImplementation(async (asked: vscode.Uri) => {
+            const answer = await stat(asked);
+            return asked.path.endsWith('app.json') ? { ...answer, type: vscode.FileType.File | vscode.FileType.SymbolicLink } : answer;
+        });
+
+        const scope = await alScopeFor(uri(`${APP}/Translations/Contoso.de-DE.xlf`));
+
+        expect(scope?.folder.path).toBe(APP);
+        expect(scope?.symbols).toEqual(['CLEAN']);
+    });
+
+    it('leaves the translation file\'s query out of every probe', async () => {
+        // For a diff, the query is what names the file; every app.json probed beside it would
+        // otherwise answer for the translation file itself.
+        const probed: string[] = [];
+        const stat = vscode.workspace.fs.stat;
+        vi.spyOn(vscode.workspace.fs, 'stat').mockImplementation((asked: vscode.Uri) => {
+            probed.push(asked.query);
+            return stat(asked);
+        });
+
+        await alScopeFor(uri(`${APP}/Translations/Contoso.de-DE.xlf`).with({ query: '{"ref":"HEAD"}' }));
+
+        expect(probed.length).toBeGreaterThan(0);
+        expect(probed.every(query => query === '')).toBe(true);
     });
 
     it('reads a broken app.json as having no symbols, and says so', async () => {
@@ -190,6 +223,49 @@ describe('AlSourceIndex', () => {
         expect(outcome.result.kind).toBe('found');
     });
 
+    it('does not list an app with no AL file again on every miss', async () => {
+        for (const path of [`${APP}/src/Order.Table.al`, `${APP}/src/Card.Page.al`]) {
+            removeVirtualFile(path);
+        }
+        const findFiles = vi.spyOn(vscode.workspace, 'findFiles');
+
+        await index.locate(target(CAPTION));
+        await index.locate(target(CAPTION));
+
+        expect(findFiles).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not read a file it could not read again on every build', async () => {
+        const readFile = vscode.workspace.fs.readFile;
+        vi.spyOn(vscode.workspace.fs, 'readFile').mockImplementation((asked: vscode.Uri) => (asked.path.endsWith('Card.Page.al') ? Promise.reject(new Error('locked')) : readFile(asked)));
+
+        await index.objects();
+        await index.objects();
+
+        expect(flushProgressTitles()).toEqual(['Indexing AL objects…']);
+        expect(flushLogs().filter(line => line.includes('Could not read'))).toHaveLength(1);
+    });
+
+    it('reads again a file a watcher dropped while the others were being read', async () => {
+        await index.objects();
+        flushProgress();
+        setVirtualFile(`${APP}/src/New.Codeunit.al`, 'codeunit 50102 "Contoso New" { }');
+        fireFileWatcher('created', `${APP}/src/New.Codeunit.al`);
+        const readFile = vscode.workspace.fs.readFile;
+        vi.spyOn(vscode.workspace.fs, 'readFile').mockImplementation((asked: vscode.Uri) => {
+            if (asked.path.endsWith('New.Codeunit.al')) {
+                // Saved while the new file is read: its entry goes, and its object must not.
+                fireFileWatcher('changed', `${APP}/src/Order.Table.al`);
+            }
+            return readFile(asked);
+        });
+
+        const objects = await index.objects();
+
+        expect(objects.map(object => object.name).sort()).toEqual(['Contoso Card', 'Contoso New', 'Contoso Order']);
+        expect(flushProgress()).toHaveLength(1);
+    });
+
     it('lets its watcher go when disposed', () => {
         const before = watcherCount();
         index.dispose();
@@ -208,6 +284,19 @@ describe('AlSourceIndexes', () => {
 
         expect(first).toBeDefined();
         expect(second).toBe(first);
+        indexes.dispose();
+    });
+
+    it('takes changed preprocessor symbols from the next click on', async () => {
+        setVirtualFile(`${APP}/app.json`, JSON.stringify({ preprocessorSymbols: ['A'] }));
+        setVirtualFile(`${APP}/src/Order.Table.al`, '#if B\ntable 50100 "Contoso Order" { Caption = \'Contoso Order\'; }\n#endif\n');
+        setVirtualFile(`${APP}/Translations/Contoso.g.xlf`, `<xliff><trans-unit id="${CAPTION}"/></xliff>`);
+        const indexes = new AlSourceIndexes();
+        const request = { document: uri(`${APP}/Translations/Contoso.g.xlf`), isBaseFile: true, unitId: CAPTION };
+
+        expect(await goToSource(request, indexes, undefined)).toBe(SourceOutcome.ownFile);
+        setVirtualFile(`${APP}/app.json`, JSON.stringify({ preprocessorSymbols: ['B'] }));
+        expect(await goToSource(request, indexes, undefined)).toBe(SourceOutcome.declaration);
         indexes.dispose();
     });
 

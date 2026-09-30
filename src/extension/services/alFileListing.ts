@@ -6,9 +6,9 @@ import { Logger } from './logger';
  * Every AL file under a folder, in both hosts.
  *
  * `findFiles` is the right tool — it honours the user's excludes, and on the desktop it is
- * fast — but a host whose file system has no search provider answers it with nothing. So
- * when it finds nothing, the folder is walked with `workspace.fs.readDirectory`, which every
- * file system supports.
+ * fast — but a host whose file system has no search provider answers it with nothing, and
+ * one whose provider gives up on a large folder answers the same. So when it finds nothing,
+ * the folder is walked with `workspace.fs.readDirectory`, which every file system supports.
  */
 
 export const AlListingPath = {
@@ -43,12 +43,18 @@ export async function listAlFiles(folder: vscode.Uri): Promise<AlListing> {
         Logger.warn(`Could not search ${folder.path} for AL files: ${error instanceof Error ? error.message : 'unknown error'}`);
     }
 
-    const walked = await walk(folder);
+    const walked = await walkAlFiles(folder);
     Logger.info(`Found ${walked.length} AL files under ${folder.path} by walking the folder.`);
     return { files: walked, via: AlListingPath.walk };
 }
 
-async function walk(root: vscode.Uri): Promise<vscode.Uri[]> {
+/**
+ * The AL files under a folder, read with `readDirectory` alone.
+ *
+ * Exported for the hosts' own tests: where search works, this path is never taken, and it
+ * is the one a host without search depends on.
+ */
+export async function walkAlFiles(root: vscode.Uri): Promise<vscode.Uri[]> {
     const files: vscode.Uri[] = [];
     const pending = [root];
     let seen = 0;
@@ -69,11 +75,13 @@ async function walk(root: vscode.Uri): Promise<vscode.Uri[]> {
                 Logger.warn(`Stopped looking for AL files under ${root.path} after ${MAX_ENTRIES} entries.`);
                 return files;
             }
-            if (type === vscode.FileType.Directory) {
-                if (!name.startsWith('.') && !SKIPPED.has(name)) {
+            // A bit set, not a value. A linked folder is not followed — a link back up the tree
+            // would be walked until the cap — but a linked file is read like any other.
+            if ((type & vscode.FileType.Directory) !== 0) {
+                if ((type & vscode.FileType.SymbolicLink) === 0 && !name.startsWith('.') && !SKIPPED.has(name)) {
                     pending.push(vscode.Uri.joinPath(folder, name));
                 }
-            } else if (name.toLowerCase().endsWith('.al')) {
+            } else if ((type & vscode.FileType.File) !== 0 && name.toLowerCase().endsWith('.al')) {
                 files.push(vscode.Uri.joinPath(folder, name));
             }
         }

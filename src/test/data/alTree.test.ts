@@ -187,7 +187,7 @@ describe('the object-type level', () => {
     it('wraps the roots in one node per type', () => {
         const tree = grouped('Table 1 - Property 9', 'Page 2 - Property 9', 'Table 3 - Property 9');
 
-        expect(tree.map(node => node.key)).toEqual(['type:Table', 'type:Page']);
+        expect(tree.map(node => node.key)).toEqual([`${OBJECT_TYPE_GROUP_PREFIX}Table`, `${OBJECT_TYPE_GROUP_PREFIX}Page`]);
         expect(tree[0].children.map(node => node.key)).toEqual(['Table 1', 'Table 3']);
         expect(tree[1].children.map(node => node.key)).toEqual(['Page 2']);
     });
@@ -221,7 +221,7 @@ describe('the object-type level', () => {
     it('leaves a root alone when its id has no type to group by', () => {
         const tree = grouped('Table 1 - Property 9', '1');
 
-        expect(tree.map(node => node.key)).toEqual(['type:Table', '1']);
+        expect(tree.map(node => node.key)).toEqual([`${OBJECT_TYPE_GROUP_PREFIX}Table`, '1']);
     });
 
     it('does nothing to an empty tree', () => {
@@ -232,7 +232,7 @@ describe('the object-type level', () => {
         // The hash is of the *name*, so those two collide on hash alone.
         const tree = grouped('Table 1950013021 - Property 1', 'Page 1950013021 - Property 1');
 
-        expect(tree.map(node => node.key)).toEqual(['type:Table', 'type:Page']);
+        expect(tree.map(node => node.key)).toEqual([`${OBJECT_TYPE_GROUP_PREFIX}Table`, `${OBJECT_TYPE_GROUP_PREFIX}Page`]);
         expect(tree.every(node => node.children.length === 1)).toBe(true);
     });
 
@@ -303,15 +303,43 @@ describe('naming', () => {
         expect(roots[0].children[0].segment.name).toBe('ReleaseOrder');
     });
 
-    it('prefers a note name its hash confirms over one it does not', () => {
-        // A folded extension's note names the extension, while its id names the extended object.
+    it('names a folded extension\'s members, and not the object after the extension', () => {
+        // The note names the extension that declares the field; the id files it under the table.
         const root = `Table ${alNameHash('Contoso Item')}`;
-        const roots = buildAlTree([
-            unit(`${root} - Field ${alNameHash('Extra')} - Property ${alNameHash('Caption')}`, 'Table Contoso Item Ext. - Field Extra - Property Caption'),
+        const folded = unit(`${root} - Field ${alNameHash('Extra')} - Property ${alNameHash('Caption')}`, 'TableExtension Contoso Item Ext. - Field Extra - Property Caption');
+
+        const [table] = buildAlTree([folded]);
+
+        expect(table.segment.name).toBeUndefined();
+        expect(table.children[0].segment.name).toBe('Extra');
+        expect(table.children[0].children[0].segment.name).toBe('Caption');
+    });
+
+    it('names the object from a unit of its own, alongside a folded one', () => {
+        const root = `Table ${alNameHash('Contoso Item')}`;
+        const [table] = buildAlTree([
+            unit(`${root} - Field ${alNameHash('Extra')} - Property ${alNameHash('Caption')}`, 'TableExtension Contoso Item Ext. - Field Extra - Property Caption'),
             unit(`${root} - Property ${alNameHash('Caption')}`, 'Table Contoso Item - Property Caption'),
         ]);
 
-        expect(roots[0].segment.name).toBe('Contoso Item');
+        expect(table.segment.name).toBe('Contoso Item');
+    });
+
+    it('names an all-digit enum value by its digits — only a method\'s digits are an id', () => {
+        const [enumeration] = buildAlTree([unit('Enum "Contoso Codes" - EnumValue "10" - Property Caption')]);
+
+        expect(enumeration.children[0].segment.name).toBe('10');
+    });
+
+    it('merges a negative API method id, written unquoted, with its hashed form', () => {
+        const page = `Page ${alNameHash('Contoso API')}`;
+        const roots = buildAlTree([
+            unit('Page "Contoso API" - Method -7007001', 'Page Contoso API - Method ReleaseOrder'),
+            unit(`${page} - Method ${alNameHash('-7007001')} - NamedType ${alNameHash('DoneMsg')}`, 'Page Contoso API - Method ReleaseOrder - NamedType DoneMsg'),
+        ]);
+
+        expect(roots).toHaveLength(1);
+        expect(roots[0].children).toHaveLength(1);
     });
 });
 
@@ -327,7 +355,7 @@ describe('the namespace level', () => {
         const sales = `Namespace ${alNameHash('Contoso.Sales')}`;
 
         expect(tree.map(node => node.segment.name)).toEqual(['Contoso.Sales', 'Contoso.Common']);
-        expect(tree[0].children.map(node => node.key)).toEqual([`type:${sales}/Table`, `type:${sales}/Page`]);
+        expect(tree[0].children.map(node => node.key)).toEqual([`${OBJECT_TYPE_GROUP_PREFIX}${sales}/Table`, `${OBJECT_TYPE_GROUP_PREFIX}${sales}/Page`]);
         expect(tree[0].children.map(node => node.segment.name)).toEqual(['Tables (1)', 'Pages (1)']);
         expect(tree[0].synthetic).toBeUndefined();
         expect(tree[0].children.every(node => node.synthetic === true)).toBe(true);
@@ -343,7 +371,7 @@ describe('the namespace level', () => {
         expect(tree.map(node => node.key)).toEqual([NO_NAMESPACE_GROUP_KEY, `Namespace ${alNameHash('Contoso.Sales')}`]);
         expect(tree[0].segment.name).toBe('(no namespace)');
         expect(tree[0].synthetic).toBe(true);
-        expect(tree[0].children.map(node => node.key)).toEqual([`type:${NO_NAMESPACE_GROUP_KEY}/Codeunit`, `type:${NO_NAMESPACE_GROUP_KEY}/Table`]);
+        expect(tree[0].children.map(node => node.key)).toEqual([`${OBJECT_TYPE_GROUP_PREFIX}${NO_NAMESPACE_GROUP_KEY}/Codeunit`, `${OBJECT_TYPE_GROUP_PREFIX}${NO_NAMESPACE_GROUP_KEY}/Table`]);
     });
 
     it('keeps two objects of one type and name apart when their namespaces differ', () => {
@@ -358,7 +386,7 @@ describe('the namespace level', () => {
     });
 
     it('leaves a file without namespace segments exactly as before', () => {
-        expect(grouped('Table 1 - Property 9', 'Page 2 - Property 9').map(node => node.key)).toEqual(['type:Table', 'type:Page']);
+        expect(grouped('Table 1 - Property 9', 'Page 2 - Property 9').map(node => node.key)).toEqual([`${OBJECT_TYPE_GROUP_PREFIX}Table`, `${OBJECT_TYPE_GROUP_PREFIX}Page`]);
     });
 });
 

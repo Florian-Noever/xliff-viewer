@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { XliffEditorProvider } from '../../extension/editor/xliffEditorProvider';
 import { Logger } from '../../extension/services/logger';
@@ -99,6 +99,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+    vi.restoreAllMocks();
     resetMocks();
 });
 
@@ -424,6 +425,33 @@ describe('Go to source, from the panel', () => {
         await settle();
 
         expect(told()).toEqual([{ available: false }, { available: true }]);
+    });
+
+    it('says only the latest answer, when an older one arrives after it', async () => {
+        setVirtualFile('/w/src/Customer.Table.al', CUSTOMER);
+        let releaseFirst = (): void => { };
+        let alSearches = 0;
+        const findFiles = vscode.workspace.findFiles;
+        vi.spyOn(vscode.workspace, 'findFiles').mockImplementation(async (...args: Parameters<typeof findFiles>) => {
+            const found = await findFiles(...args);
+            const [pattern] = args;
+            if (typeof pattern !== 'string' && pattern.pattern === '**/*.al' && ++alSearches === 1) {
+                // The first listing sees the file, and is held back until after it is gone.
+                await new Promise<void>((resolve) => {
+                    releaseFirst = resolve;
+                });
+            }
+            return found;
+        });
+        const harness = await openInApp();
+
+        removeVirtualFile('/w/src/Customer.Table.al');
+        fireFileWatcher('deleted', '/w/src/Customer.Table.al');
+        await settle();
+        releaseFirst();
+        await settle();
+
+        expect(harness.posted.filter(message => message.type === ExtensionMessageType.alSource).map(message => message.payload)).toEqual([{ available: false }]);
     });
 
     it('stops listening for AL files once the panel is gone', async () => {

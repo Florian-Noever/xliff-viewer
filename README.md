@@ -10,12 +10,13 @@ Open `.xlf` and `.xliff` translation files as a structured, themed GUI instead o
 
 - **Structured tree** — object type → object → member → translated element, built from the trans-unit id rather than from the display note, so the grouping is exact even when two objects share a name
 - **Object-type grouping** — the top level is `Tables (16)`, `PageExtensions (89)`, `Codeunits (15)`…, so a file's couple of hundred objects are navigable instead of one flat list
+- **Namespaced apps** — the readable, namespaced ids AL 18 writes under `TranslationsWithNamespaces` build the same exact tree, with a namespace level above the object types. An object whose ids come in both readable and hashed form — AL falls back to hashes for long or non-ASCII ids — is still one node
 - **Rolled-up state** — every container shows a progress bar coloured by its *worst* descendant, not by its percentage: 99 % done with one missing target is not the same as 99 % done with one needing review
 - **Every field shown** — source, target, `maxwidth`, `size-unit`, `al-object-target`, `translate="no"`, every `<note>`, and a state the spec does not define is shown as the file wrote it
 - **Search** — over id, names, source, target and notes, with `*` wildcards (`Setup*`, `*caption*`); a matching unit brings its whole path into view
 - **State filter** — chips for the states the file actually contains, driven by the same roll-up the header shows
 - **Base-file pairing** — resolves the `.g.xlf` for a language file and marks units the base no longer has (*orphaned*) or whose source has since changed
-- **Go to source** — opens the resolved base file at the same unit
+- **Go to source** — opens the AL source that declares the unit, with the `Caption`, `ToolTip` or label itself selected — or the member or object that declares it, when the source has no line for the unit. When the app's source does not declare it, the unit opens in the base file instead, with a notice that closes itself. The button's tooltip says which it will be. No AL tooling needed, on the desktop or the web
 - **Edit mode** — opt-in per window: type a target, pick a state, and let the state follow the edit. Writes go through a `WorkspaceEdit`, so one typed translation is one undo step
 - **Validation hints** — a target past its `maxwidth`, a placeholder the translation lost or invented, an empty target the file calls finished. Advisory: they never block an edit or change a value, and a container says how many translations beneath it are worth a look
 - **Load-bearing whitespace** — a target that is only a space, or whose edges differ from the source, is marked and explained; `xml:space="preserve"` means those spaces are the translation
@@ -110,6 +111,14 @@ For `<App>.<lang>.xlf`, in order, first hit wins:
 
 Not finding one is a normal state, not an error: the viewer works fully without a base file and the affordances that need one say why they are disabled. NAB AL Tools has no base-file setting to read — it uses the same convention steps 3–5 already implement.
 
+### How "Go to source" finds the AL source
+
+- **Where it looks.** It searches the app the translation file belongs to: the nearest folder above it that holds an `app.json`, else the workspace folder. `node_modules`, `.alpackages`, `.snapshots` and hidden folders are skipped. The app's `preprocessorSymbols` decide which side of an `#if` counts.
+- **How it matches.** The numbers in a trans-unit id are AL's hash of each name. Every candidate declaration is checked against them, so a match is exact, never a guess by name.
+- **Several equally good matches** — two apps in one workspace, say — are offered to choose from.
+- **Your edits count.** An AL file open with unsaved edits is read as it stands in the editor.
+- **Always fresh.** The index of objects is built on the first click and kept current as files change.
+
 ---
 
 ## 🚦 Status
@@ -127,6 +136,7 @@ Not published, and buildable into an installable VSIX today: `npm run package` w
 | Accessibility and keyboard | ✅ complete |
 | View-state persistence | ✅ complete |
 | Packaging | ✅ complete |
+| Namespaced ids and "Go to source" to the AL declaration | ✅ complete |
 
 ---
 
@@ -152,7 +162,7 @@ The VSIX carries the two host bundles, the webview bundle and its HTML shell, an
 
 | Layer | Technology | Purpose |
 | --- | --- | --- |
-| Extension host | TypeScript, esbuild → two CJS bundles | Parses the XLIFF, resolves the base file, owns navigation. One entry, built for both `node` and `browser`, so the same source runs on the desktop and on the web |
+| Extension host | TypeScript, esbuild → two CJS bundles | Parses the XLIFF, resolves the base file, scans the app's AL source, owns navigation. One entry, built for both `node` and `browser`, so the same source runs on the desktop and on the web |
 | Shared | TypeScript | The model, the state domain, the DTOs and both message unions — imported by both runtimes, so there is one definition rather than two |
 | Webview | Vue 3, Vite, `@tanstack/vue-virtual` | The tree, virtualised. Rolls up state, searches and filters over the DTOs already in memory; no round trip to the host for a keystroke |
 
