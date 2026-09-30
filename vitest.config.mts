@@ -1,3 +1,4 @@
+import { availableParallelism, totalmem } from 'node:os';
 import { fileURLToPath, URL } from 'node:url';
 import { defineConfig } from 'vitest/config';
 import vue from '@vitejs/plugin-vue';
@@ -6,6 +7,14 @@ const resolvePath = (relative: string): string => fileURLToPath(new URL(relative
 
 const VSCODE_MOCK = resolvePath('./src/test/__mocks__/vscode.ts');
 const SHARED = resolvePath('./src/shared');
+
+/**
+ * Workers are bounded by memory as well as by processors. Vitest's default is one worker per
+ * processor, and on a machine with many processors and little memory the workers exhaust it
+ * and die mid-run. Each is given half a gigabyte, which the heaviest data test stays inside.
+ */
+const WORKER_MEMORY = 512 * 1024 * 1024;
+const MAX_WORKERS = Math.max(1, Math.min(availableParallelism(), Math.floor(totalmem() / WORKER_MEMORY)));
 
 /**
  * Four projects:
@@ -21,6 +30,7 @@ const SHARED = resolvePath('./src/shared');
  */
 export default defineConfig({
     test: {
+        maxWorkers: MAX_WORKERS,
         projects: [
             {
                 test: {

@@ -172,14 +172,14 @@ export default tseslint.config(
         },
     },
     {
-        files: ['src/extension/xliff/**/*.ts'],
+        files: ['src/extension/xliff/**/*.ts', 'src/extension/al/**/*.ts'],
         rules: {
             'no-restricted-imports': ['error', {
                 paths: [
-                    ...NODE_BUILTINS.map(name => ({ name, message: 'No node builtins in the data layer: it ships for the web host too. Use web-standard APIs instead.' })),
+                    ...NODE_BUILTINS.map(name => ({ name, message: 'No node builtins in the data layer or the AL scanner: both ship for the web host too. Use web-standard APIs instead.' })),
                     {
                         name: 'vscode',
-                        message: 'The data layer must not import vscode, so it stays testable without mocks. Keep vscode calls outside src/extension/xliff.',
+                        message: 'The data layer and the AL scanner must not import vscode, so they stay testable without mocks. Keep vscode calls outside src/extension/xliff and src/extension/al.',
                     },
                 ],
                 patterns: [
