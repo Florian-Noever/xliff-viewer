@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 
 import { DocumentSessionRegistry } from './documentSessionRegistry';
 import { createDocumentSession } from './documentView';
+import { AlSourceIndexes } from '../services/alSourceIndex';
 import { BaseFileIndex } from '../services/baseFileIndex';
 import { BaseFileResolver } from '../services/baseFileResolver';
 import { getWebviewHtml, localResourceRoots } from './webviewHtml';
@@ -37,6 +38,7 @@ export class XliffEditorProvider implements vscode.CustomTextEditorProvider {
     private readonly registry = new DocumentSessionRegistry();
     private readonly baseFiles = new BaseFileResolver();
     private readonly baseIndex = new BaseFileIndex();
+    private readonly alSources = new AlSourceIndexes();
 
     public constructor(extensionUri: vscode.Uri) {
         this.extensionUri = extensionUri;
@@ -60,6 +62,7 @@ export class XliffEditorProvider implements vscode.CustomTextEditorProvider {
         this.registry.dispose();
         this.baseFiles.dispose();
         this.baseIndex.dispose();
+        this.alSources.dispose();
     }
 
     public async resolveCustomTextEditor(

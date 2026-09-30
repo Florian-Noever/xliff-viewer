@@ -32,8 +32,13 @@ let messageResult: string | undefined;
 let clipboardWrites: string[] = [];
 let logLines: string[] = [];
 let executedCommands: { command: string; args: readonly unknown[] }[] = [];
-let watcherListeners: { created: ((uri: Uri) => void)[]; deleted: ((uri: Uri) => void)[]; changed: ((uri: Uri) => void)[] } = { created: [], deleted: [], changed: [] };
+let watchers: FakeFileSystemWatcher[] = [];
 let workspaceRoot: Uri | undefined;
+let searchAvailable = true;
+let fileTimes: Record<string, number> = {};
+let clock = 0;
+let openDocuments: { uri: Uri; getText(): string }[] = [];
+let shownDocuments: { path: string; selection?: Range }[] = [];
 let revealedPositions: { path: string; line: number }[] = [];
 let quickPickCalls: { label: string; description?: string }[][] = [];
 let quickPickChoice: number | undefined;
@@ -106,6 +111,56 @@ export class Uri {
     public toString(): string {
         return `${this.scheme}://${this.path}`;
     }
+}
+
+/** A glob relative to a folder, as `findFiles` and watchers take it. */
+export class RelativePattern {
+    public readonly baseUri: Uri;
+    public readonly pattern: string;
+
+    public constructor(base: Uri | string, pattern: string) {
+        this.baseUri = typeof base === 'string' ? Uri.file(base) : base;
+        this.pattern = pattern;
+    }
+}
+
+/** A `**` / `*` / `?` glob as a regular expression over a whole path. */
+function globRegex(pattern: string): RegExp {
+    // One pass with a replacer: expanding `**` in an earlier pass would leave `*`
+    // characters that a later single-`*` pass would rewrite again.
+    const source = pattern.replace(/\*\*\/|\*\*|\*|\?|[.+^${}()|[\]\\]/g, (token) => {
+        switch (token) {
+            case '**/':
+                return '(?:.*/)?';
+            case '**':
+                return '.*';
+            case '*':
+                return '[^/]*';
+            case '?':
+                return '[^/]';
+            default:
+                return `\\${token}`;
+        }
+    });
+    return new RegExp(`^${source}$`);
+}
+
+/** Whether a virtual path is one the pattern selects. */
+function patternMatches(pattern: string | RelativePattern, path: string): boolean {
+    if (typeof pattern === 'string') {
+        const regex = globRegex(pattern);
+        return regex.test(path) || regex.test(path.replace(/^\//, ''));
+    }
+    const base = pattern.baseUri.path.endsWith('/') ? pattern.baseUri.path : `${pattern.baseUri.path}/`;
+    return path.startsWith(base) && globRegex(pattern.pattern).test(path.slice(base.length));
+}
+
+/** Line and character of an offset, the way a `TextDocument` counts them. */
+function positionIn(text: string, offset: number): Position {
+    const clamped = Math.max(0, Math.min(offset, text.length));
+    const before = text.slice(0, clamped);
+    const line = before.split('\n').length - 1;
+    return new Position(line, clamped - (before.lastIndexOf('\n') + 1));
 }
 
 export class Disposable {
@@ -200,8 +255,10 @@ export const window = {
         progressTitles.push(options.title ?? '');
         return task();
     },
-    showTextDocument: (document: { uri: Uri; getText(): string }, _options?: unknown): Promise<FakeTextEditor> =>
-        Promise.resolve(new FakeTextEditor(document)),
+    showTextDocument: (document: { uri: Uri; getText(): string }, options?: { selection?: Range }): Promise<FakeTextEditor> => {
+        shownDocuments.push({ path: document.uri.path, selection: options?.selection });
+        return Promise.resolve(new FakeTextEditor(document));
+    },
     showQuickPick: <T extends { label: string; description?: string }>(items: T[], _options?: unknown): Promise<T | undefined> => {
         quickPickCalls.push(items.map(item => ({ label: item.label, description: item.description })));
         return Promise.resolve(quickPickChoice === undefined ? undefined : items[quickPickChoice]);
@@ -238,13 +295,18 @@ export class FakeTextEditor {
 }
 
 export const workspace = {
-    openTextDocument: (uri: Uri): Promise<{ uri: Uri; getText(): string }> => {
-        const content = virtualFiles[uri.path];
+    /** An open document's text wins, as the editor's buffer does over the disk. */
+    openTextDocument: (uri: Uri): Promise<{ uri: Uri; getText(): string; positionAt(offset: number): Position }> => {
+        const open = openDocuments.find(document => document.uri.path === uri.path);
+        const content = open === undefined ? virtualFiles[uri.path] : open.getText();
         if (content === undefined) {
             return Promise.reject(new Error(`ENOENT: ${uri.path}`));
         }
         fileReads.push(uri.path);
-        return Promise.resolve({ uri, getText: () => content });
+        return Promise.resolve({ uri, getText: () => content, positionAt: (offset: number) => positionIn(content, offset) });
+    },
+    get textDocuments(): { uri: Uri; getText(): string }[] {
+        return openDocuments;
     },
     getConfiguration: (section?: string) => ({
         get: <T>(key: string, defaultValue?: T): T | undefined => {
@@ -274,56 +336,51 @@ export const workspace = {
             return Promise.resolve();
         },
         isWritableFileSystem: (scheme: string): boolean | undefined => writableFileSystems[scheme],
+        /** A folder's files and, one level down, the folders that hold more. */
         readDirectory: (uri: Uri): Promise<[string, number][]> => {
             const prefix = uri.path.endsWith('/') ? uri.path : `${uri.path}/`;
-            const names = new Set<string>();
+            const entries = new Map<string, number>();
             for (const path of Object.keys(virtualFiles)) {
-                if (path.startsWith(prefix) && !path.slice(prefix.length).includes('/')) {
-                    names.add(path.slice(prefix.length));
+                if (!path.startsWith(prefix)) {
+                    continue;
                 }
+                const rest = path.slice(prefix.length);
+                const slash = rest.indexOf('/');
+                entries.set(slash < 0 ? rest : rest.slice(0, slash), slash < 0 ? FileType.File : FileType.Directory);
             }
-            if (names.size === 0 && !Object.keys(virtualFiles).some(path => path.startsWith(prefix))) {
+            if (entries.size === 0) {
                 return Promise.reject(new Error(`ENOENT: ${uri.path}`));
             }
-            return Promise.resolve([...names].map(name => [name, FileType.File] as [string, number]));
+            return Promise.resolve([...entries]);
         },
-        stat: (uri: Uri): Promise<{ type: number; size: number }> => {
+        stat: (uri: Uri): Promise<{ type: number; size: number; mtime: number }> => {
             const content = virtualFiles[uri.path];
-            if (content === undefined) {
-                return Promise.reject(new Error(`ENOENT: ${uri.path}`));
+            if (content !== undefined) {
+                return Promise.resolve({ type: FileType.File, size: content.length, mtime: fileTimes[uri.path] ?? 0 });
             }
-            return Promise.resolve({ type: 1, size: content.length });
+            const prefix = uri.path.endsWith('/') ? uri.path : `${uri.path}/`;
+            if (Object.keys(virtualFiles).some(path => path.startsWith(prefix))) {
+                return Promise.resolve({ type: FileType.Directory, size: 0, mtime: 0 });
+            }
+            return Promise.reject(new Error(`ENOENT: ${uri.path}`));
         },
     },
-    createFileSystemWatcher: (_pattern: string): FakeFileSystemWatcher => new FakeFileSystemWatcher(),
+    createFileSystemWatcher: (pattern: string | RelativePattern): FakeFileSystemWatcher => new FakeFileSystemWatcher(pattern),
     getWorkspaceFolder: (_uri: Uri): { uri: Uri } | undefined =>
         (workspaceRoot === undefined ? undefined : { uri: workspaceRoot }),
     get workspaceFolders(): { uri: Uri }[] | undefined {
         return workspaceRoot === undefined ? undefined : [{ uri: workspaceRoot }];
     },
-    /** Matches virtual file paths against a `**` / `*` glob. Enough for the resolver tests. */
-    findFiles: (pattern: string): Promise<Uri[]> => {
-        // One pass with a replacer: expanding `**` in an earlier pass would leave `*`
-        // characters that a later single-`*` pass would rewrite again.
-        const source = pattern.replace(/\*\*\/|\*\*|\*|\?|[.+^${}()|[\]\\]/g, (token) => {
-            switch (token) {
-                case '**/':
-                    return '(?:.*/)?';
-                case '**':
-                    return '.*';
-                case '*':
-                    return '[^/]*';
-                case '?':
-                    return '[^/]';
-                default:
-                    return `\\${token}`;
-            }
-        });
-        const regex = new RegExp(`^${source}$`);
-        const matches = Object.keys(virtualFiles)
-            .filter(path => regex.test(path) || regex.test(path.replace(/^\//, '')))
-            .map(path => Uri.file(path));
-        return Promise.resolve(matches);
+    /**
+     * Matches virtual file paths against a `**` / `*` glob, plain or relative to a folder.
+     * Finds nothing at all when search is switched off, as a host without a search
+     * provider does.
+     */
+    findFiles: (pattern: string | RelativePattern): Promise<Uri[]> => {
+        if (!searchAvailable) {
+            return Promise.resolve([]);
+        }
+        return Promise.resolve(Object.keys(virtualFiles).filter(path => patternMatches(pattern, path)).map(path => Uri.file(path)));
     },
     applyEdit: async (edit: WorkspaceEdit): Promise<boolean> => {
         appliedEdits.push(...edit.entries);
@@ -407,10 +464,7 @@ export class FakeTextDocument {
 
     /** Real enough for the writer's offsets: line = newlines before, character = the rest. */
     public positionAt(offset: number): Position {
-        const clamped = Math.max(0, Math.min(offset, this.text.length));
-        const before = this.text.slice(0, clamped);
-        const line = before.split('\n').length - 1;
-        return new Position(line, clamped - (before.lastIndexOf('\n') + 1));
+        return positionIn(this.text, offset);
     }
 
     /** The inverse, so a test can read back the text an edit would produce. */
@@ -435,24 +489,34 @@ export const env = {
 
 export const FileType = { Unknown: 0, File: 1, Directory: 2, SymbolicLink: 64 } as const;
 
-/** Only what the resolver uses: three events and a dispose. */
+type WatchedKind = 'created' | 'deleted' | 'changed';
+
+/** Three events and a dispose; only paths its pattern selects reach its listeners. */
 class FakeFileSystemWatcher {
-    public readonly onDidCreate = (listener: (uri: Uri) => void): Disposable => {
-        watcherListeners.created.push(listener);
-        return new Disposable(() => { });
-    };
+    public readonly pattern: string | RelativePattern;
+    public readonly listeners: Record<WatchedKind, ((uri: Uri) => void)[]> = { created: [], deleted: [], changed: [] };
 
-    public readonly onDidDelete = (listener: (uri: Uri) => void): Disposable => {
-        watcherListeners.deleted.push(listener);
-        return new Disposable(() => { });
-    };
+    public constructor(pattern: string | RelativePattern) {
+        this.pattern = pattern;
+        watchers.push(this);
+    }
 
-    public readonly onDidChange = (listener: (uri: Uri) => void): Disposable => {
-        watcherListeners.changed.push(listener);
-        return new Disposable(() => { });
-    };
+    public readonly onDidCreate = (listener: (uri: Uri) => void): Disposable => this.listen('created', listener);
 
-    public dispose(): void { }
+    public readonly onDidDelete = (listener: (uri: Uri) => void): Disposable => this.listen('deleted', listener);
+
+    public readonly onDidChange = (listener: (uri: Uri) => void): Disposable => this.listen('changed', listener);
+
+    public dispose(): void {
+        watchers = watchers.filter(watcher => watcher !== this);
+    }
+
+    private listen(kind: WatchedKind, listener: (uri: Uri) => void): Disposable {
+        this.listeners[kind].push(listener);
+        return new Disposable(() => {
+            this.listeners[kind] = this.listeners[kind].filter(each => each !== listener);
+        });
+    }
 }
 
 export const commands = {
@@ -465,9 +529,22 @@ export const commands = {
 };
 
 // ── arrange ──────────────────────────────────────────────────────────────────
-/** Registers a virtual file (path → text) readable via `workspace.fs` and `findFiles`. */
+/** Registers a virtual file (path → text) readable via `workspace.fs` and `findFiles`; each write moves its mtime on. */
 export function setVirtualFile(path: string, content: string): void {
-    virtualFiles[path.replace(/\\/g, '/')] = content;
+    const normalised = path.replace(/\\/g, '/');
+    virtualFiles[normalised] = content;
+    fileTimes[normalised] = ++clock;
+}
+
+/** Whether `findFiles` finds anything — off, as in a host with no search provider. */
+export function setSearchAvailable(available: boolean): void {
+    searchAvailable = available;
+}
+
+/** Opens a document in the editor with this text, which then wins over the file's. */
+export function setOpenDocument(path: string, text: string): void {
+    const uri = Uri.file(path);
+    openDocuments = [...openDocuments.filter(document => document.uri.path !== uri.path), { uri, getText: () => text }];
 }
 
 /** Overrides a configuration value, by bare key or fully qualified `section.key`. */
@@ -524,11 +601,20 @@ export function setWorkspaceRoot(path: string | undefined): void {
     workspaceRoot = path === undefined ? undefined : Uri.file(path);
 }
 
-/** Fires the file-system watcher, as a `.g.xlf` appearing or vanishing would. */
-export function fireFileWatcher(kind: 'created' | 'deleted' | 'changed', path: string): void {
-    for (const listener of [...watcherListeners[kind]]) {
-        listener(Uri.file(path));
+/** Fires every file-system watcher whose pattern selects the path, as a file appearing, changing or vanishing would. */
+export function fireFileWatcher(kind: WatchedKind, path: string): void {
+    for (const watcher of [...watchers]) {
+        if (patternMatches(watcher.pattern, path)) {
+            for (const listener of [...watcher.listeners[kind]]) {
+                listener(Uri.file(path));
+            }
+        }
     }
+}
+
+/** How many watchers are live — a disposal spy. */
+export function watcherCount(): number {
+    return watchers.length;
 }
 
 /** Declares a scheme's file system read-only, as VS Code does for e.g. `git:`. */
@@ -606,6 +692,11 @@ export function flushExecutedCommands(): { command: string; args: readonly unkno
     return executedCommands.splice(0);
 }
 
+/** Which documents were shown, and with which selection. */
+export function flushShownDocuments(): { path: string; selection?: Range }[] {
+    return shownDocuments.splice(0);
+}
+
 /** Everything written to the `LogOutputChannel`, each line prefixed with its level. */
 export function flushLogs(): string[] {
     return logLines.splice(0);
@@ -629,8 +720,12 @@ export function resetMocks(): void {
     writableFileSystems = {};
     logLines = [];
     executedCommands = [];
-    watcherListeners = { created: [], deleted: [], changed: [] };
+    watchers = [];
     workspaceRoot = undefined;
+    searchAvailable = true;
+    fileTimes = {};
+    openDocuments = [];
+    shownDocuments = [];
     editableDocuments.clear();
     revealedPositions = [];
     quickPickCalls = [];
