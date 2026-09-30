@@ -282,6 +282,35 @@ describe('the object-type level', () => {
     });
 });
 
+describe('the namespace level', () => {
+    const GROUPED: AlNodeDto[] = [{ key: 'type:Table', type: 'Table', name: 'Tables (2)', group: true, children: TREE }];
+    const NAMESPACED: AlNodeDto[] = [{ key: 'Namespace 9', type: 'Namespace', name: 'Contoso.Sales', children: GROUPED }];
+    const namespaced = (tree: AlNodeDto[]): XliffFileDto => ({ ...file(tree), namespaced: true });
+
+    it('opens the same objects as a file without namespaces, with the namespace and group above them', () => {
+        const plain = view(file(TREE), 1).tree;
+        const withNamespaces = view(namespaced(NAMESPACED), 1).tree;
+
+        const opened = withNamespaces.rows.value.map(row => row.key).filter(key => key !== 'Namespace 9' && key !== 'type:Table');
+        expect(opened).toEqual(plain.rows.value.map(row => row.key));
+    });
+
+    it('shows the objects collapsed at depth zero, with their namespace and group open', () => {
+        const plain = view(file(TREE), 0).tree;
+        const withNamespaces = view(namespaced(NAMESPACED), 0).tree;
+
+        expect(withNamespaces.rows.value.map(row => row.key)).toEqual(['Namespace 9', 'type:Table', ...plain.rows.value.map(row => row.key)]);
+    });
+
+    it('counts both levels even when the only group at the top is "(no namespace)"', () => {
+        const withoutNamespace: AlNodeDto[] = [{ key: 'namespace:', type: 'Namespace', name: '(no namespace)', group: true, children: GROUPED }];
+        const withNamespaces = view(namespaced(withoutNamespace), 0).tree;
+
+        expect(withNamespaces.rows.value.map(row => row.key).slice(0, 2)).toEqual(['namespace:', 'type:Table']);
+        expect(withNamespaces.rows.value.map(row => row.key)).toContain('Table 5');
+    });
+});
+
 describe('an edit does not disturb the tree', () => {
     it('keeps expansion when a patched unit arrives', () => {
         // `patchUnits` replaces units, never the tree, and expansion is keyed on node keys

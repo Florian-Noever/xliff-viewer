@@ -11,7 +11,16 @@ import { iterateUnits } from '../../shared/model';
 import { lastSegmentLabel, splitUnitId } from '../../shared/unitPath';
 
 const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
-const unitsOf = (name: string) => [...iterateUnits(parseXliff(readFileSync(`${FIXTURES}/${name}`, 'utf8')))];
+const parsed = new Map<string, ReturnType<typeof parseXliff>>();
+/** Parsed once per file: the large one is megabytes, and two tests walk it. */
+const unitsOf = (name: string) => {
+    let document = parsed.get(name);
+    if (document === undefined) {
+        document = parseXliff(readFileSync(`${FIXTURES}/${name}`, 'utf8'));
+        parsed.set(name, document);
+    }
+    return [...iterateUnits(document)];
+};
 const CORPUS = ['Contoso App.g.xlf', 'Fabrikam Base.de-DE.xlf'];
 
 describe('splitUnitId', () => {

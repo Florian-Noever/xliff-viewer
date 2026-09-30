@@ -14,7 +14,16 @@ const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
 const CORPUS = ['Contoso App.g.xlf', 'Contoso App.en-US.xlf', 'Contoso App.de-DE.xlf', 'Fabrikam Base.de-DE.xlf', 'minimal.xlf', 'Northwind App.g.xlf', 'Northwind App.de-DE.xlf'];
 /** Every corpus file but the hand-written one, whose single id has no AL structure. */
 const AL_CORPUS = CORPUS.filter(name => name !== 'minimal.xlf');
-const unitsOf = (name: string) => [...iterateUnits(parseXliff(readFileSync(`${FIXTURES}/${name}`, 'utf8')))];
+const parsed = new Map<string, ReturnType<typeof parseXliff>>();
+/** Parsed once per file: several tests walk every file, and the large one is megabytes. */
+const unitsOf = (name: string) => {
+    let document = parsed.get(name);
+    if (document === undefined) {
+        document = parseXliff(readFileSync(`${FIXTURES}/${name}`, 'utf8'));
+        parsed.set(name, document);
+    }
+    return [...iterateUnits(document)];
+};
 
 function unit(id: string, generatorNote?: string): XliffTransUnit {
     const notes: XliffNote[] = generatorNote === undefined
