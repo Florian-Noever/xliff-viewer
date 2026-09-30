@@ -16,6 +16,10 @@ export interface UnitActions {
     open(target: NavigationTarget, unitId: string): void;
     /** Undefined while resolution has not run; null when it ran and found nothing. */
     baseFileName(): string | null | undefined;
+    /** Whether the app has AL source to go to; undefined until the host has looked. */
+    alSourceAvailable(): boolean | undefined;
+    /** The document is a base file, which is its own fallback. */
+    isBaseFile(): boolean;
     /** Commits a target. Called on blur, never per keystroke. */
     updateTarget(unitId: string, value: string): void;
     updateState(unitId: string, state: XliffState): void;
@@ -33,6 +37,8 @@ export function useUnitActions(): UnitActions {
     return inject(UNIT_ACTIONS_KEY, {
         open: () => { },
         baseFileName: () => undefined,
+        alSourceAvailable: () => undefined,
+        isBaseFile: () => false,
         updateTarget: () => { },
         updateState: () => { },
     });

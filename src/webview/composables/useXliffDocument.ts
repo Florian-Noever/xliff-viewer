@@ -40,6 +40,13 @@ export interface XliffDocument {
     /** The most recent failure, cleared by the next successful parse. */
     readonly error: Ref<ErrorPayload | undefined>;
     readonly settings: Ref<WebviewSettings>;
+    /**
+     * Whether the app has AL source to go to; undefined until the host says.
+     *
+     * Not part of the document: it describes the workspace, arrives on its own, and a
+     * `setDocument` leaves it alone.
+     */
+    readonly alSourceAvailable: Ref<boolean | undefined>;
     /** Which `<file>` is on screen. The file header's switcher sets it. */
     readonly activeFileIndex: Ref<number>;
     readonly activeFile: ComputedRef<XliffFileDto | undefined>;
@@ -118,6 +125,7 @@ export function useXliffDocument(options: XliffDocumentOptions = {}): XliffDocum
     const loading = ref<string | undefined>(undefined);
     const error = ref<ErrorPayload | undefined>(undefined);
     const settings = ref<WebviewSettings>(DEFAULT_WEBVIEW_SETTINGS);
+    const alSourceAvailable = ref<boolean | undefined>(undefined);
     const activeFileIndex = ref(0);
 
     const activeFile = computed(() => document.value?.files[activeFileIndex.value] ?? document.value?.files[0]);
@@ -168,6 +176,9 @@ export function useXliffDocument(options: XliffDocumentOptions = {}): XliffDocum
                 if (document.value !== undefined) {
                     document.value = { ...document.value, baseFile: message.payload };
                 }
+                break;
+            case ExtensionMessageType.alSource:
+                alSourceAvailable.value = message.payload.available;
                 break;
             case ExtensionMessageType.settings:
                 settings.value = message.payload;
@@ -222,6 +233,7 @@ export function useXliffDocument(options: XliffDocumentOptions = {}): XliffDocum
         loading,
         error,
         settings,
+        alSourceAvailable,
         activeFileIndex,
         activeFile,
         unitsById,

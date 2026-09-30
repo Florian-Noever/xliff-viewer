@@ -172,6 +172,33 @@ describe('applying messages', () => {
         expect(state.settings.value.editMode).toBe(true);
         expect(state.document.value?.fileName).toBe('App.de-DE.xlf');
     });
+
+    it('does not know whether there is AL source until the host says', () => {
+        const state = useIt();
+
+        sendDocument();
+
+        expect(state.alSourceAvailable.value).toBeUndefined();
+    });
+
+    it('keeps whether there is AL source across a re-parse, which does not say it again', () => {
+        const state = useIt();
+
+        sendDocument();
+        send({ type: ExtensionMessageType.alSource, payload: { available: true } });
+        sendDocument();
+
+        expect(state.alSourceAvailable.value).toBe(true);
+    });
+
+    it('takes a later answer about AL source, which comes when files come or go', () => {
+        const state = useIt();
+
+        send({ type: ExtensionMessageType.alSource, payload: { available: true } });
+        send({ type: ExtensionMessageType.alSource, payload: { available: false } });
+
+        expect(state.alSourceAvailable.value).toBe(false);
+    });
 });
 
 describe('the active file', () => {
