@@ -103,7 +103,7 @@ export class XliffEditorProvider implements vscode.CustomTextEditorProvider {
         const post = (message: ExtensionMessage): void => {
             void webviewPanel.webview.postMessage(message);
         };
-        const view = createDocumentSession(session, post, this.baseFiles, this.baseIndex);
+        const view = createDocumentSession(session, post, this.baseFiles, this.baseIndex, this.alSources);
         const context: HandlerContext = {
             post,
             session: view,

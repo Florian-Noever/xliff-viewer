@@ -441,12 +441,12 @@ describe('the one navigation action', () => {
         expect(wrapper.get('.legend').findAll('.state-badge')).toHaveLength(1);
     });
 
-    it('asks the host for the base file, naming the unit', async () => {
+    it('asks the host for the unit\'s source, naming the unit', async () => {
         const { calls, button } = mountRow('App.g.xlf');
 
         await button.trigger('click');
 
-        expect(calls).toEqual([{ target: 'base', unitId: 'Table 0 - Property 0' }]);
+        expect(calls).toEqual([{ target: 'source', unitId: 'Table 0 - Property 0' }]);
     });
 
     it('is disabled while resolution has not run, and says so', () => {

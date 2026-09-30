@@ -3,14 +3,18 @@ import * as vscode from 'vscode';
 import { unitTarget } from '../../extension/al/alTarget';
 import { listAlFiles } from '../../extension/services/alFileListing';
 import { alScopeFor } from '../../extension/services/alScope';
-import { AlSourceIndex } from '../../extension/services/alSourceIndex';
+import { AlSourceIndex, AlSourceIndexes } from '../../extension/services/alSourceIndex';
+import { BaseFileResolver } from '../../extension/services/baseFileResolver';
+import { goToSource, SourceOutcome } from '../../extension/services/goToSource';
+import { findUnitLine } from '../../extension/services/navigation';
 import { appUnits, translationRoot } from '../fixtures/alApp';
 import { renderApp } from '../fixtures/alRender';
-import { AL_APPS, CONTOSO_MANIFEST, contosoApp, NORTHWIND_MANIFEST } from '../fixtures/corpus';
+import { AL_APPS, CONTOSO_MANIFEST, contosoApp, fabrikamApp, NORTHWIND_MANIFEST } from '../fixtures/corpus';
 import { NORTHWIND } from '../fixtures/northwind';
 
 import { assertEqual, assertOk } from './assertions';
 
+import type { SourceRequest } from '../../extension/services/goToSource';
 import type { AlApp, AppUnit } from '../fixtures/alApp';
 import type { AppManifest } from '../fixtures/alRender';
 
@@ -29,6 +33,7 @@ function workspaceUri(...segments: string[]): vscode.Uri {
 }
 
 const AL = ['src', 'test', 'fixtures', 'al'];
+const XLIFF = ['src', 'test', 'fixtures', 'xliff'];
 const alFilesOf = (app: AlApp, manifest: AppManifest) => renderApp(app, manifest).files.filter(file => file.path.endsWith('.al'));
 
 /** Locates a unit in its app's committed source and checks the place against the rendering. */
@@ -48,6 +53,25 @@ async function assertLocated(folderName: string, app: AlApp, manifest: AppManife
     } finally {
         index.dispose();
     }
+}
+
+function requestFor(fileName: string, unit: AppUnit): SourceRequest {
+    return {
+        document: workspaceUri(...XLIFF, fileName),
+        isBaseFile: false,
+        unitId: unit.id,
+        generatorNote: unit.generatorNote,
+        alObjectTarget: unit.alObjectTarget,
+    };
+}
+
+function editorFor(uri: vscode.Uri): vscode.TextEditor | undefined {
+    const wanted = uri.toString();
+    return vscode.window.visibleTextEditors.find(editor => editor.document.uri.toString() === wanted);
+}
+
+async function closeEverything(): Promise<void> {
+    await vscode.commands.executeCommand('workbench.action.closeAllEditors');
 }
 
 suite('AL source, in whichever host this is', () => {
@@ -75,5 +99,56 @@ suite('AL source, in whichever host this is', () => {
         const folded = appUnits(NORTHWIND).find(unit => translationRoot(NORTHWIND, unit.declaring) !== unit.declaring);
         assertOk(folded, 'the namespaced app has no folded unit');
         await assertLocated(AL_APPS.namespaced, NORTHWIND, NORTHWIND_MANIFEST, folded);
+    });
+
+    test('Go to source opens the declaring token, found from the translation file', async () => {
+        const [unit] = appUnits(contosoApp());
+        const expected = renderApp(contosoApp(), CONTOSO_MANIFEST).expected.get(unit.id);
+        assertOk(expected, `no expected location for ${unit.id}`);
+        const alSources = new AlSourceIndexes();
+        const baseFiles = new BaseFileResolver();
+        try {
+            const outcome = await goToSource(requestFor('Contoso App.de-DE.xlf', unit), alSources, baseFiles);
+            const editor = vscode.window.activeTextEditor;
+
+            assertEqual(outcome, SourceOutcome.declaration, `${unit.id} was not opened in its AL source`);
+            assertOk(editor, 'no editor is active');
+            assertOk(decodeURIComponent(editor.document.uri.path).endsWith(expected.file), `opened ${editor.document.uri.path}`);
+            assertEqual(editor.document.offsetAt(editor.selection.start), expected.offset, 'the selection is not on the declaring token');
+        } finally {
+            alSources.dispose();
+            baseFiles.dispose();
+            await closeEverything();
+        }
+    });
+
+    test('Go to source shows the unit in the base file when there is no AL source to ask', async () => {
+        const [unit] = appUnits(contosoApp());
+        const baseFiles = new BaseFileResolver();
+        try {
+            const outcome = await goToSource(requestFor('Contoso App.de-DE.xlf', unit), undefined, baseFiles);
+            const editor = editorFor(workspaceUri(...XLIFF, 'Contoso App.g.xlf'));
+
+            assertEqual(outcome, SourceOutcome.baseFile, `${unit.id} was not shown in the base file`);
+            assertOk(editor, 'the base file did not open as text');
+            assertEqual(editor.selection.active.line, findUnitLine(editor.document.getText(), unit.id), 'the cursor is not on the unit');
+        } finally {
+            baseFiles.dispose();
+            await closeEverything();
+        }
+    });
+
+    test('Go to source looks for a unit no AL source declares, and answers without opening anything', async () => {
+        // The app's AL is not in the workspace, and no base file in its folder carries it.
+        const [unit] = appUnits(fabrikamApp());
+        const alSources = new AlSourceIndexes();
+        const baseFiles = new BaseFileResolver();
+        try {
+            assertEqual(await goToSource(requestFor('Fabrikam Base.de-DE.xlf', unit), alSources, baseFiles), SourceOutcome.nowhere, `${unit.id} was found somewhere`);
+        } finally {
+            alSources.dispose();
+            baseFiles.dispose();
+            await closeEverything();
+        }
     });
 });

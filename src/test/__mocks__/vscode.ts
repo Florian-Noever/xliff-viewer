@@ -42,7 +42,13 @@ let shownDocuments: { path: string; selection?: Range }[] = [];
 let revealedPositions: { path: string; line: number }[] = [];
 let quickPickCalls: { label: string; description?: string }[][] = [];
 let quickPickChoice: number | undefined;
-let progressTitles: string[] = [];
+/** One `withProgress` call: where it showed, what it said, and whether its task has ended. */
+export interface ProgressRecord {
+    readonly location?: number;
+    readonly title: string;
+    done: boolean;
+}
+let progressRecords: ProgressRecord[] = [];
 let configurationListeners: ((event: ConfigurationChangeEvent) => void)[] = [];
 let documentChangeListeners: ((event: TextDocumentChangeEvent) => void)[] = [];
 let writableFileSystems: Record<string, boolean> = {};
@@ -251,9 +257,16 @@ export const window = {
         messageCalls.push({ message, args });
         return Promise.resolve(messageResult);
     },
-    withProgress: <T>(options: { title?: string }, task: () => Promise<T>): Promise<T> => {
-        progressTitles.push(options.title ?? '');
-        return task();
+    withProgress: <T>(options: { location?: number; title?: string }, task: () => Promise<T>): Promise<T> => {
+        const record: ProgressRecord = { location: options.location, title: options.title ?? '', done: false };
+        progressRecords.push(record);
+        const running = task();
+        void running.then(() => {
+            record.done = true;
+        }, () => {
+            record.done = true;
+        });
+        return running;
     },
     showTextDocument: (document: { uri: Uri; getText(): string }, options?: { selection?: Range }): Promise<FakeTextEditor> => {
         shownDocuments.push({ path: document.uri.path, selection: options?.selection });
@@ -677,9 +690,12 @@ export function flushRevealedPositions(): { path: string; line: number }[] {
 }
 
 export function flushProgressTitles(): string[] {
-    const taken = progressTitles;
-    progressTitles = [];
-    return taken;
+    return flushProgress().map(record => record.title);
+}
+
+/** The progress shown so far; a record keeps updating after it is taken, so `done` can be watched. */
+export function flushProgress(): ProgressRecord[] {
+    return progressRecords.splice(0);
 }
 
 export function flushQuickPicks(): { label: string; description?: string }[][] {
@@ -730,5 +746,5 @@ export function resetMocks(): void {
     revealedPositions = [];
     quickPickCalls = [];
     quickPickChoice = undefined;
-    progressTitles = [];
+    progressRecords = [];
 }

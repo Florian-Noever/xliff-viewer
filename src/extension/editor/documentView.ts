@@ -2,10 +2,13 @@ import * as vscode from 'vscode';
 
 import { Logger } from '../services/logger';
 import { compareToBase } from '../services/baseFileIndex';
-import { revealAsText, revealInBaseFile } from '../services/navigation';
+import { goToSource } from '../services/goToSource';
+import { revealAsText } from '../services/navigation';
 import { readSettings } from '../services/settings';
+import { generatorNote } from '../xliff/names';
 import { containsComment, setState, setTarget } from '../xliff/writer';
 
+import { iterateFileUnits } from '../../shared/model';
 import { XliffState } from '../../shared/state';
 import { fileNameOf } from '../services/uriNames';
 
@@ -13,9 +16,11 @@ import { ExtensionMessageType, NavigationTarget } from '../../shared/messages';
 
 import type { DocumentSession, SessionChange, SessionState, UnitReference, XliffDocumentSession } from './documentSession';
 import type { TextEditRange } from '../xliff/writer';
+import type { AlSourceIndex, AlSourceIndexes } from '../services/alSourceIndex';
 import type { BaseFileIndex } from '../services/baseFileIndex';
 import type { BaseFileResolver } from '../services/baseFileResolver';
 import type { XliffDocumentDto } from '../../shared/dto';
+import type { XliffTransUnit } from '../../shared/model';
 import type { ExtensionMessage } from '../../shared/messages';
 
 /**
@@ -44,8 +49,10 @@ export function createDocumentSession(
     post: (message: ExtensionMessage) => void,
     baseFiles?: BaseFileResolver,
     baseIndex?: BaseFileIndex,
+    alSources?: AlSourceIndexes,
 ): DocumentView {
     const subscriptions: vscode.Disposable[] = [];
+    let disposed = false;
 
     // Which units this panel has been told are orphaned or source-changed, per `<file>`.
     // `patchUnits` can only *set* a marker; clearing one means sending the unit again
@@ -71,6 +78,20 @@ export function createDocumentSession(
         }));
     }
 
+    // Whether there is AL source to go to is a fact about the app, not the document: it is
+    // told once per `ready`, and again only when the app's AL files come or go.
+    const alIndex = alSources?.forFile(session.uri);
+    const announceAl = (): void => {
+        if (alIndex !== undefined) {
+            void announceAlSource(alIndex, session, post);
+        }
+    };
+    void alIndex?.then((index) => {
+        if (index !== undefined && !disposed) {
+            subscriptions.push(index.onDidChangeFiles(announceAl));
+        }
+    });
+
     return {
         sendDocument: () => {
             post({ type: ExtensionMessageType.loading, payload: { message: 'Reading the translation file…' } });
@@ -82,8 +103,10 @@ export function createDocumentSession(
             if (state.kind === 'document') {
                 announcePairing(state.dto);
             }
+            announceAl();
         },
         dispose: () => {
+            disposed = true;
             for (const subscription of subscriptions) {
                 subscription.dispose();
             }
@@ -107,8 +130,8 @@ export function createDocumentSession(
         updateState: (unit, state) => write(session, unit, edit => setState(edit.model, edit.text, unit.unitId, state)),
         // Two targets: the unit's own "Go to source", and the raw XML for the error pane,
         // which has no unit to name.
-        openSource: (target, unit) => (target === NavigationTarget.base
-            ? showInBaseFile(baseFiles, session, unit)
+        openSource: (target, unit) => (target === NavigationTarget.source
+            ? showSource(session, unit, alSources, baseFiles)
             : revealAsText(session.uri, unit?.unitId)),
     };
 }
@@ -194,36 +217,59 @@ async function write(
 }
 
 /**
- * Everything that can go wrong here is a normal state, not an error: no resolver, no base
- * file, or a base file that does not carry this unit. Each says so plainly.
+ * A unit's "Go to source".
+ *
+ * The note and `al-object-target` come from the model rather than the message: the host has
+ * the file's own note, where the webview only has one rebuilt from the tree. A document that
+ * stopped parsing still answers from its last good parse, which is what the panel shows.
  */
-async function showInBaseFile(
-    baseFiles: BaseFileResolver | undefined,
+async function showSource(
     session: XliffDocumentSession,
     unit: UnitReference | undefined,
+    alSources: AlSourceIndexes | undefined,
+    baseFiles: BaseFileResolver | undefined,
 ): Promise<void> {
     if (unit === undefined) {
-        void vscode.window.showInformationMessage('Choose a unit to show in the base file.');
+        void vscode.window.showInformationMessage('Choose a unit to go to its source.');
         return;
     }
 
-    const state = session.current();
-    if (state.kind === 'document' && state.dto.isBaseFile) {
-        // Resolving a base file's base file would find the document itself.
-        void vscode.window.showInformationMessage('This file is the base file.');
-        return;
-    }
+    const current = session.current();
+    const parsed = current.kind === 'document' ? current : session.lastGoodState();
+    const file = parsed?.model.files[unit.fileIndex];
+    const modelUnit = file === undefined ? undefined : findUnit(iterateFileUnits(file), unit.unitId);
 
-    const resolved = await baseFiles?.resolve(session.uri, false);
-    if (resolved?.uri === undefined) {
-        void vscode.window.showInformationMessage('No base file was found for this translation file.');
-        return;
-    }
+    await goToSource({
+        document: session.uri,
+        isBaseFile: parsed?.dto.isBaseFile ?? false,
+        unitId: unit.unitId,
+        generatorNote: modelUnit === undefined ? undefined : generatorNote(modelUnit),
+        alObjectTarget: modelUnit?.alObjectTarget,
+    }, alSources, baseFiles);
+}
 
-    const found = await revealInBaseFile(resolved.uri, unit.unitId);
-    if (!found) {
-        void vscode.window.showInformationMessage(`The base file does not contain "${unit.unitId}". It may have been removed since this translation was made.`);
+function findUnit(units: Iterable<XliffTransUnit>, unitId: string): XliffTransUnit | undefined {
+    for (const unit of units) {
+        if (unit.id === unitId) {
+            return unit;
+        }
     }
+    return undefined;
+}
+
+/** Posts `alSource`: whether the app has AL files at all. Having none is an answer, not a failure. */
+async function announceAlSource(
+    alIndex: Promise<AlSourceIndex | undefined>,
+    session: XliffDocumentSession,
+    post: (message: ExtensionMessage) => void,
+): Promise<void> {
+    let available = false;
+    try {
+        available = await (await alIndex)?.hasAlFiles() ?? false;
+    } catch (error: unknown) {
+        Logger.warn(`Looking for AL source failed for ${session.uri.path}: ${error instanceof Error ? error.message : 'unknown error'}`);
+    }
+    post({ type: ExtensionMessageType.alSource, payload: { available } });
 }
 
 /** Posts `baseFile` once resolution finishes. Not finding one is a result, not a failure. */
