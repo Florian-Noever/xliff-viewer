@@ -7,12 +7,13 @@ import { projectDocument } from '../../extension/xliff/dto';
 import { parseXliff } from '../../extension/xliff/parser';
 import { iterateUnits } from '../../shared/model';
 import { summariseTree, summariseUnits, XliffState } from '../../shared/state';
+import { generateNamespacedFabrikam } from '../fixtures/corpus';
 
 import type { AlNodeDto, TransUnitDto, XliffDocumentDto, XliffFileDto } from '../../shared/dto';
 import type { UnitState } from '../../shared/state';
 
 const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
-const AL_FILES = ['Contoso App.g.xlf', 'Contoso App.en-US.xlf', 'Contoso App.de-DE.xlf', 'Fabrikam Base.de-DE.xlf'];
+const AL_FILES = ['Contoso App.g.xlf', 'Contoso App.en-US.xlf', 'Contoso App.de-DE.xlf', 'Fabrikam Base.de-DE.xlf', 'Northwind App.g.xlf', 'Northwind App.de-DE.xlf'];
 const CORPUS = [...AL_FILES, 'minimal.xlf'];
 
 function project(name: string): XliffDocumentDto {
@@ -347,6 +348,37 @@ describe('budget', () => {
         expect(bytes).toBeLessThan(1250 * 1024);
     });
 
+    it('keeps the large file, compiled with namespaced ids, smaller than its source', () => {
+        // Readable ids are longer than hashed ones, and every unit carries its id.
+        const text = generateNamespacedFabrikam();
+        const dto = projectDocument(parseXliff(text), { uri: 'file:///x', fileName: 'x' });
+
+        expect(dto.files[0].namespaced).toBe(true);
+        expect(Buffer.byteLength(JSON.stringify(dto), 'utf8')).toBeLessThan(Buffer.byteLength(text, 'utf8'));
+    });
+});
+
+describe('namespaced ids', () => {
+    it('marks the file whose ids name namespaces', () => {
+        expect(project('Northwind App.de-DE.xlf').files[0].namespaced).toBe(true);
+    });
+
+    it('leaves every other file unmarked, so its payload is unchanged', () => {
+        for (const name of CORPUS.filter(each => !each.startsWith('Northwind'))) {
+            expect('namespaced' in project(name).files[0], name).toBe(false);
+        }
+    });
+
+    it('ships the namespaces as real nodes and the levels below them as groups', () => {
+        const [file] = project('Northwind App.de-DE.xlf').files;
+        const namespaces = file.tree.filter(node => node.group !== true);
+
+        expect(namespaces.every(node => node.type === 'Namespace' && node.name !== undefined)).toBe(true);
+        expect(file.tree.find(node => node.group === true)?.name).toBe('(no namespace)');
+        for (const namespace of file.tree) {
+            expect(namespace.children.every(group => group.group === true), namespace.key).toBe(true);
+        }
+    });
 });
 
 describe('base-file detection across several files', () => {

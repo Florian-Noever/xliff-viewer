@@ -160,7 +160,7 @@ describe('the example files, which the hints have to be quiet on', () => {
             }
         }
 
-        expect(units).toBe(4001);
+        expect(units).toBe(4081);
         expect(counts.placeholders).toBe(1);
         expect(counts.maxwidth).toBe(0);
         expect(counts.statedButEmpty).toBe(0);

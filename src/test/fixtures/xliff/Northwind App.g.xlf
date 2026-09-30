@@ -1,0 +1,209 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en-US" target-language="en-US" original="Northwind App">
+    <body>
+      <group id="body">
+        <trans-unit id="Namespace Northwind.Common - Table &quot;Northwind Setup&quot; - Property Caption" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Northwind Setup</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Northwind-Einrichtung</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Common - Table Northwind Setup - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Common - Table &quot;Northwind Setup&quot; - Field &quot;Primary Key&quot; - Property Caption" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Primary Key</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Primärschlüssel</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Common - Table Northwind Setup - Field Primary Key - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Common - Table &quot;Northwind Setup&quot; - Field &quot;Order Nos.&quot; - Property Caption" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Order Nos.</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Auftragsnummern</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Common - Table Northwind Setup - Field Order Nos. - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Common - Table &quot;Northwind Setup&quot; - Field &quot;Order Nos.&quot; - Property ToolTip" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Specifies the number series for orders.</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Gibt die Nummernserie für Aufträge an.</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Common - Table Northwind Setup - Field Order Nos. - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - Table &quot;Northwind Order&quot; - Property Caption" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Northwind Order</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Northwind-Auftrag</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - Table Northwind Order - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - Table &quot;Northwind Order&quot; - Field No. - Property Caption" size-unit="char" translate="yes" xml:space="preserve">
+          <source>No.</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Nr.</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - Table Northwind Order - Field No. - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - Table &quot;Northwind Order&quot; - Field &quot;Customer No.&quot; - Property Caption" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Customer No.</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Debitorennr.</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - Table Northwind Order - Field Customer No. - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - Table &quot;Northwind Order&quot; - Field &quot;Customer No.&quot; - Property ToolTip" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Specifies the customer.</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Gibt den Debitor an.</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - Table Northwind Order - Field Customer No. - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - Table &quot;Northwind Order&quot; - Field &quot;Order Date&quot; - Property Caption" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Order Date</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Auftragsdatum</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - Table Northwind Order - Field Order Date - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - Table &quot;Northwind Order&quot; - Field &quot;Order Date&quot; - Method OnValidate - NamedType FutureDateErr" size-unit="char" translate="yes" xml:space="preserve">
+          <source>The order date %1 lies in the future.</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Das Auftragsdatum %1 liegt in der Zukunft.</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - Table Northwind Order - Field Order Date - Method OnValidate - NamedType FutureDateErr</note>
+        </trans-unit>
+        <trans-unit id="Namespace 2410125799 - Table 13153271 - Field 1085276355 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Size</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Größe</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - Table Northwind Order - Field Größe - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Purchasing - Table &quot;Northwind Order&quot; - Property Caption" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Northwind Purchase Order</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Northwind-Bestellung</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Purchasing - Table Northwind Order - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Purchasing - Table &quot;Northwind Order&quot; - Field No. - Property Caption" size-unit="char" translate="yes" xml:space="preserve">
+          <source>No.</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Nr.</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Purchasing - Table Northwind Order - Field No. - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Purchasing - Table &quot;Northwind Order&quot; - Field &quot;Vendor No.&quot; - Property Caption" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Vendor No.</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Kreditorennr.</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Purchasing - Table Northwind Order - Field Vendor No. - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - Page &quot;Northwind Order Card&quot; - Property Caption" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Northwind Order Card</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Northwind-Auftragskarte</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - Page Northwind Order Card - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - Page &quot;Northwind Order Card&quot; - Control No. - Property ToolTip" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Specifies the number of the order.</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Gibt die Nummer des Auftrags an.</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - Page Northwind Order Card - Control No. - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - Page &quot;Northwind Order Card&quot; - Control &quot;Customer No.&quot; - Property ToolTip" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Specifies the customer of the order.</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Gibt den Debitor des Auftrags an.</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - Page Northwind Order Card - Control Customer No. - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - Page &quot;Northwind Order Card&quot; - Action Release - Property Caption" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Release</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Freigeben</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - Page Northwind Order Card - Action Release - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - Page &quot;Northwind Order Card&quot; - Action Release - Property ToolTip" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Releases the order.</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Gibt den Auftrag frei.</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - Page Northwind Order Card - Action Release - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - Page &quot;Northwind Order Card&quot; - Action Release - Method OnAction - NamedType ReleasedMsg" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Order %1 was released.</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Auftrag %1 wurde freigegeben.</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - Page Northwind Order Card - Action Release - Method OnAction - NamedType ReleasedMsg</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - Report &quot;Northwind Sales - Quote&quot; - Property Caption" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Northwind Sales - Quote</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Northwind Verkauf - Angebot</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - Report Northwind Sales - Quote - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - Report &quot;Northwind Sales - Quote&quot; - NamedType NoLinesErr" size-unit="char" translate="yes" xml:space="preserve">
+          <source>The quote has no lines.</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Das Angebot hat keine Zeilen.</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - Report Northwind Sales - Quote - NamedType NoLinesErr</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - Report &quot;Northwind Sales - Quote&quot; - ReportLabel PageLbl" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Page</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Seite</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - Report Northwind Sales - Quote - ReportLabel PageLbl</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - Report &quot;Northwind Sales - Quote&quot; - ReportLabel TotalLbl" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Total</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Gesamt</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - Report Northwind Sales - Quote - ReportLabel TotalLbl</note>
+        </trans-unit>
+        <trans-unit id="Codeunit &quot;Northwind Legacy Mgt.&quot; - Method Run - NamedType StartedMsg" size-unit="char" translate="yes" xml:space="preserve">
+          <source>The run has started.</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Der Lauf wurde gestartet.</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Codeunit Northwind Legacy Mgt. - Method Run - NamedType StartedMsg</note>
+        </trans-unit>
+        <trans-unit id="Codeunit &quot;Northwind Legacy Mgt.&quot; - Method Run - NamedType DoneMsg" size-unit="char" translate="yes" xml:space="preserve">
+          <source>The run is done.</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Der Lauf ist abgeschlossen.</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Codeunit Northwind Legacy Mgt. - Method Run - NamedType DoneMsg</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - Enum &quot;Northwind Order Status&quot; - EnumValue Open - Property Caption" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Open</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Offen</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - Enum Northwind Order Status - EnumValue Open - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - Enum &quot;Northwind Order Status&quot; - EnumValue Released - Property Caption" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Released</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Freigegeben</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - Enum Northwind Order Status - EnumValue Released - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - PageExtension &quot;Northwind Customer Card Ext.&quot; - Control &quot;Northwind Orders&quot; - Property Caption" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Page 523354100">
+          <source>Northwind Orders</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Northwind-Aufträge</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - PageExtension Northwind Customer Card Ext. - Control Northwind Orders - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - PageExtension &quot;Northwind Customer Card Ext.&quot; - Control &quot;Northwind Orders&quot; - Property ToolTip" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Page 523354100">
+          <source>Specifies the open Northwind orders.</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Gibt die offenen Northwind-Aufträge an.</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - PageExtension Northwind Customer Card Ext. - Control Northwind Orders - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - PageExtension &quot;Northwind Customer Card Ext.&quot; - Action &quot;Northwind Show Orders&quot; - Property Caption" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Page 523354100">
+          <source>Show Orders</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Aufträge anzeigen</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - PageExtension Northwind Customer Card Ext. - Action Northwind Show Orders - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - PageExtension &quot;Northwind Customer Card Ext.&quot; - Action &quot;Northwind Show Orders&quot; - Method OnAction - NamedType NoOrdersMsg" size-unit="char" translate="yes" xml:space="preserve" al-object-target="PageExtension 585118992">
+          <source>There are no orders.</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Es gibt keine Aufträge.</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - PageExtension Northwind Customer Card Ext. - Action Northwind Show Orders - Method OnAction - NamedType NoOrdersMsg</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - PageExtension &quot;Northwind Customer List Ext.&quot; - Control &quot;Northwind Order Count&quot; - Property Caption" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Page 2901867346">
+          <source>Order Count</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Anzahl Aufträge</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - PageExtension Northwind Customer List Ext. - Control Northwind Order Count - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - PageExtension &quot;Northwind Customer List Ext.&quot; - Control &quot;Northwind Last Order&quot; - Property Caption" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Page 2901867346">
+          <source>Last Order</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Letzter Auftrag</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - PageExtension Northwind Customer List Extra - Control Northwind Last Order - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - PageExtension &quot;Northwind Customer List Ext.&quot; - Action &quot;Northwind New Order&quot; - Property Caption" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Page 2901867346">
+          <source>New Order</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Neuer Auftrag</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - PageExtension Northwind Customer List Extra - Action Northwind New Order - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - PageExtension &quot;Northwind Customer List Ext.&quot; - Action &quot;Northwind New Order&quot; - Method OnAction - NamedType CreatedMsg" size-unit="char" translate="yes" xml:space="preserve" al-object-target="PageExtension 2854227337">
+          <source>Order %1 was created.</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Auftrag %1 wurde erstellt.</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - PageExtension Northwind Customer List Extra - Action Northwind New Order - Method OnAction - NamedType CreatedMsg</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Common - Table &quot;Northwind Setup&quot; - Field &quot;Region Code&quot; - Property Caption" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Table 2652558288">
+          <source>Region Code</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Regionscode</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Common - TableExtension Northwind Setup Ext. - Field Region Code - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Sales - Page &quot;Northwind Order API&quot; - Method &quot;7007001&quot;" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Release Order</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Auftrag freigeben</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Sales - Page Northwind Order API - Method ReleaseOrder</note>
+        </trans-unit>
+        <trans-unit id="Namespace Northwind.Logistics.Warehousing.Outbound.Shipping.Documents.Printing.Templates.Configuration.Validation.Rules - Codeunit &quot;Northwind Print Template Mgt.&quot; - Method Run - NamedType PrintedMsg" size-unit="char" translate="yes" xml:space="preserve">
+          <source>%1 documents were printed.</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=%1 Belege wurden gedruckt.</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Logistics.Warehousing.Outbound.Shipping.Documents.Printing.Templates.Configuration.Validation.Rules - Codeunit Northwind Print Template Mgt. - Method Run - NamedType PrintedMsg</note>
+        </trans-unit>
+        <trans-unit id="Namespace 2744279762 - Codeunit 3406867510 - Method 3403992780 - NamedType 3022678637" size-unit="char" translate="yes" xml:space="preserve">
+          <source>No print template is set up for location %1.</source>
+          <note from="Developer" annotates="general" priority="2">de-DE=Für Lagerort %1 ist keine Druckvorlage eingerichtet.</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Namespace Northwind.Logistics.Warehousing.Outbound.Shipping.Documents.Printing.Templates.Configuration.Validation.Rules - Codeunit Northwind Print Template Mgt. - Method ValidateOutboundShipmentDocumentPrintTemplateConfigurationBeforeReleasingTheWarehouseShipmentToTheCarrierForDispatch - NamedType OutboundShipmentDocumentPrintTemplateConfigurationIsMissingForTheSelectedLocationAndShippingAgentServiceCombinationErr</note>
+        </trans-unit>
+      </group>
+    </body>
+  </file>
+</xliff>

@@ -13,6 +13,8 @@
  * the same names; `alNameHash.test.ts` holds that function to values AL is known to write.
  */
 
+import { appUnits, quoteNameIfNeeded } from './alApp';
+import { NORTHWIND } from './northwind';
 import { alNameHash } from '../../extension/xliff/alNameHash';
 
 export const FIXTURE = {
@@ -21,6 +23,8 @@ export const FIXTURE = {
     german: 'Contoso App.de-DE.xlf',
     large: 'Fabrikam Base.de-DE.xlf',
     minimal: 'minimal.xlf',
+    namespacedBase: 'Northwind App.g.xlf',
+    namespacedGerman: 'Northwind App.de-DE.xlf',
 } as const;
 
 export interface FixtureFile {
@@ -45,6 +49,10 @@ interface Draft {
     readonly alObjectTarget?: string;
     /** Exempt from the file's untranslated pattern. */
     readonly keep?: boolean;
+    /** The id, when it is not the path's names hashed: a readable, namespaced id. */
+    readonly id?: string;
+    /** The generator note, when it is not the path's names: a namespace, or a folded root. */
+    readonly generatorNote?: string;
 }
 
 interface Unit extends Draft {
@@ -206,6 +214,11 @@ export function idOf(path: readonly Segment[]): string {
     return path.map(each => `${each.type} ${alNameHash(each.name)}`).join(' - ');
 }
 
+/** The path as the generator note writes it: types and names. */
+function namesOf(path: readonly Segment[]): string {
+    return path.map(each => `${each.type} ${each.name}`).join(' - ');
+}
+
 const segment = (type: string, name: string): Segment => ({ type, name });
 const property = (name: string): Segment => segment('Property', name);
 const identifier = (text: string): string => text.replace(/[^A-Za-z0-9]/g, '');
@@ -350,7 +363,7 @@ function assertDistinct(units: readonly Unit[]): void {
             }
             names.set(key, each.name);
         }
-        const id = idOf(unit.path);
+        const id = unit.id ?? idOf(unit.path);
         if (ids.has(id)) {
             throw new Error(`two units share the id ${id}`);
         }
@@ -516,6 +529,43 @@ function fabrikam(): Unit[] {
     return finish(drafts, index => index % 7 === 3);
 }
 
+/** The namespaced app, with one target left untranslated. */
+function northwind(): Unit[] {
+    const drafts = appUnits(NORTHWIND).map((unit): Draft => ({
+        path: unit.path,
+        source: unit.source,
+        german: unit.german,
+        note: unit.developerNote,
+        maxwidth: unit.maxwidth,
+        alObjectTarget: unit.alObjectTarget,
+        id: unit.id,
+        generatorNote: unit.generatorNote,
+    }));
+    return finish(drafts, index => index === 6);
+}
+
+/** Fabrikam's objects, spread over three namespaces by their type. */
+const FABRIKAM_NAMESPACES: Readonly<Record<string, string>> = {
+    Table: 'Fabrikam.Data', TableExtension: 'Fabrikam.Data', Enum: 'Fabrikam.Data', EnumExtension: 'Fabrikam.Data',
+    Page: 'Fabrikam.Interface', PageExtension: 'Fabrikam.Interface', Report: 'Fabrikam.Interface',
+};
+
+/**
+ * `Fabrikam Base.de-DE.xlf` as it would be compiled with namespaced ids — generated in
+ * memory, for the payload and speed a file of that size costs in this form.
+ */
+export function generateNamespacedFabrikam(): string {
+    const units = fabrikam().map((unit): Unit => {
+        const namespace = FABRIKAM_NAMESPACES[unit.path[0].type] ?? 'Fabrikam.Logic';
+        return {
+            ...unit,
+            id: [`Namespace ${namespace}`, ...unit.path.map(each => `${each.type} ${quoteNameIfNeeded(each.name)}`)].join(' - '),
+            generatorNote: `Namespace ${namespace} - ${namesOf(unit.path)}`,
+        };
+    });
+    return render(units, { role: 'german', original: 'Fabrikam Base', declaration: DECLARATION_UPPER, bom: false, eol: LF });
+}
+
 function escapeText(value: string): string {
     return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
@@ -543,7 +593,7 @@ function targetOf(unit: Unit, role: Role): string | undefined {
 }
 
 function renderUnit(unit: Unit, role: Role): string[] {
-    const attributes = [`id="${escapeAttribute(idOf(unit.path))}"`];
+    const attributes = [`id="${escapeAttribute(unit.id ?? idOf(unit.path))}"`];
     if (unit.maxwidth !== undefined) {
         attributes.push(`maxwidth="${unit.maxwidth}"`);
     }
@@ -557,7 +607,7 @@ function renderUnit(unit: Unit, role: Role): string[] {
         leaf('source', '', unit.source),
         ...(target === undefined ? [] : [target]),
         leaf('note', ' from="Developer" annotates="general" priority="2"', unit.note),
-        leaf('note', ' from="Xliff Generator" annotates="general" priority="3"', unit.path.map(each => `${each.type} ${each.name}`).join(' - ')),
+        leaf('note', ' from="Xliff Generator" annotates="general" priority="3"', unit.generatorNote ?? namesOf(unit.path)),
         '        </trans-unit>',
     ];
 }
@@ -582,11 +632,14 @@ function render(units: readonly Unit[], shape: FileShape): string {
 export function generateCorpus(): readonly FixtureFile[] {
     const app = contoso();
     const large = fabrikam();
+    const namespaced = northwind();
     return [
         { name: FIXTURE.base, text: render(app, { role: 'base', original: 'Contoso App', declaration: DECLARATION_LOWER, bom: true, eol: CRLF }) },
         { name: FIXTURE.english, text: render(app, { role: 'english', original: 'Contoso App', declaration: DECLARATION_UPPER, bom: false, eol: LF }) },
         { name: FIXTURE.german, text: render(app, { role: 'german', original: 'Contoso App', declaration: DECLARATION_UPPER, bom: false, eol: LF }) },
         { name: FIXTURE.large, text: render(large, { role: 'german', original: 'Fabrikam Base', declaration: DECLARATION_UPPER, bom: false, eol: LF }) },
         { name: FIXTURE.minimal, text: MINIMAL },
+        { name: FIXTURE.namespacedBase, text: render(namespaced, { role: 'base', original: 'Northwind App', declaration: DECLARATION_LOWER, bom: true, eol: CRLF }) },
+        { name: FIXTURE.namespacedGerman, text: render(namespaced, { role: 'german', original: 'Northwind App', declaration: DECLARATION_UPPER, bom: false, eol: LF }) },
     ];
 }

@@ -3,14 +3,15 @@ import { fileURLToPath, URL } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { buildAlTree, groupByObjectType, iterateNodes, iterateUnitNodes, OBJECT_TYPE_GROUP_PREFIX } from '../../extension/xliff/alTree';
+import { buildAlTree, groupRoots, iterateNodes, iterateUnitNodes, NO_NAMESPACE_GROUP_KEY, OBJECT_TYPE_GROUP_PREFIX } from '../../extension/xliff/alTree';
+import { alNameHash } from '../../extension/xliff/alNameHash';
 import { parseXliff } from '../../extension/xliff/parser';
 import { iterateUnits } from '../../shared/model';
 
 import type { XliffNote, XliffTransUnit } from '../../shared/model';
 
 const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
-const CORPUS = ['Contoso App.g.xlf', 'Contoso App.en-US.xlf', 'Contoso App.de-DE.xlf', 'Fabrikam Base.de-DE.xlf', 'minimal.xlf'];
+const CORPUS = ['Contoso App.g.xlf', 'Contoso App.en-US.xlf', 'Contoso App.de-DE.xlf', 'Fabrikam Base.de-DE.xlf', 'minimal.xlf', 'Northwind App.g.xlf', 'Northwind App.de-DE.xlf'];
 /** Every corpus file but the hand-written one, whose single id has no AL structure. */
 const AL_CORPUS = CORPUS.filter(name => name !== 'minimal.xlf');
 const unitsOf = (name: string) => [...iterateUnits(parseXliff(readFileSync(`${FIXTURES}/${name}`, 'utf8')))];
@@ -172,7 +173,7 @@ describe('shape', () => {
 
 
 describe('the object-type level', () => {
-    const grouped = (...ids: string[]) => groupByObjectType(buildAlTree(ids.map(id => unit(id))));
+    const grouped = (...ids: string[]) => groupRoots(buildAlTree(ids.map(id => unit(id))));
 
     it('wraps the roots in one node per type', () => {
         const tree = grouped('Table 1 - Property 9', 'Page 2 - Property 9', 'Table 3 - Property 9');
@@ -215,7 +216,7 @@ describe('the object-type level', () => {
     });
 
     it('does nothing to an empty tree', () => {
-        expect(groupByObjectType([])).toEqual([]);
+        expect(groupRoots([])).toEqual([]);
     });
 
     it('keeps a Table and a Page of one name apart, in different groups', () => {
@@ -227,34 +228,190 @@ describe('the object-type level', () => {
     });
 
     it('groups the large corpus file into its known object types, keeping every root', () => {
-        const tree = groupByObjectType(buildAlTree(unitsOf('Fabrikam Base.de-DE.xlf')));
+        const tree = groupRoots(buildAlTree(unitsOf('Fabrikam Base.de-DE.xlf')));
 
         expect(tree).toHaveLength(9);
         expect(tree.reduce((sum, group) => sum + group.children.length, 0)).toBe(230);
     });
 });
 
-describe('a group key can never be a unit id', () => {
-    it('holds against every id in the corpus', () => {
-        // A node carries a unit exactly when its key IS that unit's id. A group carries
-        // none, so its key must be one no id can produce.
+describe('canonical merging', () => {
+    const hashed = (...path: readonly (readonly [string, string])[]) => path.map(([type, name]) => `${type} ${alNameHash(name)}`).join(' - ');
+
+    it('merges the readable and the hashed form of one object into one node', () => {
+        const roots = buildAlTree([
+            unit('Table "Contoso Item" - Property Caption'),
+            unit(hashed(['Table', 'Contoso Item'], ['Field', 'Größe'], ['Property', 'Caption']), 'Table Contoso Item - Field Größe - Property Caption'),
+        ]);
+
+        expect(roots).toHaveLength(1);
+        expect(roots[0].segment.name).toBe('Contoso Item');
+        expect(roots[0].children.map(node => node.segment.name)).toEqual(['Caption', 'Größe']);
+    });
+
+    it('keys a container by its canonical path and a unit node by its own id', () => {
+        const id = 'Table "Contoso Item" - Field "No." - Property Caption';
+        const roots = buildAlTree([unit(id)]);
+        const field = roots[0].children[0];
+
+        expect(roots[0].key).toBe(`Table ${alNameHash('Contoso Item')}`);
+        expect(field.key).toBe(`Table ${alNameHash('Contoso Item')} - Field ${alNameHash('No.')}`);
+        expect(field.children[0].key).toBe(id);
+        expect(field.children[0].unitId).toBe(id);
+    });
+
+    it('keeps a quoted name that contains the separator as one segment', () => {
+        const roots = buildAlTree([
+            unit('Report "Contoso Sales - Quote" - Property Caption'),
+            unit('Report "Contoso Sales - Invoice" - Property Caption'),
+        ]);
+
+        expect(roots.map(node => node.segment.name)).toEqual(['Contoso Sales - Quote', 'Contoso Sales - Invoice']);
+        expect(roots.every(node => node.children.length === 1)).toBe(true);
+    });
+
+    it('keeps a second unit on the same canonical path as a leaf of its own', () => {
+        const readable = 'Table "Contoso Item" - Property Caption';
+        const other = hashed(['Table', 'Contoso Item'], ['Property', 'Caption']);
+        const roots = buildAlTree([unit(readable), unit(other)]);
+
+        expect(roots).toHaveLength(1);
+        expect(roots[0].children).toHaveLength(2);
+        expect([...iterateUnitNodes(roots)].map(node => node.key)).toEqual([readable, other]);
+    });
+});
+
+describe('naming', () => {
+    it('names every segment of a readable id without a note', () => {
+        const roots = buildAlTree([unit('Namespace Contoso.Sales - Table "Contoso Item" - Field "No." - Property Caption')]);
+
+        expect([...iterateNodes(roots)].map(node => node.segment.name)).toEqual(['Contoso.Sales', 'Contoso Item', 'No.', 'Caption']);
+    });
+
+    it('lets an all-digit readable name, an API method id, yield to the note', () => {
+        const roots = buildAlTree([unit('Page "Contoso API" - Method "7001"', 'Page Contoso API - Method ReleaseOrder')]);
+
+        expect(roots[0].children[0].segment.name).toBe('ReleaseOrder');
+    });
+
+    it('prefers a note name its hash confirms over one it does not', () => {
+        // A folded extension's note names the extension, while its id names the extended object.
+        const root = `Table ${alNameHash('Contoso Item')}`;
+        const roots = buildAlTree([
+            unit(`${root} - Field ${alNameHash('Extra')} - Property ${alNameHash('Caption')}`, 'Table Contoso Item Ext. - Field Extra - Property Caption'),
+            unit(`${root} - Property ${alNameHash('Caption')}`, 'Table Contoso Item - Property Caption'),
+        ]);
+
+        expect(roots[0].segment.name).toBe('Contoso Item');
+    });
+});
+
+describe('the namespace level', () => {
+    const grouped = (...ids: string[]) => groupRoots(buildAlTree(ids.map(id => unit(id))));
+
+    it('puts the namespaces first, each with type groups of its own', () => {
+        const tree = grouped(
+            'Namespace Contoso.Sales - Table Order - Property Caption',
+            'Namespace Contoso.Sales - Page Order - Property Caption',
+            'Namespace Contoso.Common - Table Setup - Property Caption',
+        );
+        const sales = `Namespace ${alNameHash('Contoso.Sales')}`;
+
+        expect(tree.map(node => node.segment.name)).toEqual(['Contoso.Sales', 'Contoso.Common']);
+        expect(tree[0].children.map(node => node.key)).toEqual([`type:${sales}/Table`, `type:${sales}/Page`]);
+        expect(tree[0].children.map(node => node.segment.name)).toEqual(['Tables (1)', 'Pages (1)']);
+        expect(tree[0].synthetic).toBeUndefined();
+        expect(tree[0].children.every(node => node.synthetic === true)).toBe(true);
+    });
+
+    it('gathers the objects without a namespace under one group, in first-appearance order', () => {
+        const tree = grouped(
+            'Codeunit "Contoso Legacy" - Method Run - NamedType DoneMsg',
+            'Namespace Contoso.Sales - Table Order - Property Caption',
+            'Table "Contoso Old" - Property Caption',
+        );
+
+        expect(tree.map(node => node.key)).toEqual([NO_NAMESPACE_GROUP_KEY, `Namespace ${alNameHash('Contoso.Sales')}`]);
+        expect(tree[0].segment.name).toBe('(no namespace)');
+        expect(tree[0].synthetic).toBe(true);
+        expect(tree[0].children.map(node => node.key)).toEqual([`type:${NO_NAMESPACE_GROUP_KEY}/Codeunit`, `type:${NO_NAMESPACE_GROUP_KEY}/Table`]);
+    });
+
+    it('keeps two objects of one type and name apart when their namespaces differ', () => {
+        const tree = grouped(
+            'Namespace Contoso.Sales - Table Order - Property Caption',
+            'Namespace Contoso.Purchasing - Table Order - Property Caption',
+        );
+        const tables = tree.flatMap(namespace => namespace.children).flatMap(group => group.children);
+
+        expect(tables).toHaveLength(2);
+        expect(new Set(tables.map(node => node.key)).size).toBe(2);
+    });
+
+    it('leaves a file without namespace segments exactly as before', () => {
+        expect(grouped('Table 1 - Property 9', 'Page 2 - Property 9').map(node => node.key)).toEqual(['type:Table', 'type:Page']);
+    });
+});
+
+describe('the namespaced corpus file', () => {
+    const units = unitsOf('Northwind App.de-DE.xlf');
+    const tree = groupRoots(buildAlTree(units));
+    const objects = [...iterateNodes(tree)].filter(node => node.depth === 1 && node.synthetic !== true);
+
+    it('reads namespace, object type, object, with a group for the objects without a namespace', () => {
+        expect(tree.map(node => node.segment.name)).toEqual([
+            'Northwind.Common', 'Northwind.Sales', 'Northwind.Purchasing', '(no namespace)',
+            'Northwind.Logistics.Warehousing.Outbound.Shipping.Documents.Printing.Templates.Configuration.Validation.Rules',
+        ]);
+        for (const namespace of tree) {
+            expect(namespace.children.every(group => group.synthetic === true), namespace.key).toBe(true);
+        }
+    });
+
+    it('keeps each object in one node, whichever form its ids take', () => {
+        const orders = objects.filter(node => node.segment.name === 'Northwind Order');
+        const sales = orders.find(node => node.key.startsWith(`Namespace ${alNameHash('Northwind.Sales')} - `));
+        const template = objects.filter(node => node.segment.name === 'Northwind Print Template Mgt.');
+
+        expect(orders).toHaveLength(2);
+        expect(sales?.children.map(node => node.segment.name)).toContain('Größe');
+        expect(template).toHaveLength(1);
+        expect(template[0].children).toHaveLength(2);
+    });
+
+    it('places every unit on a node keyed by its own id', () => {
+        const carrying = [...iterateUnitNodes(tree)];
+
+        expect(carrying).toHaveLength(units.length);
+        expect(carrying.every(node => node.key === node.unitId)).toBe(true);
+    });
+
+    it('names every node', () => {
+        expect([...iterateNodes(tree)].filter(node => node.segment.name === undefined)).toHaveLength(0);
+    });
+});
+
+describe('a group key can never be a node key', () => {
+    it('holds because no node of any corpus file has a key that starts like a group key', () => {
         for (const name of CORPUS) {
-            for (const each of unitsOf(name)) {
-                expect(each.id.includes(':'), `${name}: ${each.id}`).toBe(false);
+            for (const node of iterateNodes(buildAlTree(unitsOf(name)))) {
+                expect(/^[a-z]+:/.test(node.key), `${name}: ${node.key}`).toBe(false);
             }
         }
     });
 
-    it('holds for every group the corpus actually produces', () => {
+    it('holds for every group the corpus produces, at every level', () => {
         for (const name of AL_CORPUS) {
             const all = unitsOf(name);
             const ids = new Set(all.map(each => each.id));
-            const groups = groupByObjectType(buildAlTree(all)).filter(node => node.key.startsWith(OBJECT_TYPE_GROUP_PREFIX));
+            const groups = [...iterateNodes(groupRoots(buildAlTree(all)))].filter(node => node.synthetic === true);
 
             expect(groups.length, name).toBeGreaterThan(0);
             for (const group of groups) {
                 expect(ids.has(group.key), `${name}: ${group.key}`).toBe(false);
+                expect(group.key.startsWith(OBJECT_TYPE_GROUP_PREFIX) || group.key === NO_NAMESPACE_GROUP_KEY, `${name}: ${group.key}`).toBe(true);
             }
         }
     });
 });
+

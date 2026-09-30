@@ -1,0 +1,210 @@
+/**
+ * An invented AL app, described object by object, and the trans-units the AL compiler
+ * writes for it.
+ *
+ * The compiler's rules, as they apply to what an app declares:
+ *
+ * - a unit's id is the path root → [a method's container] → [its container] → element;
+ * - with namespaced ids, the id is readable — names quoted when they contain whitespace or
+ *   a quote, are empty, are `-`, or are all digits — and leads with the root's namespace,
+ *   unless the readable id would be over 400 characters or contain a non-ASCII character,
+ *   in which case that one id is hashed, namespace segment and all;
+ * - an element declared in an extension is filed under the extended object when that object
+ *   is in the same app, else under the lowest-numbered extension of the same object;
+ * - the generator note always names the **declaring** object, prefixed with its namespace;
+ * - `al-object-target`, always hashed, is the extended object on a property of an extension,
+ *   and the extension itself on its labels;
+ * - an API procedure's caption is filed under the procedure's method id, not its name.
+ */
+
+import { alNameHash } from '../../extension/xliff/alNameHash';
+
+export interface Text {
+    readonly source: string;
+    readonly german: string;
+}
+
+/** A translatable property, named by its canonical kind: `Caption`, `ToolTip`, … */
+export interface AlProperty extends Text {
+    readonly name: string;
+}
+
+export interface AlLabel extends Text {
+    readonly name: string;
+    /** The Developer note, when it is not the usual `de-DE=<german>`. */
+    readonly comment?: string;
+    readonly maxLength?: number;
+}
+
+export interface AlMethod {
+    readonly kind: 'trigger' | 'procedure';
+    readonly name: string;
+    readonly labels: readonly AlLabel[];
+    /** An API procedure's caption: translated under the procedure's method id. */
+    readonly apiCaption?: Text & { readonly methodId: number };
+}
+
+export interface AlMember {
+    /** The id segment type: `Field`, `Control`, `Action`, `Change`, `EnumValue`, … */
+    readonly kind: string;
+    readonly name: string;
+    readonly properties: readonly AlProperty[];
+    readonly methods?: readonly AlMethod[];
+}
+
+export interface AlObject {
+    /** The id segment type: `Table`, `PageExtension`, … */
+    readonly kind: string;
+    readonly id: number;
+    readonly name: string;
+    readonly namespace?: string;
+    /** What an extension extends: its base kind and name. */
+    readonly extends?: { readonly kind: string; readonly name: string };
+    readonly properties: readonly AlProperty[];
+    readonly members: readonly AlMember[];
+    readonly labels?: readonly AlLabel[];
+    readonly methods?: readonly AlMethod[];
+    readonly reportLabels?: readonly AlLabel[];
+}
+
+export interface AlApp {
+    readonly name: string;
+    /** The compiler's namespace feature: readable, namespaced ids. */
+    readonly namespacedIds: boolean;
+    readonly objects: readonly AlObject[];
+}
+
+/** One step of a symbol path, by type and declared name. */
+export interface PathStep {
+    readonly type: string;
+    readonly name: string;
+}
+
+/** One trans-unit of the app, as the compiler writes it. */
+export interface AppUnit extends Text {
+    readonly id: string;
+    readonly generatorNote: string;
+    readonly developerNote: string;
+    readonly alObjectTarget?: string;
+    readonly maxwidth?: number;
+    /** The object that declares the element, whatever the id's root says. */
+    readonly declaring: AlObject;
+    /** The declaring path, starting at the declaring object. */
+    readonly path: readonly PathStep[];
+}
+
+const MAX_READABLE_ID = 400;
+const ASCII = /^[\x00-\x7f]*$/;
+const DIGITS = /^\d+$/;
+const WHITESPACE = /\s/;
+
+/** How the compiler writes a name into a readable id. */
+export function quoteNameIfNeeded(name: string): string {
+    const quote = name === '' || name === '-' || WHITESPACE.test(name) || name.includes('"') || DIGITS.test(name);
+    return quote ? `"${name.replace(/"/g, '""')}"` : name;
+}
+
+const isExtension = (kind: string): boolean => kind.endsWith('Extension');
+
+/** The object an element declared in `object` is filed under. */
+export function translationRoot(app: AlApp, object: AlObject): AlObject {
+    if (!isExtension(object.kind) || object.extends === undefined) {
+        return object;
+    }
+    const target = object.extends;
+    const inApp = app.objects.find(each => each.kind === target.kind && each.name === target.name);
+    if (inApp !== undefined) {
+        return inApp;
+    }
+    return app.objects
+        .filter(each => each.kind === object.kind && each.extends?.kind === target.kind && each.extends.name === target.name)
+        .reduce((lowest, each) => (each.id < lowest.id ? each : lowest), object);
+}
+
+function idOf(app: AlApp, root: AlObject, path: readonly PathStep[]): string {
+    const steps: PathStep[] = [
+        ...(app.namespacedIds && root.namespace !== undefined ? [{ type: 'Namespace', name: root.namespace }] : []),
+        { type: root.kind, name: root.name },
+        ...path.slice(1),
+    ];
+    if (app.namespacedIds) {
+        const readable = steps.map(step => `${step.type} ${quoteNameIfNeeded(step.name)}`).join(' - ');
+        if (readable.length <= MAX_READABLE_ID && ASCII.test(readable)) {
+            return readable;
+        }
+    }
+    return steps.map(step => `${step.type} ${alNameHash(step.name)}`).join(' - ');
+}
+
+function noteOf(app: AlApp, declaring: AlObject, path: readonly PathStep[]): string {
+    const names = path.map(step => `${step.type} ${step.name}`).join(' - ');
+    return app.namespacedIds && declaring.namespace !== undefined ? `Namespace ${declaring.namespace} - ${names}` : names;
+}
+
+/** Every trans-unit the app's objects produce, object by object in declaration order. */
+export function appUnits(app: AlApp): AppUnit[] {
+    const units: AppUnit[] = [];
+
+    for (const object of app.objects) {
+        const root = translationRoot(app, object);
+        const own: PathStep = { type: object.kind, name: object.name };
+        const target = isExtension(object.kind) && object.extends !== undefined
+            ? `${object.extends.kind} ${alNameHash(object.extends.name)}`
+            : undefined;
+        const self = isExtension(object.kind) ? `${object.kind} ${alNameHash(object.name)}` : undefined;
+
+        const push = (path: readonly PathStep[], text: Text, alObjectTarget: string | undefined, label?: AlLabel): void => {
+            units.push({
+                id: idOf(app, root, path),
+                generatorNote: noteOf(app, object, path),
+                developerNote: label?.comment ?? `de-DE=${text.german}`,
+                source: text.source,
+                german: text.german,
+                alObjectTarget,
+                maxwidth: label?.maxLength,
+                declaring: object,
+                path,
+            });
+        };
+        const properties = (path: readonly PathStep[], list: readonly AlProperty[]): void => {
+            for (const property of list) {
+                push([...path, { type: 'Property', name: property.name }], property, target);
+            }
+        };
+        const methods = (path: readonly PathStep[], list: readonly AlMethod[]): void => {
+            for (const method of list) {
+                if (method.apiCaption !== undefined) {
+                    units.push({
+                        id: idOf(app, root, [...path, { type: 'Method', name: String(method.apiCaption.methodId) }]),
+                        generatorNote: noteOf(app, object, [...path, { type: 'Method', name: method.name }]),
+                        developerNote: `de-DE=${method.apiCaption.german}`,
+                        source: method.apiCaption.source,
+                        german: method.apiCaption.german,
+                        alObjectTarget: target,
+                        declaring: object,
+                        path: [...path, { type: 'Method', name: method.name }],
+                    });
+                }
+                for (const label of method.labels) {
+                    push([...path, { type: 'Method', name: method.name }, { type: 'NamedType', name: label.name }], label, self, label);
+                }
+            }
+        };
+
+        properties([own], object.properties);
+        for (const member of object.members) {
+            const path = [own, { type: member.kind, name: member.name }];
+            properties(path, member.properties);
+            methods(path, member.methods ?? []);
+        }
+        for (const label of object.labels ?? []) {
+            push([own, { type: 'NamedType', name: label.name }], label, self, label);
+        }
+        methods([own], object.methods ?? []);
+        for (const label of object.reportLabels ?? []) {
+            push([own, { type: 'ReportLabel', name: label.name }], label, self, label);
+        }
+    }
+
+    return units;
+}

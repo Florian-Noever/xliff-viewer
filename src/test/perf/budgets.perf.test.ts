@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { XliffDocumentSession } from '../../extension/editor/documentSession';
 import { createDocumentSession } from '../../extension/editor/documentView';
-import { buildAlTree, groupByObjectType } from '../../extension/xliff/alTree';
+import { buildAlTree, groupRoots } from '../../extension/xliff/alTree';
 import { projectDocument } from '../../extension/xliff/dto';
 import { parseXliff } from '../../extension/xliff/parser';
 import { serialiseXliff } from '../../extension/xliff/serialise';
@@ -18,6 +18,7 @@ import { hintsFor } from '../../webview/validation';
 import { iterateUnits } from '../../shared/model';
 import { effectiveState, summariseTree } from '../../shared/state';
 import { FakeTextDocument } from '../__mocks__/vscode';
+import { generateNamespacedFabrikam } from '../fixtures/corpus';
 
 import type * as vscode from 'vscode';
 import type { XliffDocumentDto } from '../../shared/dto';
@@ -65,7 +66,13 @@ describe('performance budgets on the large example file', () => {
     it('builds the AL tree in under 60 ms', () => {
         // Including the object-type level, because that is what ships.
         const units = [...iterateUnits(parseXliff(text))];
-        expect(fastest(3, () => groupByObjectType(buildAlTree(units)))).toBeLessThan(60);
+        expect(fastest(3, () => groupRoots(buildAlTree(units)))).toBeLessThan(60);
+    });
+
+    it('builds the AL tree of the file compiled with namespaced ids in under 60 ms', () => {
+        // Every readable segment is hashed on the way in, so this is the costlier form.
+        const units = [...iterateUnits(parseXliff(generateNamespacedFabrikam()))];
+        expect(fastest(3, () => groupRoots(buildAlTree(units)))).toBeLessThan(60);
     });
 
     it('rolls state up in under 40 ms', () => {

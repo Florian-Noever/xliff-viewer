@@ -43,18 +43,21 @@ function unquote(value: string): string {
         : value;
 }
 
+/** The hash as written, or the one AL writes for the readable name; empty when there is no value. */
+export function canonicalHash(segment: UnitIdSegment): string {
+    if (segment.hash !== undefined) {
+        return segment.hash;
+    }
+    return segment.name === undefined ? '' : alNameHash(segment.name);
+}
+
 /**
  * The segment as `<Type> <hash>`: the hash as written, or the one AL writes for its readable
  * name. A segment with no value stays as written.
  */
 export function canonicalSegment(segment: UnitIdSegment): string {
-    if (segment.hash !== undefined) {
-        return `${segment.type} ${segment.hash}`;
-    }
-    if (segment.name !== undefined) {
-        return `${segment.type} ${alNameHash(segment.name)}`;
-    }
-    return segment.type;
+    const hash = canonicalHash(segment);
+    return hash === '' ? segment.type : `${segment.type} ${hash}`;
 }
 
 /**

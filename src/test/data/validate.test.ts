@@ -79,7 +79,7 @@ const UNQUOTED_ATTRIBUTE = `<?xml version="1.0"?>
 describe('validateXml', () => {
     it('accepts every file in the corpus', () => {
         const files = readdirSync(FIXTURES);
-        expect(files).toHaveLength(5);
+        expect(files).toHaveLength(7);
         for (const name of files) {
             expect(() => validateXml(read(name)), name).not.toThrow();
         }

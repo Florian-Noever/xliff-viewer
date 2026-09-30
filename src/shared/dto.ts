@@ -106,6 +106,11 @@ export interface XliffFileDto {
     readonly units: readonly TransUnitDto[];
     /** False when **no** id parses as `<SymbolType> <hash>` — drives the flat list and its note. */
     readonly hasAlIds: boolean;
+    /**
+     * Set when the ids name namespaces, so the tree's top level is namespaces with type
+     * groups inside them — one level more above the objects than a file without.
+     */
+    readonly namespaced?: true;
 }
 
 export interface BaseFileDto {
