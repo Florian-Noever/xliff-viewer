@@ -59,7 +59,8 @@ export const NORTHWIND: AlApp = {
             properties: [caption('Northwind Purchase Order', 'Northwind-Bestellung')],
             members: [
                 { kind: 'Field', name: 'No.', properties: [caption('No.', 'Nr.')] },
-                { kind: 'Field', name: 'Vendor No.', properties: [caption('Vendor No.', 'Kreditorennr.')] },
+                // Synthesised by the compiler: the caption is the field's name, and the source has no line for it.
+                { kind: 'Field', name: 'Vendor No.', properties: [{ ...caption('Vendor No.', 'Kreditorennr.'), synthesized: true }] },
             ],
         },
         {

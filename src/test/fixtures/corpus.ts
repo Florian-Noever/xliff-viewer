@@ -14,8 +14,12 @@
  */
 
 import { appUnits, quoteNameIfNeeded } from './alApp';
+import { renderApp } from './alRender';
 import { NORTHWIND } from './northwind';
 import { alNameHash } from '../../extension/xliff/alNameHash';
+
+import type { AlApp, AlLabel, AlProperty } from './alApp';
+import type { AppManifest } from './alRender';
 
 export const FIXTURE = {
     base: 'Contoso App.g.xlf',
@@ -47,6 +51,8 @@ interface Draft {
     readonly state?: string;
     readonly maxwidth?: number;
     readonly alObjectTarget?: string;
+    /** What an extension extends: the base object's type and name. */
+    readonly target?: Segment;
     /** Exempt from the file's untranslated pattern. */
     readonly keep?: boolean;
     /** The id, when it is not the path's names hashed: a readable, namespaced id. */
@@ -262,7 +268,7 @@ function tableExtension(base: string, offset: number): Draft[] {
     const alObjectTarget = `Table ${alNameHash(base)}`;
     return Array.from({ length: 5 }, (_, index) => {
         const [english, german] = at(FIELDS, offset + index);
-        return caption([...root, segment('Field', `Fabrikam ${english}`)], english, german, { alObjectTarget });
+        return caption([...root, segment('Field', `Fabrikam ${english}`)], english, german, { alObjectTarget, target: segment('Table', base) });
     });
 }
 
@@ -281,14 +287,17 @@ interface PageShape {
     readonly actions: number;
     readonly withActionLabel: boolean;
     readonly alObjectTarget?: string;
+    /** The page an extension extends. */
+    readonly target?: string;
     readonly lastCaption?: (english: string, german: string) => SpecialCaption;
 }
 
 function page(name: string, shape: PageShape): Draft[] {
     const root = [segment(shape.type, name)];
-    const extra: Partial<Draft> = shape.alObjectTarget === undefined ? {} : { alObjectTarget: shape.alObjectTarget };
+    const target: Partial<Draft> = shape.target === undefined ? {} : { target: segment('Page', shape.target) };
+    const extra: Partial<Draft> = shape.alObjectTarget === undefined ? target : { ...target, alObjectTarget: shape.alObjectTarget };
     // A label declared in an extension names the extension itself, not the page it extends.
-    const labelExtra: Partial<Draft> = shape.alObjectTarget === undefined ? {} : { alObjectTarget: `${shape.type} ${alNameHash(name)}` };
+    const labelExtra: Partial<Draft> = shape.alObjectTarget === undefined ? target : { ...target, alObjectTarget: `${shape.type} ${alNameHash(name)}` };
     const drafts: Draft[] = shape.withCaption ? [caption(root, name, toGerman(name), extra)] : [];
 
     for (let index = 0; index < shape.controls; index++) {
@@ -347,7 +356,7 @@ function enumeration(name: string, values: readonly Pair[], count: number): Draf
 function enumExtension(base: string): Draft[] {
     const root = [segment('EnumExtension', `Fabrikam ${base} Ext.`)];
     const alObjectTarget = `Enum ${alNameHash(base)}`;
-    return EXTENSION_VALUES.map(([english, german]) => caption([...root, segment('EnumValue', english)], english, german, { alObjectTarget }));
+    return EXTENSION_VALUES.map(([english, german]) => caption([...root, segment('EnumValue', english)], english, german, { alObjectTarget, target: segment('Enum', base) }));
 }
 
 /** Two names with one hash would merge into one tree node, and two units with one id would be one unit. */
@@ -518,7 +527,7 @@ function fabrikam(): Unit[] {
         // Each extension has a page of its own: AL files two extensions of one page under one of them.
         ...BASE_PAGES.flatMap((base, index) => [base, `${base} FactBox`].flatMap((target, variant) => page(`Fabrikam ${target} Ext.`, {
             type: 'PageExtension', controls: 4, offset: index * 2 + variant, withCaption: false, actions: 1, withActionLabel: true,
-            alObjectTarget: `Page ${alNameHash(target)}`,
+            alObjectTarget: `Page ${alNameHash(target)}`, target,
         }))),
         ...FABRIKAM_REPORTS.flatMap((name, index) => report(name, 6, index)),
         ...FABRIKAM_CODEUNITS.flatMap((name, index) => (name === LABEL_CODEUNIT ? labelCodeunit() : codeunit(name, 2, 4, index))),
@@ -542,6 +551,127 @@ function northwind(): Unit[] {
         generatorNote: unit.generatorNote,
     }));
     return finish(drafts, index => index === 6);
+}
+
+interface MethodDraft {
+    readonly kind: 'trigger' | 'procedure';
+    readonly name: string;
+    readonly labels: AlLabel[];
+}
+
+interface MemberDraft {
+    readonly kind: string;
+    readonly name: string;
+    readonly properties: AlProperty[];
+    readonly methods: MethodDraft[];
+}
+
+interface ObjectDraft {
+    readonly kind: string;
+    readonly id: number;
+    readonly name: string;
+    readonly extends?: { readonly kind: string; readonly name: string };
+    readonly properties: AlProperty[];
+    readonly members: MemberDraft[];
+    readonly labels: AlLabel[];
+    readonly methods: MethodDraft[];
+    readonly reportLabels: AlLabel[];
+}
+
+function findOrAdd<T extends { readonly kind: string; readonly name: string }>(list: T[], kind: string, name: string, create: () => T): T {
+    const found = list.find(each => each.kind === kind && each.name === name);
+    if (found !== undefined) {
+        return found;
+    }
+    const created = create();
+    list.push(created);
+    return created;
+}
+
+/**
+ * The corpus's units as the objects that declare them, so AL source can be written for them.
+ *
+ * Every fifth table-field caption becomes one the compiler synthesises — its source is the
+ * field's name, which is what the compiler would take — so the source has no line for it.
+ */
+function appOf(name: string, units: readonly Unit[]): AlApp {
+    const objects = new Map<string, ObjectDraft>();
+    let nextId = 50000;
+    let tableFields = 0;
+
+    for (const unit of units) {
+        const [root, ...rest] = unit.path;
+        const key = `${root.type} ${root.name}`;
+        let object = objects.get(key);
+        if (object === undefined) {
+            object = {
+                kind: root.type, id: nextId++, name: root.name,
+                properties: [], members: [], labels: [], methods: [], reportLabels: [],
+                ...(unit.target === undefined ? {} : { extends: { kind: unit.target.type, name: unit.target.name } }),
+            };
+            objects.set(key, object);
+        }
+
+        const last = rest.at(-1);
+        if (last === undefined) {
+            continue;
+        }
+        const text: AlLabel = { name: last.name, source: unit.source, german: unit.german, ...(unit.maxwidth === undefined ? {} : { maxLength: unit.maxwidth }) };
+
+        if (rest.length === 1) {
+            if (last.type === 'Property') {
+                object.properties.push({ name: last.name, source: unit.source, german: unit.german });
+            } else if (last.type === 'ReportLabel') {
+                object.reportLabels.push(text);
+            } else {
+                object.labels.push(text);
+            }
+        } else if (rest.length === 2 && rest[0].type === 'Method') {
+            findOrAdd(object.methods, 'procedure', rest[0].name, (): MethodDraft => ({ kind: 'procedure', name: rest[0].name, labels: [] })).labels.push(text);
+        } else if (rest.length === 2) {
+            const [container] = rest;
+            const member = findOrAdd(object.members, container.type, container.name, () => ({ kind: container.type, name: container.name, properties: [], methods: [] }));
+            const synthesized = root.type === 'Table' && container.type === 'Field' && last.name === 'Caption' && tableFields++ % 5 === 3;
+            member.properties.push({ name: last.name, source: unit.source, german: unit.german, ...(synthesized ? { synthesized } : {}) });
+        } else {
+            const [container, method] = rest;
+            const member = findOrAdd(object.members, container.type, container.name, () => ({ kind: container.type, name: container.name, properties: [], methods: [] }));
+            findOrAdd(member.methods, 'trigger', method.name, (): MethodDraft => ({ kind: 'trigger', name: method.name, labels: [] })).labels.push(text);
+        }
+    }
+
+    return { name, namespacedIds: false, objects: [...objects.values()] };
+}
+
+/** `Contoso App` as the AL objects that declare its units. */
+export function contosoApp(): AlApp {
+    return appOf('Contoso App', contoso());
+}
+
+/** `Fabrikam Base` as the AL objects that declare its units — rendered in memory only. */
+export function fabrikamApp(): AlApp {
+    return appOf('Fabrikam Base', fabrikam());
+}
+
+export const CONTOSO_MANIFEST: AppManifest = { id: '5c0e7a10-0000-4000-8000-00000000c0a1', publisher: 'Contoso', features: ['TranslationFile'] };
+export const NORTHWIND_MANIFEST: AppManifest = {
+    id: '5c0e7a10-0000-4000-8000-000000004e71',
+    publisher: 'Northwind',
+    features: ['TranslationFile', 'GenerateCaptions', 'TranslationsWithNamespaces'],
+};
+
+/** Where the committed AL sources live, per app, under `src/test/fixtures/al/`. */
+export const AL_APPS = {
+    contoso: 'Contoso App',
+    namespaced: 'Northwind App',
+} as const;
+
+/** The committed AL sources: every file of both apps, `app.json` included, by path. */
+export function generateAlSources(): readonly FixtureFile[] {
+    return [
+        ...renderApp(contosoApp(), CONTOSO_MANIFEST).files.map(file => ({ name: `${AL_APPS.contoso}/${file.path}`, text: file.text })),
+        ...renderApp(NORTHWIND, NORTHWIND_MANIFEST).files.map(file => ({ name: `${AL_APPS.namespaced}/${file.path}`, text: file.text })),
+    ];
 }
 
 /** Fabrikam's objects, spread over three namespaces by their type. */

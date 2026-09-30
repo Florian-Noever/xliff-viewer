@@ -1,18 +1,34 @@
-import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath, URL } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { FIXTURE, generateCorpus } from '../fixtures/corpus';
+import { FIXTURE, generateAlSources, generateCorpus } from '../fixtures/corpus';
 
 const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
+const AL_FIXTURES = fileURLToPath(new URL('../fixtures/al', import.meta.url));
 const generated = generateCorpus();
+const generatedAl = generateAlSources();
 
 if (process.env.UPDATE_FIXTURES === '1') {
     mkdirSync(FIXTURES, { recursive: true });
     for (const file of generated) {
         writeFileSync(`${FIXTURES}/${file.name}`, file.text, 'utf8');
     }
+    // Rewritten whole, so a file the generator no longer writes does not linger.
+    rmSync(AL_FIXTURES, { recursive: true, force: true });
+    for (const file of generatedAl) {
+        mkdirSync(dirname(join(AL_FIXTURES, file.name)), { recursive: true });
+        writeFileSync(join(AL_FIXTURES, file.name), file.text, 'utf8');
+    }
+}
+
+/** Every file below a folder, by its path relative to it, with forward slashes. */
+function filesBelow(folder: string, prefix = ''): string[] {
+    return readdirSync(folder, { withFileTypes: true }).flatMap(entry => (entry.isDirectory()
+        ? filesBelow(join(folder, entry.name), `${prefix}${entry.name}/`)
+        : [`${prefix}${entry.name}`]));
 }
 
 /**
@@ -27,6 +43,14 @@ describe('fixture corpus', () => {
     it.each(generated.map(file => [file.name, file.text] as const))('%s is exactly what the generator writes', (name, text) => {
         // Compared as a boolean: a failing `toBe` on a megabyte of XML prints all of it.
         expect(readFileSync(`${FIXTURES}/${name}`, 'utf8') === text, `${name} was edited; regenerate it with UPDATE_FIXTURES=1`).toBe(true);
+    });
+
+    it('holds exactly the AL sources the generator writes', () => {
+        expect(filesBelow(AL_FIXTURES).sort()).toEqual(generatedAl.map(file => file.name).sort());
+    });
+
+    it.each(generatedAl.map(file => [file.name, file.text] as const))('%s is exactly what the generator writes', (name, text) => {
+        expect(readFileSync(join(AL_FIXTURES, name), 'utf8') === text, `${name} was edited; regenerate it with UPDATE_FIXTURES=1`).toBe(true);
     });
 
     it('reads the minimal fixture as XLIFF text', () => {
