@@ -4,5 +4,6 @@ import './desktop';
 import './editor.test';
 import './navigation.test';
 import './edit.test';
+import './alSource.test';
 
 export { run } from './desktop';

@@ -1,0 +1,209 @@
+import * as vscode from 'vscode';
+
+import { listAlFiles } from './alFileListing';
+import { alScopeFor } from './alScope';
+import { Logger } from './logger';
+import { indexedObjects } from '../al/alHeaderIndex';
+import { outlineAl, scanHeaders } from '../al/alOutline';
+import { candidateObjects, locateUnit } from '../al/unitLocator';
+
+import type { AlScope } from './alScope';
+import type { IndexedObject } from '../al/alHeaderIndex';
+import type { AlOutline } from '../al/alOutline';
+import type { UnitTarget } from '../al/alTarget';
+import type { LocateResult } from '../al/unitLocator';
+
+/**
+ * Which objects an app's AL files declare, kept up to date without re-reading the app.
+ *
+ * Built on first use — most documents never ask for it — from object headers alone. A
+ * watcher drops a changed file's entry and forgets the listing when files come or go; where
+ * watchers do not fire, a miss triggers one refresh that re-reads whatever changed. The
+ * index only chooses candidates: the candidates themselves are always read at the moment of
+ * asking, from the open document when there is one, so what is found is what is there.
+ */
+
+export interface AlLocateOutcome {
+    readonly result: LocateResult;
+    /** The documents the candidates were read from, by the file key a location names. */
+    readonly documents: ReadonlyMap<string, vscode.TextDocument>;
+}
+
+interface FileEntry {
+    readonly mtime: number;
+    readonly objects: readonly IndexedObject[];
+}
+
+/** Files read at once while building. */
+const BATCH = 8;
+/** A second miss this soon after a refresh does not refresh again. */
+const REFRESH_INTERVAL_MS = 2000;
+
+export class AlSourceIndex implements vscode.Disposable {
+    public readonly scope: AlScope;
+    private readonly changed = new vscode.EventEmitter<void>();
+    private readonly subscriptions: vscode.Disposable[] = [];
+    private readonly entries = new Map<string, FileEntry>();
+    private listing: Promise<readonly vscode.Uri[]> | undefined;
+    private building: Promise<readonly IndexedObject[]> | undefined;
+    private lastRefresh = 0;
+
+    public constructor(scope: AlScope) {
+        this.scope = scope;
+        const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(scope.folder, '**/*.al'));
+        this.subscriptions.push(
+            watcher,
+            this.changed,
+            watcher.onDidChange(uri => this.entries.delete(uri.toString())),
+            watcher.onDidCreate(() => this.forgetListing()),
+            watcher.onDidDelete((uri) => {
+                this.entries.delete(uri.toString());
+                this.forgetListing();
+            }),
+        );
+    }
+
+    /** Fires when files come or go, so whether AL source exists can be asked again. */
+    public get onDidChangeFiles(): vscode.Event<void> {
+        return this.changed.event;
+    }
+
+    public dispose(): void {
+        for (const subscription of this.subscriptions) {
+            subscription.dispose();
+        }
+        this.subscriptions.length = 0;
+        this.entries.clear();
+    }
+
+    public async hasAlFiles(): Promise<boolean> {
+        return (await this.files()).length > 0;
+    }
+
+    /** Every object the app declares, building what is missing — one build at a time. */
+    public async objects(): Promise<readonly IndexedObject[]> {
+        this.building ??= this.build();
+        try {
+            return await this.building;
+        } finally {
+            this.building = undefined;
+        }
+    }
+
+    /** Finds where a unit is declared, refreshing once when it is not found at all. */
+    public async locate(target: UnitTarget): Promise<AlLocateOutcome> {
+        const first = await this.locateOnce(target);
+        if (first.result.kind !== 'notFound' || Date.now() - this.lastRefresh < REFRESH_INTERVAL_MS) {
+            return first;
+        }
+        await this.refresh();
+        return this.locateOnce(target);
+    }
+
+    private forgetListing(): void {
+        this.listing = undefined;
+        this.changed.fire();
+    }
+
+    private async files(): Promise<readonly vscode.Uri[]> {
+        this.listing ??= listAlFiles(this.scope.folder).then(listing => listing.files);
+        return this.listing;
+    }
+
+    private async build(): Promise<readonly IndexedObject[]> {
+        const files = await this.files();
+        const missing = files.filter(uri => !this.entries.has(uri.toString()));
+        if (missing.length > 0) {
+            // A large app takes visible time to read, and this runs on a click.
+            await vscode.window.withProgress({ location: vscode.ProgressLocation.Window, title: 'Indexing AL objects…' }, () => this.readAll(missing));
+        }
+        return files.flatMap(uri => this.entries.get(uri.toString())?.objects ?? []);
+    }
+
+    private async readAll(uris: readonly vscode.Uri[]): Promise<void> {
+        for (let start = 0; start < uris.length; start += BATCH) {
+            await Promise.all(uris.slice(start, start + BATCH).map(uri => this.readEntry(uri)));
+        }
+    }
+
+    private async readEntry(uri: vscode.Uri): Promise<void> {
+        try {
+            const [text, stat] = await Promise.all([readText(uri), vscode.workspace.fs.stat(uri)]);
+            this.entries.set(uri.toString(), { mtime: stat.mtime, objects: indexedObjects(uri.toString(), scanHeaders(text, this.scope.symbols)) });
+        } catch (error: unknown) {
+            Logger.warn(`Could not read ${uri.path}: ${error instanceof Error ? error.message : 'unknown error'}`);
+        }
+    }
+
+    /** Lists the files again, and forgets every entry whose file changed or went. */
+    private async refresh(): Promise<void> {
+        this.lastRefresh = Date.now();
+        this.listing = undefined;
+        const current = new Set((await this.files()).map(uri => uri.toString()));
+
+        await Promise.all([...this.entries].map(async ([key, entry]) => {
+            if (!current.has(key)) {
+                this.entries.delete(key);
+                return;
+            }
+            try {
+                if ((await vscode.workspace.fs.stat(vscode.Uri.parse(key))).mtime !== entry.mtime) {
+                    this.entries.delete(key);
+                }
+            } catch {
+                this.entries.delete(key);
+            }
+        }));
+    }
+
+    private async locateOnce(target: UnitTarget): Promise<AlLocateOutcome> {
+        const candidates = candidateObjects(target, await this.objects());
+        const documents = new Map<string, vscode.TextDocument>();
+        const outlines = new Map<string, AlOutline>();
+
+        for (const file of new Set(candidates.map(candidate => candidate.object.file))) {
+            try {
+                const document = await vscode.workspace.openTextDocument(vscode.Uri.parse(file));
+                documents.set(file, document);
+                outlines.set(file, outlineAl(document.getText(), this.scope.symbols));
+            } catch {
+                this.entries.delete(file);
+            }
+        }
+
+        return { result: locateUnit(target, candidates, outlines), documents };
+    }
+}
+
+/** An open document's text wins over the one on disk: it is what the user sees. */
+async function readText(uri: vscode.Uri): Promise<string> {
+    const open = vscode.workspace.textDocuments.find(document => document.uri.toString() === uri.toString());
+    return open === undefined ? new TextDecoder().decode(await vscode.workspace.fs.readFile(uri)) : open.getText();
+}
+
+/** One index per app, shared by every translation file of it. */
+export class AlSourceIndexes implements vscode.Disposable {
+    private readonly indexes = new Map<string, AlSourceIndex>();
+
+    /** The index of the app a file belongs to; undefined when it belongs to none. */
+    public async forFile(file: vscode.Uri): Promise<AlSourceIndex | undefined> {
+        const scope = await alScopeFor(file);
+        if (scope === undefined) {
+            return undefined;
+        }
+        const key = scope.folder.toString();
+        let index = this.indexes.get(key);
+        if (index === undefined) {
+            index = new AlSourceIndex(scope);
+            this.indexes.set(key, index);
+        }
+        return index;
+    }
+
+    public dispose(): void {
+        for (const index of this.indexes.values()) {
+            index.dispose();
+        }
+        this.indexes.clear();
+    }
+}
