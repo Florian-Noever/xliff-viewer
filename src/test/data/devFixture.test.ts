@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
@@ -8,14 +8,45 @@ import { parseXliff } from '../../extension/xliff/parser';
 import { DEV_FIXTURE_ROOTS, DEV_FIXTURE_SOURCE, isDevFixtureUnit } from '../../shared/devFixture';
 import { DEV_DOCUMENT } from '../../webview/fixtures/devDocument';
 import { XliffState } from '../../shared/state';
+import { generateCorpus } from '../fixtures/corpus';
 
 import type { XliffDocumentDto } from '../../shared/dto';
 
-const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
+const DEV_DOCUMENT_FILE = fileURLToPath(new URL('../../webview/fixtures/devDocument.ts', import.meta.url));
 
-/** Rebuilds the fixture straight from the corpus, keeping only the units it selects. */
+/** Everything above the document itself, byte for byte. */
+const DEV_DOCUMENT_HEADER = [
+    '/* eslint-disable -- generated file; see the note below */',
+    '/**',
+    ' * The document the Vite dev server renders when there is no extension host.',
+    ' *',
+    ' * **Generated — do not hand-edit.** It is a projection of the fixture file named by',
+    ' * `DEV_FIXTURE_SOURCE`, trimmed to the root objects listed in `src/shared/devFixture.ts`.',
+    ' * `src/test/data/devFixture.test.ts` rebuilds it from that file and fails if this one has',
+    ' * drifted, so the dev server always shows what the extension would send.',
+    ' *',
+    ' * Tree-shaken out of the production bundle: it is reached only under',
+    ' * `import.meta.env.DEV`, which Vite replaces with `false` when building.',
+    ' */',
+    '',
+    "import type { XliffDocumentDto } from '../../shared/dto';",
+    '',
+    'export const DEV_DOCUMENT: XliffDocumentDto = ',
+].join('\n');
+
+/**
+ * Rebuilds the fixture from the corpus, keeping only the units it selects.
+ *
+ * Reads the generator's output rather than the committed file — the same bytes, which
+ * `corpus.test.ts` holds the file to — so regenerating both in one run cannot read a stale
+ * file.
+ */
 function rebuild(): XliffDocumentDto {
-    const model = parseXliff(readFileSync(`${FIXTURES}/${DEV_FIXTURE_SOURCE}`, 'utf8'));
+    const source = generateCorpus().find(file => file.name === DEV_FIXTURE_SOURCE);
+    if (source === undefined) {
+        throw new Error(`The corpus has no ${DEV_FIXTURE_SOURCE}.`);
+    }
+    const model = parseXliff(source.text);
     const trimmed = {
         ...model,
         files: model.files.map(file => ({
@@ -36,8 +67,15 @@ function rebuild(): XliffDocumentDto {
     });
 }
 
+const updating = process.env.UPDATE_FIXTURES === '1';
+
+if (updating) {
+    writeFileSync(DEV_DOCUMENT_FILE, `${DEV_DOCUMENT_HEADER}${JSON.stringify(rebuild(), null, 4)};\n`, 'utf8');
+}
+
 describe('the dev-server fixture', () => {
-    it('is exactly what the corpus produces, not invented data', () => {
+    // Skipped while rewriting: the module under test was loaded before the rewrite.
+    it.skipIf(updating)('is exactly what the corpus produces, not invented data', () => {
         // Without this the fixture decays: someone tweaks it to make a screenshot look
         // right and the dev server stops showing what the extension actually sends.
         expect(DEV_DOCUMENT).toEqual(rebuild());
@@ -68,11 +106,11 @@ describe('the dev-server fixture', () => {
     });
 
     it('keeps the two objects that share a hash apart', () => {
-        // Table 2515662762 and Page 2515662762 are the same name under two object types:
+        // Table 1518856175 and Page 1518856175 are the same name under two object types:
         // the case the tree must not merge, visible on the dev server.
         const shared = DEV_DOCUMENT.files[0].tree
             .flatMap(group => group.children)
-            .filter(node => node.key.endsWith('2515662762'));
+            .filter(node => node.key.endsWith(' 1518856175'));
 
         expect(shared).toHaveLength(2);
         expect(shared.map(node => node.type).sort()).toEqual(['Page', 'Table']);

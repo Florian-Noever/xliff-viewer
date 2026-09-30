@@ -32,23 +32,23 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "name": "Tables (1)",
                     "children": [
                         {
-                            "key": "Table 2515662762",
+                            "key": "Table 1518856175",
                             "type": "Table",
                             "name": "Fabrikam Relay Setup",
                             "children": [
                                 {
-                                    "key": "Table 2515662762 - Property 532412421",
+                                    "key": "Table 1518856175 - Property 2879900210",
                                     "type": "Property",
                                     "name": "Caption",
                                     "children": []
                                 },
                                 {
-                                    "key": "Table 2515662762 - Field 1725856265",
+                                    "key": "Table 1518856175 - Field 3461834954",
                                     "type": "Field",
                                     "name": "Description",
                                     "children": [
                                         {
-                                            "key": "Table 2515662762 - Field 1725856265 - Property 532412421",
+                                            "key": "Table 1518856175 - Field 3461834954 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
@@ -56,12 +56,12 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Table 2515662762 - Field 2036185364",
+                                    "key": "Table 1518856175 - Field 3004954119",
                                     "type": "Field",
                                     "name": "Code",
                                     "children": [
                                         {
-                                            "key": "Table 2515662762 - Field 2036185364 - Property 532412421",
+                                            "key": "Table 1518856175 - Field 3004954119 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
@@ -69,12 +69,12 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Table 2515662762 - Field 6222351",
+                                    "key": "Table 1518856175 - Field 513339096",
                                     "type": "Field",
                                     "name": "Status",
                                     "children": [
                                         {
-                                            "key": "Table 2515662762 - Field 6222351 - Property 532412421",
+                                            "key": "Table 1518856175 - Field 513339096 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
@@ -82,12 +82,12 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Table 2515662762 - Field 1346013879",
+                                    "key": "Table 1518856175 - Field 3710982960",
                                     "type": "Field",
                                     "name": "Posting Date",
                                     "children": [
                                         {
-                                            "key": "Table 2515662762 - Field 1346013879 - Property 532412421",
+                                            "key": "Table 1518856175 - Field 3710982960 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
@@ -95,12 +95,12 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Table 2515662762 - Field 594630319",
+                                    "key": "Table 1518856175 - Field 486908828",
                                     "type": "Field",
                                     "name": "Document No.",
                                     "children": [
                                         {
-                                            "key": "Table 2515662762 - Field 594630319 - Property 532412421",
+                                            "key": "Table 1518856175 - Field 486908828 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
@@ -108,12 +108,12 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Table 2515662762 - Field 608998249",
+                                    "key": "Table 1518856175 - Field 636392376",
                                     "type": "Field",
                                     "name": "Amount",
                                     "children": [
                                         {
-                                            "key": "Table 2515662762 - Field 608998249 - Property 532412421",
+                                            "key": "Table 1518856175 - Field 636392376 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
@@ -121,12 +121,12 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Table 2515662762 - Field 737620728",
+                                    "key": "Table 1518856175 - Field 2704404533",
                                     "type": "Field",
                                     "name": "Quantity",
                                     "children": [
                                         {
-                                            "key": "Table 2515662762 - Field 737620728 - Property 532412421",
+                                            "key": "Table 1518856175 - Field 2704404533 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
@@ -134,12 +134,12 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Table 2515662762 - Field 1044930314",
+                                    "key": "Table 1518856175 - Field 2937233469",
                                     "type": "Field",
                                     "name": "Unit Price",
                                     "children": [
                                         {
-                                            "key": "Table 2515662762 - Field 1044930314 - Property 532412421",
+                                            "key": "Table 1518856175 - Field 2937233469 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
@@ -147,12 +147,12 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Table 2515662762 - Field 360195871",
+                                    "key": "Table 1518856175 - Field 2161572060",
                                     "type": "Field",
                                     "name": "Location Code",
                                     "children": [
                                         {
-                                            "key": "Table 2515662762 - Field 360195871 - Property 532412421",
+                                            "key": "Table 1518856175 - Field 2161572060 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
@@ -160,12 +160,12 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Table 2515662762 - Field 1209288119",
+                                    "key": "Table 1518856175 - Field 2814799924",
                                     "type": "Field",
                                     "name": "Bin Code",
                                     "children": [
                                         {
-                                            "key": "Table 2515662762 - Field 1209288119 - Property 532412421",
+                                            "key": "Table 1518856175 - Field 2814799924 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
@@ -173,12 +173,12 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Table 2515662762 - Field 2886938269",
+                                    "key": "Table 1518856175 - Field 568743302",
                                     "type": "Field",
                                     "name": "Item No.",
                                     "children": [
                                         {
-                                            "key": "Table 2515662762 - Field 2886938269 - Property 532412421",
+                                            "key": "Table 1518856175 - Field 568743302 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
@@ -196,29 +196,29 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "name": "Pages (1)",
                     "children": [
                         {
-                            "key": "Page 2515662762",
+                            "key": "Page 1518856175",
                             "type": "Page",
                             "name": "Fabrikam Relay Setup",
                             "children": [
                                 {
-                                    "key": "Page 2515662762 - Property 532412421",
+                                    "key": "Page 1518856175 - Property 2879900210",
                                     "type": "Property",
                                     "name": "Caption",
                                     "children": []
                                 },
                                 {
-                                    "key": "Page 2515662762 - Control 266367750",
+                                    "key": "Page 1518856175 - Control 2961552353",
                                     "type": "Control",
                                     "name": "Name",
                                     "children": [
                                         {
-                                            "key": "Page 2515662762 - Control 266367750 - Property 532412421",
+                                            "key": "Page 1518856175 - Control 2961552353 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "Page 2515662762 - Control 266367750 - Property 2904335024",
+                                            "key": "Page 1518856175 - Control 2961552353 - Property 1295455071",
                                             "type": "Property",
                                             "name": "ToolTip",
                                             "children": []
@@ -226,18 +226,18 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Page 2515662762 - Control 1725856265",
+                                    "key": "Page 1518856175 - Control 3461834954",
                                     "type": "Control",
                                     "name": "Description",
                                     "children": [
                                         {
-                                            "key": "Page 2515662762 - Control 1725856265 - Property 532412421",
+                                            "key": "Page 1518856175 - Control 3461834954 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "Page 2515662762 - Control 1725856265 - Property 2904335024",
+                                            "key": "Page 1518856175 - Control 3461834954 - Property 1295455071",
                                             "type": "Property",
                                             "name": "ToolTip",
                                             "children": []
@@ -245,18 +245,18 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Page 2515662762 - Control 2036185364",
+                                    "key": "Page 1518856175 - Control 3004954119",
                                     "type": "Control",
                                     "name": "Code",
                                     "children": [
                                         {
-                                            "key": "Page 2515662762 - Control 2036185364 - Property 532412421",
+                                            "key": "Page 1518856175 - Control 3004954119 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "Page 2515662762 - Control 2036185364 - Property 2904335024",
+                                            "key": "Page 1518856175 - Control 3004954119 - Property 1295455071",
                                             "type": "Property",
                                             "name": "ToolTip",
                                             "children": []
@@ -264,18 +264,18 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Page 2515662762 - Control 6222351",
+                                    "key": "Page 1518856175 - Control 513339096",
                                     "type": "Control",
                                     "name": "Status",
                                     "children": [
                                         {
-                                            "key": "Page 2515662762 - Control 6222351 - Property 532412421",
+                                            "key": "Page 1518856175 - Control 513339096 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "Page 2515662762 - Control 6222351 - Property 2904335024",
+                                            "key": "Page 1518856175 - Control 513339096 - Property 1295455071",
                                             "type": "Property",
                                             "name": "ToolTip",
                                             "children": []
@@ -283,18 +283,18 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Page 2515662762 - Control 2835827789",
+                                    "key": "Page 1518856175 - Control 3037438984",
                                     "type": "Control",
                                     "name": "PostingDate",
                                     "children": [
                                         {
-                                            "key": "Page 2515662762 - Control 2835827789 - Property 532412421",
+                                            "key": "Page 1518856175 - Control 3037438984 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "Page 2515662762 - Control 2835827789 - Property 2904335024",
+                                            "key": "Page 1518856175 - Control 3037438984 - Property 1295455071",
                                             "type": "Property",
                                             "name": "ToolTip",
                                             "children": []
@@ -302,18 +302,18 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Page 2515662762 - Control 2647798643",
+                                    "key": "Page 1518856175 - Control 3117834186",
                                     "type": "Control",
                                     "name": "DocumentNo",
                                     "children": [
                                         {
-                                            "key": "Page 2515662762 - Control 2647798643 - Property 532412421",
+                                            "key": "Page 1518856175 - Control 3117834186 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "Page 2515662762 - Control 2647798643 - Property 2904335024",
+                                            "key": "Page 1518856175 - Control 3117834186 - Property 1295455071",
                                             "type": "Property",
                                             "name": "ToolTip",
                                             "children": []
@@ -321,18 +321,18 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Page 2515662762 - Control 608998249",
+                                    "key": "Page 1518856175 - Control 636392376",
                                     "type": "Control",
                                     "name": "Amount",
                                     "children": [
                                         {
-                                            "key": "Page 2515662762 - Control 608998249 - Property 532412421",
+                                            "key": "Page 1518856175 - Control 636392376 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "Page 2515662762 - Control 608998249 - Property 2904335024",
+                                            "key": "Page 1518856175 - Control 636392376 - Property 1295455071",
                                             "type": "Property",
                                             "name": "ToolTip",
                                             "children": []
@@ -340,18 +340,18 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Page 2515662762 - Control 737620728",
+                                    "key": "Page 1518856175 - Control 2704404533",
                                     "type": "Control",
                                     "name": "Quantity",
                                     "children": [
                                         {
-                                            "key": "Page 2515662762 - Control 737620728 - Property 532412421",
+                                            "key": "Page 1518856175 - Control 2704404533 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "Page 2515662762 - Control 737620728 - Property 2904335024",
+                                            "key": "Page 1518856175 - Control 2704404533 - Property 1295455071",
                                             "type": "Property",
                                             "name": "ToolTip",
                                             "children": []
@@ -359,18 +359,18 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Page 2515662762 - Control 246381216",
+                                    "key": "Page 1518856175 - Control 3625705173",
                                     "type": "Control",
                                     "name": "UnitPrice",
                                     "children": [
                                         {
-                                            "key": "Page 2515662762 - Control 246381216 - Property 532412421",
+                                            "key": "Page 1518856175 - Control 3625705173 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "Page 2515662762 - Control 246381216 - Property 2904335024",
+                                            "key": "Page 1518856175 - Control 3625705173 - Property 1295455071",
                                             "type": "Property",
                                             "name": "ToolTip",
                                             "children": []
@@ -378,18 +378,18 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Page 2515662762 - Action 4284450207",
+                                    "key": "Page 1518856175 - Action 1484880472",
                                     "type": "Action",
                                     "name": "PrintLabels",
                                     "children": [
                                         {
-                                            "key": "Page 2515662762 - Action 4284450207 - Property 532412421",
+                                            "key": "Page 1518856175 - Action 1484880472 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "Page 2515662762 - Action 4284450207 - Property 2904335024",
+                                            "key": "Page 1518856175 - Action 1484880472 - Property 1295455071",
                                             "type": "Property",
                                             "name": "ToolTip",
                                             "children": []
@@ -397,18 +397,18 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Page 2515662762 - Action 1830722334",
+                                    "key": "Page 1518856175 - Action 4032263875",
                                     "type": "Action",
                                     "name": "Release",
                                     "children": [
                                         {
-                                            "key": "Page 2515662762 - Action 1830722334 - Property 532412421",
+                                            "key": "Page 1518856175 - Action 4032263875 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "Page 2515662762 - Action 1830722334 - Property 2904335024",
+                                            "key": "Page 1518856175 - Action 4032263875 - Property 1295455071",
                                             "type": "Property",
                                             "name": "ToolTip",
                                             "children": []
@@ -426,23 +426,23 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "name": "PageExtensions (2)",
                     "children": [
                         {
-                            "key": "PageExtension 90699051",
+                            "key": "PageExtension 465446794",
                             "type": "PageExtension",
                             "name": "Fabrikam Customer Card Ext.",
                             "children": [
                                 {
-                                    "key": "PageExtension 90699051 - Control 1642511898",
+                                    "key": "PageExtension 465446794 - Control 949215307",
                                     "type": "Control",
                                     "name": "No",
                                     "children": [
                                         {
-                                            "key": "PageExtension 90699051 - Control 1642511898 - Property 532412421",
+                                            "key": "PageExtension 465446794 - Control 949215307 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "PageExtension 90699051 - Control 1642511898 - Property 2904335024",
+                                            "key": "PageExtension 465446794 - Control 949215307 - Property 1295455071",
                                             "type": "Property",
                                             "name": "ToolTip",
                                             "children": []
@@ -450,18 +450,18 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "PageExtension 90699051 - Control 266367750",
+                                    "key": "PageExtension 465446794 - Control 2961552353",
                                     "type": "Control",
                                     "name": "Name",
                                     "children": [
                                         {
-                                            "key": "PageExtension 90699051 - Control 266367750 - Property 532412421",
+                                            "key": "PageExtension 465446794 - Control 2961552353 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "PageExtension 90699051 - Control 266367750 - Property 2904335024",
+                                            "key": "PageExtension 465446794 - Control 2961552353 - Property 1295455071",
                                             "type": "Property",
                                             "name": "ToolTip",
                                             "children": []
@@ -469,18 +469,18 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "PageExtension 90699051 - Control 1725856265",
+                                    "key": "PageExtension 465446794 - Control 3461834954",
                                     "type": "Control",
                                     "name": "Description",
                                     "children": [
                                         {
-                                            "key": "PageExtension 90699051 - Control 1725856265 - Property 532412421",
+                                            "key": "PageExtension 465446794 - Control 3461834954 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "PageExtension 90699051 - Control 1725856265 - Property 2904335024",
+                                            "key": "PageExtension 465446794 - Control 3461834954 - Property 1295455071",
                                             "type": "Property",
                                             "name": "ToolTip",
                                             "children": []
@@ -488,18 +488,18 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "PageExtension 90699051 - Control 2036185364",
+                                    "key": "PageExtension 465446794 - Control 3004954119",
                                     "type": "Control",
                                     "name": "Code",
                                     "children": [
                                         {
-                                            "key": "PageExtension 90699051 - Control 2036185364 - Property 532412421",
+                                            "key": "PageExtension 465446794 - Control 3004954119 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "PageExtension 90699051 - Control 2036185364 - Property 2904335024",
+                                            "key": "PageExtension 465446794 - Control 3004954119 - Property 1295455071",
                                             "type": "Property",
                                             "name": "ToolTip",
                                             "children": []
@@ -507,29 +507,29 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "PageExtension 90699051 - Action 4039610727",
+                                    "key": "PageExtension 465446794 - Action 2282416948",
                                     "type": "Action",
                                     "name": "Post",
                                     "children": [
                                         {
-                                            "key": "PageExtension 90699051 - Action 4039610727 - Property 532412421",
+                                            "key": "PageExtension 465446794 - Action 2282416948 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "PageExtension 90699051 - Action 4039610727 - Property 2904335024",
+                                            "key": "PageExtension 465446794 - Action 2282416948 - Property 1295455071",
                                             "type": "Property",
                                             "name": "ToolTip",
                                             "children": []
                                         },
                                         {
-                                            "key": "PageExtension 90699051 - Action 4039610727 - Method 1207008682",
+                                            "key": "PageExtension 465446794 - Action 2282416948 - Method 1377591017",
                                             "type": "Method",
                                             "name": "OnAction",
                                             "children": [
                                                 {
-                                                    "key": "PageExtension 90699051 - Action 4039610727 - Method 1207008682 - NamedType 3465996469",
+                                                    "key": "PageExtension 465446794 - Action 2282416948 - Method 1377591017 - NamedType 2141140146",
                                                     "type": "NamedType",
                                                     "name": "PostQst",
                                                     "children": []
@@ -541,23 +541,23 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                             ]
                         },
                         {
-                            "key": "PageExtension 1619057625",
+                            "key": "PageExtension 3965510573",
                             "type": "PageExtension",
-                            "name": "Fabrikam Customer Card Ext. 2",
+                            "name": "Fabrikam Customer Card FactBox Ext.",
                             "children": [
                                 {
-                                    "key": "PageExtension 1619057625 - Control 266367750",
+                                    "key": "PageExtension 3965510573 - Control 2961552353",
                                     "type": "Control",
                                     "name": "Name",
                                     "children": [
                                         {
-                                            "key": "PageExtension 1619057625 - Control 266367750 - Property 532412421",
+                                            "key": "PageExtension 3965510573 - Control 2961552353 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "PageExtension 1619057625 - Control 266367750 - Property 2904335024",
+                                            "key": "PageExtension 3965510573 - Control 2961552353 - Property 1295455071",
                                             "type": "Property",
                                             "name": "ToolTip",
                                             "children": []
@@ -565,18 +565,18 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "PageExtension 1619057625 - Control 1725856265",
+                                    "key": "PageExtension 3965510573 - Control 3461834954",
                                     "type": "Control",
                                     "name": "Description",
                                     "children": [
                                         {
-                                            "key": "PageExtension 1619057625 - Control 1725856265 - Property 532412421",
+                                            "key": "PageExtension 3965510573 - Control 3461834954 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "PageExtension 1619057625 - Control 1725856265 - Property 2904335024",
+                                            "key": "PageExtension 3965510573 - Control 3461834954 - Property 1295455071",
                                             "type": "Property",
                                             "name": "ToolTip",
                                             "children": []
@@ -584,18 +584,18 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "PageExtension 1619057625 - Control 2036185364",
+                                    "key": "PageExtension 3965510573 - Control 3004954119",
                                     "type": "Control",
                                     "name": "Code",
                                     "children": [
                                         {
-                                            "key": "PageExtension 1619057625 - Control 2036185364 - Property 532412421",
+                                            "key": "PageExtension 3965510573 - Control 3004954119 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "PageExtension 1619057625 - Control 2036185364 - Property 2904335024",
+                                            "key": "PageExtension 3965510573 - Control 3004954119 - Property 1295455071",
                                             "type": "Property",
                                             "name": "ToolTip",
                                             "children": []
@@ -603,18 +603,18 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "PageExtension 1619057625 - Control 6222351",
+                                    "key": "PageExtension 3965510573 - Control 513339096",
                                     "type": "Control",
                                     "name": "Status",
                                     "children": [
                                         {
-                                            "key": "PageExtension 1619057625 - Control 6222351 - Property 532412421",
+                                            "key": "PageExtension 3965510573 - Control 513339096 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "PageExtension 1619057625 - Control 6222351 - Property 2904335024",
+                                            "key": "PageExtension 3965510573 - Control 513339096 - Property 1295455071",
                                             "type": "Property",
                                             "name": "ToolTip",
                                             "children": []
@@ -622,29 +622,29 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "PageExtension 1619057625 - Action 4284450207",
+                                    "key": "PageExtension 3965510573 - Action 1484880472",
                                     "type": "Action",
                                     "name": "PrintLabels",
                                     "children": [
                                         {
-                                            "key": "PageExtension 1619057625 - Action 4284450207 - Property 532412421",
+                                            "key": "PageExtension 3965510573 - Action 1484880472 - Property 2879900210",
                                             "type": "Property",
                                             "name": "Caption",
                                             "children": []
                                         },
                                         {
-                                            "key": "PageExtension 1619057625 - Action 4284450207 - Property 2904335024",
+                                            "key": "PageExtension 3965510573 - Action 1484880472 - Property 1295455071",
                                             "type": "Property",
                                             "name": "ToolTip",
                                             "children": []
                                         },
                                         {
-                                            "key": "PageExtension 1619057625 - Action 4284450207 - Method 1207008682",
+                                            "key": "PageExtension 3965510573 - Action 1484880472 - Method 1377591017",
                                             "type": "Method",
                                             "name": "OnAction",
                                             "children": [
                                                 {
-                                                    "key": "PageExtension 1619057625 - Action 4284450207 - Method 1207008682 - NamedType 1173589659",
+                                                    "key": "PageExtension 3965510573 - Action 1484880472 - Method 1377591017 - NamedType 3187300792",
                                                     "type": "NamedType",
                                                     "name": "ReleasedMsg",
                                                     "children": []
@@ -664,41 +664,41 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "name": "Codeunits (1)",
                     "children": [
                         {
-                            "key": "Codeunit 4184348254",
+                            "key": "Codeunit 562451849",
                             "type": "Codeunit",
                             "name": "Fabrikam Label Mgt.",
                             "children": [
                                 {
-                                    "key": "Codeunit 4184348254 - Method 2070365322",
+                                    "key": "Codeunit 562451849 - Method 2574094843",
                                     "type": "Method",
                                     "name": "GetNoneText",
                                     "children": [
                                         {
-                                            "key": "Codeunit 4184348254 - Method 2070365322 - NamedType 1660893115",
+                                            "key": "Codeunit 562451849 - Method 2574094843 - NamedType 2945922260",
                                             "type": "NamedType",
                                             "name": "NoneLbl",
                                             "children": []
                                         },
                                         {
-                                            "key": "Codeunit 4184348254 - Method 2070365322 - NamedType 3465996469",
+                                            "key": "Codeunit 562451849 - Method 2574094843 - NamedType 2141140146",
                                             "type": "NamedType",
                                             "name": "PostQst",
                                             "children": []
                                         },
                                         {
-                                            "key": "Codeunit 4184348254 - Method 2070365322 - NamedType 1173589659",
+                                            "key": "Codeunit 562451849 - Method 2574094843 - NamedType 3187300792",
                                             "type": "NamedType",
                                             "name": "ReleasedMsg",
                                             "children": []
                                         },
                                         {
-                                            "key": "Codeunit 4184348254 - Method 2070365322 - NamedType 1422045454",
+                                            "key": "Codeunit 562451849 - Method 2574094843 - NamedType 4277721231",
                                             "type": "NamedType",
                                             "name": "BlankFieldErr",
                                             "children": []
                                         },
                                         {
-                                            "key": "Codeunit 4184348254 - Method 2070365322 - NamedType 947767955",
+                                            "key": "Codeunit 562451849 - Method 2574094843 - NamedType 2779639592",
                                             "type": "NamedType",
                                             "name": "ProgressMsg",
                                             "children": []
@@ -706,36 +706,36 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Codeunit 4184348254 - Method 774755807",
+                                    "key": "Codeunit 562451849 - Method 2474569616",
                                     "type": "Method",
                                     "name": "FormatRange",
                                     "children": [
                                         {
-                                            "key": "Codeunit 4184348254 - Method 774755807 - NamedType 2258608478",
+                                            "key": "Codeunit 562451849 - Method 2474569616 - NamedType 3204780081",
                                             "type": "NamedType",
                                             "name": "RangeTxt",
                                             "children": []
                                         },
                                         {
-                                            "key": "Codeunit 4184348254 - Method 774755807 - NamedType 2086379190",
+                                            "key": "Codeunit 562451849 - Method 2474569616 - NamedType 2364039393",
                                             "type": "NamedType",
                                             "name": "NothingToPostMsg",
                                             "children": []
                                         },
                                         {
-                                            "key": "Codeunit 4184348254 - Method 774755807 - NamedType 1757207888",
+                                            "key": "Codeunit 562451849 - Method 2474569616 - NamedType 1947391627",
                                             "type": "NamedType",
                                             "name": "AmountErr",
                                             "children": []
                                         },
                                         {
-                                            "key": "Codeunit 4184348254 - Method 774755807 - NamedType 3363961757",
+                                            "key": "Codeunit 562451849 - Method 2474569616 - NamedType 3431447212",
                                             "type": "NamedType",
                                             "name": "ContinueMsg",
                                             "children": []
                                         },
                                         {
-                                            "key": "Codeunit 4184348254 - Method 774755807 - NamedType 1174209694",
+                                            "key": "Codeunit 562451849 - Method 2474569616 - NamedType 4032538393",
                                             "type": "NamedType",
                                             "name": "TermsLbl",
                                             "children": []
@@ -743,36 +743,36 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Codeunit 4184348254 - Method 424637325",
+                                    "key": "Codeunit 562451849 - Method 4227372758",
                                     "type": "Method",
                                     "name": "CheckCarrier",
                                     "children": [
                                         {
-                                            "key": "Codeunit 4184348254 - Method 424637325 - NamedType 3997507320",
+                                            "key": "Codeunit 562451849 - Method 4227372758 - NamedType 2971401515",
                                             "type": "NamedType",
                                             "name": "NoServiceErr",
                                             "children": []
                                         },
                                         {
-                                            "key": "Codeunit 4184348254 - Method 424637325 - NamedType 760130590",
+                                            "key": "Codeunit 562451849 - Method 4227372758 - NamedType 2455756963",
                                             "type": "NamedType",
                                             "name": "PrintedMsg",
                                             "children": []
                                         },
                                         {
-                                            "key": "Codeunit 4184348254 - Method 424637325 - NamedType 2507712333",
+                                            "key": "Codeunit 562451849 - Method 4227372758 - NamedType 987543024",
                                             "type": "NamedType",
                                             "name": "RouteBlockedErr",
                                             "children": []
                                         },
                                         {
-                                            "key": "Codeunit 4184348254 - Method 424637325 - NamedType 3965151784",
+                                            "key": "Codeunit 562451849 - Method 4227372758 - NamedType 2082848491",
                                             "type": "NamedType",
                                             "name": "UnreachableErr",
                                             "children": []
                                         },
                                         {
-                                            "key": "Codeunit 4184348254 - Method 424637325 - NamedType 2928068614",
+                                            "key": "Codeunit 562451849 - Method 4227372758 - NamedType 2367821945",
                                             "type": "NamedType",
                                             "name": "DeleteQst",
                                             "children": []
@@ -780,36 +780,36 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Codeunit 4184348254 - Method 2921939501",
+                                    "key": "Codeunit 562451849 - Method 2459202162",
                                     "type": "Method",
                                     "name": "GetRelayUrl",
                                     "children": [
                                         {
-                                            "key": "Codeunit 4184348254 - Method 2921939501 - NamedType 2277100897",
+                                            "key": "Codeunit 562451849 - Method 2459202162 - NamedType 1847808964",
                                             "type": "NamedType",
                                             "name": "RelayUrlTxt",
                                             "children": []
                                         },
                                         {
-                                            "key": "Codeunit 4184348254 - Method 2921939501 - NamedType 1181928992",
+                                            "key": "Codeunit 562451849 - Method 2459202162 - NamedType 1460637839",
                                             "type": "NamedType",
                                             "name": "WeightErr",
                                             "children": []
                                         },
                                         {
-                                            "key": "Codeunit 4184348254 - Method 2921939501 - NamedType 3068111671",
+                                            "key": "Codeunit 562451849 - Method 2459202162 - NamedType 1649695370",
                                             "type": "NamedType",
                                             "name": "SyncDoneMsg",
                                             "children": []
                                         },
                                         {
-                                            "key": "Codeunit 4184348254 - Method 2921939501 - NamedType 2433232136",
+                                            "key": "Codeunit 562451849 - Method 2459202162 - NamedType 1367593959",
                                             "type": "NamedType",
                                             "name": "SelectCarrierMsg",
                                             "children": []
                                         },
                                         {
-                                            "key": "Codeunit 4184348254 - Method 2921939501 - NamedType 2842952226",
+                                            "key": "Codeunit 562451849 - Method 2459202162 - NamedType 3061372855",
                                             "type": "NamedType",
                                             "name": "PlannedMsg",
                                             "children": []
@@ -817,36 +817,36 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Codeunit 4184348254 - Method 4247756800",
+                                    "key": "Codeunit 562451849 - Method 3820981559",
                                     "type": "Method",
                                     "name": "PrintBatch",
                                     "children": [
                                         {
-                                            "key": "Codeunit 4184348254 - Method 4247756800 - NamedType 1422045454",
+                                            "key": "Codeunit 562451849 - Method 3820981559 - NamedType 4277721231",
                                             "type": "NamedType",
                                             "name": "BlankFieldErr",
                                             "children": []
                                         },
                                         {
-                                            "key": "Codeunit 4184348254 - Method 4247756800 - NamedType 947767955",
+                                            "key": "Codeunit 562451849 - Method 3820981559 - NamedType 2779639592",
                                             "type": "NamedType",
                                             "name": "ProgressMsg",
                                             "children": []
                                         },
                                         {
-                                            "key": "Codeunit 4184348254 - Method 4247756800 - NamedType 2086379190",
+                                            "key": "Codeunit 562451849 - Method 3820981559 - NamedType 2364039393",
                                             "type": "NamedType",
                                             "name": "NothingToPostMsg",
                                             "children": []
                                         },
                                         {
-                                            "key": "Codeunit 4184348254 - Method 4247756800 - NamedType 1757207888",
+                                            "key": "Codeunit 562451849 - Method 3820981559 - NamedType 1947391627",
                                             "type": "NamedType",
                                             "name": "AmountErr",
                                             "children": []
                                         },
                                         {
-                                            "key": "Codeunit 4184348254 - Method 4247756800 - NamedType 3363961757",
+                                            "key": "Codeunit 562451849 - Method 3820981559 - NamedType 3431447212",
                                             "type": "NamedType",
                                             "name": "ContinueMsg",
                                             "children": []
@@ -854,36 +854,36 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                                     ]
                                 },
                                 {
-                                    "key": "Codeunit 4184348254 - Method 2915492949",
+                                    "key": "Codeunit 562451849 - Method 3785214030",
                                     "type": "Method",
                                     "name": "ResetCounters",
                                     "children": [
                                         {
-                                            "key": "Codeunit 4184348254 - Method 2915492949 - NamedType 2507712333",
+                                            "key": "Codeunit 562451849 - Method 3785214030 - NamedType 987543024",
                                             "type": "NamedType",
                                             "name": "RouteBlockedErr",
                                             "children": []
                                         },
                                         {
-                                            "key": "Codeunit 4184348254 - Method 2915492949 - NamedType 3965151784",
+                                            "key": "Codeunit 562451849 - Method 3785214030 - NamedType 2082848491",
                                             "type": "NamedType",
                                             "name": "UnreachableErr",
                                             "children": []
                                         },
                                         {
-                                            "key": "Codeunit 4184348254 - Method 2915492949 - NamedType 2928068614",
+                                            "key": "Codeunit 562451849 - Method 3785214030 - NamedType 2367821945",
                                             "type": "NamedType",
                                             "name": "DeleteQst",
                                             "children": []
                                         },
                                         {
-                                            "key": "Codeunit 4184348254 - Method 2915492949 - NamedType 1181928992",
+                                            "key": "Codeunit 562451849 - Method 3785214030 - NamedType 1460637839",
                                             "type": "NamedType",
                                             "name": "WeightErr",
                                             "children": []
                                         },
                                         {
-                                            "key": "Codeunit 4184348254 - Method 2915492949 - NamedType 3068111671",
+                                            "key": "Codeunit 562451849 - Method 3785214030 - NamedType 1649695370",
                                             "type": "NamedType",
                                             "name": "SyncDoneMsg",
                                             "children": []
@@ -898,7 +898,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
             ],
             "units": [
                 {
-                    "id": "Table 2515662762 - Property 532412421",
+                    "id": "Table 1518856175 - Property 2879900210",
                     "source": "Fabrikam Relay Setup",
                     "target": "Fabrikam Relay Einrichtung",
                     "state": "translated",
@@ -913,7 +913,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Fabrikam Relay Einrichtung"
                 },
                 {
-                    "id": "Table 2515662762 - Field 1725856265 - Property 532412421",
+                    "id": "Table 1518856175 - Field 3461834954 - Property 2879900210",
                     "source": "Description",
                     "target": "Beschreibung",
                     "state": "translated",
@@ -927,7 +927,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     ]
                 },
                 {
-                    "id": "Table 2515662762 - Field 2036185364 - Property 532412421",
+                    "id": "Table 1518856175 - Field 3004954119 - Property 2879900210",
                     "source": "Code",
                     "target": "Code",
                     "state": "translated",
@@ -942,7 +942,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Code"
                 },
                 {
-                    "id": "Table 2515662762 - Field 6222351 - Property 532412421",
+                    "id": "Table 1518856175 - Field 513339096 - Property 2879900210",
                     "source": "Status",
                     "target": "Status",
                     "state": "translated",
@@ -957,7 +957,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Status"
                 },
                 {
-                    "id": "Table 2515662762 - Field 1346013879 - Property 532412421",
+                    "id": "Table 1518856175 - Field 3710982960 - Property 2879900210",
                     "source": "Posting Date",
                     "target": "Buchungsdatum",
                     "state": "translated",
@@ -972,7 +972,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Buchungsdatum"
                 },
                 {
-                    "id": "Table 2515662762 - Field 594630319 - Property 532412421",
+                    "id": "Table 1518856175 - Field 486908828 - Property 2879900210",
                     "source": "Document No.",
                     "target": "",
                     "state": "empty",
@@ -988,7 +988,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Belegnr."
                 },
                 {
-                    "id": "Table 2515662762 - Field 608998249 - Property 532412421",
+                    "id": "Table 1518856175 - Field 636392376 - Property 2879900210",
                     "source": "Amount",
                     "target": "Betrag",
                     "state": "translated",
@@ -1003,7 +1003,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Betrag"
                 },
                 {
-                    "id": "Table 2515662762 - Field 737620728 - Property 532412421",
+                    "id": "Table 1518856175 - Field 2704404533 - Property 2879900210",
                     "source": "Quantity",
                     "target": "Menge",
                     "state": "translated",
@@ -1018,7 +1018,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Menge"
                 },
                 {
-                    "id": "Table 2515662762 - Field 1044930314 - Property 532412421",
+                    "id": "Table 1518856175 - Field 2937233469 - Property 2879900210",
                     "source": "Unit Price",
                     "target": "VK-Preis",
                     "state": "translated",
@@ -1033,7 +1033,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "VK-Preis"
                 },
                 {
-                    "id": "Table 2515662762 - Field 360195871 - Property 532412421",
+                    "id": "Table 1518856175 - Field 2161572060 - Property 2879900210",
                     "source": "Location Code",
                     "target": "Lagerortcode",
                     "state": "translated",
@@ -1048,7 +1048,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Lagerortcode"
                 },
                 {
-                    "id": "Table 2515662762 - Field 1209288119 - Property 532412421",
+                    "id": "Table 1518856175 - Field 2814799924 - Property 2879900210",
                     "source": "Bin Code",
                     "target": "Lagerplatzcode",
                     "state": "translated",
@@ -1062,7 +1062,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     ]
                 },
                 {
-                    "id": "Table 2515662762 - Field 2886938269 - Property 532412421",
+                    "id": "Table 1518856175 - Field 568743302 - Property 2879900210",
                     "source": "Item No.",
                     "target": "Artikelnr.",
                     "state": "translated",
@@ -1077,7 +1077,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Artikelnr."
                 },
                 {
-                    "id": "Page 2515662762 - Property 532412421",
+                    "id": "Page 1518856175 - Property 2879900210",
                     "source": "Fabrikam Relay Setup",
                     "target": "Fabrikam Relay Einrichtung",
                     "state": "translated",
@@ -1092,7 +1092,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Fabrikam Relay Einrichtung"
                 },
                 {
-                    "id": "Page 2515662762 - Control 266367750 - Property 532412421",
+                    "id": "Page 1518856175 - Control 2961552353 - Property 2879900210",
                     "source": "Name",
                     "target": "Name",
                     "state": "translated",
@@ -1107,7 +1107,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Name"
                 },
                 {
-                    "id": "Page 2515662762 - Control 266367750 - Property 2904335024",
+                    "id": "Page 1518856175 - Control 2961552353 - Property 1295455071",
                     "source": "Specifies the value of the Name field.",
                     "target": "Gibt den Wert des Felds Name an.",
                     "state": "translated",
@@ -1122,7 +1122,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Gibt den Wert des Felds Name an."
                 },
                 {
-                    "id": "Page 2515662762 - Control 1725856265 - Property 532412421",
+                    "id": "Page 1518856175 - Control 3461834954 - Property 2879900210",
                     "source": "Description",
                     "target": "",
                     "state": "empty",
@@ -1138,7 +1138,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Beschreibung"
                 },
                 {
-                    "id": "Page 2515662762 - Control 1725856265 - Property 2904335024",
+                    "id": "Page 1518856175 - Control 3461834954 - Property 1295455071",
                     "source": "Specifies the value of the Description field.",
                     "target": "Gibt den Wert des Felds Beschreibung an.",
                     "state": "translated",
@@ -1152,7 +1152,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     ]
                 },
                 {
-                    "id": "Page 2515662762 - Control 2036185364 - Property 532412421",
+                    "id": "Page 1518856175 - Control 3004954119 - Property 2879900210",
                     "source": "Code",
                     "target": "Code",
                     "state": "translated",
@@ -1167,7 +1167,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Code"
                 },
                 {
-                    "id": "Page 2515662762 - Control 2036185364 - Property 2904335024",
+                    "id": "Page 1518856175 - Control 3004954119 - Property 1295455071",
                     "source": "Specifies the value of the Code field.",
                     "target": "Gibt den Wert des Felds Code an.",
                     "state": "translated",
@@ -1182,7 +1182,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Gibt den Wert des Felds Code an."
                 },
                 {
-                    "id": "Page 2515662762 - Control 6222351 - Property 532412421",
+                    "id": "Page 1518856175 - Control 513339096 - Property 2879900210",
                     "source": "Status",
                     "target": "Status",
                     "state": "translated",
@@ -1197,7 +1197,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Status"
                 },
                 {
-                    "id": "Page 2515662762 - Control 6222351 - Property 2904335024",
+                    "id": "Page 1518856175 - Control 513339096 - Property 1295455071",
                     "source": "Specifies the value of the Status field.",
                     "target": "Gibt den Wert des Felds Status an.",
                     "state": "translated",
@@ -1212,7 +1212,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Gibt den Wert des Felds Status an."
                 },
                 {
-                    "id": "Page 2515662762 - Control 2835827789 - Property 532412421",
+                    "id": "Page 1518856175 - Control 3037438984 - Property 2879900210",
                     "source": "Posting Date",
                     "target": "Buchungsdatum",
                     "state": "translated",
@@ -1227,7 +1227,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Buchungsdatum"
                 },
                 {
-                    "id": "Page 2515662762 - Control 2835827789 - Property 2904335024",
+                    "id": "Page 1518856175 - Control 3037438984 - Property 1295455071",
                     "source": "Specifies the value of the Posting Date field.",
                     "target": "",
                     "state": "empty",
@@ -1243,7 +1243,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Gibt den Wert des Felds Buchungsdatum an."
                 },
                 {
-                    "id": "Page 2515662762 - Control 2647798643 - Property 532412421",
+                    "id": "Page 1518856175 - Control 3117834186 - Property 2879900210",
                     "source": "Document No.",
                     "target": "Belegnr.",
                     "state": "translated",
@@ -1258,7 +1258,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Belegnr."
                 },
                 {
-                    "id": "Page 2515662762 - Control 2647798643 - Property 2904335024",
+                    "id": "Page 1518856175 - Control 3117834186 - Property 1295455071",
                     "source": "Specifies the value of the Document No. field.",
                     "target": "Gibt den Wert des Felds Belegnr. an.",
                     "state": "translated",
@@ -1273,7 +1273,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Gibt den Wert des Felds Belegnr. an."
                 },
                 {
-                    "id": "Page 2515662762 - Control 608998249 - Property 532412421",
+                    "id": "Page 1518856175 - Control 636392376 - Property 2879900210",
                     "source": "Amount",
                     "target": "Betrag",
                     "state": "translated",
@@ -1287,7 +1287,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     ]
                 },
                 {
-                    "id": "Page 2515662762 - Control 608998249 - Property 2904335024",
+                    "id": "Page 1518856175 - Control 636392376 - Property 1295455071",
                     "source": "Specifies the value of the Amount field.",
                     "target": "Gibt den Wert des Felds Betrag an.",
                     "state": "translated",
@@ -1302,7 +1302,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Gibt den Wert des Felds Betrag an."
                 },
                 {
-                    "id": "Page 2515662762 - Control 737620728 - Property 532412421",
+                    "id": "Page 1518856175 - Control 2704404533 - Property 2879900210",
                     "source": "Quantity",
                     "target": "Menge",
                     "state": "translated",
@@ -1317,7 +1317,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Menge"
                 },
                 {
-                    "id": "Page 2515662762 - Control 737620728 - Property 2904335024",
+                    "id": "Page 1518856175 - Control 2704404533 - Property 1295455071",
                     "source": "Specifies the value of the Quantity field.",
                     "target": "Gibt den Wert des Felds Menge an.",
                     "state": "translated",
@@ -1332,7 +1332,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Gibt den Wert des Felds Menge an."
                 },
                 {
-                    "id": "Page 2515662762 - Control 246381216 - Property 532412421",
+                    "id": "Page 1518856175 - Control 3625705173 - Property 2879900210",
                     "source": "",
                     "target": "",
                     "state": "empty",
@@ -1347,7 +1347,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     ]
                 },
                 {
-                    "id": "Page 2515662762 - Control 246381216 - Property 2904335024",
+                    "id": "Page 1518856175 - Control 3625705173 - Property 1295455071",
                     "source": "Specifies the value of the Unit Price field.",
                     "target": "Gibt den Wert des Felds VK-Preis an.",
                     "state": "translated",
@@ -1362,7 +1362,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Gibt den Wert des Felds VK-Preis an."
                 },
                 {
-                    "id": "Page 2515662762 - Action 4284450207 - Property 532412421",
+                    "id": "Page 1518856175 - Action 1484880472 - Property 2879900210",
                     "source": "Print Labels",
                     "target": "Etiketten drucken",
                     "state": "translated",
@@ -1377,7 +1377,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Etiketten drucken"
                 },
                 {
-                    "id": "Page 2515662762 - Action 4284450207 - Property 2904335024",
+                    "id": "Page 1518856175 - Action 1484880472 - Property 1295455071",
                     "source": "Prints labels for the selected lines.",
                     "target": "Druckt Etiketten für die ausgewählten Zeilen.",
                     "state": "translated",
@@ -1392,7 +1392,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Druckt Etiketten für die ausgewählten Zeilen."
                 },
                 {
-                    "id": "Page 2515662762 - Action 1830722334 - Property 532412421",
+                    "id": "Page 1518856175 - Action 4032263875 - Property 2879900210",
                     "source": "Release",
                     "target": "Freigeben",
                     "state": "translated",
@@ -1407,7 +1407,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Freigeben"
                 },
                 {
-                    "id": "Page 2515662762 - Action 1830722334 - Property 2904335024",
+                    "id": "Page 1518856175 - Action 4032263875 - Property 1295455071",
                     "source": "Releases the document for the next stage.",
                     "target": "Gibt den Beleg für die nächste Stufe frei.",
                     "state": "translated",
@@ -1421,13 +1421,13 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     ]
                 },
                 {
-                    "id": "PageExtension 90699051 - Control 1642511898 - Property 532412421",
+                    "id": "PageExtension 465446794 - Control 949215307 - Property 2879900210",
                     "source": "No.",
                     "target": "Nr.",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 2343612539",
+                    "alObjectTarget": "Page 523354100",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1437,13 +1437,13 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Nr."
                 },
                 {
-                    "id": "PageExtension 90699051 - Control 1642511898 - Property 2904335024",
+                    "id": "PageExtension 465446794 - Control 949215307 - Property 1295455071",
                     "source": "Specifies the value of the No. field.",
                     "target": "Gibt den Wert des Felds Nr. an.",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 2343612539",
+                    "alObjectTarget": "Page 523354100",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1453,14 +1453,14 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Gibt den Wert des Felds Nr. an."
                 },
                 {
-                    "id": "PageExtension 90699051 - Control 266367750 - Property 532412421",
+                    "id": "PageExtension 465446794 - Control 2961552353 - Property 2879900210",
                     "source": "Name",
                     "target": "",
                     "state": "empty",
                     "declaredState": "needs-translation",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 2343612539",
+                    "alObjectTarget": "Page 523354100",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1470,13 +1470,13 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Name"
                 },
                 {
-                    "id": "PageExtension 90699051 - Control 266367750 - Property 2904335024",
+                    "id": "PageExtension 465446794 - Control 2961552353 - Property 1295455071",
                     "source": "Specifies the value of the Name field.",
                     "target": "Gibt den Wert des Felds Name an.",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 2343612539",
+                    "alObjectTarget": "Page 523354100",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1486,13 +1486,13 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Gibt den Wert des Felds Name an."
                 },
                 {
-                    "id": "PageExtension 90699051 - Control 1725856265 - Property 532412421",
+                    "id": "PageExtension 465446794 - Control 3461834954 - Property 2879900210",
                     "source": "Description",
                     "target": "Beschreibung",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 2343612539",
+                    "alObjectTarget": "Page 523354100",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1502,13 +1502,13 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Beschreibung"
                 },
                 {
-                    "id": "PageExtension 90699051 - Control 1725856265 - Property 2904335024",
+                    "id": "PageExtension 465446794 - Control 3461834954 - Property 1295455071",
                     "source": "Specifies the value of the Description field.",
                     "target": "Gibt den Wert des Felds Beschreibung an.",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 2343612539",
+                    "alObjectTarget": "Page 523354100",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1518,13 +1518,13 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Gibt den Wert des Felds Beschreibung an."
                 },
                 {
-                    "id": "PageExtension 90699051 - Control 2036185364 - Property 532412421",
+                    "id": "PageExtension 465446794 - Control 3004954119 - Property 2879900210",
                     "source": "Code",
                     "target": "Code",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 2343612539",
+                    "alObjectTarget": "Page 523354100",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1534,13 +1534,13 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Code"
                 },
                 {
-                    "id": "PageExtension 90699051 - Control 2036185364 - Property 2904335024",
+                    "id": "PageExtension 465446794 - Control 3004954119 - Property 1295455071",
                     "source": "Specifies the value of the Code field.",
                     "target": "Gibt den Wert des Felds Code an.",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 2343612539",
+                    "alObjectTarget": "Page 523354100",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1549,13 +1549,13 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     ]
                 },
                 {
-                    "id": "PageExtension 90699051 - Action 4039610727 - Property 532412421",
+                    "id": "PageExtension 465446794 - Action 2282416948 - Property 2879900210",
                     "source": "Post",
                     "target": "Buchen",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 2343612539",
+                    "alObjectTarget": "Page 523354100",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1565,14 +1565,14 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Buchen"
                 },
                 {
-                    "id": "PageExtension 90699051 - Action 4039610727 - Property 2904335024",
+                    "id": "PageExtension 465446794 - Action 2282416948 - Property 1295455071",
                     "source": "Posts the selected documents.",
                     "target": "",
                     "state": "empty",
                     "declaredState": "needs-translation",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 2343612539",
+                    "alObjectTarget": "Page 523354100",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1582,13 +1582,13 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Bucht die ausgewählten Belege."
                 },
                 {
-                    "id": "PageExtension 90699051 - Action 4039610727 - Method 1207008682 - NamedType 3465996469",
+                    "id": "PageExtension 465446794 - Action 2282416948 - Method 1377591017 - NamedType 2141140146",
                     "source": "Do you want to post %1 %2?",
                     "target": "Möchten Sie %1 %2 buchen?",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 2343612539",
+                    "alObjectTarget": "PageExtension 465446794",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1598,13 +1598,13 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "%1 = Record, %2 = Value"
                 },
                 {
-                    "id": "PageExtension 1619057625 - Control 266367750 - Property 532412421",
+                    "id": "PageExtension 3965510573 - Control 2961552353 - Property 2879900210",
                     "source": "Name",
                     "target": "Name",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 2343612539",
+                    "alObjectTarget": "Page 4178289031",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1614,13 +1614,13 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Name"
                 },
                 {
-                    "id": "PageExtension 1619057625 - Control 266367750 - Property 2904335024",
+                    "id": "PageExtension 3965510573 - Control 2961552353 - Property 1295455071",
                     "source": "Specifies the value of the Name field.",
                     "target": "Gibt den Wert des Felds Name an.",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 2343612539",
+                    "alObjectTarget": "Page 4178289031",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1630,13 +1630,13 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Gibt den Wert des Felds Name an."
                 },
                 {
-                    "id": "PageExtension 1619057625 - Control 1725856265 - Property 532412421",
+                    "id": "PageExtension 3965510573 - Control 3461834954 - Property 2879900210",
                     "source": "Description",
                     "target": "Beschreibung",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 2343612539",
+                    "alObjectTarget": "Page 4178289031",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1646,13 +1646,13 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Beschreibung"
                 },
                 {
-                    "id": "PageExtension 1619057625 - Control 1725856265 - Property 2904335024",
+                    "id": "PageExtension 3965510573 - Control 3461834954 - Property 1295455071",
                     "source": "Specifies the value of the Description field.",
                     "target": "Gibt den Wert des Felds Beschreibung an.",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 2343612539",
+                    "alObjectTarget": "Page 4178289031",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1662,13 +1662,13 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Gibt den Wert des Felds Beschreibung an."
                 },
                 {
-                    "id": "PageExtension 1619057625 - Control 2036185364 - Property 532412421",
+                    "id": "PageExtension 3965510573 - Control 3004954119 - Property 2879900210",
                     "source": "Code",
                     "target": "Code",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 2343612539",
+                    "alObjectTarget": "Page 4178289031",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1678,14 +1678,14 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Code"
                 },
                 {
-                    "id": "PageExtension 1619057625 - Control 2036185364 - Property 2904335024",
+                    "id": "PageExtension 3965510573 - Control 3004954119 - Property 1295455071",
                     "source": "Specifies the value of the Code field.",
                     "target": "",
                     "state": "empty",
                     "declaredState": "needs-translation",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 2343612539",
+                    "alObjectTarget": "Page 4178289031",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1694,13 +1694,13 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     ]
                 },
                 {
-                    "id": "PageExtension 1619057625 - Control 6222351 - Property 532412421",
+                    "id": "PageExtension 3965510573 - Control 513339096 - Property 2879900210",
                     "source": "Status",
                     "target": "Status",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 2343612539",
+                    "alObjectTarget": "Page 4178289031",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1710,13 +1710,13 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Status"
                 },
                 {
-                    "id": "PageExtension 1619057625 - Control 6222351 - Property 2904335024",
+                    "id": "PageExtension 3965510573 - Control 513339096 - Property 1295455071",
                     "source": "Specifies the value of the Status field.",
                     "target": "Gibt den Wert des Felds Status an.",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 2343612539",
+                    "alObjectTarget": "Page 4178289031",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1726,13 +1726,13 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Gibt den Wert des Felds Status an."
                 },
                 {
-                    "id": "PageExtension 1619057625 - Action 4284450207 - Property 532412421",
+                    "id": "PageExtension 3965510573 - Action 1484880472 - Property 2879900210",
                     "source": "Print Labels",
                     "target": "Etiketten drucken",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 2343612539",
+                    "alObjectTarget": "Page 4178289031",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1742,13 +1742,13 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Etiketten drucken"
                 },
                 {
-                    "id": "PageExtension 1619057625 - Action 4284450207 - Property 2904335024",
+                    "id": "PageExtension 3965510573 - Action 1484880472 - Property 1295455071",
                     "source": "Prints labels for the selected lines.",
                     "target": "Druckt Etiketten für die ausgewählten Zeilen.",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 2343612539",
+                    "alObjectTarget": "Page 4178289031",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1758,13 +1758,13 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Druckt Etiketten für die ausgewählten Zeilen."
                 },
                 {
-                    "id": "PageExtension 1619057625 - Action 4284450207 - Method 1207008682 - NamedType 1173589659",
+                    "id": "PageExtension 3965510573 - Action 1484880472 - Method 1377591017 - NamedType 3187300792",
                     "source": "%1 %2 has been released.",
                     "target": "%1 %2 wurde freigegeben.",
                     "state": "translated",
                     "translate": true,
                     "sizeUnit": "char",
-                    "alObjectTarget": "Page 2343612539",
+                    "alObjectTarget": "PageExtension 3965510573",
                     "notes": [
                         {
                             "from": "Developer",
@@ -1774,7 +1774,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "%1 = Record, %2 = Value"
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 2070365322 - NamedType 1660893115",
+                    "id": "Codeunit 562451849 - Method 2574094843 - NamedType 2945922260",
                     "source": "none",
                     "target": "keine",
                     "state": "translated",
@@ -1790,7 +1790,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "keine|en-US=none"
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 2070365322 - NamedType 3465996469",
+                    "id": "Codeunit 562451849 - Method 2574094843 - NamedType 2141140146",
                     "source": "Do you want to post %1 %2?",
                     "target": "Möchten Sie %1 %2 buchen?",
                     "state": "translated",
@@ -1805,7 +1805,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "%1 = Record, %2 = Value"
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 2070365322 - NamedType 1173589659",
+                    "id": "Codeunit 562451849 - Method 2574094843 - NamedType 3187300792",
                     "source": "%1 %2 has been released.",
                     "target": "%1 %2 wurde freigegeben.",
                     "state": "translated",
@@ -1820,7 +1820,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "%1 = Record, %2 = Value"
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 2070365322 - NamedType 1422045454",
+                    "id": "Codeunit 562451849 - Method 2574094843 - NamedType 4277721231",
                     "source": "The %1 field must not be blank.",
                     "target": "Das Feld %1 darf nicht leer sein.",
                     "state": "translated",
@@ -1835,7 +1835,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "%1 = Record"
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 2070365322 - NamedType 947767955",
+                    "id": "Codeunit 562451849 - Method 2574094843 - NamedType 2779639592",
                     "source": "Processing %1 of %2...",
                     "target": "Verarbeite %1 von %2...",
                     "state": "translated",
@@ -1850,7 +1850,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "%1 = Record, %2 = Value"
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 774755807 - NamedType 2258608478",
+                    "id": "Codeunit 562451849 - Method 2474569616 - NamedType 3204780081",
                     "source": "From %1 %2 to %3 %4",
                     "target": "Von %1 %2 bis %3 %4 (%1 %2 bis %3 %4)",
                     "state": "translated",
@@ -1865,7 +1865,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "%1 = Record, %2 = Value, %3 = Limit, %4 = Error"
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 774755807 - NamedType 2086379190",
+                    "id": "Codeunit 562451849 - Method 2474569616 - NamedType 2364039393",
                     "source": "Nothing to post.",
                     "target": "",
                     "state": "empty",
@@ -1881,7 +1881,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Es gibt nichts zu buchen."
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 774755807 - NamedType 1757207888",
+                    "id": "Codeunit 562451849 - Method 2474569616 - NamedType 1947391627",
                     "source": "The amount must be > 0.",
                     "target": "Der Betrag muss > 0 sein.",
                     "state": "translated",
@@ -1896,7 +1896,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Der Betrag muss > 0 sein."
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 774755807 - NamedType 3363961757",
+                    "id": "Codeunit 562451849 - Method 2474569616 - NamedType 3431447212",
                     "source": "Press <Enter> to continue.",
                     "target": "Drücken Sie <Eingabe>, um fortzufahren.",
                     "state": "translated",
@@ -1911,7 +1911,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Drücken Sie <Eingabe>, um fortzufahren."
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 774755807 - NamedType 1174209694",
+                    "id": "Codeunit 562451849 - Method 2474569616 - NamedType 4032538393",
                     "source": "Terms & Conditions",
                     "target": "Geschäftsbedingungen & Konditionen",
                     "state": "translated",
@@ -1926,7 +1926,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Geschäftsbedingungen & Konditionen"
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 424637325 - NamedType 3997507320",
+                    "id": "Codeunit 562451849 - Method 4227372758 - NamedType 2971401515",
                     "source": "Carrier %1 has no service %2.",
                     "target": "Spediteur %1 hat keinen Service.",
                     "state": "translated",
@@ -1941,7 +1941,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "%1 = Record, %2 = Value"
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 424637325 - NamedType 760130590",
+                    "id": "Codeunit 562451849 - Method 4227372758 - NamedType 2455756963",
                     "source": "%1 labels were printed.",
                     "target": "%1 Etiketten wurden gedruckt.",
                     "state": "translated",
@@ -1956,7 +1956,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "%1 = Record"
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 424637325 - NamedType 2507712333",
+                    "id": "Codeunit 562451849 - Method 4227372758 - NamedType 987543024",
                     "source": "Route %1 is blocked.",
                     "target": "Route %1 ist gesperrt.",
                     "state": "translated",
@@ -1971,7 +1971,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "%1 = Record"
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 424637325 - NamedType 3965151784",
+                    "id": "Codeunit 562451849 - Method 4227372758 - NamedType 2082848491",
                     "source": "Could not reach %1. Error: %2",
                     "target": "",
                     "state": "empty",
@@ -1987,7 +1987,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "%1 = Record, %2 = Value"
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 424637325 - NamedType 2928068614",
+                    "id": "Codeunit 562451849 - Method 4227372758 - NamedType 2367821945",
                     "source": "Do you want to delete %1?",
                     "target": "Möchten Sie %1 löschen?",
                     "state": "translated",
@@ -2002,7 +2002,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "%1 = Record"
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 2921939501 - NamedType 2277100897",
+                    "id": "Codeunit 562451849 - Method 2459202162 - NamedType 1847808964",
                     "source": "https://relay.fabrikam.example/api?sv=2024-05-04&sig=Q29udG9zbw",
                     "target": "https://relay.fabrikam.example/api?sv=2024-05-04&sig=Q29udG9zbw",
                     "state": "translated",
@@ -2017,7 +2017,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "https://relay.fabrikam.example/api?sv=2024-05-04&sig=Q29udG9zbw"
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 2921939501 - NamedType 1181928992",
+                    "id": "Codeunit 562451849 - Method 2459202162 - NamedType 1460637839",
                     "source": "Weight %1 exceeds the limit of %2.",
                     "target": "Gewicht %1 überschreitet das Limit von %2.",
                     "state": "translated",
@@ -2032,7 +2032,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "%1 = Record, %2 = Value"
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 2921939501 - NamedType 3068111671",
+                    "id": "Codeunit 562451849 - Method 2459202162 - NamedType 1649695370",
                     "source": "Synchronization finished.",
                     "target": "Synchronisierung abgeschlossen.",
                     "state": "translated",
@@ -2047,7 +2047,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Synchronisierung abgeschlossen."
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 2921939501 - NamedType 2433232136",
+                    "id": "Codeunit 562451849 - Method 2459202162 - NamedType 1367593959",
                     "source": "Select a carrier first.",
                     "target": "Wählen Sie zuerst einen Spediteur aus.",
                     "state": "translated",
@@ -2062,7 +2062,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Wählen Sie zuerst einen Spediteur aus."
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 2921939501 - NamedType 2842952226",
+                    "id": "Codeunit 562451849 - Method 2459202162 - NamedType 3061372855",
                     "source": "%1 of %2 stops were planned.",
                     "target": "%1 von %2 Stopps wurden geplant.",
                     "state": "translated",
@@ -2077,7 +2077,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "%1 = Record, %2 = Value"
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 4247756800 - NamedType 1422045454",
+                    "id": "Codeunit 562451849 - Method 3820981559 - NamedType 4277721231",
                     "source": "The %1 field must not be blank.",
                     "target": "",
                     "state": "empty",
@@ -2093,7 +2093,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "%1 = Record"
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 4247756800 - NamedType 947767955",
+                    "id": "Codeunit 562451849 - Method 3820981559 - NamedType 2779639592",
                     "source": "Processing %1 of %2...",
                     "target": "Verarbeite %1 von %2...",
                     "state": "translated",
@@ -2108,7 +2108,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "%1 = Record, %2 = Value"
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 4247756800 - NamedType 2086379190",
+                    "id": "Codeunit 562451849 - Method 3820981559 - NamedType 2364039393",
                     "source": "Nothing to post.",
                     "target": "Es gibt nichts zu buchen.",
                     "state": "translated",
@@ -2123,7 +2123,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Es gibt nichts zu buchen."
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 4247756800 - NamedType 1757207888",
+                    "id": "Codeunit 562451849 - Method 3820981559 - NamedType 1947391627",
                     "source": "The amount must be > 0.",
                     "target": "Der Betrag muss > 0 sein.",
                     "state": "translated",
@@ -2137,7 +2137,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     ]
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 4247756800 - NamedType 3363961757",
+                    "id": "Codeunit 562451849 - Method 3820981559 - NamedType 3431447212",
                     "source": "Press <Enter> to continue.",
                     "target": "Drücken Sie <Eingabe>, um fortzufahren.",
                     "state": "translated",
@@ -2152,7 +2152,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "Drücken Sie <Eingabe>, um fortzufahren."
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 2915492949 - NamedType 2507712333",
+                    "id": "Codeunit 562451849 - Method 3785214030 - NamedType 987543024",
                     "source": "Route %1 is blocked.",
                     "target": "Route %1 ist gesperrt.",
                     "state": "translated",
@@ -2167,7 +2167,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "%1 = Record"
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 2915492949 - NamedType 3965151784",
+                    "id": "Codeunit 562451849 - Method 3785214030 - NamedType 2082848491",
                     "source": "Could not reach %1. Error: %2",
                     "target": "%1 konnte nicht erreicht werden. Fehler: %2",
                     "state": "translated",
@@ -2182,7 +2182,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "%1 = Record, %2 = Value"
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 2915492949 - NamedType 2928068614",
+                    "id": "Codeunit 562451849 - Method 3785214030 - NamedType 2367821945",
                     "source": "Do you want to delete %1?",
                     "target": "",
                     "state": "empty",
@@ -2198,7 +2198,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "%1 = Record"
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 2915492949 - NamedType 1181928992",
+                    "id": "Codeunit 562451849 - Method 3785214030 - NamedType 1460637839",
                     "source": "Weight %1 exceeds the limit of %2.",
                     "target": "Gewicht %1 überschreitet das Limit von %2.",
                     "state": "translated",
@@ -2213,7 +2213,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                     "developerHint": "%1 = Record, %2 = Value"
                 },
                 {
-                    "id": "Codeunit 4184348254 - Method 2915492949 - NamedType 3068111671",
+                    "id": "Codeunit 562451849 - Method 3785214030 - NamedType 1649695370",
                     "source": "Synchronization finished.",
                     "target": "Synchronisierung abgeschlossen.",
                     "state": "translated",

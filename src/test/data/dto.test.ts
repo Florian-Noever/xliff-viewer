@@ -117,10 +117,10 @@ describe('units', () => {
 
     it('projects a unit in full', () => {
         const [file] = project('Fabrikam Base.de-DE.xlf').files;
-        const unit = unitById(file, 'Codeunit 4184348254 - Method 2070365322 - NamedType 1660893115');
+        const unit = unitById(file, 'Codeunit 562451849 - Method 2574094843 - NamedType 2945922260');
 
         expect(unit).toEqual({
-            id: 'Codeunit 4184348254 - Method 2070365322 - NamedType 1660893115',
+            id: 'Codeunit 562451849 - Method 2574094843 - NamedType 2945922260',
             source: 'none',
             target: 'keine',
             state: XliffState.translated,

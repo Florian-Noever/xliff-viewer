@@ -1,4 +1,5 @@
-import { generatorNote, namesFromNote, SEGMENT_SEPARATOR } from './names';
+import { generatorNote, namesFromNote } from './names';
+import { SEGMENT_SEPARATOR, splitUnitId } from '../../shared/unitPath';
 
 import type { AlNode, XliffTransUnit } from '../../shared/model';
 
@@ -33,7 +34,7 @@ export function buildAlTree(units: Iterable<XliffTransUnit>): AlNode[] {
     const byKey = new Map<string, MutableAlNode>();
 
     for (const unit of units) {
-        const parts = unit.id.split(SEGMENT_SEPARATOR);
+        const parts = splitUnitId(unit.id);
         const names = namesFromNote(unit.id, generatorNote(unit));
 
         let key = '';
@@ -77,10 +78,10 @@ export function buildAlTree(units: Iterable<XliffTransUnit>): AlNode[] {
 }
 
 /**
- * The namespace a group key lives in.
+ * The prefix of a group key.
  *
- * A trans-unit id is ` - `-separated `<SymbolType> <hash>` segments, so it cannot contain a
- * colon and no group key can equal one: a node carries a unit exactly when its key **is**
+ * Every segment of an AL-shaped id is `<SymbolType> <value>`, so every id prefix contains a
+ * space and no group key can equal one: a node carries a unit exactly when its key **is**
  * that unit's id, and a group carries none.
  */
 export const OBJECT_TYPE_GROUP_PREFIX = 'type:';
