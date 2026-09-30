@@ -81,6 +81,7 @@ const {
     loading,
     error,
     settings,
+    alSourceAvailable,
     activeFile,
     activeFileIndex,
     unitsById,
@@ -97,6 +98,8 @@ provideUnitActions({
         const resolved = document.value?.baseFile;
         return resolved === undefined || resolved === null ? resolved : resolved.fileName;
     },
+    alSourceAvailable: () => alSourceAvailable.value,
+    isBaseFile: () => document.value?.isBaseFile === true,
     // A state the reader chose for this unit outranks `stateOnEdit` on a later edit to its
     // text, so it travels with the message rather than being remembered twice.
     updateTarget: (unitId, value) => updateTarget(unitId, value, edit.chosenState(unitId)),

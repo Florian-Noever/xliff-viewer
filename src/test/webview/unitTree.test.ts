@@ -15,6 +15,7 @@ import type { AlNodeDto, TransUnitDto, XliffFileDto } from '../../shared/dto';
 import type { WebviewSettings } from '../../shared/settings';
 import type { StateSummary } from '../../shared/state';
 import type { TreeView } from '../../webview/composables/useTreeFlatten';
+import type { UnitActions } from '../../webview/unitActions';
 
 /** `roots` objects, each with `members` children. */
 function bigTree(roots: number, members: number): { tree: AlNodeDto[]; units: Map<string, TransUnitDto> } {
@@ -32,7 +33,14 @@ function bigTree(roots: number, members: number): { tree: AlNodeDto[]; units: Ma
 }
 
 /** The card asks for these through `provide`; no tree test is about what they do. */
-const NO_ACTIONS = { open: () => { }, baseFileName: () => undefined, updateTarget: () => { }, updateState: () => { } };
+const NO_ACTIONS: UnitActions = {
+    open: () => { },
+    baseFileName: () => undefined,
+    alSourceAvailable: () => undefined,
+    isBaseFile: () => false,
+    updateTarget: () => { },
+    updateState: () => { },
+};
 
 function mountTree(
     tree: AlNodeDto[],
@@ -415,24 +423,36 @@ describe('the one navigation action', () => {
         siblings: 1,
     });
 
-    function mountRow(baseFileName: string | null | undefined, over: Partial<TransUnitDto> = {}) {
+    /** What the host has said so far; each is undefined until it answers. */
+    interface Answers {
+        readonly baseFile?: string | null;
+        readonly alSource?: boolean;
+        readonly isBaseFile?: boolean;
+    }
+
+    function mountRow(answers: Answers, over: Partial<TransUnitDto> = {}) {
         const calls: { target: string; unitId: string }[] = [];
+        const alSource = ref(answers.alSource);
         const wrapper = mount(TreeRow, {
             props: { row: row(over), focused: false, settings: DEFAULT_WEBVIEW_SETTINGS },
             global: {
                 provide: {
                     [UNIT_ACTIONS_KEY as symbol]: {
                         open: (target: string, unitId: string) => calls.push({ target, unitId }),
-                        baseFileName: () => baseFileName,
+                        baseFileName: () => answers.baseFile,
+                        alSourceAvailable: () => alSource.value,
+                        isBaseFile: () => answers.isBaseFile === true,
                     },
                 },
             },
         });
-        return { wrapper, calls, button: wrapper.get('.action') };
+        return { wrapper, calls, alSource, button: wrapper.get('.action') };
     }
 
+    const BASE_ONLY: Answers = { baseFile: 'App.g.xlf', alSource: false };
+
     it('offers exactly one action, and the state sits on the box', () => {
-        const { wrapper, button } = mountRow('App.g.xlf');
+        const { wrapper, button } = mountRow(BASE_ONLY);
 
         expect(wrapper.findAll('.action')).toHaveLength(1);
         expect(button.text()).toBe('Go to source');
@@ -442,43 +462,78 @@ describe('the one navigation action', () => {
     });
 
     it('asks the host for the unit\'s source, naming the unit', async () => {
-        const { calls, button } = mountRow('App.g.xlf');
+        const { calls, button } = mountRow(BASE_ONLY);
 
         await button.trigger('click');
 
         expect(calls).toEqual([{ target: 'source', unitId: 'Table 0 - Property 0' }]);
     });
 
-    it('is disabled while resolution has not run, and says so', () => {
-        const { button } = mountRow(undefined);
+    it('is disabled while the host has answered nothing, and says so', () => {
+        const { button } = mountRow({});
 
         expect(button.attributes('disabled')).toBeDefined();
-        expect(button.attributes('title')).toBe('Looking for the base file…');
+        expect(button.attributes('title')).toBe('Looking for the AL source…');
     });
 
-    it('gives a different reason once resolution ran and found nothing', () => {
-        const { button } = mountRow(null);
-
-        expect(button.attributes('disabled')).toBeDefined();
-        expect(button.attributes('title')).toBe('No base file was found for this translation file.');
-    });
-
-    it('names the base file it would open', () => {
-        const { button } = mountRow('App.g.xlf');
+    it('offers the AL source when the app has some, and names the base file behind it', () => {
+        const { button } = mountRow({ baseFile: 'App.g.xlf', alSource: true });
 
         expect(button.attributes('disabled')).toBeUndefined();
-        expect(button.attributes('title')).toContain('App.g.xlf');
+        expect(button.attributes('title')).toBe('Open the AL source that declares this unit, or show the unit in App.g.xlf if none does.');
     });
 
-    it('is disabled for a unit the base file no longer has, and says why', () => {
-        const { button } = mountRow('App.g.xlf', { orphaned: true });
+    it('offers the base file when the app has no AL source', () => {
+        const { button } = mountRow(BASE_ONLY);
+
+        expect(button.attributes('disabled')).toBeUndefined();
+        expect(button.attributes('title')).toBe('No AL source was found for this app, so this shows the unit in App.g.xlf.');
+    });
+
+    it('is disabled when there is neither, and says so', () => {
+        const { button } = mountRow({ baseFile: null, alSource: false });
 
         expect(button.attributes('disabled')).toBeDefined();
-        expect(button.attributes('title')).toContain('does not contain this unit any more');
+        expect(button.attributes('title')).toBe('No AL source and no base file were found for this translation file.');
+    });
+
+    it('is disabled for a unit the base file no longer has, when there is no AL source, and says why', () => {
+        const { button } = mountRow(BASE_ONLY, { orphaned: true });
+
+        expect(button.attributes('disabled')).toBeDefined();
+        expect(button.attributes('title')).toBe('No AL source was found for this app, and App.g.xlf does not contain this unit any more.');
+    });
+
+    it('still offers the AL source for a unit the base file no longer has', () => {
+        // The source can be ahead of a base file the compiler has not rewritten yet.
+        const { button } = mountRow({ baseFile: 'App.g.xlf', alSource: true }, { orphaned: true });
+
+        expect(button.attributes('disabled')).toBeUndefined();
+        expect(button.attributes('title')).toBe('Open the AL source that declares this unit.');
+    });
+
+    it('in a base file, falls back to the file itself, AL source or not', () => {
+        const withAl = mountRow({ baseFile: null, alSource: true, isBaseFile: true }).button;
+        const without = mountRow({ baseFile: null, alSource: false, isBaseFile: true }).button;
+
+        expect(withAl.attributes('disabled')).toBeUndefined();
+        expect(withAl.attributes('title')).toBe('Open the AL source that declares this unit, or show the unit in this file if none does.');
+        expect(without.attributes('disabled')).toBeUndefined();
+        expect(without.attributes('title')).toBe('No AL source was found for this app, so this shows the unit in this file.');
+    });
+
+    it('changes its title when the host\'s answer about AL source arrives', async () => {
+        const { alSource, button } = mountRow({ baseFile: 'App.g.xlf' });
+        expect(button.attributes('title')).toContain('Open the AL source');
+
+        alSource.value = false;
+        await nextTick();
+
+        expect(button.attributes('title')).toBe('No AL source was found for this app, so this shows the unit in App.g.xlf.');
     });
 
     it('stays enabled for a merely source-changed unit — it is still there', () => {
-        const { button } = mountRow('App.g.xlf', { baseSource: 'Customer (renamed)' });
+        const { button } = mountRow(BASE_ONLY, { baseSource: 'Customer (renamed)' });
 
         expect(button.attributes('disabled')).toBeUndefined();
     });
@@ -499,6 +554,8 @@ describe('the one navigation action', () => {
                     [UNIT_ACTIONS_KEY as symbol]: {
                         open: (target: string, unitId: string) => calls.push({ target, unitId }),
                         baseFileName: () => 'App.g.xlf',
+                        alSourceAvailable: () => true,
+                        isBaseFile: () => false,
                     },
                 },
             },

@@ -188,7 +188,7 @@ describe('goToSource, when no AL source declares the unit', () => {
         const outcome = await goToSource(request(orphan), alSources, baseFiles);
 
         expect(outcome).toBe(SourceOutcome.nowhere);
-        expect(flushInfoMessages()).toEqual([`The AL source for this unit was not found, and the base file does not contain "${orphan}".`]);
+        expect(flushInfoMessages()).toEqual([`The AL source for this unit was not found, and the base file does not contain "${orphan}". It may have been removed since this translation was made.`]);
     });
 
     it('shows a base file\'s unit in the base file itself', async () => {

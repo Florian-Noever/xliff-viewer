@@ -51,8 +51,8 @@
             <button
                 type="button"
                 class="action"
-                :disabled="baseFile === null || baseFile === undefined || row.unit.orphaned === true"
-                :title="sourceTitle"
+                :disabled="!source.enabled"
+                :title="source.title"
                 @click.stop="actions.open(NavigationTarget.source, row.unit.id)"
             >
                 Go to source
@@ -68,6 +68,7 @@ import { computed } from 'vue';
 import ProgressBar from './ProgressBar.vue';
 import UnitCard from './UnitCard.vue';
 import { Icon } from '../icons';
+import { sourceAction } from '../sourceAction';
 import { useUnitActions } from '../unitActions';
 
 import { NavigationTarget } from '@shared/messages';
@@ -154,25 +155,14 @@ const hintTitle = computed(() => {
 });
 
 const actions = useUnitActions();
-const baseFile = computed(() => actions.baseFileName());
 
-/**
- * Why the one action is off, rather than only that it is. "Not yet", "there is
- * none" and "the base file dropped this unit" are three different answers and the reader
- * deserves to know which.
- */
-const sourceTitle = computed(() => {
-    if (baseFile.value === undefined) {
-        return 'Looking for the base file…';
-    }
-    if (baseFile.value === null) {
-        return 'No base file was found for this translation file.';
-    }
-    if (props.row.unit?.orphaned === true) {
-        return `${baseFile.value} does not contain this unit any more.`;
-    }
-    return `Show ${props.row.key} in ${baseFile.value}`;
-});
+/** Whether the one action can go anywhere, and the title that says where — or why not. */
+const source = computed(() => sourceAction({
+    alSource: actions.alSourceAvailable(),
+    baseFile: actions.baseFileName(),
+    isBaseFile: actions.isBaseFile(),
+    orphaned: props.row.unit?.orphaned === true,
+}));
 
 /**
  * A drifted unit is worth seeing without opening anything. Informational only — it

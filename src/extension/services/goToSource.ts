@@ -95,7 +95,7 @@ async function openFallback(request: SourceRequest, baseFiles: BaseFileResolver 
 
     void vscode.window.showInformationMessage(base === undefined
         ? 'The AL source for this unit was not found, and no base file was found for this translation file.'
-        : `The AL source for this unit was not found, and the base file does not contain "${request.unitId}".`);
+        : `The AL source for this unit was not found, and the base file does not contain "${request.unitId}". It may have been removed since this translation was made.`);
     return SourceOutcome.nowhere;
 }
 
