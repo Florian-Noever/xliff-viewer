@@ -13,8 +13,8 @@
         "url": "https://github.com/Florian-Noever/xliff-viewer/issues"
     },
     "homepage": "https://github.com/Florian-Noever/xliff-viewer",
-    "qna": "github",
-    "version": "1.0.0",
+    "qna": "https://github.com/Florian-Noever/xliff-viewer/issues",
+    "version": "1.0.1",
     "engines": {
         "vscode": "^1.134.0"
     },
