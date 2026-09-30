@@ -23,6 +23,7 @@ export const ExtensionMessageType = {
     setDocument: 'setDocument',
     patchUnits: 'patchUnits',
     baseFile: 'baseFile',
+    alSource: 'alSource',
     settings: 'settings',
     error: 'error',
 } as const;
@@ -37,6 +38,11 @@ export interface PatchUnitsPayload {
     readonly units: readonly TransUnitDto[];
 }
 
+/** Whether the translation file's app has AL source to go to — a fact about the workspace, not the document. */
+export interface AlSourcePayload {
+    readonly available: boolean;
+}
+
 export interface ErrorPayload {
     readonly message: string;
     readonly line?: number;
@@ -49,6 +55,7 @@ export type ExtensionMessage =
     | { readonly type: typeof ExtensionMessageType.setDocument; readonly payload: XliffDocumentDto }
     | { readonly type: typeof ExtensionMessageType.patchUnits; readonly payload: PatchUnitsPayload }
     | { readonly type: typeof ExtensionMessageType.baseFile; readonly payload: BaseFileDto | null }
+    | { readonly type: typeof ExtensionMessageType.alSource; readonly payload: AlSourcePayload }
     | { readonly type: typeof ExtensionMessageType.settings; readonly payload: WebviewSettings }
     | { readonly type: typeof ExtensionMessageType.error; readonly payload: ErrorPayload };
 
@@ -65,11 +72,12 @@ export const WebviewMessageType = {
 export type WebviewMessageType = typeof WebviewMessageType[keyof typeof WebviewMessageType];
 
 /**
- * Where navigation goes: `base` is the unit's "Go to source", and `text` is the
- * document-level escape hatch the error pane offers when nothing parses.
+ * Where navigation goes: `source` is the unit's "Go to source" — the AL declaration, else
+ * the unit in the base file, as the host decides — and `text` is the document-level escape
+ * hatch the error pane offers when nothing parses.
  */
 export const NavigationTarget = {
-    base: 'base',
+    source: 'source',
     text: 'text',
 } as const;
 export type NavigationTarget = typeof NavigationTarget[keyof typeof NavigationTarget];

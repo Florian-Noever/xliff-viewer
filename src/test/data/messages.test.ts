@@ -18,7 +18,7 @@ const VALID: readonly WebviewMessage[] = [
     { type: WebviewMessageType.updateTarget, fileIndex: 0, unitId: 'Table 1 - Property 2', value: 'Kunde' },
     { type: WebviewMessageType.updateTarget, fileIndex: 1, unitId: 'x', value: '', state: XliffState.signedOff },
     { type: WebviewMessageType.updateState, fileIndex: 0, unitId: 'x', state: XliffState.translated },
-    { type: WebviewMessageType.openSource, fileIndex: 0, unitId: 'x', target: NavigationTarget.base },
+    { type: WebviewMessageType.openSource, fileIndex: 0, unitId: 'x', target: NavigationTarget.source },
     { type: WebviewMessageType.openSource, target: NavigationTarget.text },
     { type: WebviewMessageType.copyToClipboard, text: 'anything' },
     { type: WebviewMessageType.notify, kind: NotifyKind.warning, message: 'careful' },
@@ -113,9 +113,9 @@ describe('the constants that cross the boundary', () => {
         }
     });
 
-    it('names exactly the base and text navigation targets', () => {
+    it('names exactly the source and text navigation targets', () => {
         // The unit's own "Go to source", and the document-level escape hatch the error
         // pane offers when nothing parses.
-        expect(Object.values(NavigationTarget).sort()).toEqual(['base', 'text']);
+        expect(Object.values(NavigationTarget).sort()).toEqual(['source', 'text']);
     });
 });

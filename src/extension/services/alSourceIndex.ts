@@ -138,8 +138,13 @@ export class AlSourceIndex implements vscode.Disposable {
     /** Lists the files again, and forgets every entry whose file changed or went. */
     private async refresh(): Promise<void> {
         this.lastRefresh = Date.now();
+        const before = new Set((await this.files()).map(uri => uri.toString()));
         this.listing = undefined;
         const current = new Set((await this.files()).map(uri => uri.toString()));
+        // Where no watcher fires, this is the only way to learn that files came or went.
+        if (current.size !== before.size || [...current].some(key => !before.has(key))) {
+            this.changed.fire();
+        }
 
         await Promise.all([...this.entries].map(async ([key, entry]) => {
             if (!current.has(key)) {

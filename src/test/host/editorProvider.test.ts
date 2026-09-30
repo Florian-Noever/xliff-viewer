@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { XliffEditorProvider } from '../../extension/editor/xliffEditorProvider';
 import { Logger } from '../../extension/services/logger';
+import { alNameHash } from '../../extension/xliff/alNameHash';
 import { ExtensionMessageType, WebviewMessageType } from '../../shared/messages';
 import {
     customEditorRegistrations,
@@ -11,12 +12,16 @@ import {
     fireConfigurationChange,
     fireFileWatcher,
     fireTextDocumentChange,
+    flushExecutedCommands,
     flushInfoMessages,
     flushLogs,
+    flushProgressTitles,
+    flushShownDocuments,
     removeVirtualFile,
     resetMocks,
     setConfigOverride,
     setVirtualFile,
+    setWorkspaceRoot,
 } from '../__mocks__/vscode';
 
 import type { TransUnitDto } from '../../shared/dto';
@@ -235,13 +240,16 @@ describe('what survives a re-parse', () => {
 
         harness.send({ type: WebviewMessageType.ready });
         await settle();
-        expect(harness.posted.map(message => message.type)).toEqual([
+        // Whether the app has AL source is answered once per `ready`, in its own time.
+        const answered = harness.posted.map(message => message.type);
+        expect(answered.filter(type => type !== ExtensionMessageType.alSource)).toEqual([
             ExtensionMessageType.settings,
             ExtensionMessageType.loading,
             ExtensionMessageType.setDocument,
             ExtensionMessageType.baseFile,
             ExtensionMessageType.patchUnits,
         ]);
+        expect(answered.filter(type => type === ExtensionMessageType.alSource)).toHaveLength(1);
 
         harness.posted.length = 0;
         document.setText(language('Customer edited'));
@@ -251,6 +259,7 @@ describe('what survives a re-parse', () => {
 
         // Without this the panel keeps a document whose baseFile is gone and whose
         // orphaned/source-changed markers were dropped with the payload they rode on.
+        // Whether there is AL source is not about the document, so it is not said again.
         expect(harness.posted.map(message => message.type)).toEqual([
             ExtensionMessageType.setDocument,
             ExtensionMessageType.baseFile,
@@ -346,8 +355,31 @@ describe('what survives a re-parse', () => {
     });
 });
 
-describe('navigation that cannot go anywhere still says so', () => {
-    it('refuses to look for a base file\'s own base file', async () => {
+describe('Go to source, from the panel', () => {
+    const CUSTOMER = 'table 50100 Customer\n{\n    Caption = \'Customer\';\n}\n';
+    const CAPTION = `Table ${alNameHash('Customer')} - Property ${alNameHash('Caption')}`;
+
+    async function openInApp(unitId = 'Table 1 - Property 2'): Promise<Harness> {
+        setWorkspaceRoot('/w');
+        setVirtualFile('/w/app.json', '{}');
+        const harness = await openEditor(new FakeTextDocument('/w/Translations/App.de-DE.xlf', FIXTURE.replace('Table 1 - Property 2', unitId)));
+        harness.send({ type: WebviewMessageType.ready });
+        await settle();
+        return harness;
+    }
+
+    it('opens the AL declaration of the unit, in the app the file belongs to', async () => {
+        setVirtualFile('/w/src/Customer.Table.al', CUSTOMER);
+        const harness = await openInApp(CAPTION);
+
+        harness.send({ type: WebviewMessageType.openSource, target: 'source', fileIndex: 0, unitId: CAPTION });
+        await settle();
+
+        expect(flushShownDocuments().map(shown => shown.path)).toEqual(['/w/src/Customer.Table.al']);
+        expect(flushInfoMessages()).toEqual([]);
+    });
+
+    it('shows a base file\'s unit in the file itself when no AL source declares it', async () => {
         const document = new FakeTextDocument('/w/App.g.xlf', `<?xml version="1.0" encoding="utf-8"?>
 <xliff version="1.2"><file source-language="en-US" target-language="en-US" original="App"><body>
   <trans-unit id="Table 1 - Property 2"><source>Customer</source></trans-unit>
@@ -358,13 +390,14 @@ describe('navigation that cannot go anywhere still says so', () => {
 
         harness.send({
             type: WebviewMessageType.openSource,
-            target: 'base',
+            target: 'source',
             fileIndex: 0,
             unitId: 'Table 1 - Property 2',
         });
         await settle();
 
-        expect(flushInfoMessages()).toEqual(['This file is the base file.']);
+        expect(flushExecutedCommands()).toEqual([{ command: 'vscode.openWith', args: [document.uri, 'default'] }]);
+        expect(flushProgressTitles()).toContain('The AL source for this unit was not found, so it is shown in this file instead.');
     });
 
     it('names the missing unit rather than opening nothing quietly', async () => {
@@ -372,10 +405,37 @@ describe('navigation that cannot go anywhere still says so', () => {
         harness.send({ type: WebviewMessageType.ready });
         await settle();
 
-        harness.send({ type: WebviewMessageType.openSource, target: 'base' });
+        harness.send({ type: WebviewMessageType.openSource, target: 'source' });
         await settle();
 
-        expect(flushInfoMessages()).toEqual(['Choose a unit to show in the base file.']);
+        expect(flushInfoMessages()).toEqual(['Choose a unit to go to its source.']);
+    });
+
+    it('tells the panel whether the app has AL source, and again when that changes', async () => {
+        const harness = await openInApp();
+        const told = (): unknown[] => harness.posted
+            .filter(message => message.type === ExtensionMessageType.alSource)
+            .map(message => message.payload);
+
+        expect(told()).toEqual([{ available: false }]);
+
+        setVirtualFile('/w/src/Customer.Table.al', CUSTOMER);
+        fireFileWatcher('created', '/w/src/Customer.Table.al');
+        await settle();
+
+        expect(told()).toEqual([{ available: false }, { available: true }]);
+    });
+
+    it('stops listening for AL files once the panel is gone', async () => {
+        const harness = await openInApp();
+
+        harness.dispose();
+        harness.posted.length = 0;
+        setVirtualFile('/w/src/Customer.Table.al', CUSTOMER);
+        fireFileWatcher('created', '/w/src/Customer.Table.al');
+        await settle();
+
+        expect(harness.posted).toEqual([]);
     });
 });
 

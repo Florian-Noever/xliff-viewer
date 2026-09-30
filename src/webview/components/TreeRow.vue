@@ -53,7 +53,7 @@
                 class="action"
                 :disabled="baseFile === null || baseFile === undefined || row.unit.orphaned === true"
                 :title="sourceTitle"
-                @click.stop="actions.open(NavigationTarget.base, row.key)"
+                @click.stop="actions.open(NavigationTarget.source, row.unit.id)"
             >
                 Go to source
             </button>

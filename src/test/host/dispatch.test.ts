@@ -92,11 +92,11 @@ describe('routing', () => {
         const { calls, context } = fixture();
 
         await dispatch({ type: WebviewMessageType.updateState, fileIndex: 0, unitId: 'x', state: XliffState.needsAdaptation }, context);
-        await dispatch({ type: WebviewMessageType.openSource, fileIndex: 0, unitId: 'x', target: NavigationTarget.base }, context);
+        await dispatch({ type: WebviewMessageType.openSource, fileIndex: 0, unitId: 'x', target: NavigationTarget.source }, context);
 
         expect(calls.map(call => call.what)).toEqual(['updateState', 'openSource']);
         expect(calls[0].rest).toBe(XliffState.needsAdaptation);
-        expect(calls[1].rest).toBe(NavigationTarget.base);
+        expect(calls[1].rest).toBe(NavigationTarget.source);
         expect(calls[1].unit).toEqual({ fileIndex: 0, unitId: 'x' });
     });
 
