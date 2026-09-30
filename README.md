@@ -121,38 +121,25 @@ Not finding one is a normal state, not an error: the viewer works fully without 
 
 ---
 
-## 🚦 Status
+## 📦 Installing
 
-Not published, and buildable into an installable VSIX today: `npm run package` writes one at the repository root.
+Install **XLIFF Viewer** from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=Florian-Noever.xliff-viewer) or from [Open VSX](https://open-vsx.org/extension/Florian-Noever/xliff-viewer), or from the command line:
 
-| Phase | State |
-| --- | --- |
-| Toolchain | ✅ complete |
-| Data layer — parse, validate, serialise, byte-identical round trip | ✅ complete |
-| Read-only GUI | ✅ complete |
-| Search, filter, base file, navigation | ✅ complete |
-| Edit mode | ✅ complete |
-| Validation hints | ✅ complete |
-| Accessibility and keyboard | ✅ complete |
-| View-state persistence | ✅ complete |
-| Packaging | ✅ complete |
-| Namespaced ids and "Go to source" to the AL declaration | ✅ complete |
+```bash
+code --install-extension Florian-Noever.xliff-viewer
+```
+
+Every [GitHub release](https://github.com/Florian-Noever/xliff-viewer/releases) also carries its VSIX, for *Extensions → … → Install from VSIX…*. `npm run package` builds one from source as `xliff-viewer-<version>.vsix`.
+
+The VSIX carries the two host bundles, the webview bundle and its HTML shell, and nothing else — no sources and no tests.
 
 ---
 
-## 📦 Installing a build
+## 🧩 Repository
 
-```bash
-npm run package
-```
+GitHub: [Florian-Noever/xliff-viewer](https://github.com/Florian-Noever/xliff-viewer)
 
-That writes `xliff-viewer-<version>.vsix`. Install it with *Extensions → … → Install from VSIX…*, or:
-
-```bash
-code --install-extension xliff-viewer-0.0.1.vsix
-```
-
-The VSIX carries the two host bundles, the webview bundle and its HTML shell, and nothing else — no sources, no tests and none of the example translation files.
+Bug reports and feature requests are welcome via [Issues](https://github.com/Florian-Noever/xliff-viewer/issues).
 
 ---
 
@@ -179,15 +166,15 @@ npm run compile          # check-types + lint + esbuild (both targets) + vite bu
 npm run watch            # all four watchers, which is what F5 starts
 npm run check-types      # tsc for the host and tests, vue-tsc for the webview
 npm run lint             # eslint src
-npm test                 # vitest: data, host, webview, then the perf budgets
-npm run test:integration # @vscode/test-electron and @vscode/test-web
+npm test                 # build, then vitest: data, host, webview and the perf budgets
+npm run test:integration # build, then @vscode/test-electron and @vscode/test-web
 npm run dev:webview      # the webview alone, against a fixture document
 npm run package          # vsce package
 ```
 
 `npm run dev:webview` serves the UI with no extension host behind it, rendering a projection of the largest fixture file. A drift test rebuilds that document from the file and fails if it has been hand-edited, so the dev server always shows what the extension actually sends.
 
-**Install scripts are opt-in.** npm 11 runs a dependency's install script only when `allowScripts` in `package.json` approves it. Two are: `@playwright/browser-chromium`, which downloads the browser the web integration tests run in, and `esbuild`. Without the first, those tests cannot start — and they **hang** rather than fail, so if they ever sit silent after a dependency update, check `npm install-scripts ls` first. `keytar` and `@vscode/vsce-sign` are denied: they serve publishing, which this project does not do.
+**Install scripts are opt-in.** npm 11 runs a dependency's install script only when `allowScripts` in `package.json` approves it. Two are: `@playwright/browser-chromium`, which downloads the browser the web integration tests run in, and `esbuild`. Without the first, those tests cannot start — and they **hang** rather than fail, so if they ever sit silent after a dependency update, check `npm install-scripts ls` first. `@vscode/vsce-sign` is denied: packaging does not need it, and releases are published by CI.
 
 ### Tests
 
@@ -198,6 +185,12 @@ The XLIFF the tests read is invented. `src/test/fixtures/corpus.ts` generates ev
 ```bash
 UPDATE_FIXTURES=1 npx vitest run --project data src/test/data/corpus.test.ts
 ```
+
+### CI & Releases
+
+CI runs on every push and pull request through the shared workflows of [Florian-Noever/Florian-Noever](https://github.com/Florian-Noever/Florian-Noever/blob/main/.github/CI.md). One job type-checks, lints and runs the `data`, `host` and `webview` tests; a second runs the integration tests in the desktop and the web host; a third packs a preview VSIX. The perf budgets stay out of CI, since shared runners are slower and noisier than the machines the budgets were set on, so run `npm test` locally before a release.
+
+To release, bump the version with `npm version x.y.z --no-git-tag-version`, add a CHANGELOG entry, and publish a GitHub release `vx.y.z` from a commit whose CI is green. The publish workflow builds and tests the tag, attaches the VSIX to the release and publishes it to the Visual Studio Marketplace and Open VSX.
 
 ---
 

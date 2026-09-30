@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 const REPO = new URL('../../../', import.meta.url);
 const SELF = fileURLToPath(import.meta.url);
 
-const FOLDERS = ['src', 'media', '.vscode'];
+const FOLDERS = ['src', 'media', '.vscode', '.github'];
 const ROOT_FILES = ['esbuild.mjs', 'eslint.config.mjs', 'vite.config.mts', 'vitest.config.mts', 'tsconfig.json', 'index.html', 'package.json', '.gitignore', '.vscodeignore'];
 
 const CITATION = /\bDEC-\d{3}\b|\bD-\d{2}\b|§\s?\d|\\u00[aA]7\d|\b(?:TOOL|DATA|TREE|HOST|UI|FIND|NAV|EDIT|POLISH|REVIEW)-\d{2}[a-z]?\b|MASTER_PLAN|ROADMAP|OPEN_QUESTIONS|DECISIONS\.md|STATUS\.md|gob-numberingtool|al-actionimage-viewer/;
