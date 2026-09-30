@@ -9,7 +9,6 @@ import { beforeAll, describe, expect, it } from 'vitest';
  */
 
 const SHIPS = [
-    'CHANGELOG.md',
     'LICENSE',
     'README.md',
     'assets/icon-dark.svg',
@@ -45,7 +44,7 @@ beforeAll(async () => {
 }, 60_000);
 
 describe('what the VSIX contains', () => {
-    it('is exactly the twelve files the extension needs, and nothing else', () => {
+    it('is exactly the eleven files the extension needs, and nothing else', () => {
         expect([...files]).toEqual(SHIPS);
     });
 
