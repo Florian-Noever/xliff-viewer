@@ -1,0 +1,32 @@
+name: Publish Release
+
+on:
+  release:
+    types: [published]
+
+concurrency:
+  group: vscode-extension-publish
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  publish:
+    uses: Florian-Noever/Florian-Noever/.github/workflows/vscode-extension-publish.yml@v1
+    with:
+      # The perf budgets stay a local gate: shared runners are slower and noisier than the machines they were set on
+      check-command: npm run compile && npm run test:data && npm run test:host && npm run test:webview
+      test-command: npm run test:integration
+      required-files: |
+        out/extension.js
+        out/web/extension.js
+        public/app.js
+        public/styles.css
+        media/webview.html
+      vs-marketplace: true
+      open-vsx: true
+    secrets:
+      OPEN_VSX_TOKEN: ${{ secrets.OPEN_VSX_TOKEN }}

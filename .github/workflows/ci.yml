@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  extension:
+    uses: Florian-Noever/Florian-Noever/.github/workflows/vscode-extension-ci.yml@v1
+    with:
+      # The perf budgets stay a local gate: shared runners are slower and noisier than the machines they were set on
+      check-command: npm run compile && npm run test:data && npm run test:host && npm run test:webview
+      test-command: npm run test:integration
+      required-files: |
+        out/extension.js
+        out/web/extension.js
+        public/app.js
+        public/styles.css
+        media/webview.html
+
+  automerge:
+    needs: [extension]
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: Florian-Noever/Florian-Noever/.github/workflows/dependabot-automerge.yml@v1

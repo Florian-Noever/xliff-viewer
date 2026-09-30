@@ -1,8 +1,10 @@
 .vscode/**
 .vscode-test/**
 .vscode-test-web/**
+.github/**
 .claude/**
 CLAUDE.md
+artifacts/**
 assets/**
 !assets/icon-light-x512.png
 !assets/icon-light.svg

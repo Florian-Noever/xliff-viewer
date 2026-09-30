@@ -5,6 +5,8 @@ public
 .vscode-test
 .vscode-test-web/
 *.vsix
+artifacts/
 .env
 docs/
 Examples/
+CLAUDE.md
