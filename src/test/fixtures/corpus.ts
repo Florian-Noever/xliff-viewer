@@ -8,7 +8,12 @@
  *
  * `corpus.test.ts` fails when a committed file differs from this output. Running it with
  * `UPDATE_FIXTURES=1` writes the files instead.
+ *
+ * Ids are hashed with the production `alNameHash`, so every id is the one AL would write for
+ * the same names; `alNameHash.test.ts` holds that function to values AL is known to write.
  */
+
+import { alNameHash } from '../../extension/xliff/alNameHash';
 
 export const FIXTURE = {
     base: 'Contoso App.g.xlf',
@@ -197,18 +202,8 @@ const WORDS: Readonly<Record<string, string>> = {
 
 const PLACEHOLDER_ROLES: readonly string[] = ['%1 = Record', '%2 = Value', '%3 = Limit', '%4 = Error'];
 
-/** A 32-bit hash of the name, standing in for the one AL derives an id segment's number from. */
-export function alHash(name: string): number {
-    let hash = 0x811c9dc5;
-    for (let index = 0; index < name.length; index++) {
-        hash ^= name.charCodeAt(index);
-        hash = Math.imul(hash, 0x01000193) >>> 0;
-    }
-    return hash;
-}
-
 export function idOf(path: readonly Segment[]): string {
-    return path.map(each => `${each.type} ${alHash(each.name)}`).join(' - ');
+    return path.map(each => `${each.type} ${alNameHash(each.name)}`).join(' - ');
 }
 
 const segment = (type: string, name: string): Segment => ({ type, name });
@@ -251,7 +246,7 @@ function table(name: string, fields: number, offset: number): Draft[] {
 
 function tableExtension(base: string, offset: number): Draft[] {
     const root = [segment('TableExtension', `Fabrikam ${base} Ext.`)];
-    const alObjectTarget = `Table ${alHash(base)}`;
+    const alObjectTarget = `Table ${alNameHash(base)}`;
     return Array.from({ length: 5 }, (_, index) => {
         const [english, german] = at(FIELDS, offset + index);
         return caption([...root, segment('Field', `Fabrikam ${english}`)], english, german, { alObjectTarget });
@@ -279,6 +274,8 @@ interface PageShape {
 function page(name: string, shape: PageShape): Draft[] {
     const root = [segment(shape.type, name)];
     const extra: Partial<Draft> = shape.alObjectTarget === undefined ? {} : { alObjectTarget: shape.alObjectTarget };
+    // A label declared in an extension names the extension itself, not the page it extends.
+    const labelExtra: Partial<Draft> = shape.alObjectTarget === undefined ? {} : { alObjectTarget: `${shape.type} ${alNameHash(name)}` };
     const drafts: Draft[] = shape.withCaption ? [caption(root, name, toGerman(name), extra)] : [];
 
     for (let index = 0; index < shape.controls; index++) {
@@ -297,7 +294,7 @@ function page(name: string, shape: PageShape): Draft[] {
         drafts.push(caption(action, english, german, extra));
         drafts.push(toolTip(action, tip, germanTip, extra));
         if (shape.withActionLabel && index === 0) {
-            drafts.push(label([...action, segment('Method', 'OnAction')], at(LABELS, shape.offset), extra));
+            drafts.push(label([...action, segment('Method', 'OnAction')], at(LABELS, shape.offset), labelExtra));
         }
     }
     return drafts;
@@ -336,7 +333,7 @@ function enumeration(name: string, values: readonly Pair[], count: number): Draf
 
 function enumExtension(base: string): Draft[] {
     const root = [segment('EnumExtension', `Fabrikam ${base} Ext.`)];
-    const alObjectTarget = `Enum ${alHash(base)}`;
+    const alObjectTarget = `Enum ${alNameHash(base)}`;
     return EXTENSION_VALUES.map(([english, german]) => caption([...root, segment('EnumValue', english)], english, german, { alObjectTarget }));
 }
 
@@ -346,7 +343,7 @@ function assertDistinct(units: readonly Unit[]): void {
     const ids = new Set<string>();
     for (const unit of units) {
         for (const each of unit.path) {
-            const key = `${each.type} ${alHash(each.name)}`;
+            const key = `${each.type} ${alNameHash(each.name)}`;
             const known = names.get(key);
             if (known !== undefined && known !== each.name) {
                 throw new Error(`"${known}" and "${each.name}" hash alike as ${each.type}`);
@@ -505,9 +502,10 @@ function fabrikam(): Unit[] {
         ...FABRIKAM_PAGES.flatMap((name, index) => page(name, {
             type: 'Page', controls: 9, offset: index, withCaption: true, actions: 2, withActionLabel: false, lastCaption: lastCaption(index),
         })),
-        ...BASE_PAGES.flatMap((base, index) => ['Ext.', 'Ext. 2'].flatMap((suffix, variant) => page(`Fabrikam ${base} ${suffix}`, {
+        // Each extension has a page of its own: AL files two extensions of one page under one of them.
+        ...BASE_PAGES.flatMap((base, index) => [base, `${base} FactBox`].flatMap((target, variant) => page(`Fabrikam ${target} Ext.`, {
             type: 'PageExtension', controls: 4, offset: index * 2 + variant, withCaption: false, actions: 1, withActionLabel: true,
-            alObjectTarget: `Page ${alHash(base)}`,
+            alObjectTarget: `Page ${alNameHash(target)}`,
         }))),
         ...FABRIKAM_REPORTS.flatMap((name, index) => report(name, 6, index)),
         ...FABRIKAM_CODEUNITS.flatMap((name, index) => (name === LABEL_CODEUNIT ? labelCodeunit() : codeunit(name, 2, 4, index))),
@@ -520,6 +518,11 @@ function fabrikam(): Unit[] {
 
 function escapeText(value: string): string {
     return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/** A readable id can carry a quoted name, and an attribute value is delimited by quotes. */
+function escapeAttribute(value: string): string {
+    return escapeText(value).replace(/"/g, '&quot;');
 }
 
 function leaf(tag: string, attributes: string, value: string): string {
@@ -540,13 +543,13 @@ function targetOf(unit: Unit, role: Role): string | undefined {
 }
 
 function renderUnit(unit: Unit, role: Role): string[] {
-    const attributes = [`id="${idOf(unit.path)}"`];
+    const attributes = [`id="${escapeAttribute(idOf(unit.path))}"`];
     if (unit.maxwidth !== undefined) {
         attributes.push(`maxwidth="${unit.maxwidth}"`);
     }
     attributes.push('size-unit="char"', 'translate="yes"', 'xml:space="preserve"');
     if (unit.alObjectTarget !== undefined) {
-        attributes.push(`al-object-target="${unit.alObjectTarget}"`);
+        attributes.push(`al-object-target="${escapeAttribute(unit.alObjectTarget)}"`);
     }
     const target = targetOf(unit, role);
     return [

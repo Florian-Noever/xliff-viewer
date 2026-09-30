@@ -1,6 +1,6 @@
-import type { AlNodeDto } from '@shared/dto';
+import { SEGMENT_SEPARATOR, splitUnitId } from '@shared/unitPath';
 
-const SEGMENT_SEPARATOR = ' - ';
+import type { AlNodeDto } from '@shared/dto';
 
 /**
  * Rebuilds the `Xliff Generator` note the payload does not carry.
@@ -19,7 +19,7 @@ const SEGMENT_SEPARATOR = ' - ';
  * guessing — the caller shows the raw id instead.
  */
 export function reconstructGeneratorNote(unitId: string, nodesByKey: ReadonlyMap<string, AlNodeDto>): string | undefined {
-    const segments = unitId.split(SEGMENT_SEPARATOR);
+    const segments = splitUnitId(unitId);
     const parts: string[] = [];
     let key = '';
 

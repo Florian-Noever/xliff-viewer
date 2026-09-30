@@ -9,28 +9,27 @@ import {
     generatorNote,
     hasAlStructure,
     namesFromNote,
-    segmentTypes,
 } from '../../extension/xliff/names';
 import { parseXliff } from '../../extension/xliff/parser';
+import { parseUnitId } from '../../extension/xliff/unitId';
 import { iterateUnits } from '../../shared/model';
 
 const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
 const unitsOf = (name: string) => [...iterateUnits(parseXliff(readFileSync(`${FIXTURES}/${name}`, 'utf8')))];
 
-describe('segmentTypes', () => {
-    it('splits an AL id into type and hash', () => {
-        expect(segmentTypes('Table 3952258696 - Field 2985504065 - Property 2879900210')).toEqual([
-            { type: 'Table', hash: '3952258696' },
-            { type: 'Field', hash: '2985504065' },
-            { type: 'Property', hash: '2879900210' },
-        ]);
+describe('hasAlStructure', () => {
+    it('accepts a hashed AL id', () => {
+        expect(hasAlStructure('Table 3952258696 - Property 2879900210')).toBe(true);
     });
 
-    it('keeps a segment with no hash rather than dropping it', () => {
+    it('accepts a readable AL id, quoted names and all', () => {
+        expect(hasAlStructure('Namespace Contoso.Sales - Report "Sales - Quote" - Property Caption')).toBe(true);
+    });
+
+    it('rejects an id with a segment that carries no value', () => {
         // id="1" is a legal XLIFF id carrying no AL structure.
-        expect(segmentTypes('1')).toEqual([{ type: '1', hash: '' }]);
         expect(hasAlStructure('1')).toBe(false);
-        expect(hasAlStructure('Table 3952258696 - Property 2879900210')).toBe(true);
+        expect(hasAlStructure('Table 3952258696 - Property')).toBe(false);
     });
 });
 
@@ -74,6 +73,13 @@ describe('namesFromNote', () => {
         expect(namesFromNote('Table 1 - Property 2', '')).toBeNull();
     });
 
+    it('anchors on the types of a readable id, quoted names and all', () => {
+        expect(namesFromNote(
+            'Namespace Contoso.Sales - Report "Sales - Quote" - Property Caption',
+            'Namespace Contoso.Sales - Report Sales - Quote - Property Caption',
+        )).toEqual(['Contoso.Sales', 'Sales - Quote', 'Caption']);
+    });
+
     it('escapes regex metacharacters in a segment type', () => {
         // A type containing a dot must match literally, not as "any character".
         expect(namesFromNote('Trans. 1 - Property 2', 'TransX Name - Property Caption')).toBeNull();
@@ -100,7 +106,7 @@ describe('names for every corpus unit', () => {
         for (const unit of unitsOf('Fabrikam Base.de-DE.xlf')) {
             const names = namesFromNote(unit.id, generatorNote(unit));
             expect(names, unit.id).not.toBeNull();
-            expect(names, unit.id).toHaveLength(segmentTypes(unit.id).length);
+            expect(names, unit.id).toHaveLength(parseUnitId(unit.id).length);
         }
     });
 

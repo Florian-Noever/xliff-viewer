@@ -1,4 +1,7 @@
-import type { AlSegment, XliffNote, XliffTransUnit } from '../../shared/model';
+import { parseUnitId } from './unitId';
+import { SEGMENT_SEPARATOR } from '../../shared/unitPath';
+
+import type { XliffNote, XliffTransUnit } from '../../shared/model';
 
 /**
  * Display names for the AL hierarchy.
@@ -7,8 +10,6 @@ import type { AlSegment, XliffNote, XliffTransUnit } from '../../shared/model';
  * only, so a failure degrades the display and never the structure.
  */
 
-export const SEGMENT_SEPARATOR = ' - ';
-
 export const GENERATOR_NOTE_FROM = 'Xliff Generator';
 const DEVELOPER_NOTE_FROM = 'Developer';
 
@@ -16,25 +17,12 @@ const DEVELOPER_NOTE_FROM = 'Developer';
 const LANGUAGE_PREFIX = /^([a-z]{2}(?:-[A-Za-z0-9]{2,8})?)=([\s\S]*)$/;
 
 /**
- * Splits a trans-unit id into its `<SymbolType> <hash>` segments.
+ * True when every segment is `<Type> <value>` — i.e. the id is AL-shaped.
  *
- * A segment with no space has an empty hash rather than being dropped — `id="1"` is a
- * legal XLIFF id that carries no AL structure at all, and the caller decides what to do
- * about that.
+ * `id="1"` is a legal XLIFF id that carries no AL structure at all.
  */
-export function segmentTypes(id: string): AlSegment[] {
-    return id.split(SEGMENT_SEPARATOR).map((segment) => {
-        const space = segment.indexOf(' ');
-        return space < 0
-            ? { type: segment, hash: '' }
-            : { type: segment.slice(0, space), hash: segment.slice(space + 1) };
-    });
-}
-
-/** True when every segment looks like `<Type> <hash>` — i.e. the id is AL-shaped. */
 export function hasAlStructure(id: string): boolean {
-    const segments = segmentTypes(id);
-    return segments.length > 0 && segments.every(segment => segment.type !== '' && segment.hash !== '');
+    return parseUnitId(id).every(segment => segment.type !== '' && segment.value !== '');
 }
 
 function escapeRegex(value: string): string {
@@ -63,10 +51,7 @@ export function namesFromNote(id: string, note: string | undefined): string[] | 
         return null;
     }
 
-    const segments = segmentTypes(id);
-    if (segments.length === 0) {
-        return null;
-    }
+    const segments = parseUnitId(id);
 
     // Every segment but the last is lazy, so it yields at the first following anchor;
     // the last is greedy and takes the remainder.
