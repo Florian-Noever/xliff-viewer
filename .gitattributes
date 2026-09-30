@@ -1,0 +1,2 @@
+# The fixture corpus is compared byte for byte, line endings included: git must not convert it.
+src/test/fixtures/** -text
