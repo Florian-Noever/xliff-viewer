@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 
-import { listFiles } from '@vscode/vsce';
+import { listFiles, PackageManager } from '@vscode/vsce';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 /**
@@ -29,6 +29,9 @@ const BUILT = ['out/extension.js', 'out/web/extension.js', 'public/app.js', 'pub
 /**
  * The packager's own listing, through its API rather than `vsce ls`, which runs
  * `vscode:prepublish` and rebuilds everything first. Asked once: it cannot change within a run.
+ *
+ * Without dependencies, as a bundled extension is packed. Listing them asks `npm list`,
+ * whose output masks any path segment shaped like a UUID, and the listing then comes back empty.
  */
 let files: readonly string[] = [];
 
@@ -37,7 +40,7 @@ beforeAll(async () => {
     if (unbuilt.length > 0) {
         throw new Error(`Not built: ${unbuilt.join(', ')}. Run npm run bundle and npm run build:webview first, as npm test does.`);
     }
-    const listed = await listFiles({ cwd: process.cwd() });
+    const listed = await listFiles({ cwd: process.cwd(), packageManager: PackageManager.None });
     files = listed.map(file => file.split('\\').join('/')).sort();
 }, 60_000);
 

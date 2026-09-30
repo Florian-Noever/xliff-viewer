@@ -140,7 +140,7 @@
         "test:integration": "run-s bundle build:webview compile-tests test:integration:desktop test:integration:web",
         "test:integration:desktop": "node ./out/test/runIntegration.js",
         "test:integration:web": "vscode-test-web --browserType=chromium --headless --extensionDevelopmentPath=. --extensionTestsPath=out/web/test/integration/index.js .",
-        "package": "vsce package",
+        "package": "vsce package --no-dependencies",
         "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. ."
     },
     "devDependencies": {
