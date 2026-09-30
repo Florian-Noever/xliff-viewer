@@ -35,7 +35,7 @@ const CORPUS = readdirSync(FIXTURES);
 
 describe('round-trip invariant', () => {
     it('the corpus holds the expected number of files', () => {
-        expect(CORPUS).toHaveLength(5);
+        expect(CORPUS).toHaveLength(7);
     });
 
     // Asserted per file so a failure names the file.

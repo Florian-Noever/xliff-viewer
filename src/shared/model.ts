@@ -112,9 +112,12 @@ export interface XliffDocument {
 export interface AlSegment {
     /** An open string — never an enum of allowed AL kinds. */
     readonly type: string;
-    /** The numeric hash. Stable and language-independent; the tree groups by it. */
+    /**
+     * The numeric hash — as written, or the one AL writes for a readable name. Stable and
+     * language-independent; the tree groups by it. Empty on synthetic nodes.
+     */
     readonly hash: string;
-    /** From the generator note, absent when it could not be parsed. */
+    /** From a readable id or the generator note; absent when neither supplied one. */
     readonly name?: string;
 }
 
@@ -124,13 +127,19 @@ export interface AlSegment {
  * No `summary`: the roll-up runs in the webview, so this carries structure only.
  */
 export interface AlNode {
-    /** The joined id prefix, e.g. `Table 834123014 - Field 3421458895`. Stable identity for expansion state. */
+    /**
+     * Stable identity for expansion state. A node carrying a unit is keyed by that unit's
+     * id; any other is keyed by its canonical path, e.g. `Table 834123014 - Field 3421458895`,
+     * or by a synthetic key containing a colon.
+     */
     readonly key: string;
     readonly segment: AlSegment;
     readonly depth: number;
     readonly children: readonly AlNode[];
     /** Set on the node a unit lands on — usually a leaf, but an id can also be another's prefix. */
     readonly unitId?: string;
+    /** Set on the levels the tree adds above the objects: the type groups and "(no namespace)". */
+    readonly synthetic?: true;
 }
 
 /** Walks every unit in the document, in file order, across files and nested groups. */

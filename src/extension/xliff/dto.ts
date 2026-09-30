@@ -1,5 +1,4 @@
-import { buildAlTree, groupByObjectType } from './alTree';
-import { OBJECT_TYPE_GROUP_PREFIX } from './alTree';
+import { buildAlTree, groupRoots, isNamespaceNode } from './alTree';
 import { developerHint, developerNote, GENERATOR_NOTE_FROM, hasAlStructure } from './names';
 
 import { iterateFileUnits } from '../../shared/model';
@@ -73,6 +72,7 @@ function projectFile(file: XliffFile, index: number): XliffFileDto {
     const models = [...iterateFileUnits(file)];
     const hasAlIds = models.some(unit => hasAlStructure(unit.id));
     const roots = buildAlTree(models);
+    const namespaced = hasAlIds && roots.some(isNamespaceNode);
 
     return {
         index,
@@ -82,9 +82,10 @@ function projectFile(file: XliffFile, index: number): XliffFileDto {
         datatype: file.datatype,
         // A file with no AL structure has no types to group by, and its flat list is
         // already the right answer.
-        tree: projectNodes(hasAlIds ? groupByObjectType(roots) : roots),
+        tree: projectNodes(hasAlIds ? groupRoots(roots) : roots),
         units: models.map(projectUnit),
         hasAlIds,
+        ...(namespaced ? { namespaced: true as const } : {}),
     };
 }
 
@@ -121,6 +122,6 @@ function projectNodes(nodes: readonly AlNode[]): AlNodeDto[] {
         type: node.segment.type,
         name: node.segment.name,
         children: projectNodes(node.children),
-        group: node.key.startsWith(OBJECT_TYPE_GROUP_PREFIX) ? true as const : undefined,
+        group: node.synthetic,
     }));
 }

@@ -19,6 +19,8 @@ const CORPUS = {
     deDe: 'Contoso App.de-DE.xlf',
     large: 'Fabrikam Base.de-DE.xlf',
     minimal: 'minimal.xlf',
+    namespacedBase: 'Northwind App.g.xlf',
+    namespacedGerman: 'Northwind App.de-DE.xlf',
 } as const;
 
 describe('unit counts', () => {
@@ -28,6 +30,8 @@ describe('unit counts', () => {
         [CORPUS.deDe, 500],
         [CORPUS.large, 2500],
         [CORPUS.minimal, 1],
+        [CORPUS.namespacedBase, 40],
+        [CORPUS.namespacedGerman, 40],
     ])('%s has %i units', (name, expected) => {
         expect(unitsOf(name)).toHaveLength(expected);
     });

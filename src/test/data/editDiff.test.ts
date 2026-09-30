@@ -22,6 +22,8 @@ const CORPUS = [
     'Contoso App.de-DE.xlf',
     'Fabrikam Base.de-DE.xlf',
     'minimal.xlf',
+    'Northwind App.g.xlf',
+    'Northwind App.de-DE.xlf',
 ];
 
 const EDITED = 'ZZZ EDITED ZZZ';
