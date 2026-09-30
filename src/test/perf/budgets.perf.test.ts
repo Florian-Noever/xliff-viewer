@@ -3,6 +3,10 @@ import { fileURLToPath, URL } from 'node:url';
 
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { indexedObjects } from '../../extension/al/alHeaderIndex';
+import { outlineAl, scanHeaders } from '../../extension/al/alOutline';
+import { unitTarget } from '../../extension/al/alTarget';
+import { candidateObjects, locateUnit } from '../../extension/al/unitLocator';
 import { XliffDocumentSession } from '../../extension/editor/documentSession';
 import { createDocumentSession } from '../../extension/editor/documentView';
 import { buildAlTree, groupRoots } from '../../extension/xliff/alTree';
@@ -18,9 +22,12 @@ import { hintsFor } from '../../webview/validation';
 import { iterateUnits } from '../../shared/model';
 import { effectiveState, summariseTree } from '../../shared/state';
 import { FakeTextDocument } from '../__mocks__/vscode';
-import { generateNamespacedFabrikam } from '../fixtures/corpus';
+import { renderApp } from '../fixtures/alRender';
+import { CONTOSO_MANIFEST, fabrikamApp, generateNamespacedFabrikam } from '../fixtures/corpus';
+import { generatorNote } from '../../extension/xliff/names';
 
 import type * as vscode from 'vscode';
+import type { AlOutline } from '../../extension/al/alOutline';
 import type { XliffDocumentDto } from '../../shared/dto';
 import type { UnitState } from '../../shared/state';
 
@@ -180,4 +187,34 @@ describe('performance budgets on the large example file', () => {
 
 beforeEach(() => {
     Logger.initialize({ subscriptions: [] } as unknown as vscode.ExtensionContext, 'perf');
+});
+
+describe('performance budgets on the AL source of the large app', () => {
+    const source = renderApp(fabrikamApp(), CONTOSO_MANIFEST);
+    const files = source.files.filter(file => file.path.endsWith('.al'));
+
+    it('indexes the headers of every file in under 100 ms', () => {
+        expect(fastest(3, () => files.flatMap(file => indexedObjects(file.path, scanHeaders(file.text, source.symbols))))).toBeLessThan(100);
+    });
+
+    it('locates the slowest unit in under 20 ms, its files already read', () => {
+        const outlines = new Map<string, AlOutline>(files.map(file => [file.path, outlineAl(file.text, source.symbols)]));
+        const index = [...outlines].flatMap(([path, outline]) => indexedObjects(path, outline));
+        const units = [...iterateUnits(parseXliff(text))];
+        const locate = (unit: (typeof units)[number]): void => {
+            const target = unitTarget(unit.id, generatorNote(unit), unit.alObjectTarget);
+            if (target !== undefined) {
+                locateUnit(target, candidateObjects(target, index), outlines);
+            }
+        };
+
+        units.forEach(locate);
+        let slowest = 0;
+        for (const unit of units) {
+            const started = performance.now();
+            locate(unit);
+            slowest = Math.max(slowest, performance.now() - started);
+        }
+        expect(slowest).toBeLessThan(20);
+    });
 });
