@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as vscode from 'vscode';
 
-import { emitterListenerCount, FakeTextDocument, flushAppliedEdits, flushErrorMessages, flushFileReads, holdFileRead, reportEditsInPieces, setApplyEditResult, setConfigOverride, setUserConfigOverride, setVirtualFile, setWorkspaceTrusted } from '../__mocks__/vscode';
+import { emitterListenerCount, FakeTextDocument, fireFileWatcher, flushAppliedEdits, flushErrorMessages, flushFileReads, holdFileRead, reportEditsInPieces, setApplyEditResult, setConfigOverride, setSearchAvailable, setUserConfigOverride, setVirtualFile, setWorkspaceTrusted, watcherCount } from '../__mocks__/vscode';
 
 /** Smoke test for the mock itself: the host tests build on every helper below. */
 describe('vscode mock', () => {
@@ -157,5 +157,94 @@ describe('vscode mock', () => {
         emitter.fire('two');
         expect(seen).toEqual(['one']);
         expect(emitterListenerCount()).toBe(0);
+    });
+
+    it('reads a setting only by its qualified key, as the editor does', () => {
+        setConfigOverride('baseFile', 'Translations/App.g.xlf');
+
+        expect(vscode.workspace.getConfiguration('xliffViewer').get('baseFile', '')).toBe('');
+    });
+
+    it('positions an offset by line and character and back, a CR counting as part of its line', async () => {
+        const text = 'a\nbc\r\nd';
+        const document = new FakeTextDocument('/ws/lines.xlf', text);
+        const atD = document.positionAt(text.indexOf('d'));
+
+        expect(atD).toEqual(new vscode.Position(2, 0));
+        expect(document.offsetAt(atD)).toBe(text.indexOf('d'));
+        expect(document.positionAt(text.indexOf('c'))).toEqual(new vscode.Position(1, 1));
+        expect(document.positionAt(-5)).toEqual(new vscode.Position(0, 0));
+        expect(document.positionAt(text.length + 5)).toEqual(document.positionAt(text.length));
+
+        setVirtualFile('/ws/lines.xlf', text);
+        expect((await vscode.workspace.openTextDocument(vscode.Uri.file('/ws/lines.xlf'))).positionAt(text.indexOf('d'))).toEqual(atD);
+    });
+
+    it('lists a folder\'s files, and the folders below it that hold more', async () => {
+        setVirtualFile('/ws/app.json', '{}');
+        setVirtualFile('/ws/src/Order.Table.al', '');
+        setVirtualFile('/ws/src/deep/Line.Table.al', '');
+
+        expect(await vscode.workspace.fs.readDirectory(vscode.Uri.file('/ws'))).toEqual([['app.json', vscode.FileType.File], ['src', vscode.FileType.Directory]]);
+        expect(await vscode.workspace.fs.readDirectory(vscode.Uri.file('/ws/src/'))).toEqual([['Order.Table.al', vscode.FileType.File], ['deep', vscode.FileType.Directory]]);
+        await expect(vscode.workspace.fs.readDirectory(vscode.Uri.file('/ws/none'))).rejects.toThrow('ENOENT');
+    });
+
+    it('tells a file from a folder, and moves a file\'s modification time on with each write', async () => {
+        setVirtualFile('/ws/src/Order.Table.al', 'a');
+        const first = await vscode.workspace.fs.stat(vscode.Uri.file('/ws/src/Order.Table.al'));
+        setVirtualFile('/ws/src/Order.Table.al', 'b');
+        const second = await vscode.workspace.fs.stat(vscode.Uri.file('/ws/src/Order.Table.al'));
+
+        expect(first.type).toBe(vscode.FileType.File);
+        expect(second.mtime).toBeGreaterThan(first.mtime);
+        expect((await vscode.workspace.fs.stat(vscode.Uri.file('/ws/src'))).type).toBe(vscode.FileType.Directory);
+        await expect(vscode.workspace.fs.stat(vscode.Uri.file('/ws/nothing'))).rejects.toThrow('ENOENT');
+    });
+
+    it('matches globs relative to a folder, one character to a ?, and up to a limit', async () => {
+        setVirtualFile('/ws/app/src/Order.Table.al', '');
+        setVirtualFile('/ws/app/src/Line.Table.al', '');
+        setVirtualFile('/ws/other/src/Order.Table.al', '');
+
+        const relative = await vscode.workspace.findFiles(new vscode.RelativePattern(vscode.Uri.file('/ws/app'), '**/*.al'));
+
+        expect(relative.map(uri => uri.path)).toEqual(['/ws/app/src/Order.Table.al', '/ws/app/src/Line.Table.al']);
+        expect((await vscode.workspace.findFiles('**/????.Table.al')).map(uri => uri.path)).toEqual(['/ws/app/src/Line.Table.al']);
+        expect(await vscode.workspace.findFiles('**/*.al', undefined, 1)).toHaveLength(1);
+    });
+
+    it('finds nothing when search is off, as in a host without a search provider', async () => {
+        setVirtualFile('/ws/T/App.g.xlf', '');
+        setSearchAvailable(false);
+
+        expect(await vscode.workspace.findFiles('**/*.g.xlf')).toEqual([]);
+    });
+
+    it('fires a watcher only for paths its pattern selects, plain or relative to a folder', () => {
+        const seen: string[] = [];
+        vscode.workspace.createFileSystemWatcher('**/*.g.xlf').onDidChange(uri => seen.push(`plain ${uri.path}`));
+        vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(vscode.Uri.file('/ws/app'), '**/*.al'))
+            .onDidCreate(uri => seen.push(`relative ${uri.path}`));
+
+        fireFileWatcher('changed', '/ws/T/App.g.xlf');
+        fireFileWatcher('changed', '/ws/T/App.de-DE.xlf');
+        fireFileWatcher('created', '/ws/app/src/Order.Table.al');
+        fireFileWatcher('created', '/ws/other/src/Order.Table.al');
+
+        expect(seen).toEqual(['plain /ws/T/App.g.xlf', 'relative /ws/app/src/Order.Table.al']);
+    });
+
+    it('stops a watcher once disposed, and counts the ones still live', () => {
+        const seen: string[] = [];
+        const watcher = vscode.workspace.createFileSystemWatcher('**/*.g.xlf');
+        watcher.onDidDelete(uri => seen.push(uri.path));
+        expect(watcherCount()).toBe(1);
+
+        watcher.dispose();
+        fireFileWatcher('deleted', '/ws/T/App.g.xlf');
+
+        expect(watcherCount()).toBe(0);
+        expect(seen).toEqual([]);
     });
 });
