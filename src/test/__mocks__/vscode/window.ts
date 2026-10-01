@@ -138,6 +138,9 @@ export function flushLogs(): string[] {
 }
 
 export function resetWindow(): void {
+    customEditorRegistrations.length = 0;
+    window.visibleTextEditors = [];
+    window.activeTextEditor = undefined;
     errorMessages = [];
     warningMessages = [];
     infoMessages = [];

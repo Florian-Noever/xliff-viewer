@@ -1,17 +1,20 @@
 import { describe, expect, it } from 'vitest';
+import * as vscode from 'vscode';
 
 import { affectsSettings, readSettings, toWebviewSettings } from '../../extension/services/settings';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { XliffState } from '../../shared/state';
-import { setConfigOverride } from '../__mocks__/vscode';
-
-import type { ConfigurationChangeEvent } from '../__mocks__/vscode';
-
-const changeEvent = (...sections: string[]): ConfigurationChangeEvent => ({
-    affectsConfiguration: (section: string) => sections.some(changed => changed === section || changed.startsWith(`${section}.`)),
-});
+import { configurationChange, flushConfigurationScopes, setConfigOverride } from '../__mocks__/vscode';
 
 describe('readSettings', () => {
+    it('reads the settings that apply to the document, by its URI', () => {
+        const document = vscode.Uri.file('/w/App.de-DE.xlf');
+
+        readSettings(document);
+
+        expect(flushConfigurationScopes()).toEqual([{ section: 'xliffViewer', scope: document }]);
+    });
+
     it('falls back to the package.json defaults when nothing is set', () => {
         expect(readSettings()).toEqual({
             ...DEFAULT_WEBVIEW_SETTINGS,
@@ -91,11 +94,11 @@ describe('toWebviewSettings', () => {
 
 describe('affectsSettings', () => {
     it('is true for any key in our section', () => {
-        expect(affectsSettings(changeEvent('xliffViewer.editMode'))).toBe(true);
-        expect(affectsSettings(changeEvent('xliffViewer.validation.enabled'))).toBe(true);
+        expect(affectsSettings(configurationChange('xliffViewer.editMode'))).toBe(true);
+        expect(affectsSettings(configurationChange('xliffViewer.validation.enabled'))).toBe(true);
     });
 
     it('is false for someone else\'s settings', () => {
-        expect(affectsSettings(changeEvent('editor.fontSize', 'xliffSync.baseFile'))).toBe(false);
+        expect(affectsSettings(configurationChange('editor.fontSize', 'xliffSync.baseFile'))).toBe(false);
     });
 });

@@ -528,7 +528,6 @@ describe('how the editor is registered', () => {
     it('does not ask VS Code to keep a hidden tab alive', () => {
         // `retainContextWhenHidden` costs memory per open tab; a recreated webview asks for
         // the document again and restores its view state from what it saved.
-        customEditorRegistrations.length = 0;
         const context = { extensionUri: vscode.Uri.file('/ext'), subscriptions: [] } as unknown as vscode.ExtensionContext;
 
         track(XliffEditorProvider.register(context));

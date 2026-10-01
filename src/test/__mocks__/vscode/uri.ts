@@ -39,16 +39,26 @@ export class RelativePattern {
     }
 }
 
-/**
- * Which virtual paths a pattern selects: a plain glob from the root, written with or without
- * its leading slash, or a glob relative to its folder. Dot files match, as VS Code's do.
- */
-export function pathMatcher(pattern: string | RelativePattern): (path: string) => boolean {
-    if (typeof pattern === 'string') {
-        const matches = picomatch(pattern, { dot: true });
-        return path => matches(path) || matches(path.replace(/^\//, ''));
-    }
-    const base = pattern.baseUri.path.endsWith('/') ? pattern.baseUri.path : `${pattern.baseUri.path}/`;
-    const matches = picomatch(pattern.pattern, { dot: true });
+/** A glob as VS Code reads one: dot files match too. */
+export function globMatcher(glob: string): (path: string) => boolean {
+    return picomatch(glob, { dot: true });
+}
+
+/** Which paths a relative pattern selects: those below its folder that its glob matches. */
+export function relativeMatcher(pattern: RelativePattern): (path: string) => boolean {
+    const base = `${withoutTrailingSlash(pattern.baseUri.path)}/`;
+    const matches = globMatcher(pattern.pattern);
     return path => path.startsWith(base) && matches(path.slice(base.length));
+}
+
+/**
+ * Which absolute paths a watcher's pattern selects. A string glob is applied to the absolute
+ * path, as VS Code applies it, written with or without its leading slash.
+ */
+export function watchedMatcher(pattern: string | RelativePattern): (path: string) => boolean {
+    if (typeof pattern !== 'string') {
+        return relativeMatcher(pattern);
+    }
+    const matches = globMatcher(pattern);
+    return path => matches(path) || matches(path.replace(/^\//, ''));
 }

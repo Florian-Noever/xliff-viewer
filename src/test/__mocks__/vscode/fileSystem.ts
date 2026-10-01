@@ -1,7 +1,7 @@
 /** A virtual file system: files by path, the reads and writes made on it, and watchers. */
 
 import { Disposable } from './events';
-import { normalisePath, pathMatcher, Uri } from './uri';
+import { normalisePath, Uri, watchedMatcher } from './uri';
 
 import type { RelativePattern } from './uri';
 
@@ -14,12 +14,16 @@ const heldReads = new Map<string, Promise<void>>();
 let fileReads: string[] = [];
 let fileWrites: { path: string; content: string }[] = [];
 let writableFileSystems: Record<string, boolean> = {};
-let searchAvailable = true;
 let watchers: FakeFileSystemWatcher[] = [];
 
 /** A virtual file's text, or undefined when there is none. */
 export function virtualFile(path: string): string | undefined {
     return virtualFiles[path];
+}
+
+/** Every virtual file's path, in the order the files were first set. */
+export function virtualFilePaths(): string[] {
+    return Object.keys(virtualFiles);
 }
 
 /** Notes that a file was read, for `flushFileReads`. */
@@ -79,15 +83,6 @@ export const fs = {
     },
 };
 
-/** Virtual paths the glob selects; nothing at all when search is off, as in a host without a search provider. */
-export function findFiles(pattern: string | RelativePattern, _exclude?: unknown, maxResults?: number): Promise<Uri[]> {
-    if (!searchAvailable) {
-        return Promise.resolve([]);
-    }
-    const found = Object.keys(virtualFiles).filter(pathMatcher(pattern)).map(path => Uri.file(path));
-    return Promise.resolve(maxResults === undefined ? found : found.slice(0, maxResults));
-}
-
 export type WatchedKind = 'created' | 'deleted' | 'changed';
 
 /** Three events and a dispose; only paths its pattern selects reach its listeners. */
@@ -141,7 +136,7 @@ export function removeVirtualFile(path: string): void {
  */
 export function holdFileRead(path: string): () => void {
     let release = (): void => { };
-    heldReads.set(path, new Promise<void>((resolve) => {
+    heldReads.set(normalisePath(path), new Promise<void>((resolve) => {
         release = resolve;
     }));
     return () => {
@@ -154,17 +149,13 @@ export function setWritableFileSystem(scheme: string, writable: boolean): void {
     writableFileSystems[scheme] = writable;
 }
 
-/** Whether `findFiles` finds anything — off, as in a host with no search provider. */
-export function setSearchAvailable(available: boolean): void {
-    searchAvailable = available;
-}
-
 /** Fires every file-system watcher whose pattern selects the path, as a file appearing, changing or vanishing would. */
 export function fireFileWatcher(kind: WatchedKind, path: string): void {
+    const normalised = normalisePath(path);
     for (const watcher of [...watchers]) {
-        if (pathMatcher(watcher.pattern)(path)) {
+        if (watchedMatcher(watcher.pattern)(normalised)) {
             for (const listener of [...watcher.listeners[kind]]) {
-                listener(Uri.file(path));
+                listener(Uri.file(normalised));
             }
         }
     }
@@ -191,6 +182,5 @@ export function resetFileSystem(): void {
     fileReads = [];
     fileWrites = [];
     writableFileSystems = {};
-    searchAvailable = true;
     watchers = [];
 }

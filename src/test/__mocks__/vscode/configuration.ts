@@ -11,9 +11,11 @@ let userValues: Record<string, unknown> = {};
 let configurationListeners: ((event: ConfigurationChangeEvent) => void)[] = [];
 let workspaceTrusted = true;
 let trustListeners: (() => void)[] = [];
+let configurationScopes: { section?: string; scope?: unknown }[] = [];
 
 /** The workspace's value wins over the user's, as it does in the editor. */
-export function getConfiguration(section?: string) {
+export function getConfiguration(section?: string, scope?: unknown) {
+    configurationScopes.push({ section, scope });
     const qualified = (key: string): string => (section === undefined ? key : `${section}.${key}`);
     return {
         get: <T>(key: string, defaultValue?: T): T | undefined => {
@@ -76,17 +78,27 @@ export function setWorkspaceTrusted(trusted: boolean): void {
     }
 }
 
-/** Fires `onDidChangeConfiguration`; `affectsConfiguration` is true for any prefix of one of `sections`. */
-export function fireConfigurationChange(...sections: string[]): void {
-    const event: ConfigurationChangeEvent = {
+/** A change to these settings: `affectsConfiguration` is true for each, and for every section that holds one. */
+export function configurationChange(...sections: string[]): ConfigurationChangeEvent {
+    return {
         affectsConfiguration: (section: string) => sections.some(changed => changed === section || changed.startsWith(`${section}.`)),
     };
+}
+
+/** Fires `onDidChangeConfiguration` with a `configurationChange` of these settings. */
+export function fireConfigurationChange(...sections: string[]): void {
+    const event = configurationChange(...sections);
     for (const listener of [...configurationListeners]) {
         listener(event);
     }
 }
 
 // ── assert ───────────────────────────────────────────────────────────────────
+/** Which section, and for which scope, each `getConfiguration` call asked. */
+export function flushConfigurationScopes(): { section?: string; scope?: unknown }[] {
+    return configurationScopes.splice(0);
+}
+
 /** How many listeners `onDidChangeConfiguration` currently has — a disposal spy. */
 export function configurationListenerCount(): number {
     return configurationListeners.length;
@@ -98,4 +110,5 @@ export function resetConfiguration(): void {
     configurationListeners = [];
     workspaceTrusted = true;
     trustListeners = [];
+    configurationScopes = [];
 }

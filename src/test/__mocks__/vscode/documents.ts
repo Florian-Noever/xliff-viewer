@@ -61,14 +61,13 @@ export interface EditRecord {
 }
 
 let documentChangeListeners: ((event: TextDocumentChangeEvent) => void)[] = [];
-let openDocuments: { uri: Uri; getText(): string }[] = [];
 let appliedEdits: EditRecord[] = [];
 let applyEditResult: boolean | Error = true;
 let editsInPieces = false;
-/** Documents `workspace.applyEdit` can actually write to, keyed by URI. */
-const editableDocuments = new Map<string, { applyEdit(range: Range, newText: string): void }>();
+/** The documents open in the editor, by URI: what `textDocuments` lists and `applyEdit` writes to. */
+const openDocuments = new Map<string, FakeTextDocument>();
 
-/** Enough of a `TextDocument` for a session: an identity and its text. */
+/** Enough of a `TextDocument` for a session: an identity and its text. Made, it is open. */
 export class FakeTextDocument {
     public readonly uri: Uri;
     /** What the editor detected on read. The session warns that a save drops a `utf8bom` BOM. */
@@ -79,7 +78,7 @@ export class FakeTextDocument {
         this.uri = Uri.file(path);
         this.text = text;
         this.encoding = encoding;
-        editableDocuments.set(this.uri.toString(), this);
+        openDocuments.set(this.uri.toString(), this);
     }
 
     /**
@@ -122,19 +121,25 @@ export class FakeTextDocument {
     }
 }
 
-/** An open document's text wins, as the editor's buffer does over the disk. */
+/**
+ * The open document itself, since its buffer wins over the disk as the editor's does, or
+ * else the file as it is now. A read is recorded as it is attempted, as `fs.readFile` does.
+ */
 export function openTextDocument(uri: Uri): Promise<{ uri: Uri; getText(): string; positionAt(offset: number): Position }> {
-    const open = openDocuments.find(document => document.uri.path === uri.path);
-    const content = open === undefined ? virtualFile(uri.path) : open.getText();
+    recordFileRead(uri.path);
+    const open = openDocuments.get(uri.toString());
+    if (open !== undefined) {
+        return Promise.resolve(open);
+    }
+    const content = virtualFile(uri.path);
     if (content === undefined) {
         return Promise.reject(new Error(`ENOENT: ${uri.path}`));
     }
-    recordFileRead(uri.path);
     return Promise.resolve({ uri, getText: () => content, positionAt: (offset: number) => positionIn(content, offset) });
 }
 
-export function textDocuments(): { uri: Uri; getText(): string }[] {
-    return openDocuments;
+export function textDocuments(): FakeTextDocument[] {
+    return [...openDocuments.values()];
 }
 
 export class WorkspaceEdit {
@@ -161,7 +166,7 @@ export async function applyEdit(edit: WorkspaceEdit): Promise<boolean> {
         return false;
     }
     for (const entry of edit.entries) {
-        editableDocuments.get(entry.uri)?.applyEdit(entry.range, entry.newText);
+        openDocuments.get(entry.uri)?.applyEdit(entry.range, entry.newText);
     }
     return true;
 }
@@ -178,9 +183,8 @@ export function onDidChangeTextDocument(listener: (event: TextDocumentChangeEven
 
 // ── arrange ──────────────────────────────────────────────────────────────────
 /** Opens a document in the editor with this text, which then wins over the file's. */
-export function setOpenDocument(path: string, text: string): void {
-    const uri = Uri.file(path);
-    openDocuments = [...openDocuments.filter(document => document.uri.path !== uri.path), { uri, getText: () => text }];
+export function setOpenDocument(path: string, text: string): FakeTextDocument {
+    return new FakeTextDocument(path, text);
 }
 
 /** What `workspace.applyEdit` answers from now on: applied, refused, or rejected with this error. */
@@ -226,9 +230,8 @@ export function documentChangeListenerCount(): number {
 
 export function resetDocuments(): void {
     documentChangeListeners = [];
-    openDocuments = [];
+    openDocuments.clear();
     appliedEdits = [];
     applyEditResult = true;
     editsInPieces = false;
-    editableDocuments.clear();
 }

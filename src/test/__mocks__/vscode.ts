@@ -15,8 +15,10 @@ import { resetWorkspace } from './vscode/workspace';
 
 export { commands, flushExecutedCommands } from './vscode/commands';
 export {
+    configurationChange,
     configurationListenerCount,
     fireConfigurationChange,
+    flushConfigurationScopes,
     setConfigOverride,
     setUserConfigOverride,
     setWorkspaceTrusted,
@@ -44,7 +46,6 @@ export {
     flushFileWrites,
     holdFileRead,
     removeVirtualFile,
-    setSearchAvailable,
     setVirtualFile,
     setWritableFileSystem,
     watcherCount,
@@ -68,7 +69,7 @@ export {
     window,
 } from './vscode/window';
 export type { ProgressRecord } from './vscode/window';
-export { setWorkspaceRoot, workspace } from './vscode/workspace';
+export { setSearchAvailable, setWorkspaceRoot, workspace } from './vscode/workspace';
 
 export function resetMocks(): void {
     resetCommands();

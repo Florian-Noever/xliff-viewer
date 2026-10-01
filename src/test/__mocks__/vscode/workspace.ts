@@ -2,10 +2,38 @@
 
 import { getConfiguration, isTrusted, onDidChangeConfiguration, onDidGrantWorkspaceTrust } from './configuration';
 import { applyEdit, onDidChangeTextDocument, openTextDocument, textDocuments } from './documents';
-import { createFileSystemWatcher, findFiles, fs } from './fileSystem';
-import { isWithin, Uri, withoutTrailingSlash } from './uri';
+import { createFileSystemWatcher, fs, virtualFilePaths } from './fileSystem';
+import { globMatcher, isWithin, relativeMatcher, Uri, withoutTrailingSlash } from './uri';
+
+import type { RelativePattern } from './uri';
 
 let workspaceRoot: Uri | undefined;
+let searchAvailable = true;
+
+/**
+ * Which paths a search pattern selects. A string glob is read relative to the workspace
+ * folder, as VS Code reads it, so with no folder it selects nothing.
+ */
+function searchMatcher(pattern: string | RelativePattern): (path: string) => boolean {
+    if (typeof pattern !== 'string') {
+        return relativeMatcher(pattern);
+    }
+    if (workspaceRoot === undefined) {
+        return () => false;
+    }
+    const base = `${withoutTrailingSlash(workspaceRoot.path)}/`;
+    const matches = globMatcher(pattern);
+    return path => path.startsWith(base) && matches(path.slice(base.length));
+}
+
+/** The virtual files a pattern selects; none when search is off, as in a host without a search provider. */
+function findFiles(pattern: string | RelativePattern, _exclude?: unknown, maxResults?: number): Promise<Uri[]> {
+    if (!searchAvailable) {
+        return Promise.resolve([]);
+    }
+    const found = virtualFilePaths().filter(searchMatcher(pattern)).map(path => Uri.file(path));
+    return Promise.resolve(maxResults === undefined ? found : found.slice(0, maxResults));
+}
 
 export const workspace = {
     openTextDocument,
@@ -34,11 +62,17 @@ export const workspace = {
     onDidChangeConfiguration,
 };
 
-/** Sets the single workspace folder `getWorkspaceFolder` reports. */
+/** Sets the single workspace folder `getWorkspaceFolder` reports, and `findFiles` searches. */
 export function setWorkspaceRoot(path: string | undefined): void {
     workspaceRoot = path === undefined ? undefined : Uri.file(path);
 }
 
+/** Whether `findFiles` finds anything — off, as in a host with no search provider. */
+export function setSearchAvailable(available: boolean): void {
+    searchAvailable = available;
+}
+
 export function resetWorkspace(): void {
     workspaceRoot = undefined;
+    searchAvailable = true;
 }

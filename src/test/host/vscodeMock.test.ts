@@ -1,7 +1,28 @@
 import { describe, expect, it } from 'vitest';
 import * as vscode from 'vscode';
 
-import { emitterListenerCount, FakeTextDocument, fireFileWatcher, flushAppliedEdits, flushErrorMessages, flushFileReads, holdFileRead, reportEditsInPieces, setApplyEditResult, setConfigOverride, setSearchAvailable, setUserConfigOverride, setVirtualFile, setWorkspaceTrusted, watcherCount } from '../__mocks__/vscode';
+import {
+    customEditorRegistrations,
+    emitterListenerCount,
+    FakeTextDocument,
+    fireFileWatcher,
+    flushAppliedEdits,
+    flushConfigurationScopes,
+    flushErrorMessages,
+    flushFileReads,
+    holdFileRead,
+    reportEditsInPieces,
+    resetMocks,
+    setApplyEditResult,
+    setConfigOverride,
+    setOpenDocument,
+    setSearchAvailable,
+    setUserConfigOverride,
+    setVirtualFile,
+    setWorkspaceRoot,
+    setWorkspaceTrusted,
+    watcherCount,
+} from '../__mocks__/vscode';
 
 /** Smoke test for the mock itself: the host tests build on every helper below. */
 describe('vscode mock', () => {
@@ -67,11 +88,17 @@ describe('vscode mock', () => {
         await expect(vscode.workspace.fs.readFile(vscode.Uri.file('/nope'))).rejects.toThrow('ENOENT');
     });
 
-    it('matches globs in findFiles', async () => {
+    it('reads a string glob in findFiles from the workspace folder, as VS Code does', async () => {
         setVirtualFile('/ws/Translations/App.g.xlf', '');
         setVirtualFile('/ws/Translations/App.de-DE.xlf', '');
-        const found = await vscode.workspace.findFiles('/ws/**/*.g.xlf');
-        expect(found.map(u => u.path)).toEqual(['/ws/Translations/App.g.xlf']);
+        setWorkspaceRoot('/ws');
+
+        expect((await vscode.workspace.findFiles('**/*.g.xlf')).map(u => u.path)).toEqual(['/ws/Translations/App.g.xlf']);
+        expect((await vscode.workspace.findFiles('Translations/*.g.xlf')).map(u => u.path)).toEqual(['/ws/Translations/App.g.xlf']);
+        expect(await vscode.workspace.findFiles('/ws/**/*.g.xlf')).toEqual([]);
+
+        setWorkspaceRoot(undefined);
+        expect(await vscode.workspace.findFiles('**/*.g.xlf')).toEqual([]);
     });
 
     it('returns configuration overrides and falls back to the default', () => {
@@ -206,6 +233,7 @@ describe('vscode mock', () => {
         setVirtualFile('/ws/app/src/Order.Table.al', '');
         setVirtualFile('/ws/app/src/Line.Table.al', '');
         setVirtualFile('/ws/other/src/Order.Table.al', '');
+        setWorkspaceRoot('/ws');
 
         const relative = await vscode.workspace.findFiles(new vscode.RelativePattern(vscode.Uri.file('/ws/app'), '**/*.al'));
 
@@ -218,6 +246,7 @@ describe('vscode mock', () => {
         setVirtualFile('/ws/Translations/App.g.xlf', '');
         setVirtualFile('/ws/i18n/Other.g.xlf', '');
         setVirtualFile('/ws/docs/Notes.g.xlf', '');
+        setWorkspaceRoot('/ws');
 
         expect((await vscode.workspace.findFiles('**/{Translations,i18n}/*.g.xlf')).map(uri => uri.path)).toEqual(['/ws/Translations/App.g.xlf', '/ws/i18n/Other.g.xlf']);
         expect((await vscode.workspace.findFiles('**/[A-N]*.g.xlf')).map(uri => uri.path)).toEqual(['/ws/Translations/App.g.xlf', '/ws/docs/Notes.g.xlf']);
@@ -225,6 +254,7 @@ describe('vscode mock', () => {
 
     it('finds nothing when search is off, as in a host without a search provider', async () => {
         setVirtualFile('/ws/T/App.g.xlf', '');
+        setWorkspaceRoot('/ws');
         setSearchAvailable(false);
 
         expect(await vscode.workspace.findFiles('**/*.g.xlf')).toEqual([]);
@@ -242,6 +272,69 @@ describe('vscode mock', () => {
         fireFileWatcher('created', '/ws/other/src/Order.Table.al');
 
         expect(seen).toEqual(['plain /ws/T/App.g.xlf', 'relative /ws/app/src/Order.Table.al']);
+    });
+
+    it('takes every path with backslashes as it takes it with slashes', async () => {
+        setVirtualFile('\\ws\\a.xlf', 'text');
+        const seen: string[] = [];
+        vscode.workspace.createFileSystemWatcher('**/*.xlf').onDidChange(uri => seen.push(uri.path));
+        const release = holdFileRead('\\ws\\a.xlf');
+        let read: string | undefined;
+        const reading = vscode.workspace.fs.readFile(vscode.Uri.file('/ws/a.xlf')).then((bytes) => {
+            read = new TextDecoder().decode(bytes);
+        });
+
+        fireFileWatcher('changed', '\\ws\\a.xlf');
+        await Promise.resolve();
+        expect(read).toBeUndefined();
+        release();
+        await reading;
+
+        expect(read).toBe('text');
+        expect(seen).toEqual(['/ws/a.xlf']);
+    });
+
+    it('records a read as it is attempted, whether or not the file is there', async () => {
+        await expect(vscode.workspace.openTextDocument(vscode.Uri.file('/ws/none.xlf'))).rejects.toThrow('ENOENT');
+        await expect(vscode.workspace.fs.readFile(vscode.Uri.file('/ws/gone.xlf'))).rejects.toThrow('ENOENT');
+
+        expect(flushFileReads()).toEqual(['/ws/none.xlf', '/ws/gone.xlf']);
+    });
+
+    it('keeps one registry of open documents, whose buffers win over the disk', async () => {
+        setVirtualFile('/ws/open.xlf', 'on disk');
+        const made = new FakeTextDocument('/ws/open.xlf', 'in the editor');
+        const opened = setOpenDocument('/ws/other.xlf', 'one');
+
+        expect(vscode.workspace.textDocuments).toEqual([made, opened]);
+        expect(await vscode.workspace.openTextDocument(vscode.Uri.file('/ws/open.xlf'))).toBe(made);
+
+        const edit = new vscode.WorkspaceEdit();
+        edit.replace(opened.uri, new vscode.Range(new vscode.Position(0, 0), new vscode.Position(0, 3)), 'two');
+        await vscode.workspace.applyEdit(edit);
+        expect((await vscode.workspace.openTextDocument(opened.uri)).getText()).toBe('two');
+    });
+
+    it('records the scope each settings read asked for', () => {
+        const document = vscode.Uri.file('/ws/App.de-DE.xlf');
+
+        vscode.workspace.getConfiguration('xliffViewer', document);
+        vscode.workspace.getConfiguration('xliffSync');
+
+        expect(flushConfigurationScopes()).toEqual([{ section: 'xliffViewer', scope: document }, { section: 'xliffSync', scope: undefined }]);
+    });
+
+    it('forgets the editors and the registered editor provider on reset', () => {
+        const editorOn = (path: string) => ({ document: new FakeTextDocument(path, '') }) as unknown as vscode.TextEditor;
+        vscode.window.registerCustomEditorProvider('xliff-viewer.editor', {} as vscode.CustomTextEditorProvider);
+        vscode.window.activeTextEditor = editorOn('/ws/a.xlf');
+        vscode.window.visibleTextEditors = [editorOn('/ws/b.xlf')];
+
+        resetMocks();
+
+        expect(customEditorRegistrations).toEqual([]);
+        expect(vscode.window.activeTextEditor).toBeUndefined();
+        expect(vscode.window.visibleTextEditors).toEqual([]);
     });
 
     it('stops a watcher once disposed, and counts the ones still live', () => {
