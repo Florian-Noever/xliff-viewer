@@ -4,8 +4,8 @@ import { listFiles, PackageManager } from '@vscode/vsce';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 /**
- * What ships, as listed by the packager itself rather than by re-deriving `.vscodeignore`'s
- * glob semantics. An allow-list, so the next stray file at the repository root fails it.
+ * What ships, as listed by the packager itself from the manifest's `files`. Compared as a
+ * whole, so a file that slips in or goes missing fails it.
  */
 
 const SHIPS = [

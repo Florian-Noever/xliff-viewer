@@ -34,6 +34,18 @@
     "activationEvents": [],
     "main": "./out/extension.js",
     "browser": "./out/web/extension.js",
+    "files": [
+        "LICENSE",
+        "README.md",
+        "assets/icon-dark.svg",
+        "assets/icon-light-x512.png",
+        "assets/icon-light.svg",
+        "media/webview.html",
+        "out/extension.js",
+        "out/web/extension.js",
+        "public/app.js",
+        "public/styles.css"
+    ],
     "contributes": {
         "customEditors": [
             {
