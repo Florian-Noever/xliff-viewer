@@ -90,7 +90,6 @@ describe('mounting', () => {
         expect(state.document.value).toBeUndefined();
         expect(state.blocking.value).toBe(false);
         expect(state.settings.value).toEqual(DEFAULT_WEBVIEW_SETTINGS);
-        expect(state.unitCount.value).toBe(0);
     });
 
     it('stops listening once unmounted', async () => {
@@ -111,7 +110,6 @@ describe('applying messages', () => {
         sendDocument();
 
         expect(state.document.value?.fileName).toBe('App.de-DE.xlf');
-        expect(state.unitCount.value).toBe(3);
     });
 
     it('ignores anything that is not part of the contract', () => {
@@ -309,7 +307,6 @@ describe('patchUnits', () => {
 
         expect(state.unitsById.value.get('Table 1')?.orphaned).toBe(true);
         expect(state.unitsById.value.get('Table 2')?.orphaned).toBeUndefined();
-        expect(state.unitCount.value).toBe(3);
     });
 
     it('touches only the file it names', () => {

@@ -66,8 +66,6 @@ export const WebviewMessageType = {
     updateTarget: 'updateTarget',
     updateState: 'updateState',
     openSource: 'openSource',
-    copyToClipboard: 'copyToClipboard',
-    notify: 'notify',
 } as const;
 export type WebviewMessageType = typeof WebviewMessageType[keyof typeof WebviewMessageType];
 
@@ -81,13 +79,6 @@ export const NavigationTarget = {
     text: 'text',
 } as const;
 export type NavigationTarget = typeof NavigationTarget[keyof typeof NavigationTarget];
-
-export const NotifyKind = {
-    info: 'info',
-    warning: 'warning',
-    error: 'error',
-} as const;
-export type NotifyKind = typeof NotifyKind[keyof typeof NotifyKind];
 
 /** Flat, unlike `ExtensionMessage`'s `{ type, payload }`. */
 export type WebviewMessage =
@@ -112,9 +103,7 @@ export type WebviewMessage =
         /** Both or neither. Without them the file itself opens, which is what the error pane offers. */
         readonly fileIndex?: number;
         readonly unitId?: string;
-    }
-    | { readonly type: typeof WebviewMessageType.copyToClipboard; readonly text: string }
-    | { readonly type: typeof WebviewMessageType.notify; readonly kind: NotifyKind; readonly message: string };
+    };
 
 // ── Guards ───────────────────────────────────────────────────────────────────
 
@@ -147,8 +136,6 @@ const WEBVIEW_MESSAGE_GUARDS: { readonly [K in WebviewMessage['type']]: (message
     updateState: message => isUnitReference(message) && typeof message.state === 'string',
     openSource: message => isOneOf(message.target, NavigationTarget)
         && (message.fileIndex === undefined && message.unitId === undefined ? true : isUnitReference(message)),
-    copyToClipboard: message => typeof message.text === 'string',
-    notify: message => isOneOf(message.kind, NotifyKind) && typeof message.message === 'string',
 };
 
 export function isWebviewMessage(value: unknown): value is WebviewMessage {

@@ -35,5 +35,6 @@ export function splitUnitId(id: string): string[] {
 
 /** The last segment of an id as written — a label of last resort for a node without a name. */
 export function lastSegmentLabel(id: string): string {
-    return splitUnitId(id).at(-1) ?? id;
+    const segments = splitUnitId(id);
+    return segments[segments.length - 1];
 }

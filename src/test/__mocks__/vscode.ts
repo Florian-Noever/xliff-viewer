@@ -29,7 +29,6 @@ let fileWrites: { path: string; content: string }[] = [];
 let configOverrides: Record<string, unknown> = {};
 let virtualFiles: Record<string, string> = {};
 let messageResult: string | undefined;
-let clipboardWrites: string[] = [];
 let logLines: string[] = [];
 let executedCommands: { command: string; args: readonly unknown[] }[] = [];
 let watchers: FakeFileSystemWatcher[] = [];
@@ -517,15 +516,6 @@ export class FakeTextDocument {
     }
 }
 
-export const env = {
-    clipboard: {
-        writeText: (text: string): Promise<void> => {
-            clipboardWrites.push(text);
-            return Promise.resolve();
-        },
-    },
-};
-
 export const FileType = { Unknown: 0, File: 1, Directory: 2, SymbolicLink: 64 } as const;
 
 type WatchedKind = 'created' | 'deleted' | 'changed';
@@ -705,10 +695,6 @@ export function flushFileWrites(): { path: string; content: string }[] {
     return fileWrites.splice(0);
 }
 
-export function flushClipboardWrites(): string[] {
-    return clipboardWrites.splice(0);
-}
-
 export function flushRevealedPositions(): { path: string; line: number }[] {
     const taken = revealedPositions;
     revealedPositions = [];
@@ -756,7 +742,6 @@ export function resetMocks(): void {
     configOverrides = {};
     virtualFiles = {};
     messageResult = undefined;
-    clipboardWrites = [];
     configurationListeners = [];
     documentChangeListeners = [];
     writableFileSystems = {};

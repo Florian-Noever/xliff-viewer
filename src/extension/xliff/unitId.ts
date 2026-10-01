@@ -1,5 +1,5 @@
 import { alNameHash } from './alNameHash';
-import { SEGMENT_SEPARATOR, splitUnitId } from '../../shared/unitPath';
+import { splitUnitId } from '../../shared/unitPath';
 
 /**
  * One segment of a trans-unit id.
@@ -68,12 +68,4 @@ export function canonicalHash(segment: UnitIdSegment): string {
 export function canonicalSegment(segment: UnitIdSegment): string {
     const hash = canonicalHash(segment);
     return hash === '' ? segment.type : `${segment.type} ${hash}`;
-}
-
-/**
- * The id every segment of which is `<Type> <hash>` — equal for the readable and the hashed
- * form of the same symbol path.
- */
-export function canonicalPath(segments: readonly UnitIdSegment[]): string {
-    return segments.map(canonicalSegment).join(SEGMENT_SEPARATOR);
 }

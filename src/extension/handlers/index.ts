@@ -1,7 +1,5 @@
 import * as vscode from 'vscode';
 
-import { handleCopyToClipboard } from './copyToClipboard';
-import { handleNotify } from './notify';
 import { handleOpenSource } from './openSource';
 import { handleReady } from './ready';
 import { handleUpdateState } from './updateState';
@@ -29,10 +27,6 @@ const HANDLERS: HandlerMap = {
     updateTarget: handleUpdateTarget,
     updateState: handleUpdateState,
     openSource: handleOpenSource,
-    copyToClipboard: message => handleCopyToClipboard(message),
-    notify: (message) => {
-        handleNotify(message);
-    },
 };
 
 /**

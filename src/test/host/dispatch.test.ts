@@ -2,17 +2,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { dispatch } from '../../extension/handlers';
 import { Logger } from '../../extension/services/logger';
-import { NavigationTarget, NotifyKind, WebviewMessageType } from '../../shared/messages';
+import { NavigationTarget, WebviewMessageType } from '../../shared/messages';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { XliffState } from '../../shared/state';
-import {
-    flushClipboardWrites,
-    flushErrorMessages,
-    flushInfoMessages,
-    flushLogs,
-    flushWarningMessages,
-    resetMocks,
-} from '../__mocks__/vscode';
+import { flushErrorMessages, flushLogs, resetMocks } from '../__mocks__/vscode';
 
 import type * as vscode from 'vscode';
 import type { HandlerContext } from '../../extension/handlers/handlerContext';
@@ -101,26 +94,6 @@ describe('routing', () => {
         expect(calls[1].unit).toEqual({ fileIndex: 0, unitId: 'x' });
     });
 
-    it('copies through the host, which is the only side with a clipboard', async () => {
-        const { context } = fixture();
-
-        await dispatch({ type: WebviewMessageType.copyToClipboard, text: 'Contoso Methoden Name' }, context);
-
-        expect(flushClipboardWrites()).toEqual(['Contoso Methoden Name']);
-    });
-
-    it('maps each notify kind to its own VS Code notification', async () => {
-        const { context } = fixture();
-
-        await dispatch({ type: WebviewMessageType.notify, kind: NotifyKind.info, message: 'saved' }, context);
-        await dispatch({ type: WebviewMessageType.notify, kind: NotifyKind.warning, message: 'careful' }, context);
-        await dispatch({ type: WebviewMessageType.notify, kind: NotifyKind.error, message: 'failed' }, context);
-
-        expect(flushInfoMessages()).toEqual(['saved']);
-        expect(flushWarningMessages()).toEqual(['careful']);
-        expect(flushErrorMessages()).toEqual(['failed']);
-    });
-
     it('has a handler for every message the union declares', async () => {
         // The map is keyed by WebviewMessage['type'], so a missing one is a compile error;
         // this asserts none of them throws "not a function" at runtime either.
@@ -129,8 +102,6 @@ describe('routing', () => {
             { type: WebviewMessageType.updateTarget, fileIndex: 0, unitId: 'x', value: 'v' },
             { type: WebviewMessageType.updateState, fileIndex: 0, unitId: 'x', state: XliffState.translated },
             { type: WebviewMessageType.openSource, fileIndex: 0, unitId: 'x', target: NavigationTarget.text },
-            { type: WebviewMessageType.copyToClipboard, text: 't' },
-            { type: WebviewMessageType.notify, kind: NotifyKind.info, message: 'm' },
         ];
         expect(messages.map(message => message.type)).toEqual(Object.values(WebviewMessageType));
 
@@ -160,13 +131,13 @@ describe('a handler that throws', () => {
     });
 
     it('leaves the dispatcher able to handle the next message', async () => {
-        const { context } = fixture(failing);
+        const { calls, context } = fixture(failing);
 
         await dispatch({ type: WebviewMessageType.ready }, context);
         flushErrorMessages();
-        await dispatch({ type: WebviewMessageType.copyToClipboard, text: 'still here' }, context);
+        await dispatch({ type: WebviewMessageType.updateState, fileIndex: 0, unitId: 'x', state: XliffState.translated }, context);
 
-        expect(flushClipboardWrites()).toEqual(['still here']);
+        expect(calls.map(call => call.what)).toEqual(['updateState']);
         expect(flushErrorMessages()).toEqual([]);
     });
 

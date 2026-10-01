@@ -1,7 +1,7 @@
 /**
  * Single source of truth for every number shared between TypeScript logic and CSS.
  * `useDesignTokens()` injects these as CSS custom properties. Values with no TypeScript
- * consumer — radii, z-layers, durations — live in global.css.
+ * consumer, such as radii, live in global.css.
  */
 
 // --- Layout ---

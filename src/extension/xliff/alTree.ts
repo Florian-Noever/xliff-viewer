@@ -211,10 +211,17 @@ export function groupRoots(roots: readonly AlNode[]): AlNode[] {
         : entry));
 }
 
+/** An object-type group while its members are still being collected. */
+interface TypeGroup {
+    readonly key: string;
+    readonly type: string;
+    readonly members: AlNode[];
+}
+
 /** One synthetic node per object type, in first-appearance order. */
 function groupByType(nodes: readonly AlNode[], keyPrefix: string): AlNode[] {
-    const order: (AlNode | string)[] = [];
-    const groups = new Map<string, { readonly type: string; readonly members: AlNode[] }>();
+    const order: (AlNode | TypeGroup)[] = [];
+    const groups = new Map<string, TypeGroup>();
 
     for (const node of nodes) {
         if (node.segment.hash === '') {
@@ -225,46 +232,23 @@ function groupByType(nodes: readonly AlNode[], keyPrefix: string): AlNode[] {
         const key = keyPrefix + node.segment.type;
         const group = groups.get(key);
         if (group === undefined) {
-            groups.set(key, { type: node.segment.type, members: [node] });
-            order.push(key);
+            const created: TypeGroup = { key, type: node.segment.type, members: [node] };
+            groups.set(key, created);
+            order.push(created);
         } else {
             group.members.push(node);
         }
     }
 
-    return order.map((entry) => {
-        if (typeof entry !== 'string') {
-            return entry;
-        }
-        const group = groups.get(entry);
-        if (group === undefined) {
-            throw new Error(`No members were collected for the object-type group "${entry}".`);
-        }
-        return {
-            key: entry,
+    return order.map((entry): AlNode => ('members' in entry
+        ? {
+            key: entry.key,
             // The count is of **objects**, not units: the progress bar already carries the
             // unit counts, and "Tables (12)" answers a different question.
-            segment: { type: group.type, hash: '', name: `${group.type}s (${group.members.length})` },
+            segment: { type: entry.type, hash: '', name: `${entry.type}s (${entry.members.length})` },
             depth: 0,
-            children: group.members,
+            children: entry.members,
             synthetic: true,
-        };
-    });
-}
-
-/** Walks the tree depth-first, in the order the nodes were created. */
-export function* iterateNodes(nodes: readonly AlNode[]): Generator<AlNode> {
-    for (const node of nodes) {
-        yield node;
-        yield* iterateNodes(node.children);
-    }
-}
-
-/** Every node carrying a unit, depth-first. */
-export function* iterateUnitNodes(nodes: readonly AlNode[]): Generator<AlNode> {
-    for (const node of iterateNodes(nodes)) {
-        if (node.unitId !== undefined) {
-            yield node;
         }
-    }
+        : entry));
 }

@@ -14,7 +14,7 @@ const BOUNDARY_MESSAGE =
 
 export default tseslint.config(
     {
-        ignores: ['out/**', 'dist/**', 'public/**', 'node_modules/**', '.vscode-test/**', '.vscode-test-web/**'],
+        ignores: ['out/**', 'public/**', 'node_modules/**', '.vscode-test/**', '.vscode-test-web/**'],
     },
 
     // ── Base rules — every TypeScript and Vue file ───────────────────────────

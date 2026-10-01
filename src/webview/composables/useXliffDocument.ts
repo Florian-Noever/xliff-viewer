@@ -54,7 +54,6 @@ export interface XliffDocument {
     readonly unitsById: ComputedRef<ReadonlyMap<string, TransUnitDto>>;
     /** True when a failure has nothing behind it, so the error must take the whole view. */
     readonly blocking: ComputedRef<boolean>;
-    readonly unitCount: ComputedRef<number>;
     /** Opens the raw XML in the built-in editor — the one action available while nothing parses. */
     openAsText(): void;
     /** Navigation for one unit. The host decides what each target means. */
@@ -130,7 +129,6 @@ export function useXliffDocument(options: XliffDocumentOptions = {}): XliffDocum
 
     const activeFile = computed(() => document.value?.files[activeFileIndex.value] ?? document.value?.files[0]);
     const unitsById = computed(() => new Map((activeFile.value?.units ?? []).map(unit => [unit.id, unit])));
-    const unitCount = computed(() => document.value?.files.reduce((total, file) => total + file.units.length, 0) ?? 0);
     const blocking = computed(() => document.value === undefined && (loading.value !== undefined || error.value !== undefined));
 
     function apply(message: unknown): void {
@@ -238,7 +236,6 @@ export function useXliffDocument(options: XliffDocumentOptions = {}): XliffDocum
         activeFile,
         unitsById,
         blocking,
-        unitCount,
         openAsText,
         openSource,
         updateTarget,

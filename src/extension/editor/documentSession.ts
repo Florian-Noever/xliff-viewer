@@ -191,10 +191,6 @@ export class XliffDocumentSession {
         return new vscode.Disposable(() => this.listeners.delete(listener));
     }
 
-    public get viewCount(): number {
-        return this.listeners.size;
-    }
-
     public dispose(): void {
         this.clearTimer();
         this.subscription.dispose();

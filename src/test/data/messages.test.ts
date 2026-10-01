@@ -5,7 +5,6 @@ import {
     isExtensionMessage,
     isWebviewMessage,
     NavigationTarget,
-    NotifyKind,
     WebviewMessageType,
 } from '../../shared/messages';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
@@ -20,8 +19,6 @@ const VALID: readonly WebviewMessage[] = [
     { type: WebviewMessageType.updateState, fileIndex: 0, unitId: 'x', state: XliffState.translated },
     { type: WebviewMessageType.openSource, fileIndex: 0, unitId: 'x', target: NavigationTarget.source },
     { type: WebviewMessageType.openSource, target: NavigationTarget.text },
-    { type: WebviewMessageType.copyToClipboard, text: 'anything' },
-    { type: WebviewMessageType.notify, kind: NotifyKind.warning, message: 'careful' },
 ];
 
 describe('isWebviewMessage', () => {
@@ -55,9 +52,6 @@ describe('isWebviewMessage', () => {
             { type: 'openSource', fileIndex: 0, unitId: 'x', target: 'elsewhere' },
             { type: 'openSource', target: 'text', fileIndex: 0 },
             { type: 'openSource', target: 'text', unitId: 'x' },
-            { type: 'copyToClipboard' },
-            { type: 'notify', kind: 'shout', message: 'hi' },
-            { type: 'notify', kind: 'info' },
         ];
 
         for (const value of bad) {
@@ -109,7 +103,7 @@ describe('the constants that cross the boundary', () => {
     it('are plain string maps whose key is its own value', () => {
         // Not a TS enum: an enum is neither JSON-safe nor esbuild-safe across files, and a
         // key that drifts from its value makes a message unmatchable on the far side.
-        for (const map of [ExtensionMessageType, WebviewMessageType, NavigationTarget, NotifyKind]) {
+        for (const map of [ExtensionMessageType, WebviewMessageType, NavigationTarget]) {
             for (const [key, value] of Object.entries(map)) {
                 expect(value).toBe(key);
             }

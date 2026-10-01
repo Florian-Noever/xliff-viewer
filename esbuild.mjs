@@ -3,7 +3,6 @@ import { readFile } from 'node:fs/promises';
 import * as esbuild from 'esbuild';
 
 const watch = process.argv.includes('--watch');
-const production = process.argv.includes('--production');
 const tests = process.argv.includes('--tests');
 
 /**
@@ -52,8 +51,7 @@ const shared = {
     entryPoints: ['src/extension/extension.ts'],
     bundle: true,
     format: 'cjs',
-    minify: production,
-    sourcemap: !production,
+    sourcemap: true,
     sourcesContent: false,
     external: ['vscode'],
     logLevel: 'silent',

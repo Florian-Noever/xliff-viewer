@@ -59,11 +59,7 @@ export async function walkAlFiles(root: vscode.Uri): Promise<vscode.Uri[]> {
     const pending = [root];
     let seen = 0;
 
-    while (pending.length > 0) {
-        const folder = pending.shift();
-        if (folder === undefined) {
-            break;
-        }
+    for (let folder = pending.shift(); folder !== undefined; folder = pending.shift()) {
         let entries: [string, vscode.FileType][];
         try {
             entries = await vscode.workspace.fs.readDirectory(folder);

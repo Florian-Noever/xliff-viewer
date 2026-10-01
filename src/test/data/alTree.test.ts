@@ -3,10 +3,11 @@ import { fileURLToPath, URL } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { buildAlTree, groupRoots, iterateNodes, iterateUnitNodes, NO_NAMESPACE_GROUP_KEY, OBJECT_TYPE_GROUP_PREFIX } from '../../extension/xliff/alTree';
+import { buildAlTree, groupRoots, NO_NAMESPACE_GROUP_KEY, OBJECT_TYPE_GROUP_PREFIX } from '../../extension/xliff/alTree';
 import { alNameHash } from '../../extension/xliff/alNameHash';
 import { parseXliff } from '../../extension/xliff/parser';
 import { iterateUnits } from '../../shared/model';
+import { iterateNodes, iterateUnitNodes } from '../support/alTreeWalk';
 
 import type { XliffNote, XliffTransUnit } from '../../shared/model';
 
