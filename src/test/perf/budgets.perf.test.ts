@@ -19,6 +19,7 @@ import { visibleNodes } from '../../webview/ancestorFilter';
 import { buildSearchIndex, toMatcher } from '../../webview/composables/useSearch';
 import { expandableKeys, flattenTree, keysToDepth } from '../../webview/composables/useTreeFlatten';
 import { hintsFor } from '../../webview/validation';
+import { whitespaceParts } from '../../webview/whitespace';
 import { iterateUnits } from '../../shared/model';
 import { effectiveState, summariseTree } from '../../shared/state';
 import { FakeTextDocument } from '../__mocks__/vscode';
@@ -216,5 +217,14 @@ describe('performance budgets on the AL source of the large app', () => {
             slowest = Math.max(slowest, performance.now() - started);
         }
         expect(slowest).toBeLessThan(20);
+    });
+});
+
+describe('performance budgets on input built to be slow', () => {
+    const WHITESPACE_SPLIT_MS = 5;
+
+    it(`splits a target's edge whitespace in under ${WHITESPACE_SPLIT_MS} ms, however much whitespace sits inside it`, () => {
+        const value = `a${' '.repeat(100_000)}b`;
+        expect(fastest(5, () => whitespaceParts(value))).toBeLessThan(WHITESPACE_SPLIT_MS);
     });
 });

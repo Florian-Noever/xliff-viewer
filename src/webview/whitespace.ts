@@ -25,15 +25,17 @@ export interface WhitespaceParts {
     readonly trail: string;
 }
 
-const EDGES = /^(\s*)([\s\S]*?)(\s*)$/;
-
-/** Splits a string into its leading whitespace, its middle, and its trailing whitespace. */
+/**
+ * Splits a string into its leading whitespace, its middle, and its trailing whitespace. A
+ * string of nothing but whitespace is all lead.
+ */
 export function whitespaceParts(value: string): WhitespaceParts {
-    const match = EDGES.exec(value);
-    if (match === null) {
-        return { lead: '', core: value, trail: '' };
+    const core = value.trim();
+    if (core === '') {
+        return { lead: value, core: '', trail: '' };
     }
-    return { lead: match[1], core: match[2], trail: match[3] };
+    const lead = value.slice(0, value.length - value.trimStart().length);
+    return { lead, core, trail: value.slice(lead.length + core.length) };
 }
 
 /** Undefined when the whitespace carries nothing the reader needs to know about. */
