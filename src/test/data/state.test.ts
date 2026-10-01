@@ -15,6 +15,7 @@ import {
     worstState,
     XliffState,
 } from '../../shared/state';
+import { corpusFacts } from '../fixtures/corpus';
 import { FIXTURE, fixtureUnits } from '../support/fixtures';
 import { target, unit } from '../support/modelBuilders';
 
@@ -183,7 +184,7 @@ describe('the corpus, summarised', () => {
         expect(summary.worst).toBe(XliffState.missing);
         expect(summary.percent).toBe(0);
         expect(summary.translatedCount).toBe(0);
-        expect(summary.byState).toEqual({ missing: 500 });
+        expect(summary.byState).toEqual({ missing: corpusFacts().contoso.units });
     });
 
     it('reports the outliers in a mostly translated file', () => {
@@ -337,7 +338,7 @@ describe('summariseTree', () => {
         const rootTranslated = roots.reduce((sum, node) => sum + (rolled.get(node.key)?.translatedCount ?? 0), 0);
 
         expect(rootTotals).toBe(units.length);
-        expect(rootTranslated).toBe(2138);
+        expect(rootTranslated).toBe(corpusFacts().large.translated);
     });
 
 });

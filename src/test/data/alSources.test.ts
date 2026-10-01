@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { outlineAl } from '../../extension/al/alOutline';
 import { appUnits, translationRoot } from '../fixtures/alApp';
 import { Precision, renderApp } from '../fixtures/alRender';
-import { CONTOSO_MANIFEST, contosoApp, fabrikamApp, NORTHWIND_MANIFEST } from '../fixtures/corpus';
+import { corpusApps } from '../fixtures/corpus';
 import { NORTHWIND } from '../fixtures/northwind';
-import { FIXTURE, fixtureUnits } from '../support/fixtures';
+import { fixtureUnits } from '../support/fixtures';
 
 import type { AlDeclaration, AlOutline } from '../../extension/al/alOutline';
 import type { AlApp } from '../fixtures/alApp';
@@ -17,11 +17,7 @@ interface Case {
     readonly xliff: string;
 }
 
-const CASES: Readonly<Record<string, Case>> = {
-    'Contoso App': { app: contosoApp(), manifest: CONTOSO_MANIFEST, xliff: FIXTURE.base },
-    'Northwind App': { app: NORTHWIND, manifest: NORTHWIND_MANIFEST, xliff: FIXTURE.namespacedBase },
-    'Fabrikam Base': { app: fabrikamApp(), manifest: CONTOSO_MANIFEST, xliff: FIXTURE.large },
-};
+const CASES: Readonly<Record<string, Case>> = Object.fromEntries(corpusApps().map(each => [each.name, each]));
 
 const rendered = new Map<string, RenderedApp>(Object.entries(CASES).map(([name, each]) => [name, renderApp(each.app, each.manifest)]));
 

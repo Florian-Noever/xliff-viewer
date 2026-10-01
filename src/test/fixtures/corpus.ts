@@ -661,10 +661,61 @@ export const NORTHWIND_MANIFEST: AppManifest = {
 };
 
 /** Where the committed AL sources live, per app, under `src/test/fixtures/al/`. */
+export const FABRIKAM_MANIFEST: AppManifest = { id: '5c0e7a10-0000-4000-8000-00000000fab1', publisher: 'Fabrikam', features: ['TranslationFile'] };
+
 export const AL_APPS = {
     contoso: 'Contoso App',
     namespaced: 'Northwind App',
 } as const;
+
+/** An app the corpus has AL source for, and the translation file of it the tests read. */
+export interface CorpusApp {
+    readonly name: string;
+    readonly app: AlApp;
+    readonly manifest: AppManifest;
+    readonly xliff: string;
+}
+
+/** Every app with AL source: the two committed ones, and Fabrikam's, rendered in memory. */
+export function corpusApps(): readonly CorpusApp[] {
+    return [
+        { name: AL_APPS.contoso, app: contosoApp(), manifest: CONTOSO_MANIFEST, xliff: FIXTURE.base },
+        { name: AL_APPS.namespaced, app: NORTHWIND, manifest: NORTHWIND_MANIFEST, xliff: FIXTURE.namespacedBase },
+        { name: 'Fabrikam Base', app: fabrikamApp(), manifest: FABRIKAM_MANIFEST, xliff: FIXTURE.large },
+    ];
+}
+
+/** What an app's translation files hold, counted from the units they are written from. */
+export interface CorpusFacts {
+    readonly units: number;
+    /** Written with a German target in the state `translated`. */
+    readonly translated: number;
+    /** Written with an empty `needs-translation` target. */
+    readonly untranslated: number;
+    readonly withObjectTarget: number;
+    /** The distinct roots of the hashed ids. */
+    readonly rootObjects: number;
+    readonly objectTypes: number;
+}
+
+function factsOf(units: readonly Unit[]): CorpusFacts {
+    return {
+        units: units.length,
+        translated: units.filter(unit => unit.translated && (unit.state ?? 'translated') === 'translated').length,
+        untranslated: units.filter(unit => !unit.translated).length,
+        withObjectTarget: units.filter(unit => unit.alObjectTarget !== undefined).length,
+        rootObjects: new Set(units.map(unit => idOf(unit.path.slice(0, 1)))).size,
+        objectTypes: new Set(units.map(unit => unit.path[0].type)).size,
+    };
+}
+
+let facts: Readonly<Record<'contoso' | 'large' | 'namespaced', CorpusFacts>> | undefined;
+
+/** The facts of each app, generated once: Contoso's three files, Fabrikam's and Northwind's two. */
+export function corpusFacts(): Readonly<Record<'contoso' | 'large' | 'namespaced', CorpusFacts>> {
+    facts ??= { contoso: factsOf(contoso()), large: factsOf(fabrikam()), namespaced: factsOf(northwind()) };
+    return facts;
+}
 
 /** The committed AL sources: every file of both apps, `app.json` included, by path. */
 export function generateAlSources(): readonly FixtureFile[] {

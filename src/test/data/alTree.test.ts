@@ -4,6 +4,7 @@ import { buildAlTree, groupRoots, NO_NAMESPACE_GROUP_KEY, OBJECT_TYPE_GROUP_PREF
 import { alNameHash } from '../../extension/xliff/alNameHash';
 import { canonicalSegment, parseUnitId } from '../../extension/xliff/unitId';
 import { SEGMENT_SEPARATOR, splitUnitId } from '../../shared/unitPath';
+import { corpusFacts } from '../fixtures/corpus';
 import { iterateNodes, iterateUnitNodes } from '../support/alTreeWalk';
 import { AL_FIXTURE_NAMES, FIXTURE, FIXTURE_NAMES, fixtureUnits } from '../support/fixtures';
 import { notedUnit, unit } from '../support/modelBuilders';
@@ -13,7 +14,7 @@ describe('the large corpus file', () => {
     const roots = buildAlTree(units);
 
     it('yields the known number of root objects', () => {
-        expect(roots).toHaveLength(230);
+        expect(roots).toHaveLength(corpusFacts().large.rootObjects);
     });
 
     it('places every unit on exactly one node', () => {
@@ -218,8 +219,8 @@ describe('the object-type level', () => {
     it('groups the large corpus file into its known object types, keeping every root', () => {
         const tree = groupRoots(buildAlTree(fixtureUnits(FIXTURE.large)));
 
-        expect(tree).toHaveLength(9);
-        expect(tree.reduce((sum, group) => sum + group.children.length, 0)).toBe(230);
+        expect(tree).toHaveLength(corpusFacts().large.objectTypes);
+        expect(tree.reduce((sum, group) => sum + group.children.length, 0)).toBe(corpusFacts().large.rootObjects);
     });
 });
 

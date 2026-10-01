@@ -9,6 +9,7 @@ import {
     readGeneratorNote,
 } from '../../extension/xliff/names';
 import { parseUnitId } from '../../extension/xliff/unitId';
+import { corpusFacts } from '../fixtures/corpus';
 import { FIXTURE, fixtureUnits } from '../support/fixtures';
 
 const h = alNameHash;
@@ -116,8 +117,8 @@ describe('names for every corpus unit', () => {
     // The regression guard for the whole naming approach. It is an exact count on
     // purpose: a percentage threshold would let a regression hide.
     it.each([
-        [FIXTURE.base, 500],
-        [FIXTURE.large, 2500],
+        [FIXTURE.base, corpusFacts().contoso.units],
+        [FIXTURE.large, corpusFacts().large.units],
     ])('%s: every one of %i units yields names', (file, expected) => {
         const units = fixtureUnits(file);
         expect(units).toHaveLength(expected);

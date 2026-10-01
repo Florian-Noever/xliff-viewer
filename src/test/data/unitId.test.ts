@@ -6,7 +6,8 @@ import { canonicalSegment, parseUnitId } from '../../extension/xliff/unitId';
 import { lastSegmentLabel, SEGMENT_SEPARATOR, splitUnitId } from '../../shared/unitPath';
 import { FIXTURE, fixtureUnits } from '../support/fixtures';
 
-const CORPUS = [FIXTURE.base, FIXTURE.large];
+/** The fixtures whose ids are all hashed: none of them readable. */
+const HASHED_ID_FIXTURES = [FIXTURE.base, FIXTURE.large];
 const h = alNameHash;
 /** Every segment written `<Type> <hash>`, which is the path the tree merges nodes on. */
 const canonicalPath = (id: string): string => parseUnitId(id).map(canonicalSegment).join(SEGMENT_SEPARATOR);
@@ -94,14 +95,14 @@ describe('the canonical path', () => {
 });
 
 describe('every corpus id', () => {
-    it.each(CORPUS)('%s: parses as the plain split did, and is its own canonical path', (file) => {
+    it.each(HASHED_ID_FIXTURES)('%s: parses as the plain split did, and is its own canonical path', (file) => {
         for (const unit of fixtureUnits(file)) {
             expect(splitUnitId(unit.id), unit.id).toEqual(unit.id.split(' - '));
             expect(canonicalPath(unit.id), unit.id).toBe(unit.id);
         }
     });
 
-    it.each(CORPUS)('%s: carries in every segment the hash of the name its note gives', (file) => {
+    it.each(HASHED_ID_FIXTURES)('%s: carries in every segment the hash of the name its note gives', (file) => {
         for (const unit of fixtureUnits(file)) {
             const segments = parseUnitId(unit.id);
             const reading = readGeneratorNote(segments, generatorNote(unit));

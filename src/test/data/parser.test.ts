@@ -4,19 +4,20 @@ import { XliffParseError } from '../../extension/xliff/errors';
 import { parseXliff } from '../../extension/xliff/parser';
 import { validateStructure } from '../../extension/xliff/validate';
 import { iterateUnits } from '../../shared/model';
+import { corpusFacts } from '../fixtures/corpus';
 import { FIXTURE, FIXTURE_NAMES, fixtureUnits, readFixture } from '../support/fixtures';
 
 const parse = (name: string) => parseXliff(readFixture(name));
 
 describe('unit counts', () => {
     it.each([
-        [FIXTURE.base, 500],
-        [FIXTURE.english, 500],
-        [FIXTURE.german, 500],
-        [FIXTURE.large, 2500],
+        [FIXTURE.base, corpusFacts().contoso.units],
+        [FIXTURE.english, corpusFacts().contoso.units],
+        [FIXTURE.german, corpusFacts().contoso.units],
+        [FIXTURE.large, corpusFacts().large.units],
         [FIXTURE.minimal, 1],
-        [FIXTURE.namespacedBase, 40],
-        [FIXTURE.namespacedGerman, 40],
+        [FIXTURE.namespacedBase, corpusFacts().namespaced.units],
+        [FIXTURE.namespacedGerman, corpusFacts().namespaced.units],
     ])('%s has %i units', (name, expected) => {
         expect(fixtureUnits(name)).toHaveLength(expected);
     });
@@ -66,9 +67,9 @@ describe('the large language file', () => {
         const units = fixtureUnits(FIXTURE.large);
 
         const withTarget = units.filter(unit => unit.target !== undefined);
-        expect(units).toHaveLength(2500);
-        expect(withTarget).toHaveLength(2500);
-        expect(withTarget.filter(unit => unit.target?.value === '')).toHaveLength(362);
+        expect(units).toHaveLength(corpusFacts().large.units);
+        expect(withTarget).toHaveLength(corpusFacts().large.units);
+        expect(withTarget.filter(unit => unit.target?.value === '')).toHaveLength(corpusFacts().large.untranslated);
         expect(units.filter(unit => unit.source === '')).toHaveLength(8);
         expect(withTarget.filter(unit => unit.target?.value === ' ')).toHaveLength(10);
         expect(units.filter(unit => unit.maxwidth !== undefined)).toHaveLength(1);
@@ -83,11 +84,11 @@ describe('the large language file', () => {
             acc[state] = (acc[state] ?? 0) + 1;
             return acc;
         }, {});
-        expect(counts).toEqual({ translated: 2138, 'needs-translation': 362 });
+        expect(counts).toEqual({ translated: corpusFacts().large.translated, 'needs-translation': corpusFacts().large.untranslated });
     });
 
     it('carries al-object-target on the units that have it', () => {
-        expect(fixtureUnits(FIXTURE.large).filter(unit => unit.alObjectTarget !== undefined)).toHaveLength(790);
+        expect(fixtureUnits(FIXTURE.large).filter(unit => unit.alObjectTarget !== undefined)).toHaveLength(corpusFacts().large.withObjectTarget);
     });
 
 });

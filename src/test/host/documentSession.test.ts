@@ -23,6 +23,7 @@ import {
     setConfigOverride,
     setWritableFileSystem,
 } from '../__mocks__/vscode';
+import { corpusFacts } from '../fixtures/corpus';
 import { FIXTURE, readFixture } from '../support/fixtures';
 
 import type * as vscode from 'vscode';
@@ -81,7 +82,7 @@ describe('opening a document', () => {
 
         expect(posted.map(message => message.type)).toEqual([ExtensionMessageType.loading, ExtensionMessageType.setDocument]);
         const [document] = documents(posted);
-        expect(document.type === ExtensionMessageType.setDocument && document.payload.files[0].units).toHaveLength(2500);
+        expect(document.type === ExtensionMessageType.setDocument && document.payload.files[0].units).toHaveLength(corpusFacts().large.units);
     });
 
     it('reports a base file as read-only', () => {

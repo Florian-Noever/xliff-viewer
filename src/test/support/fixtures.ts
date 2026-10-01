@@ -7,9 +7,11 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
 
 import { FIXTURE } from '../fixtures/corpus';
+import { projectDocument } from '../../extension/xliff/dto';
 import { parseXliff } from '../../extension/xliff/parser';
 import { iterateUnits } from '../../shared/model';
 
+import type { XliffDocumentDto } from '../../shared/dto';
 import type { XliffTransUnit } from '../../shared/model';
 
 export { FIXTURE };
@@ -37,4 +39,16 @@ export function fixtureUnits(name: string): readonly XliffTransUnit[] {
         unitsByFixture.set(name, units);
     }
     return units;
+}
+
+const projections = new Map<string, XliffDocumentDto>();
+
+/** A fixture as the host posts it, projected once per test file and shared between its tests. */
+export function fixtureProjection(name: string): XliffDocumentDto {
+    let projection = projections.get(name);
+    if (projection === undefined) {
+        projection = projectDocument(parseXliff(readFixture(name)), { uri: `file:///${name}`, fileName: name });
+        projections.set(name, projection);
+    }
+    return projection;
 }

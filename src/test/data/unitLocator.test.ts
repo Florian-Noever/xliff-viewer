@@ -7,15 +7,12 @@ import { candidateObjects, locateUnit, LocatePrecision } from '../../extension/a
 import { alNameHash } from '../../extension/xliff/alNameHash';
 import { generatorNote } from '../../extension/xliff/names';
 import { renderApp } from '../fixtures/alRender';
-import { CONTOSO_MANIFEST, contosoApp, fabrikamApp, NORTHWIND_MANIFEST } from '../fixtures/corpus';
+import { corpusApps } from '../fixtures/corpus';
 import { CODEUNIT, PAGE, REPORT, TABLE } from '../fixtures/alSnippets';
-import { NORTHWIND } from '../fixtures/northwind';
-import { FIXTURE, fixtureUnits } from '../support/fixtures';
+import { fixtureUnits } from '../support/fixtures';
 
 import type { AlOutline } from '../../extension/al/alOutline';
 import type { LocateResult } from '../../extension/al/unitLocator';
-import type { AlApp } from '../fixtures/alApp';
-import type { AppManifest } from '../fixtures/alRender';
 
 const h = alNameHash;
 
@@ -35,11 +32,7 @@ function textAt(files: Readonly<Record<string, string>>, result: LocateResult): 
     return result.kind === 'found' ? files[result.location.file].slice(result.location.range.start, result.location.range.end) : result.kind;
 }
 
-describe.each([
-    ['Contoso App', contosoApp(), CONTOSO_MANIFEST, FIXTURE.base],
-    ['Northwind App', NORTHWIND, NORTHWIND_MANIFEST, FIXTURE.namespacedBase],
-    ['Fabrikam Base', fabrikamApp(), CONTOSO_MANIFEST, FIXTURE.large],
-] as const satisfies readonly (readonly [string, AlApp, AppManifest, string])[])('every unit of %s', (_, app, manifest, file) => {
+describe.each(corpusApps().map(each => [each.name, each.app, each.manifest, each.xliff] as const))('every unit of %s', (_, app, manifest, file) => {
     it('is found where its source declares it, at the precision the source allows', () => {
         const source = renderApp(app, manifest);
         const outlines = new Map<string, AlOutline>(source.files.filter(each => each.path.endsWith('.al'))

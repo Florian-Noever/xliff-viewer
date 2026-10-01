@@ -4,16 +4,11 @@ import { projectDocument } from '../../extension/xliff/dto';
 import { parseXliff } from '../../extension/xliff/parser';
 import { iterateUnits } from '../../shared/model';
 import { summariseTree, summariseUnits, XliffState } from '../../shared/state';
-import { generateNamespacedFabrikam } from '../fixtures/corpus';
-import { AL_FIXTURE_NAMES, FIXTURE, FIXTURE_NAMES, readFixture } from '../support/fixtures';
+import { corpusFacts, generateNamespacedFabrikam } from '../fixtures/corpus';
+import { AL_FIXTURE_NAMES, FIXTURE, FIXTURE_NAMES, fixtureProjection, readFixture } from '../support/fixtures';
 
 import type { AlNodeDto, TransUnitDto, XliffDocumentDto, XliffFileDto } from '../../shared/dto';
 import type { UnitState } from '../../shared/state';
-
-function project(name: string): XliffDocumentDto {
-    const text = readFixture(name);
-    return projectDocument(parseXliff(text), { uri: `file:///${name}`, fileName: name });
-}
 
 function projectXml(xml: string, fileName = 'synthetic.xlf'): XliffDocumentDto {
     return projectDocument(parseXliff(xml), { uri: 'file:///synthetic.xlf', fileName });
@@ -51,12 +46,12 @@ const twoFiles = (id: string) => `<?xml version="1.0" encoding="utf-8"?>
 describe('shape', () => {
     it('gives every corpus file exactly one XliffFileDto', () => {
         for (const name of FIXTURE_NAMES) {
-            expect(project(name).files, name).toHaveLength(1);
+            expect(fixtureProjection(name).files, name).toHaveLength(1);
         }
     });
 
     it('carries the file metadata the header needs', () => {
-        const [file] = project(FIXTURE.large).files;
+        const [file] = fixtureProjection(FIXTURE.large).files;
 
         expect(file.index).toBe(0);
         expect(file.sourceLanguage).toBe('en-US');
@@ -66,7 +61,7 @@ describe('shape', () => {
     });
 
     it('holds no model internals', () => {
-        const serialised = JSON.stringify(project(FIXTURE.german));
+        const serialised = JSON.stringify(fixtureProjection(FIXTURE.german));
 
         expect(serialised).not.toContain('attributes');
         expect(serialised).not.toContain('hasBom');
@@ -76,7 +71,7 @@ describe('shape', () => {
     });
 
     it('carries no per-node summary — the webview rolls up', () => {
-        const serialised = JSON.stringify(project(FIXTURE.german));
+        const serialised = JSON.stringify(fixtureProjection(FIXTURE.german));
 
         expect(serialised).not.toContain('translatedCount');
         expect(serialised).not.toContain('byState');
@@ -99,7 +94,7 @@ describe('units', () => {
     it('gives every unit exactly one node whose key is its id', () => {
         // The DTO ships no `unitId`: a node carries a unit precisely when its key is one.
         for (const name of FIXTURE_NAMES) {
-            for (const file of project(name).files) {
+            for (const file of fixtureProjection(name).files) {
                 const keys = [...walk(file.tree)].map(node => node.key);
 
                 expect(new Set(keys).size, name).toBe(keys.length);
@@ -111,7 +106,7 @@ describe('units', () => {
     });
 
     it('projects a unit in full', () => {
-        const [file] = project(FIXTURE.large).files;
+        const [file] = fixtureProjection(FIXTURE.large).files;
         const unit = unitById(file, 'Codeunit 562451849 - Method 2574094843 - NamedType 2945922260');
 
         expect(unit).toEqual({
@@ -130,7 +125,7 @@ describe('units', () => {
     });
 
     it('carries al-object-target where the file has one', () => {
-        const [file] = project(FIXTURE.large).files;
+        const [file] = fixtureProjection(FIXTURE.large).files;
         const targeted = file.units.filter(unit => unit.alObjectTarget !== undefined);
 
         expect(targeted.length).toBeGreaterThan(0);
@@ -138,14 +133,14 @@ describe('units', () => {
     });
 
     it('distinguishes an absent target from an empty one', () => {
-        const base = project(FIXTURE.base).files[0];
-        const language = project(FIXTURE.large).files[0];
+        const base = fixtureProjection(FIXTURE.base).files[0];
+        const language = fixtureProjection(FIXTURE.large).files[0];
 
         expect(base.units.every(unit => unit.target === undefined)).toBe(true);
         expect(base.units.every(unit => unit.state === XliffState.missing)).toBe(true);
 
         const emptied = language.units.filter(unit => unit.state === XliffState.empty);
-        expect(emptied).toHaveLength(362);
+        expect(emptied).toHaveLength(corpusFacts().large.untranslated);
         expect(emptied.every(unit => unit.target === '')).toBe(true);
     });
 
@@ -163,7 +158,7 @@ describe('units', () => {
     });
 
     it('drops the Xliff Generator note but keeps the Developer one', () => {
-        const [file] = project(FIXTURE.large).files;
+        const [file] = fixtureProjection(FIXTURE.large).files;
         const serialised = JSON.stringify(file);
         const method = [...walk(file.tree)].find(node => node.type === 'Method')?.name ?? '';
 
@@ -227,12 +222,12 @@ describe('several <file> elements', () => {
 describe('hasAlIds', () => {
     it('is true for every AL-generated file', () => {
         for (const name of AL_FIXTURE_NAMES) {
-            expect(project(name).files[0].hasAlIds, name).toBe(true);
+            expect(fixtureProjection(name).files[0].hasAlIds, name).toBe(true);
         }
     });
 
     it('is false for a file whose ids carry no AL structure', () => {
-        expect(project(FIXTURE.minimal).files[0].hasAlIds).toBe(false);
+        expect(fixtureProjection(FIXTURE.minimal).files[0].hasAlIds).toBe(false);
     });
 
     it('is true when only some ids are AL-shaped, so the tree is still worth showing', () => {
@@ -248,7 +243,7 @@ describe('hasAlIds', () => {
 
 describe('isBaseFile and readOnly', () => {
     it('recognises a .g.xlf', () => {
-        const dto = project(FIXTURE.base);
+        const dto = fixtureProjection(FIXTURE.base);
 
         expect(dto.isBaseFile).toBe(true);
         expect(dto.readOnly).toBe(true);
@@ -257,7 +252,7 @@ describe('isBaseFile and readOnly', () => {
 
     it('does not call a language file a base file just because it translates into its own language', () => {
         // This fixture is en-US → en-US, and every unit has a target.
-        const dto = project(FIXTURE.english);
+        const dto = fixtureProjection(FIXTURE.english);
 
         expect(dto.isBaseFile).toBe(false);
         expect(dto.readOnly).toBe(false);
@@ -312,44 +307,43 @@ describe('isBaseFile and readOnly', () => {
 
 describe('the tree it hands over', () => {
     it('is the same shape summariseTree expects', () => {
-        const [file] = project(FIXTURE.large).files;
+        const [file] = fixtureProjection(FIXTURE.large).files;
         const states = new Map<string, UnitState>(
             file.units.map(unit => [unit.id, { state: unit.state, translate: unit.translate }]),
         );
         const summaries = summariseTree(file.tree, states);
 
         // Every real node plus the object-type groups above them.
-        expect(summaries.size).toBe(4029);
+        expect(summaries.size).toBe([...walk(file.tree)].length);
         const rootTotal = file.tree.reduce((sum, node) => sum + (summaries.get(node.key)?.total ?? 0), 0);
-        expect(rootTotal).toBe(2500);
+        expect(rootTotal).toBe(file.units.length);
     });
 
     it('puts the object types on top, and nothing else there', () => {
-        const [file] = project(FIXTURE.large).files;
+        const [file] = fixtureProjection(FIXTURE.large).files;
 
         expect(file.tree.every(node => node.group === true)).toBe(true);
-        expect(file.tree).toHaveLength(9);
-        expect(file.tree.reduce((sum, group) => sum + group.children.length, 0)).toBe(230);
+        expect(file.tree).toHaveLength(corpusFacts().large.objectTypes);
+        expect(file.tree.reduce((sum, group) => sum + group.children.length, 0)).toBe(corpusFacts().large.rootObjects);
         expect(file.tree.map(group => group.name)).toContain('Tables (16)');
     });
 
     it('marks the groups and only the groups', () => {
-        const [file] = project(FIXTURE.large).files;
+        const [file] = fixtureProjection(FIXTURE.large).files;
         const marked = [...walk(file.tree)].filter(node => node.group === true);
 
-        expect(marked).toHaveLength(9);
-        expect(marked.every(node => file.tree.includes(node))).toBe(true);
+        expect(marked).toEqual([...file.tree]);
     });
 
     it('leaves a file with no AL structure ungrouped', () => {
-        const [file] = project(FIXTURE.minimal).files;
+        const [file] = fixtureProjection(FIXTURE.minimal).files;
 
         expect(file.hasAlIds).toBe(false);
         expect(file.tree.some(node => node.group === true)).toBe(false);
     });
 
     it('names the nodes it can', () => {
-        const [file] = project(FIXTURE.large).files;
+        const [file] = fixtureProjection(FIXTURE.large).files;
         const unnamed = [...walk(file.tree)].filter(node => node.name === undefined);
 
         expect(unnamed).toHaveLength(0);
@@ -358,7 +352,7 @@ describe('the tree it hands over', () => {
 
 describe('budget', () => {
     it('serialises the large file inside the payload budget', () => {
-        const bytes = Buffer.byteLength(JSON.stringify(project(FIXTURE.large)), 'utf8');
+        const bytes = Buffer.byteLength(JSON.stringify(fixtureProjection(FIXTURE.large)), 'utf8');
 
         // A StateSummary on every node, or the generator note, would push the payload past this.
         expect(bytes).toBeLessThan(1250 * 1024);
@@ -376,17 +370,17 @@ describe('budget', () => {
 
 describe('namespaced ids', () => {
     it('marks the file whose ids name namespaces', () => {
-        expect(project(FIXTURE.namespacedGerman).files[0].namespaced).toBe(true);
+        expect(fixtureProjection(FIXTURE.namespacedGerman).files[0].namespaced).toBe(true);
     });
 
     it('leaves every other file unmarked, so its payload is unchanged', () => {
         for (const name of FIXTURE_NAMES.filter(each => !each.startsWith('Northwind'))) {
-            expect('namespaced' in project(name).files[0], name).toBe(false);
+            expect('namespaced' in fixtureProjection(name).files[0], name).toBe(false);
         }
     });
 
     it('ships the namespaces as real nodes and the levels below them as groups', () => {
-        const [file] = project(FIXTURE.namespacedGerman).files;
+        const [file] = fixtureProjection(FIXTURE.namespacedGerman).files;
         const namespaces = file.tree.filter(node => node.group !== true);
 
         expect(namespaces.every(node => node.type === 'Namespace' && node.name !== undefined)).toBe(true);
@@ -438,14 +432,16 @@ describe('base-file detection across several files', () => {
 describe('what the header will show', () => {
     // The DTO is the roll-up's only input in the webview, so the header's figures must
     // hold for the projection, not merely for the model.
-    const summaryOf = (name: string) => summariseUnits(project(name).files[0].units);
+    const summaryOf = (name: string) => summariseUnits(fixtureProjection(name).files[0].units);
 
     it('gives a partly translated file its known percentage and a worst state of empty', () => {
         const summary = summaryOf(FIXTURE.large);
 
-        expect(summary.percent).toBe(86);
+        const { translated, units } = corpusFacts().large;
+
+        expect(summary.percent).toBe(Math.round(100 * translated / units));
         expect(summary.worst).toBe(XliffState.empty);
-        expect(summary.total).toBe(2500);
+        expect(summary.total).toBe(units);
     });
 
     it('gives a base file 0 % and a worst state of missing', () => {
@@ -456,7 +452,7 @@ describe('what the header will show', () => {
     });
 
     it('rolls the tree up to the same totals the flat summary reports', () => {
-        const [file] = project(FIXTURE.large).files;
+        const [file] = fixtureProjection(FIXTURE.large).files;
         const summaries = summariseTree(file.tree, new Map(file.units.map(unit => [unit.id, unit])));
 
         const roots = file.tree.reduce((sum, node) => sum + (summaries.get(node.key)?.translatedCount ?? 0), 0);
