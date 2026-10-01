@@ -89,7 +89,7 @@ describe('revealAsText', () => {
         await revealAsText(vscode.Uri.file('/w/App.de-DE.xlf'));
 
         expect(flushExecutedCommands()).toEqual([
-            { command: 'vscode.openWith', args: [vscode.Uri.file('/w/App.de-DE.xlf'), 'default'] },
+            { command: 'vscode.openWith', args: [expect.objectContaining({ scheme: 'file', path: '/w/App.de-DE.xlf' }), 'default'] },
         ]);
     });
 

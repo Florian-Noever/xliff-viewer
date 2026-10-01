@@ -7,6 +7,8 @@
  * and only that much.
  */
 
+import { URI, Utils } from 'vscode-uri';
+
 export interface MessageCall {
     readonly message: string;
     readonly args: readonly unknown[];
@@ -79,59 +81,16 @@ export class Range {
     }
 }
 
-export class Uri {
-    public readonly scheme: string;
-    public readonly path: string;
-    public readonly query: string;
-    public readonly fragment: string;
-
-    private constructor(scheme: string, path: string, query = '', fragment = '') {
-        this.scheme = scheme;
-        this.path = path;
-        this.query = query;
-        this.fragment = fragment;
-    }
-
-    public get fsPath(): string {
-        return this.path;
-    }
-
-    public static file(path: string): Uri {
-        return new Uri('file', path.replace(/\\/g, '/'));
-    }
-
-    public static parse(value: string): Uri {
-        const match = /^([a-z-]+):\/\/(.*)$/i.exec(value);
-        return match ? new Uri(match[1], match[2]) : Uri.file(value);
-    }
-
-    public static joinPath(base: Uri, ...segments: string[]): Uri {
-        const parts = base.path.split('/');
-        for (const segment of segments) {
-            for (const piece of segment.split('/')) {
-                if (piece === '' || piece === '.') {
-                    continue;
-                }
-                if (piece === '..') {
-                    parts.pop();
-                    continue;
-                }
-                parts.push(piece);
-            }
-        }
-        const joined = parts.join('/');
-        // As the real one does, a joined URI keeps its base's query and fragment.
-        return new Uri(base.scheme, joined === '' ? '/' : joined, base.query, base.fragment);
-    }
-
-    public with(change: { readonly scheme?: string; readonly path?: string; readonly query?: string; readonly fragment?: string }): Uri {
-        return new Uri(change.scheme ?? this.scheme, change.path ?? this.path, change.query ?? this.query, change.fragment ?? this.fragment);
-    }
-
-    public toString(): string {
-        return `${this.scheme}://${this.path}`;
-    }
-}
+/**
+ * VS Code's own `Uri` implementation. Backslashes become slashes on every platform, as they
+ * do in the editor on Windows, so a test reads the same wherever it runs.
+ */
+export type Uri = URI;
+export const Uri = {
+    file: (path: string): URI => URI.file(path.replace(/\\/g, '/')),
+    parse: (value: string): URI => URI.parse(value),
+    joinPath: (base: URI, ...segments: string[]): URI => Utils.joinPath(base, ...segments),
+};
 
 function withoutTrailingSlash(path: string): string {
     return path.endsWith('/') ? path.slice(0, -1) : path;

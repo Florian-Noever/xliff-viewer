@@ -19,6 +19,30 @@ describe('vscode mock', () => {
         expect(joined.path).toBe('/root/Translations/App.g.xlf');
     });
 
+    it('joins Uris as VS Code does', () => {
+        expect(vscode.Uri.joinPath(vscode.Uri.file('/'), 'app.json').path).toBe('/app.json');
+        expect(vscode.Uri.joinPath(vscode.Uri.file('/w/'), 'x').path).toBe('/w/x');
+        expect(vscode.Uri.joinPath(vscode.Uri.file('/w/a/b'), '..', './c', 'd/../e').path).toBe('/w/a/c/e');
+    });
+
+    it('keeps the query and fragment of the base it joins to', () => {
+        const base = vscode.Uri.file('/w/App.xlf').with({ query: 'ref=HEAD', fragment: 'top' });
+        const joined = vscode.Uri.joinPath(base, '..', 'app.json');
+
+        expect([joined.path, joined.query, joined.fragment]).toEqual(['/w/app.json', 'ref=HEAD', 'top']);
+    });
+
+    it('round-trips a path with a space through toString and parse', () => {
+        const uri = vscode.Uri.file('/w/Contoso App.de-DE.xlf');
+
+        expect(uri.toString()).toBe('file:///w/Contoso%20App.de-DE.xlf');
+        expect(vscode.Uri.parse(uri.toString()).path).toBe('/w/Contoso App.de-DE.xlf');
+    });
+
+    it('reads a Windows path the same on every platform', () => {
+        expect(vscode.Uri.file('C:\\w\\App.xlf').path).toBe('/C:/w/App.xlf');
+    });
+
     it('serves virtual files and records the reads', async () => {
         setVirtualFile('/ws/App.g.xlf', '<xliff/>');
         const bytes = await vscode.workspace.fs.readFile(vscode.Uri.file('/ws/App.g.xlf'));

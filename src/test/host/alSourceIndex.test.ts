@@ -70,10 +70,19 @@ describe('alScopeFor', () => {
     });
 
     it('does not look above the workspace folder', async () => {
-        setVirtualFile('/app.json', '{}');
-        setVirtualFile('/w/Translations/Contoso.de-DE.xlf', '<xliff/>');
+        setWorkspaceRoot('/a/w');
+        setVirtualFile('/a/app.json', '{}');
+        setVirtualFile('/a/w/Translations/Contoso.de-DE.xlf', '<xliff/>');
 
-        expect((await alScopeFor(uri('/w/Translations/Contoso.de-DE.xlf')))?.folder.path).toBe('/w');
+        expect((await alScopeFor(uri('/a/w/Translations/Contoso.de-DE.xlf')))?.folder.path).toBe('/a/w');
+    });
+
+    it('finds an app.json further up when the file is in no workspace folder', async () => {
+        setWorkspaceRoot(undefined);
+        setVirtualFile('/a/app.json', '{}');
+        setVirtualFile('/a/w/Translations/Contoso.de-DE.xlf', '<xliff/>');
+
+        expect((await alScopeFor(uri('/a/w/Translations/Contoso.de-DE.xlf')))?.folder.path).toBe('/a');
     });
 
     it('takes a linked app.json for one, since a file type is a set of bits', async () => {

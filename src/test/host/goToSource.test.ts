@@ -153,7 +153,7 @@ describe('goToSource, when no AL source declares the unit', () => {
         const outcome = await goToSource(request(UNDECLARED), alSources, baseFiles);
 
         expect(outcome).toBe(SourceOutcome.baseFile);
-        expect(flushExecutedCommands()).toEqual([{ command: 'vscode.openWith', args: [vscode.Uri.file(BASE), 'default'] }]);
+        expect(flushExecutedCommands()).toEqual([{ command: 'vscode.openWith', args: [expect.objectContaining({ scheme: 'file', path: BASE }), 'default'] }]);
         const notices = flushProgress().filter(record => record.location === vscode.ProgressLocation.Notification);
         expect(notices.map(record => record.title)).toEqual(['The AL source for this unit was not found, so it is shown in Contoso.g.xlf instead.']);
         expect(flushInfoMessages()).toEqual([]);
@@ -196,7 +196,7 @@ describe('goToSource, when no AL source declares the unit', () => {
         const outcome = await goToSource(request(UNDECLARED, { document: vscode.Uri.file(BASE), isBaseFile: true }), alSources, baseFiles);
 
         expect(outcome).toBe(SourceOutcome.ownFile);
-        expect(flushExecutedCommands()).toEqual([{ command: 'vscode.openWith', args: [vscode.Uri.file(BASE), 'default'] }]);
+        expect(flushExecutedCommands()).toEqual([{ command: 'vscode.openWith', args: [expect.objectContaining({ scheme: 'file', path: BASE }), 'default'] }]);
         expect(flushProgress().map(record => record.title)).toContain('The AL source for this unit was not found, so it is shown in this file instead.');
     });
 
