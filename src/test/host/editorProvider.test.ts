@@ -6,6 +6,7 @@ import { Logger } from '../../extension/services/logger';
 import { alNameHash } from '../../extension/xliff/alNameHash';
 import { ExtensionMessageType, WebviewMessageType } from '../../shared/messages';
 import {
+    configurationListenerCount,
     customEditorRegistrations,
     documentChangeListenerCount,
     emitterListenerCount,
@@ -24,6 +25,7 @@ import {
     setConfigOverride,
     setVirtualFile,
     setWorkspaceRoot,
+    watcherCount,
 } from '../__mocks__/vscode';
 
 import type { TransUnitDto } from '../../shared/dto';
@@ -42,6 +44,14 @@ interface Harness {
     readonly panel: vscode.WebviewPanel;
     send(message: unknown): void;
     dispose(): void;
+}
+
+/** Every provider and panel a test opens, closed after it so that nothing it started outlives it. */
+const toDispose: { dispose(): void }[] = [];
+
+function track<T extends { dispose(): void }>(disposable: T): T {
+    toDispose.push(disposable);
+    return disposable;
 }
 
 async function openEditor(supplied?: FakeTextDocument): Promise<Harness> {
@@ -72,10 +82,11 @@ async function openEditor(supplied?: FakeTextDocument): Promise<Harness> {
     } as unknown as vscode.WebviewPanel;
 
     const document = supplied ?? new FakeTextDocument('/w/App.de-DE.xlf', FIXTURE);
-    const provider = new XliffEditorProvider(EXTENSION_URI);
+    const provider = track(new XliffEditorProvider(EXTENSION_URI));
     await provider.resolveCustomTextEditor(document as unknown as vscode.TextDocument, panel, {} as vscode.CancellationToken);
 
-    return {
+    let closed = false;
+    return track({
         posted,
         panel,
         send: (message: unknown) => {
@@ -83,26 +94,46 @@ async function openEditor(supplied?: FakeTextDocument): Promise<Harness> {
                 listener(message);
             }
         },
+        // VS Code disposes a panel once.
         dispose: () => {
+            if (closed) {
+                return;
+            }
+            closed = true;
             for (const handler of disposeHandlers) {
                 handler();
             }
         },
-    };
+    });
 }
 
 /** The base-file and AL-source announcements are fire-and-forget; let them land. */
-const settle = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 0));
+const settle = async (): Promise<void> => {
+    await vi.advanceTimersByTimeAsync(0);
+};
 
 beforeEach(() => {
+    vi.useFakeTimers();
     Logger.initialize({ subscriptions: [] } as unknown as vscode.ExtensionContext, 'test');
     setVirtualFile('/ext/media/webview.html', TEMPLATE);
     flushLogs();
 });
 
 afterEach(() => {
+    for (const disposable of toDispose.splice(0).reverse()) {
+        disposable.dispose();
+    }
+    const listening = {
+        documents: documentChangeListenerCount(),
+        configuration: configurationListenerCount(),
+        emitters: emitterListenerCount(),
+        watchers: watcherCount(),
+    };
+    vi.clearAllTimers();
+    vi.useRealTimers();
     vi.restoreAllMocks();
     resetMocks();
+    expect(listening, 'something the test opened is still listening').toEqual({ documents: 0, configuration: 0, emitters: 0, watchers: 0 });
 });
 
 describe('the editor provider', () => {
@@ -187,7 +218,7 @@ describe('the editor provider', () => {
         } as unknown as vscode.WebviewPanel;
 
         const document = new FakeTextDocument('/w/App.de-DE.xlf', FIXTURE) as unknown as vscode.TextDocument;
-        const resolving = new XliffEditorProvider(EXTENSION_URI)
+        const resolving = track(new XliffEditorProvider(EXTENSION_URI))
             .resolveCustomTextEditor(document, panel, {} as vscode.CancellationToken);
 
         await Promise.resolve();
@@ -229,7 +260,9 @@ describe('what survives a re-parse', () => {
   <trans-unit id="Table 1 - Property 2"><source>${source}</source><target state="translated">Kunde</target></trans-unit>
 </body></file></xliff>`;
 
-    const afterDebounce = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 250));
+    const afterDebounce = async (): Promise<void> => {
+        await vi.advanceTimersByTimeAsync(250);
+    };
 
     const patchedUnits = (posted: readonly ExtensionMessage[]): readonly TransUnitDto[] => {
         const patch = posted.find(message => message.type === ExtensionMessageType.patchUnits);
@@ -568,7 +601,7 @@ describe('how the editor is registered', () => {
         customEditorRegistrations.length = 0;
         const context = { extensionUri: vscode.Uri.file('/ext'), subscriptions: [] } as unknown as vscode.ExtensionContext;
 
-        XliffEditorProvider.register(context);
+        track(XliffEditorProvider.register(context));
 
         const [registration] = customEditorRegistrations;
         expect(registration.viewType).toBe('xliff-viewer.editor');

@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { computed, defineComponent, ref } from 'vue';
 
 import Toolbar from '../../webview/components/Toolbar.vue';
@@ -411,27 +411,23 @@ describe('the card in edit mode', () => {
     it('opens a wrapped target at its full height, before a key is ever pressed', () => {
         // The field lives in a virtualiser, so it mounts as the tree scrolls. `rows` counts
         // the target's own line breaks and knows nothing about the ones wrapping adds.
-        const heights = new WeakMap<HTMLTextAreaElement, boolean>();
-        const original = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'scrollHeight');
-        Object.defineProperty(HTMLTextAreaElement.prototype, 'scrollHeight', {
-            configurable: true,
-            get(this: HTMLTextAreaElement) {
-                heights.set(this, true);
-                return 56;
-            },
+        const measured = new WeakSet<HTMLTextAreaElement>();
+        const scrollHeight = vi.spyOn(HTMLTextAreaElement.prototype, 'scrollHeight', 'get').mockImplementation(function measure(this: HTMLTextAreaElement) {
+            measured.add(this);
+            return 56;
         });
 
         try {
             const { wrapper } = card({ target: 'a target long enough to wrap' });
             const field = wrapper.get('textarea').element as HTMLTextAreaElement;
 
-            expect(heights.get(field)).toBe(true);
+            expect(measured.has(field)).toBe(true);
             expect(field.style.blockSize).not.toBe('');
         } finally {
-            if (original !== undefined) {
-                Object.defineProperty(HTMLTextAreaElement.prototype, 'scrollHeight', original);
-            }
+            scrollHeight.mockRestore();
         }
+
+        expect(document.createElement('textarea').scrollHeight).toBe(0);
     });
 
     it('offers exactly the ten states the spec defines, and none of the synthetic ones', () => {

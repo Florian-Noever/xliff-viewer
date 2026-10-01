@@ -78,6 +78,8 @@ let alSources: AlSourceIndexes;
 let baseFiles: BaseFileResolver;
 
 beforeEach(() => {
+    // A fallback to the base file starts a notice that closes itself five seconds later.
+    vi.useFakeTimers();
     Logger.initialize({ subscriptions: [] } as unknown as vscode.ExtensionContext, 'test');
     setWorkspaceRoot('/w');
     setVirtualFile(`${APP}/app.json`, '{}');
@@ -91,6 +93,8 @@ beforeEach(() => {
 afterEach(() => {
     alSources.dispose();
     baseFiles.dispose();
+    vi.clearAllTimers();
+    vi.useRealTimers();
     resetMocks();
 });
 
@@ -210,18 +214,13 @@ describe('goToSource, when no AL source declares the unit', () => {
 
 describe('showTransientNotice', () => {
     it('is a notification that closes on its own after five seconds', async () => {
-        vi.useFakeTimers();
-        try {
-            showTransientNotice('Shown in the base file instead.');
-            const [notice] = flushProgress();
+        showTransientNotice('Shown in the base file instead.');
+        const [notice] = flushProgress();
 
-            expect(notice).toMatchObject({ location: vscode.ProgressLocation.Notification, title: 'Shown in the base file instead.', done: false });
-            await vi.advanceTimersByTimeAsync(4999);
-            expect(notice.done).toBe(false);
-            await vi.advanceTimersByTimeAsync(1);
-            expect(notice.done).toBe(true);
-        } finally {
-            vi.useRealTimers();
-        }
+        expect(notice).toMatchObject({ location: vscode.ProgressLocation.Notification, title: 'Shown in the base file instead.', done: false });
+        await vi.advanceTimersByTimeAsync(4999);
+        expect(notice.done).toBe(false);
+        await vi.advanceTimersByTimeAsync(1);
+        expect(notice.done).toBe(true);
     });
 });

@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { nextTick } from 'vue';
 
@@ -38,12 +38,15 @@ function accessibleName(element: Element): string {
     return own !== '' ? own : '';
 }
 
+/** Delivers a message from the host at once, rather than a task later as `postMessage` does. */
+function receive(data: unknown): void {
+    window.dispatchEvent(new MessageEvent('message', { data }));
+}
+
 async function app(): Promise<ReturnType<typeof mount>> {
     const wrapper = mount(App, { attachTo: document.body });
-    window.postMessage({ type: 'setDocument', payload: DEV_DOCUMENT }, '*');
-    await new Promise(resolve => setTimeout(resolve, 20));
-    await nextTick();
-    await nextTick();
+    receive({ type: 'setDocument', payload: DEV_DOCUMENT });
+    await flushPromises();
     return wrapper;
 }
 
@@ -190,10 +193,8 @@ describe('what the live region says', () => {
     /** A patch, the way the host sends one after an edit it accepted. */
     async function patch(units: readonly unknown[]): Promise<string> {
         const wrapper = await app();
-        window.postMessage({ type: 'patchUnits', payload: { fileIndex: 0, units } }, '*');
-        await new Promise(resolve => setTimeout(resolve, 20));
-        await nextTick();
-        await nextTick();
+        receive({ type: 'patchUnits', payload: { fileIndex: 0, units } });
+        await flushPromises();
         return wrapper.get('[role="status"][aria-live="polite"]').text();
     }
 

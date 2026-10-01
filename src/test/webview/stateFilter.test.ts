@@ -68,11 +68,8 @@ function filterOnly(): StateFilter {
 
 const scope = ref('file:///w/App.de-DE.xlf#0');
 
-const mounted: { unmount(): void }[] = [];
-
 function open() {
     const wrapper = mount(App, { attachTo: document.body });
-    mounted.push(wrapper);
     window.dispatchEvent(new MessageEvent('message', {
         data: { type: ExtensionMessageType.setDocument, payload: DOCUMENT },
     }));
@@ -91,9 +88,6 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    for (const wrapper of mounted.splice(0)) {
-        wrapper.unmount();
-    }
     vi.useRealTimers();
     restore();
 });

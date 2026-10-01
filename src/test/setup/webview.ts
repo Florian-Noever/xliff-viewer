@@ -6,7 +6,8 @@
  * setup file and the test share one module instance, so it is the same array.
  */
 
-import { beforeEach } from 'vitest';
+import { enableAutoUnmount } from '@vue/test-utils';
+import { afterEach, beforeEach } from 'vitest';
 
 export const postedMessages: unknown[] = [];
 
@@ -42,6 +43,9 @@ beforeEach(() => {
     stateWrites = 0;
     postedMessages.length = 0;
 });
+
+// A mounted app keeps listening for messages, so one left behind answers the next test's.
+enableAutoUnmount(afterEach);
 
 (globalThis as Record<string, unknown>).acquireVsCodeApi = () => ({
     postMessage: (message: unknown) => postedMessages.push(message),

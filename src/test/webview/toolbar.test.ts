@@ -45,13 +45,9 @@ const DOCUMENT: XliffDocumentDto = {
     }],
 };
 
-const mounted: { unmount(): void }[] = [];
-
 function open() {
-    // Attached to the document so focus assertions mean something; unmounted after each
-    // test, or the previous App keeps listening for messages this one dispatches.
+    // Attached to the document so focus assertions mean something.
     const wrapper = mount(App, { attachTo: document.body });
-    mounted.push(wrapper);
     window.dispatchEvent(new MessageEvent('message', {
         data: { type: ExtensionMessageType.setDocument, payload: DOCUMENT },
     }));
@@ -75,9 +71,6 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    for (const wrapper of mounted.splice(0)) {
-        wrapper.unmount();
-    }
     vi.useRealTimers();
     restore();
 });
@@ -99,7 +92,6 @@ describe('the toolbar', () => {
         });
 
         const wrapper = mount(TwoToolbars);
-        mounted.push(wrapper);
         const ids = wrapper.findAll('.match-count').map(count => count.attributes('id'));
 
         expect(new Set(ids).size).toBe(2);
@@ -108,7 +100,6 @@ describe('the toolbar', () => {
 
     it('appears only once a document has arrived', async () => {
         const empty = mount(App);
-        mounted.push(empty);
         expect(empty.find('.toolbar').exists()).toBe(false);
 
         const opened = open();

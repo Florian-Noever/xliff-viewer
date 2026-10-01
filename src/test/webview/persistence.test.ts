@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 
@@ -18,18 +18,23 @@ const WRITE_THROTTLE_MS = 250;
 
 type Mounted = ReturnType<typeof mount>;
 
+/** Delivers a message from the host at once, rather than a task later as `postMessage` does. */
+function receive(data: unknown): void {
+    window.dispatchEvent(new MessageEvent('message', { data }));
+}
+
 /** Mounts the app and answers `ready` with the fixture, the way the host does. */
 async function open(): Promise<Mounted> {
     const wrapper = mount(App, { attachTo: document.body });
-    window.postMessage({ type: 'setDocument', payload: DEV_DOCUMENT }, '*');
-    await new Promise(resolve => setTimeout(resolve, 20));
-    await nextTick();
-    await nextTick();
+    receive({ type: 'setDocument', payload: DEV_DOCUMENT });
+    await flushPromises();
     return wrapper;
 }
 
 /** Waits out the write throttle. */
-const settle = (): Promise<void> => new Promise(resolve => setTimeout(resolve, WRITE_THROTTLE_MS + 40));
+const settle = async (): Promise<void> => {
+    await vi.advanceTimersByTimeAsync(WRITE_THROTTLE_MS + 40);
+};
 
 /** The toolbar's second action. Collapsing changes the tree whatever depth it opened at. */
 async function collapseAll(wrapper: Mounted): Promise<void> {
@@ -48,12 +53,14 @@ const saved = (): PersistedView | undefined => webviewState() as PersistedView |
 let restore: () => void;
 
 beforeEach(() => {
+    vi.useFakeTimers();
     restore = stubLayout();
     setWebviewState(undefined);
 });
 
 afterEach(() => {
     restore();
+    vi.useRealTimers();
 });
 
 describe('what a hidden tab remembers', () => {
@@ -129,9 +136,8 @@ describe('what a hidden tab remembers', () => {
         const expanded = second.findAll('[role="treeitem"]').length;
 
         // A re-parse of the same document, which is what an edit produces.
-        window.postMessage({ type: 'setDocument', payload: DEV_DOCUMENT }, '*');
-        await new Promise(resolve => setTimeout(resolve, 20));
-        await nextTick();
+        receive({ type: 'setDocument', payload: DEV_DOCUMENT });
+        await flushPromises();
 
         expect(expanded).toBeGreaterThan(collapsed);
         expect(second.findAll('[role="treeitem"]').length).toBe(expanded);
@@ -223,22 +229,11 @@ describe('the slot, and what may be believed of it', () => {
 });
 
 describe('how often it writes', () => {
-    beforeEach(() => {
-        vi.useFakeTimers();
-    });
-
-    afterEach(() => {
-        vi.useRealTimers();
-    });
-
     it('writes once for a burst, not once per change', async () => {
         // A scroll crosses a row at a time and each crossing is a change. One write per
         // crossing would put a `setState` on every frame of a flick.
-        const wrapper = mount(App, { attachTo: document.body });
-        window.postMessage({ type: 'setDocument', payload: DEV_DOCUMENT }, '*');
-        await vi.advanceTimersByTimeAsync(20);
-        await nextTick();
-        await vi.advanceTimersByTimeAsync(WRITE_THROTTLE_MS + 40);
+        const wrapper = await open();
+        await settle();
         const before = webviewStateWrites();
 
         for (const query of ['s', 'se', 'set', 'setu', 'setup']) {
@@ -252,6 +247,5 @@ describe('how often it writes', () => {
 
         expect(webviewStateWrites()).toBe(before + 1);
         expect(saved()?.query).toBe('setup');
-        wrapper.unmount();
     });
 });

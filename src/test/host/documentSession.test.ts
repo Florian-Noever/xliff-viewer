@@ -39,8 +39,16 @@ function openDocument(name: string, text = read(name)): FakeTextDocument {
     return new FakeTextDocument(`/w/${name}`, text);
 }
 
+/** Every session and registry a test opens, closed after it so that none outlives it. */
+const toDispose: { dispose(): void }[] = [];
+
+function track<T extends { dispose(): void }>(disposable: T): T {
+    toDispose.push(disposable);
+    return disposable;
+}
+
 function sessionFor(document: FakeTextDocument): XliffDocumentSession {
-    return new XliffDocumentSession(document as unknown as vscode.TextDocument);
+    return track(new XliffDocumentSession(document as unknown as vscode.TextDocument));
 }
 
 function view(session: XliffDocumentSession) {
@@ -61,8 +69,13 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+    for (const disposable of toDispose.splice(0).reverse()) {
+        disposable.dispose();
+    }
+    const listening = documentChangeListenerCount();
     vi.useRealTimers();
     resetMocks();
+    expect(listening, 'a session the test opened is still listening').toBe(0);
 });
 
 describe('opening a document', () => {
@@ -358,7 +371,7 @@ describe('reacting to an external edit', () => {
 
 describe('the registry', () => {
     it('hands two editors of one document the same session', () => {
-        const registry = new DocumentSessionRegistry();
+        const registry = track(new DocumentSessionRegistry());
         const document = openDocument('minimal.xlf');
 
         expect(registry.acquire(document as unknown as vscode.TextDocument))
@@ -368,7 +381,7 @@ describe('the registry', () => {
     });
 
     it('keeps the session alive while a second editor still holds it', () => {
-        const registry = new DocumentSessionRegistry();
+        const registry = track(new DocumentSessionRegistry());
         const document = openDocument('minimal.xlf');
         const session = registry.acquire(document as unknown as vscode.TextDocument);
         registry.acquire(document as unknown as vscode.TextDocument);
@@ -383,7 +396,7 @@ describe('the registry', () => {
     });
 
     it('gives different documents different sessions', () => {
-        const registry = new DocumentSessionRegistry();
+        const registry = track(new DocumentSessionRegistry());
         const first = registry.acquire(openDocument('a.xlf', '<xliff/>') as unknown as vscode.TextDocument);
         const second = registry.acquire(openDocument('b.xlf', '<xliff/>') as unknown as vscode.TextDocument);
 
@@ -392,7 +405,7 @@ describe('the registry', () => {
     });
 
     it('disposes everything it holds', () => {
-        const registry = new DocumentSessionRegistry();
+        const registry = track(new DocumentSessionRegistry());
         registry.acquire(openDocument('a.xlf', '<xliff/>') as unknown as vscode.TextDocument);
         registry.acquire(openDocument('b.xlf', '<xliff/>') as unknown as vscode.TextDocument);
 
@@ -403,7 +416,7 @@ describe('the registry', () => {
     });
 
     it('ignores a release for a session it never handed out', () => {
-        const registry = new DocumentSessionRegistry();
+        const registry = track(new DocumentSessionRegistry());
         expect(() => registry.release(sessionFor(openDocument('a.xlf', '<xliff/>')))).not.toThrow();
     });
 });
@@ -748,6 +761,7 @@ describe('recognising our own edit', () => {
     it('absorbs its own edit exactly once, so a repeat of it is external', async () => {
         // Without consuming the record, a later change with the *same* span and text would
         // be taken for ours too — the user pasting back what we just wrote.
+        vi.useFakeTimers();
         const { document, facade, posted } = edited(LANGUAGE);
 
         await facade.updateTarget(UNIT, 'EditedTranslation');
@@ -760,7 +774,7 @@ describe('recognising our own edit', () => {
             rangeLength: document.offsetAt(applied.range.end) - start,
             text: applied.newText,
         }]);
-        await new Promise(resolve => setTimeout(resolve, 250));
+        await vi.advanceTimersByTimeAsync(250);
 
         expect(types(posted)).toEqual([ExtensionMessageType.patchUnits, ExtensionMessageType.setDocument]);
     });
