@@ -1,10 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
 
-import { describe, expect, it } from 'vitest';
+import { assert, describe, expect, it } from 'vitest';
 
 import { parseXliff } from '../../extension/xliff/parser';
+import { encodeAttribute } from '../../extension/xliff/serialise';
 import { setTarget } from '../../extension/xliff/writer';
+import { escapeRegExp } from '../../shared/escapeRegExp';
 import { iterateUnits } from '../../shared/model';
 
 /**
@@ -68,15 +70,15 @@ describe('one edit changes only what was edited', () => {
             const hadTarget = unit.target !== undefined;
 
             const edit = setTarget(document, original, { fileIndex: 0, unitId: unit.id, value: EDITED, state: 'translated' });
-            expect(edit, `${name}: the edit produced nothing`).not.toBeNull();
+            assert.exists(edit, `${name}: the edit produced nothing`);
 
-            const after = apply(original, edit ?? { start: 0, end: 0, newText: '' });
+            const after = apply(original, edit);
             const changed = differences(original, after);
 
             if (hadTarget) {
                 // The target's own lines are rewritten and nothing else is: what follows
                 // them is the original, shifted by whatever the new target's height differs.
-                const { at, before: was, after: now } = span(original, edit ?? { start: 0, end: 0, newText: '' });
+                const { at, before: was, after: now } = span(original, edit);
                 const left = original.split(/\r?\n/);
                 const right = after.split(/\r?\n/);
 
@@ -104,10 +106,11 @@ describe('one edit changes only what was edited', () => {
             const document = parseXliff(original);
             const [unit] = [...iterateUnits(document)];
             const edit = setTarget(document, original, { fileIndex: 0, unitId: unit.id, value: EDITED, state: 'translated' });
-            const after = apply(original, edit ?? { start: 0, end: 0, newText: '' });
+            assert.exists(edit, `${name}: the edit produced nothing`);
+            const after = apply(original, edit);
             // A target that gains or loses lines moves the line-ending count with it — but
             // only in a document whose line ending is the one being counted.
-            const { before: was, after: now } = span(original, edit ?? { start: 0, end: 0, newText: '' });
+            const { before: was, after: now } = span(original, edit);
             const delta = original.includes('\r\n') ? now - was : 0;
 
             expect(after.startsWith('﻿'), `${name}: BOM`).toBe(original.startsWith('﻿'));
@@ -119,17 +122,18 @@ describe('one edit changes only what was edited', () => {
             const original = read(name);
             const document = parseXliff(original);
             const units = [...iterateUnits(document)];
-            const target = units[Math.min(3, units.length - 1)];
+            const edited = units[Math.min(3, units.length - 1)];
 
-            const edit = setTarget(document, original, { fileIndex: 0, unitId: target.id, value: EDITED, state: 'translated' });
-            const after = apply(original, edit ?? { start: 0, end: 0, newText: '' });
+            const edit = setTarget(document, original, { fileIndex: 0, unitId: edited.id, value: EDITED, state: 'translated' });
+            assert.exists(edit, `${name}: the edit produced nothing`);
 
-            // Every other unit's id must still appear exactly where and as often as before.
-            for (const unit of units) {
-                const escaped = unit.id.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                const needle = `id="${escaped}"`;
-                expect(after.split(needle).length, `${name}: ${unit.id}`).toBe(original.split(needle).length);
-            }
+            // An edit inside the edited unit's own element leaves every other unit as it was.
+            const element = new RegExp(`<trans-unit[^>]*\\sid="${escapeRegExp(encodeAttribute(edited.id))}"`).exec(original);
+            assert.exists(element, `${name}: ${edited.id} is not in the text`);
+            const elementEnd = original.indexOf('</trans-unit>', element.index) + '</trans-unit>'.length;
+
+            expect(edit.start, `${name}: the edit starts before the unit`).toBeGreaterThanOrEqual(element.index);
+            expect(edit.end, `${name}: the edit ends after the unit`).toBeLessThanOrEqual(elementEnd);
         });
     }
 
@@ -141,9 +145,9 @@ describe('one edit changes only what was edited', () => {
         const [unit] = [...iterateUnits(document)];
 
         const edit = setTarget(document, original, { fileIndex: 0, unitId: unit.id, value: EDITED, state: 'translated' });
-        expect(edit).not.toBeNull();
+        assert.exists(edit);
 
-        const characters = (edit?.end ?? 0) - (edit?.start ?? 0);
+        const characters = edit.end - edit.start;
         expect(characters).toBeLessThan(200);
         expect(original.length).toBeGreaterThan(1_000_000);
     });
