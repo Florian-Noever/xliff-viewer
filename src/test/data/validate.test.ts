@@ -3,30 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { XliffParseError } from '../../extension/xliff/errors';
 import { validateStructure, validateXml } from '../../extension/xliff/validate';
 import { FIXTURE, FIXTURE_NAMES, readFixture } from '../support/fixtures';
-
-import type { XliffDocument, XliffFile, XliffGroup, XliffTransUnit } from '../../shared/model';
-
-// ── model builders ───────────────────────────────────────────────────────────
-function unit(id: string): XliffTransUnit {
-    return { attributes: { id }, id, translate: true, source: 's', notes: [] };
-}
-
-function group(units: XliffTransUnit[], groups: XliffGroup[] = []): XliffGroup {
-    return { attributes: {}, units, groups };
-}
-
-function file(units: XliffTransUnit[], groups: XliffGroup[] = []): XliffFile {
-    return { attributes: {}, sourceLanguage: 'en-US', body: { attributes: {}, units, groups } };
-}
-
-function document(files: XliffFile[]): XliffDocument {
-    return {
-        attributes: { version: '1.2' },
-        version: '1.2',
-        files,
-        format: { hasBom: false, declaration: '<?xml version="1.0"?>', eol: '\n', hasTrailingNewline: false },
-    };
-}
+import { document, file, group, unit } from '../support/modelBuilders';
 
 // ── malformed fixtures ───────────────────────────────────────────────────────
 // Multi-line on purpose: a reported line number is only useful if it can be wrong.

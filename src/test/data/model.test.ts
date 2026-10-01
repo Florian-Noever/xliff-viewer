@@ -1,50 +1,23 @@
 import { describe, expect, it } from 'vitest';
 
-import { iterateUnits, type XliffDocument, type XliffGroup, type XliffTransUnit } from '../../shared/model';
-
-function unit(id: string): XliffTransUnit {
-    return { attributes: { id }, id, translate: true, source: id, notes: [] };
-}
-
-function group(id: string, units: XliffTransUnit[], groups: XliffGroup[] = []): XliffGroup {
-    return { attributes: { id }, id, units, groups };
-}
-
-function document(files: XliffDocument['files']): XliffDocument {
-    return {
-        attributes: { version: '1.2' },
-        version: '1.2',
-        files,
-        format: { hasBom: false, declaration: '<?xml version="1.0"?>', eol: '\n', hasTrailingNewline: false },
-    };
-}
+import { iterateUnits, type XliffDocument } from '../../shared/model';
+import { document, file, group, unit } from '../support/modelBuilders';
 
 describe('iterateUnits', () => {
     it('walks units in file order through nested groups', () => {
-        const doc = document([{
-            attributes: {},
-            sourceLanguage: 'en-US',
-            body: {
-                attributes: {},
-                units: [unit('body-1')],
-                groups: [group('outer', [unit('outer-1')], [group('inner', [unit('inner-1')])])],
-            },
-        }]);
+        const doc = document([file([unit('body-1')], [group([unit('outer-1')], [group([unit('inner-1')])])])]);
 
         expect([...iterateUnits(doc)].map(u => u.id)).toEqual(['body-1', 'outer-1', 'inner-1']);
     });
 
     it('walks every file, not just the first', () => {
-        const doc = document([
-            { attributes: {}, sourceLanguage: 'en-US', body: { attributes: {}, units: [unit('a')], groups: [] } },
-            { attributes: {}, sourceLanguage: 'en-US', body: { attributes: {}, units: [unit('b')], groups: [] } },
-        ]);
+        const doc = document([file([unit('a')]), file([unit('b')])]);
 
         expect([...iterateUnits(doc)].map(u => u.id)).toEqual(['a', 'b']);
     });
 
     it('yields nothing for an empty body', () => {
-        const doc = document([{ attributes: {}, sourceLanguage: 'en-US', body: { attributes: {}, units: [], groups: [] } }]);
+        const doc = document([file([])]);
         expect([...iterateUnits(doc)]).toEqual([]);
     });
 });

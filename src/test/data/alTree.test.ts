@@ -4,15 +4,7 @@ import { buildAlTree, groupRoots, NO_NAMESPACE_GROUP_KEY, OBJECT_TYPE_GROUP_PREF
 import { alNameHash } from '../../extension/xliff/alNameHash';
 import { iterateNodes, iterateUnitNodes } from '../support/alTreeWalk';
 import { AL_FIXTURE_NAMES, FIXTURE, FIXTURE_NAMES, fixtureUnits } from '../support/fixtures';
-
-import type { XliffNote, XliffTransUnit } from '../../shared/model';
-
-function unit(id: string, generatorNote?: string): XliffTransUnit {
-    const notes: XliffNote[] = generatorNote === undefined
-        ? []
-        : [{ attributes: { from: 'Xliff Generator' }, from: 'Xliff Generator', value: generatorNote }];
-    return { attributes: { id }, id, translate: true, source: 's', notes };
-}
+import { notedUnit, unit } from '../support/modelBuilders';
 
 describe('the large corpus file', () => {
     const units = fixtureUnits(FIXTURE.large);
@@ -67,8 +59,8 @@ describe('grouping is by hash, never by name', () => {
 
     it('keys on type and hash together, so a shared hash cannot merge nodes', () => {
         const roots = buildAlTree([
-            unit('Table 999 - Property 1', 'Table Shared - Property Caption'),
-            unit('Page 999 - Property 1', 'Page Shared - Property Caption'),
+            notedUnit('Table 999 - Property 1', 'Table Shared - Property Caption'),
+            notedUnit('Page 999 - Property 1', 'Page Shared - Property Caption'),
         ]);
 
         expect(roots).toHaveLength(2);
@@ -77,8 +69,8 @@ describe('grouping is by hash, never by name', () => {
 
     it('separates two objects that share a name but differ by hash', () => {
         const roots = buildAlTree([
-            unit('Table 111 - Property 1', 'Table Customer - Property Caption'),
-            unit('Table 222 - Property 1', 'Table Customer - Property Caption'),
+            notedUnit('Table 111 - Property 1', 'Table Customer - Property Caption'),
+            notedUnit('Table 222 - Property 1', 'Table Customer - Property Caption'),
         ]);
 
         expect(roots).toHaveLength(2);
@@ -88,8 +80,8 @@ describe('grouping is by hash, never by name', () => {
 
     it('merges two units of the same object into one root', () => {
         const roots = buildAlTree([
-            unit('Table 111 - Property 1', 'Table Customer - Property Caption'),
-            unit('Table 111 - Property 2', 'Table Customer - Property ToolTip'),
+            notedUnit('Table 111 - Property 1', 'Table Customer - Property Caption'),
+            notedUnit('Table 111 - Property 2', 'Table Customer - Property ToolTip'),
         ]);
 
         expect(roots).toHaveLength(1);
@@ -144,7 +136,7 @@ describe('shape', () => {
     });
 
     it('leaves a node unnamed rather than guessing when the note does not parse', () => {
-        const roots = buildAlTree([unit('Table 1 - Property 2', 'utterly unrelated text')]);
+        const roots = buildAlTree([notedUnit('Table 1 - Property 2', 'utterly unrelated text')]);
         expect(roots[0].segment.name).toBeUndefined();
         expect(roots[0].children[0].segment.name).toBeUndefined();
     });
@@ -152,7 +144,7 @@ describe('shape', () => {
     it('fills a name in from a later unit that has a usable note', () => {
         const roots = buildAlTree([
             unit('Table 1 - Property 2'),
-            unit('Table 1 - Property 3', 'Table Customer - Property ToolTip'),
+            notedUnit('Table 1 - Property 3', 'Table Customer - Property ToolTip'),
         ]);
         expect(roots[0].segment.name).toBe('Customer');
     });
@@ -231,7 +223,7 @@ describe('canonical merging', () => {
     it('merges the readable and the hashed form of one object into one node', () => {
         const roots = buildAlTree([
             unit('Table "Contoso Item" - Property Caption'),
-            unit(hashed(['Table', 'Contoso Item'], ['Field', 'Größe'], ['Property', 'Caption']), 'Table Contoso Item - Field Größe - Property Caption'),
+            notedUnit(hashed(['Table', 'Contoso Item'], ['Field', 'Größe'], ['Property', 'Caption']), 'Table Contoso Item - Field Größe - Property Caption'),
         ]);
 
         expect(roots).toHaveLength(1);
@@ -279,7 +271,7 @@ describe('naming', () => {
     });
 
     it('lets an all-digit readable name, an API method id, yield to the note', () => {
-        const roots = buildAlTree([unit('Page "Contoso API" - Method "7001"', 'Page Contoso API - Method ReleaseOrder')]);
+        const roots = buildAlTree([notedUnit('Page "Contoso API" - Method "7001"', 'Page Contoso API - Method ReleaseOrder')]);
 
         expect(roots[0].children[0].segment.name).toBe('ReleaseOrder');
     });
@@ -287,7 +279,7 @@ describe('naming', () => {
     it('names a folded extension\'s members, and not the object after the extension', () => {
         // The note names the extension that declares the field; the id files it under the table.
         const root = `Table ${alNameHash('Contoso Item')}`;
-        const folded = unit(`${root} - Field ${alNameHash('Extra')} - Property ${alNameHash('Caption')}`, 'TableExtension Contoso Item Ext. - Field Extra - Property Caption');
+        const folded = notedUnit(`${root} - Field ${alNameHash('Extra')} - Property ${alNameHash('Caption')}`, 'TableExtension Contoso Item Ext. - Field Extra - Property Caption');
 
         const [table] = buildAlTree([folded]);
 
@@ -299,8 +291,8 @@ describe('naming', () => {
     it('names the object from a unit of its own, alongside a folded one', () => {
         const root = `Table ${alNameHash('Contoso Item')}`;
         const [table] = buildAlTree([
-            unit(`${root} - Field ${alNameHash('Extra')} - Property ${alNameHash('Caption')}`, 'TableExtension Contoso Item Ext. - Field Extra - Property Caption'),
-            unit(`${root} - Property ${alNameHash('Caption')}`, 'Table Contoso Item - Property Caption'),
+            notedUnit(`${root} - Field ${alNameHash('Extra')} - Property ${alNameHash('Caption')}`, 'TableExtension Contoso Item Ext. - Field Extra - Property Caption'),
+            notedUnit(`${root} - Property ${alNameHash('Caption')}`, 'Table Contoso Item - Property Caption'),
         ]);
 
         expect(table.segment.name).toBe('Contoso Item');
@@ -315,8 +307,8 @@ describe('naming', () => {
     it('merges a negative API method id, written unquoted, with its hashed form', () => {
         const page = `Page ${alNameHash('Contoso API')}`;
         const roots = buildAlTree([
-            unit('Page "Contoso API" - Method -7007001', 'Page Contoso API - Method ReleaseOrder'),
-            unit(`${page} - Method ${alNameHash('-7007001')} - NamedType ${alNameHash('DoneMsg')}`, 'Page Contoso API - Method ReleaseOrder - NamedType DoneMsg'),
+            notedUnit('Page "Contoso API" - Method -7007001', 'Page Contoso API - Method ReleaseOrder'),
+            notedUnit(`${page} - Method ${alNameHash('-7007001')} - NamedType ${alNameHash('DoneMsg')}`, 'Page Contoso API - Method ReleaseOrder - NamedType DoneMsg'),
         ]);
 
         expect(roots).toHaveLength(1);

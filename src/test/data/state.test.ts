@@ -16,8 +16,9 @@ import {
     XliffState,
 } from '../../shared/state';
 import { FIXTURE, fixtureUnits } from '../support/fixtures';
+import { target, unit } from '../support/modelBuilders';
 
-import type { XliffTarget, XliffTransUnit } from '../../shared/model';
+import type { XliffTransUnit } from '../../shared/model';
 import type { UnitState } from '../../shared/state';
 
 describe('severity order', () => {
@@ -130,12 +131,6 @@ describe('COMPLETE_STATES', () => {
 const asUnitState = (each: XliffTransUnit): UnitState => ({ state: effectiveState(each), translate: each.translate });
 const summaryOf = (name: string) => summariseUnits(fixtureUnits(name).map(asUnitState));
 
-function unit(id: string, target?: XliffTarget, translate = true): XliffTransUnit {
-    return { attributes: { id }, id, translate, source: 's', target, notes: [] };
-}
-
-const target = (value: string, state?: string): XliffTarget => ({ attributes: state === undefined ? {} : { state }, state, value });
-
 describe('isCompleteState', () => {
     it('is true for translated, signed-off and final, out of all thirteen states', () => {
         expect(STATE_SEVERITY).toHaveLength(13);
@@ -149,29 +144,29 @@ describe('effectiveState', () => {
     });
 
     it('is empty when the target has no text, whatever it declares', () => {
-        expect(effectiveState(unit('a', target('', 'translated')))).toBe(XliffState.empty);
-        expect(effectiveState(unit('a', target('', 'needs-translation')))).toBe(XliffState.empty);
+        expect(effectiveState(unit('a', { target: target('', 'translated') }))).toBe(XliffState.empty);
+        expect(effectiveState(unit('a', { target: target('', 'needs-translation') }))).toBe(XliffState.empty);
     });
 
     it('treats a single space as a translation, not as empty', () => {
         // Under `xml:space="preserve"` the space is the translation; trimming would report it untranslated.
-        expect(effectiveState(unit('a', target(' ', 'translated')))).toBe(XliffState.translated);
+        expect(effectiveState(unit('a', { target: target(' ', 'translated') }))).toBe(XliffState.translated);
     });
 
     it('returns the declared state when the spec defines it', () => {
         for (const state of SPEC_STATES) {
-            expect(effectiveState(unit('a', target('t', state)))).toBe(state);
+            expect(effectiveState(unit('a', { target: target('t', state) }))).toBe(state);
         }
     });
 
     it('is unknown for a state the spec does not define', () => {
-        expect(effectiveState(unit('a', target('t', 'proofread')))).toBe(XliffState.unknown);
+        expect(effectiveState(unit('a', { target: target('t', 'proofread') }))).toBe(XliffState.unknown);
     });
 
     it('is unknown for a target that declares no state at all', () => {
         // The `minimal.xlf` fixture is exactly this. `unknown` rather than `translated`,
         // because `unknown` cannot hide behind a green badge.
-        expect(effectiveState(unit('a', target('t')))).toBe(XliffState.unknown);
+        expect(effectiveState(unit('a', { target: target('t') }))).toBe(XliffState.unknown);
         expect(effectiveState(fixtureUnits(FIXTURE.minimal)[0])).toBe(XliffState.unknown);
     });
 });
