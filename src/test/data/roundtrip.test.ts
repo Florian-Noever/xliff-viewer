@@ -156,3 +156,28 @@ describe('encoding', () => {
         expect(rebuilt).toContain('<source>caf&amp;#233;</source>');
     });
 });
+
+describe('text that spans lines', () => {
+    const document = (eol: string): string => [
+        '<?xml version="1.0" encoding="utf-8"?>',
+        '<xliff version="1.2">',
+        '  <file source-language="en-US" target-language="de-DE" original="App">',
+        '    <body>',
+        '      <trans-unit id="a">',
+        '        <source>Line one',
+        'Line two</source>',
+        '        <target state="translated">Zeile eins',
+        'Zeile zwei</target>',
+        '      </trans-unit>',
+        '    </body>',
+        '  </file>',
+        '</xliff>',
+        '',
+    ].join(eol);
+
+    it.each([['CRLF', '\r\n'], ['LF', '\n']])('is byte-identical after parse → serialise in a %s file', (_name, eol) => {
+        const original = document(eol);
+        const rebuilt = roundTrip(original);
+        expect(rebuilt, firstDifference(original, rebuilt)).toBe(original);
+    });
+});

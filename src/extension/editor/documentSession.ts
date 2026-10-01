@@ -63,14 +63,13 @@ type StateListener = (change: SessionChange) => void;
 /**
  * An edit this session asked for and has not yet seen come back.
  *
- * Matched against the change event by its **span and its text**. Never a timer and never a
- * bare boolean: either would swallow an edit that somebody else made in the same tick,
- * which is precisely the event that must not be lost.
+ * Recognised by the **whole text** the document holds once it has landed. Not by the change
+ * spans: VS Code may report one replacement as several smaller changes. Never a timer and
+ * never a bare boolean: either would swallow an edit that somebody else made in the same
+ * tick, which is precisely the event that must not be lost.
  */
 interface PendingEdit extends UnitReference {
-    readonly rangeOffset: number;
-    readonly rangeLength: number;
-    readonly text: string;
+    readonly expectedText: string;
 }
 
 export class XliffDocumentSession {
@@ -146,12 +145,11 @@ export class XliffDocumentSession {
     public async applyEdit(edit: TextEditRange, unit: UnitReference): Promise<boolean> {
         // Recorded before the edit is applied, because the change event can arrive during
         // the await.
+        const before = this.textDocument.getText();
         this.pending = {
-            rangeOffset: edit.start,
-            rangeLength: edit.end - edit.start,
-            text: edit.newText,
             fileIndex: unit.fileIndex,
             unitId: unit.unitId,
+            expectedText: before.slice(0, edit.start) + edit.newText + before.slice(edit.end),
         };
 
         const range = new vscode.Range(
@@ -195,7 +193,7 @@ export class XliffDocumentSession {
         if (event.contentChanges.length === 0) {
             return;
         }
-        if (this.absorbOwnEdit(event)) {
+        if (this.absorbOwnEdit()) {
             return;
         }
 
@@ -213,21 +211,16 @@ export class XliffDocumentSession {
      * parsed from and the one unit in the payload. Both are corrected here rather than by
      * re-parsing the whole document to learn what we already know.
      */
-    private absorbOwnEdit(event: vscode.TextDocumentChangeEvent): boolean {
+    private absorbOwnEdit(): boolean {
         const pending = this.pending;
-        if (pending === undefined || event.contentChanges.length !== 1) {
+        if (pending?.expectedText !== this.textDocument.getText()) {
             return false;
         }
 
-        const [change] = event.contentChanges;
-        if (change.rangeOffset !== pending.rangeOffset
-            || change.rangeLength !== pending.rangeLength
-            || change.text !== pending.text) {
-            return false;
-        }
-
-        // Consumed exactly once: a second change with the same span is somebody else's.
+        // Consumed exactly once: the same change again is somebody else's. A re-parse that an
+        // earlier part of this same edit scheduled has nothing left to learn.
         this.pending = undefined;
+        this.clearTimer();
 
         const state = this.state;
         if (state?.kind !== 'document') {
@@ -240,7 +233,7 @@ export class XliffDocumentSession {
         }
 
         const patched = projectUnit(unit);
-        this.state = { ...state, text: this.textDocument.getText(), dto: withUnit(state.dto, pending.fileIndex, patched) };
+        this.state = { ...state, text: pending.expectedText, dto: withUnit(state.dto, pending.fileIndex, patched) };
         this.lastGood = this.state;
 
         this.announce({ kind: 'patched', fileIndex: pending.fileIndex, units: [patched] });

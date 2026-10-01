@@ -323,9 +323,9 @@ describe('a line break a translator typed', () => {
         expect(serialiseXliff(reparsed)).toBe(written);
     });
 
-    it('does not drag the document\'s own line endings along with it', () => {
-        // A CRLF document with an LF inside a target: the target keeps what was typed and
-        // the file keeps what it had. Mixing the two would rewrite every line.
+    it('writes the break with the document\'s own line ending', () => {
+        // XML reads any line break as LF, so the target still reads as typed while the file
+        // keeps one line ending throughout — which is also what the editor would make of it.
         //
         // `minimal.xlf` rather than a larger fixture, because the assertion counts line endings
         // and every target in it is one line — a target that already spans two would make
@@ -335,9 +335,8 @@ describe('a line break a translator typed', () => {
         const units = [...iterateUnits(document)];
         const written = apply(source, required(setTarget(document, source, { fileIndex: 0, unitId: units[0].id, value: TYPED }), 'an edit'));
 
-        // One line more, because the typed break adds one — and it is an LF, so the CRLF
-        // count is untouched.
-        expect(written.split('\r\n')).toHaveLength(source.split('\r\n').length);
+        expect(written.split('\r\n')).toHaveLength(source.split('\r\n').length + 1);
+        expect(written.replace(/\r\n/g, '')).not.toContain('\n');
         expect([...iterateUnits(parseXliff(written))].find(unit => unit.id === units[0].id)?.target?.value).toBe(TYPED);
     });
 

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import * as vscode from 'vscode';
 
-import { flushAppliedEdits, flushErrorMessages, flushFileReads, holdFileRead, resetMocks, setApplyEditResult, setConfigOverride, setVirtualFile } from '../__mocks__/vscode';
+import { FakeTextDocument, flushAppliedEdits, flushErrorMessages, flushFileReads, holdFileRead, reportEditsInPieces, resetMocks, setApplyEditResult, setConfigOverride, setVirtualFile } from '../__mocks__/vscode';
 
 afterEach(() => {
     resetMocks();
@@ -86,6 +86,25 @@ describe('vscode mock', () => {
 
         setApplyEditResult(new Error('gone'));
         await expect(vscode.workspace.applyEdit(edit)).rejects.toThrow('gone');
+    });
+
+    it('writes an edit with the document\'s line ending, and can report it in pieces', () => {
+        const document = new FakeTextDocument('/ws/a.xlf', 'one\r\ntwo');
+        const reported: unknown[] = [];
+        const listening = vscode.workspace.onDidChangeTextDocument((event) => {
+            reported.push(event.contentChanges);
+        });
+
+        document.applyEdit(new vscode.Range(new vscode.Position(0, 3), new vscode.Position(0, 3)), '\nhalf');
+        reportEditsInPieces(true);
+        document.applyEdit(new vscode.Range(new vscode.Position(0, 0), new vscode.Position(0, 3)), 'ONE');
+        listening.dispose();
+
+        expect(document.getText()).toBe('ONE\r\nhalf\r\ntwo');
+        expect(reported).toEqual([
+            [{ rangeOffset: 3, rangeLength: 0, text: '\r\nhalf' }],
+            [{ rangeOffset: 0, rangeLength: 3, text: '' }, { rangeOffset: 0, rangeLength: 0, text: 'ONE' }],
+        ]);
     });
 
     it('fires events through EventEmitter', () => {

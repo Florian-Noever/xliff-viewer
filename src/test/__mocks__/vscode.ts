@@ -25,6 +25,7 @@ let infoMessages: string[] = [];
 let messageCalls: MessageCall[] = [];
 let appliedEdits: EditRecord[] = [];
 let applyEditResult: boolean | Error = true;
+let editsInPieces = false;
 const heldReads = new Map<string, Promise<void>>();
 let fileReads: string[] = [];
 let fileWrites: { path: string; content: string }[] = [];
@@ -496,13 +497,18 @@ export class FakeTextDocument {
 
     /**
      * Replaces a range and reports it, the way the editor does — so a session under test
-     * sees its own edit arrive as a change event rather than having to be told.
+     * sees its own edit arrive as a change event rather than having to be told. As the
+     * editor does, it writes inserted line breaks with the document's own line ending, and
+     * reports the text as inserted.
      */
     public applyEdit(range: Range, newText: string): void {
         const start = this.offsetAt(range.start);
         const end = this.offsetAt(range.end);
-        this.text = this.text.slice(0, start) + newText + this.text.slice(end);
-        fireTextDocumentChange(this, [{ rangeOffset: start, rangeLength: end - start, text: newText }]);
+        const inserted = newText.replace(/\r\n|\r|\n/g, this.text.includes('\r\n') ? '\r\n' : '\n');
+        this.text = this.text.slice(0, start) + inserted + this.text.slice(end);
+        fireTextDocumentChange(this, editsInPieces
+            ? [{ rangeOffset: start, rangeLength: end - start, text: '' }, { rangeOffset: start, rangeLength: 0, text: inserted }]
+            : [{ rangeOffset: start, rangeLength: end - start, text: inserted }]);
     }
 
     public getText(): string {
@@ -648,6 +654,11 @@ export function holdFileRead(path: string): () => void {
     };
 }
 
+/** Reports each applied edit as a deletion and an insertion, as the editor may split one replacement. */
+export function reportEditsInPieces(inPieces: boolean): void {
+    editsInPieces = inPieces;
+}
+
 /** What `workspace.applyEdit` answers from now on: applied, refused, or rejected with this error. */
 export function setApplyEditResult(result: boolean | Error): void {
     applyEditResult = result;
@@ -770,6 +781,7 @@ export function resetMocks(): void {
     messageCalls = [];
     appliedEdits = [];
     applyEditResult = true;
+    editsInPieces = false;
     heldReads.clear();
     fileReads = [];
     fileWrites = [];

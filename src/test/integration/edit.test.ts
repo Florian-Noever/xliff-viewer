@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 
 import { XliffDocumentSession } from '../../extension/editor/documentSession';
 import { XliffDocumentView } from '../../extension/editor/documentView';
+import { ExtensionMessageType } from '../../shared/messages';
 
 import { assertEqual, assertOk } from './assertions';
 
@@ -161,6 +162,34 @@ suite('editing a target, in a real host', () => {
                 'the edit changed something other than the target',
             );
         } finally {
+            session.dispose();
+            await discard(uri);
+        }
+    });
+
+    test('writes a line break in a target with the file\'s own line ending, and answers with a patch', async () => {
+        const uri = scratchUri('edit-lines.xlf');
+        await vscode.workspace.fs.writeFile(uri, new TextEncoder().encode(ORIGINAL.split('\n').join('\r\n')));
+        const document = await vscode.workspace.openTextDocument(uri);
+        await vscode.window.showTextDocument(document, { preview: false });
+        const session = new XliffDocumentSession(document);
+        const posted: string[] = [];
+        const view = new XliffDocumentView(session, message => posted.push(message.type));
+        const attached = session.attach((change) => {
+            view.apply(change);
+        });
+
+        try {
+            await view.updateTarget({ fileIndex: 0, unitId: UNIT }, 'Zeile eins\nZeile zwei');
+            assertOk(await document.save(), 'save did not succeed');
+            const saved = new TextDecoder().decode(await vscode.workspace.fs.readFile(uri));
+
+            assertEqual(/(?<!\r)\n/.test(document.getText()), false, 'the document holds a line feed without a carriage return');
+            assertEqual(/(?<!\r)\n/.test(saved), false, 'the saved file holds a line feed without a carriage return');
+            assertOk(saved.includes('Zeile eins\r\nZeile zwei'), 'the target was not written');
+            assertEqual(posted.join(), ExtensionMessageType.patchUnits, 'the edit was not answered with one patch');
+        } finally {
+            attached.dispose();
             session.dispose();
             await discard(uri);
         }

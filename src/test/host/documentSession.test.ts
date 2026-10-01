@@ -21,6 +21,7 @@ import {
     flushInfoMessages,
     flushLogs,
     flushWarningMessages,
+    reportEditsInPieces,
     resetMocks,
     setApplyEditResult,
     setConfigOverride,
@@ -807,6 +808,28 @@ describe('recognising our own edit', () => {
 
         expect(types(posted)).toEqual([ExtensionMessageType.patchUnits, ExtensionMessageType.patchUnits]);
         expect(document.getText()).toBe(LANGUAGE.replace('ExampleTranslation', 'Second'));
+    });
+
+    it('recognises its own edit when the editor reports it in pieces', async () => {
+        vi.useFakeTimers();
+        reportEditsInPieces(true);
+        const { facade, posted } = edited(LANGUAGE);
+
+        await facade.updateTarget(UNIT, 'EditedTranslation');
+        vi.advanceTimersByTime(200);
+
+        expect(types(posted)).toEqual([ExtensionMessageType.patchUnits]);
+    });
+
+    it('recognises its own edit of a target with a line break, in a CRLF file', async () => {
+        // The editor writes the break with the file's own line ending; ours must match it.
+        vi.useFakeTimers();
+        const { facade, posted } = edited(LANGUAGE.replace(/\n/g, '\r\n'));
+
+        await facade.updateTarget(UNIT, 'First line\nSecond line');
+        vi.advanceTimersByTime(200);
+
+        expect(types(posted)).toEqual([ExtensionMessageType.patchUnits]);
     });
 
     describe('when the editor refuses it', () => {
