@@ -765,18 +765,23 @@ describe('recognising our own edit', () => {
         expect(types(posted)).toEqual([ExtensionMessageType.patchUnits, ExtensionMessageType.setDocument]);
     });
 
-    it('matches the edit rather than merely counting one, so a different span is external', () => {
+    it('matches the text the edit leaves, so our text arriving elsewhere is external', async () => {
         vi.useFakeTimers();
-        const { document, session, posted } = edited(LANGUAGE);
+        const { document, facade, posted } = edited(LANGUAGE);
 
-        // A change of the same shape somewhere else entirely is not ours.
+        // Recorded before the first await: the pending edit and the request to apply it.
+        const editing = facade.updateTarget(UNIT, 'EditedTranslation');
+        const [applied] = flushAppliedEdits();
+
+        // Somebody else writes the very same text into another unit, before ours lands.
         const before = document.getText();
-        fireTextDocumentChange(document, [{ rangeOffset: 0, rangeLength: 0, text: '' }]);
+        const at = before.indexOf('AnotherTranslation');
+        document.setText(before.slice(0, at) + applied.newText + before.slice(at));
+        fireTextDocumentChange(document, [{ rangeOffset: at, rangeLength: 0, text: applied.newText }]);
         vi.advanceTimersByTime(200);
-        session.dispose();
 
         expect(types(posted)).toEqual([ExtensionMessageType.setDocument]);
-        expect(before).toBe(document.getText());
+        await editing;
     });
 
     it('tells every view of the document, not only the one that asked', async () => {
