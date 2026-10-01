@@ -47,6 +47,8 @@ export interface SearchSource {
  * seam between two of them, and XML text cannot contain one.
  */
 const FIELD_SEPARATOR = '\u0000';
+/** What a `*` stands for: any run of characters short of the next field. */
+const WITHIN_FIELD = `[^${FIELD_SEPARATOR}]*`;
 
 /**
  * Everything about one node a query can match, lowercased and joined.
@@ -89,8 +91,8 @@ export function buildSearchIndex(
  * Turns a query into a test.
  *
  * `*` is the only wildcard, because it is the one people already type into VS Code's own
- * search boxes. Everything else is a literal, so a query full of `.` and `(` from a
- * source string still finds it.
+ * search boxes, and it stays within one field. Everything else is a literal, so a query
+ * full of `.` and `(` from a source string still finds it.
  */
 export function toMatcher(query: string): (haystackText: string) => boolean {
     const needle = query.trim().toLowerCase();
@@ -104,7 +106,7 @@ export function toMatcher(query: string): (haystackText: string) => boolean {
     const pattern = needle
         .split('*')
         .map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-        .join('.*');
+        .join(WITHIN_FIELD);
     const expression = new RegExp(pattern, 's');
     return text => expression.test(text);
 }

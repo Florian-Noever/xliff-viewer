@@ -68,7 +68,7 @@
                 "xliffViewer.baseFile": {
                     "type": "string",
                     "default": "",
-                    "markdownDescription": "Path or glob of the base `.g.xlf` file, absolute or relative to the workspace. Leave empty to resolve it automatically: XLIFF Sync and NAB AL Tools settings first, then a sibling `<name>.g.xlf`, then any `*.g.xlf` nearby.",
+                    "markdownDescription": "Path or glob of the base `.g.xlf` file, absolute or relative to the workspace. Leave empty to resolve it automatically: XLIFF Sync's `xliffSync.baseFile` first, then a sibling `<name>.g.xlf`, then any `*.g.xlf` nearby.",
                     "scope": "resource"
                 },
                 "xliffViewer.editMode": {

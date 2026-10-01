@@ -13,7 +13,7 @@ Open `.xlf` and `.xliff` translation files as a structured, themed GUI instead o
 - **Namespaced apps** — the readable, namespaced ids AL 18 writes under `TranslationsWithNamespaces` build the same exact tree, with a namespace level above the object types. An object whose ids come in both readable and hashed form — AL falls back to hashes for long or non-ASCII ids — is still one node
 - **Rolled-up state** — every container shows a progress bar coloured by its *worst* descendant, not by its percentage: 99 % done with one missing target is not the same as 99 % done with one needing review
 - **Every field shown** — source, target, `maxwidth`, `size-unit`, `al-object-target`, `translate="no"`, every `<note>`, and a state the spec does not define is shown as the file wrote it
-- **Search** — over id, names, source, target and notes, with `*` wildcards (`Setup*`, `*caption*`); a matching unit brings its whole path into view
+- **Search** — over id, names, source, target and notes, with a `*` wildcard within a field (`Contoso*Name`); a matching unit brings its whole path into view
 - **State filter** — chips for the states the file actually contains, driven by the same roll-up the header shows
 - **Base-file pairing** — resolves the `.g.xlf` for a language file and marks units the base no longer has (*orphaned*) or whose source has since changed
 - **Go to source** — opens the AL source that declares the unit, with the `Caption`, `ToolTip` or label itself selected — or the member or object that declares it, when the source has no line for the unit. When the app's source does not declare it, the unit opens in the base file instead, with a notice that closes itself. The button's tooltip says which it will be. No AL tooling needed, on the desktop or the web
@@ -61,10 +61,8 @@ Turn editing on with the toolbar toggle, or start every file that way with `xlif
 
 ### Search tips
 
-- Plain text (`caption`) — matches anywhere in id, names, source, target or notes, case-insensitively
-- Leading wildcard (`*setup`) — matches anything ending in the term
-- Trailing wildcard (`Table *`) — matches anything starting with it
-- Both (`*name*`) — the same as a plain substring match
+- Plain text (`caption`) — matches anywhere in the id, names, source, target or notes, ignoring case
+- `*` stands for any run of characters within one field (`Contoso*Name`), so a `*` at the start or end of a query changes nothing
 - Everything else is literal, so a query full of `.` and `(` from a source string still finds it
 
 ---

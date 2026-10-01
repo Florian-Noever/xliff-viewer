@@ -243,6 +243,11 @@ describe('toMatcher', () => {
         expect(toMatcher('Conto*Name')('contoso method')).toBe(false);
     });
 
+    it('keeps a * within one field', () => {
+        expect(toMatcher('conto*name')('contoso method name')).toBe(true);
+        expect(toMatcher('conto*name')('contoso\u0000target name')).toBe(false);
+    });
+
     it('keeps regex characters literal, so a source full of them is still findable', () => {
         expect(toMatcher('%1 = Document No.')('note: %1 = document no.')).toBe(true);
         expect(toMatcher('(x)')('a (x) b')).toBe(true);
@@ -251,6 +256,24 @@ describe('toMatcher', () => {
 
     it('matches everything for an empty query', () => {
         expect(toMatcher('   ')('anything')).toBe(true);
+    });
+});
+
+describe('a wildcard query over the tree', () => {
+    it('finds a unit one field of which holds the whole match, not one whose fields only share it', () => {
+        const tree: AlNodeDto[] = [
+            { key: 'Table 7 - Field 8', type: 'Field', name: 'Contoso Rate', children: [] },
+            { key: 'Table 7 - Field 9', type: 'Field', name: 'Discount', children: [] },
+        ];
+        const units = new Map<string, TransUnitDto>([
+            ['Table 7 - Field 8', unit('Table 7 - Field 8', 'Rate', 'Name of the rate')],
+            ['Table 7 - Field 9', unit('Table 7 - Field 9', 'Discount', 'Contoso Method Name')],
+        ]);
+        const index = buildSearchIndex(tree, units);
+
+        const found = visibleNodes(tree, [node => toMatcher('Contoso*Name')(index.get(node.key) ?? '')]);
+
+        expect([...(found?.visible ?? [])]).toEqual(['Table 7 - Field 9']);
     });
 });
 
