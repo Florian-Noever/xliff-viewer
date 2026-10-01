@@ -8,7 +8,7 @@ import {
     WebviewMessageType,
 } from '../../shared/messages';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
-import { XliffState } from '../../shared/state';
+import { SPEC_STATES, XliffState } from '../../shared/state';
 
 import type { WebviewMessage } from '../../shared/messages';
 
@@ -49,6 +49,10 @@ describe('isWebviewMessage', () => {
             { type: 'updateTarget', fileIndex: 1.5, unitId: 'x', value: 'v' },
             { type: 'updateTarget', fileIndex: 0, unitId: 42, value: 'v' },
             { type: 'updateState', fileIndex: 0, unitId: 'x' },
+            { type: 'updateState', fileIndex: 0, unitId: 'x', state: 'missing' },
+            { type: 'updateState', fileIndex: 0, unitId: 'x', state: 'bogus' },
+            { type: 'updateTarget', fileIndex: 0, unitId: 'x', value: 'v', state: 'empty' },
+            { type: 'updateTarget', fileIndex: 0, unitId: 'x', value: 'v', state: 'unknown' },
             { type: 'openSource', fileIndex: 0, unitId: 'x', target: 'elsewhere' },
             { type: 'openSource', target: 'text', fileIndex: 0 },
             { type: 'openSource', target: 'text', unitId: 'x' },
@@ -56,6 +60,13 @@ describe('isWebviewMessage', () => {
 
         for (const value of bad) {
             expect(isWebviewMessage(value), JSON.stringify(value)).toBe(false);
+        }
+    });
+
+    it('accepts every state the spec defines, and no other', () => {
+        for (const state of SPEC_STATES) {
+            expect(isWebviewMessage({ type: 'updateState', fileIndex: 0, unitId: 'x', state }), state).toBe(true);
+            expect(isWebviewMessage({ type: 'updateTarget', fileIndex: 0, unitId: 'x', value: 'v', state }), state).toBe(true);
         }
     });
 

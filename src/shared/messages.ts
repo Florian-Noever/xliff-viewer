@@ -12,6 +12,8 @@
  * re-sending the whole document to toggle a checkbox.
  */
 
+import { isSpecState } from './state';
+
 import type { TransUnitDto, XliffDocumentDto, BaseFileDto } from './dto';
 import type { WebviewSettings } from './settings';
 import type { XliffState } from './state';
@@ -132,8 +134,8 @@ const WEBVIEW_MESSAGE_GUARDS: { readonly [K in WebviewMessage['type']]: (message
     ready: () => true,
     updateTarget: message => isUnitReference(message)
         && typeof message.value === 'string'
-        && (message.state === undefined || typeof message.state === 'string'),
-    updateState: message => isUnitReference(message) && typeof message.state === 'string',
+        && (message.state === undefined || isSpecState(message.state)),
+    updateState: message => isUnitReference(message) && isSpecState(message.state),
     openSource: message => isOneOf(message.target, NavigationTarget)
         && (message.fileIndex === undefined && message.unitId === undefined ? true : isUnitReference(message)),
 };

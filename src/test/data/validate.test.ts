@@ -110,6 +110,35 @@ describe('validateXml', () => {
         expect(caught?.displayMessage).toContain('line');
     });
 
+    it.each([
+        ['text', '<source>a&nbsp;b</source>', 18],
+        ['an attribute value', '<source label="a&nbsp;b">s</source>', 25],
+    ])('rejects a named entity XML does not define, in %s, where it stands', (_where, source, col) => {
+        const text = `<?xml version="1.0"?>\n<xliff version="1.2">\n  <file source-language="en"><body><trans-unit id="a">\n        ${source}\n  </trans-unit></body></file>\n</xliff>`;
+
+        expect(() => validateXml(text)).toThrow(XliffParseError);
+        expect(() => validateXml(text)).toThrow('The entity &nbsp; is not part of XML');
+        expect(() => validateXml(text)).toThrow(expect.objectContaining({ line: 4, col }));
+    });
+
+    it('accepts the five entities XML defines and numeric references', () => {
+        expect(() => validateXml('<xliff version="1.2"><file source-language="en"><body><trans-unit id="a"><source>&amp; &lt; &gt; &quot; &apos; &#160; &#xA0;</source></trans-unit></body></file></xliff>')).not.toThrow();
+    });
+
+    it.each([
+        ['a comment', '<!-- &nbsp; -->'],
+        ['a CDATA section', '<source><![CDATA[&nbsp;]]></source>'],
+        ['a processing instruction', '<?review &nbsp;?>'],
+    ])('leaves an entity-shaped text inside %s alone', (_where, inner) => {
+        expect(() => validateXml(`<xliff version="1.2"><file source-language="en"><body><trans-unit id="a">${inner}<source>s</source></trans-unit></body></file></xliff>`)).not.toThrow();
+    });
+
+    it('counts lines and columns past a BOM and CRLF line endings', () => {
+        const text = '\uFEFF<?xml version="1.0"?>\r\n<xliff version="1.2">\r\n  <file source-language="en"><body><trans-unit id="a"><source>s</source>\r\n  <target>x &bogus;</target></trans-unit></body></file>\r\n</xliff>';
+
+        expect(() => validateXml(text)).toThrow(expect.objectContaining({ line: 4, col: 13 }));
+    });
+
     it('reports a line inside the document, not always line 1', () => {
         let caught: XliffParseError | undefined;
         try {

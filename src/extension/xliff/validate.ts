@@ -19,6 +19,12 @@ function stripBom(text: string): string {
     return text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
 }
 
+/** The five named entities XML itself defines. */
+const XML_ENTITIES = new Set(['amp', 'lt', 'gt', 'quot', 'apos']);
+/** Markup in which an `&` is not an entity reference: comments, CDATA and processing instructions. */
+const OPAQUE_MARKUP = /<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<\?[\s\S]*?\?>/g;
+const NAMED_ENTITY = /&([A-Za-z_:][\w.:-]*);/g;
+
 /**
  * Asserts the text is well-formed XML. Runs **before** every parse — not behind a
  * setting, not skipped for speed.
@@ -26,14 +32,33 @@ function stripBom(text: string): string {
  * @throws {XliffParseError} carrying the line and column the validator reported.
  */
 export function validateXml(text: string): void {
+    const body = stripBom(text);
     // Returns `true` or an error object; it does not throw.
-    const result = XMLValidator.validate(stripBom(text));
-    if (result === true) {
-        return;
+    const result = XMLValidator.validate(body);
+    if (result !== true) {
+        const { msg, line, col } = result.err;
+        throw new XliffParseError(msg, { line, col });
     }
+    rejectUndefinedEntities(body);
+}
 
-    const { msg, line, col } = result.err;
-    throw new XliffParseError(msg, { line, col });
+/**
+ * A named entity other than XML's five, such as `&nbsp;`, passes the validator. The parser
+ * reads it as literal text, and writing the document back would turn it into `&amp;nbsp;`.
+ */
+function rejectUndefinedEntities(body: string): void {
+    // Blanked rather than removed, so offsets, and with them lines and columns, stay put.
+    const masked = body.replace(OPAQUE_MARKUP, markup => markup.replace(/[^\n]/g, ' '));
+    for (const match of masked.matchAll(NAMED_ENTITY)) {
+        if (XML_ENTITIES.has(match[1])) {
+            continue;
+        }
+        const before = masked.slice(0, match.index);
+        throw new XliffParseError(
+            `The entity ${match[0]} is not part of XML. Only &amp; &lt; &gt; &quot; and &apos; are, and other characters need a numeric reference such as &#160;.`,
+            { line: before.split('\n').length, col: match.index - before.lastIndexOf('\n') },
+        );
+    }
 }
 
 /**

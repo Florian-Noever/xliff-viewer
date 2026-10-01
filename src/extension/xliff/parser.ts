@@ -45,11 +45,8 @@ import type {
  * literal character: valid XML, identical meaning, different bytes. Correctness beats
  * byte-identity here.
  *
- * Residual gaps:
- * - `&quot;` / `&apos;` in *text* decode and are written literally, so the first save
- *   changes those bytes.
- * - An **undefined** entity (`&bogus;`) cannot round-trip — it is indistinguishable from
- *   `&amp;bogus;` — but such a document is not well-formed XML in the first place.
+ * One gap remains: `&quot;` / `&apos;` in *text* decode and are written literally, so the
+ * first save changes those bytes.
  */
 const PARSER_OPTIONS = {
     preserveOrder: true,
