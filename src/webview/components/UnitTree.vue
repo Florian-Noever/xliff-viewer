@@ -22,7 +22,7 @@
                     <TreeRow
                         v-for="item in virtualItems"
                         :key="rows[item.index].key"
-                        :ref="measure(item.index)"
+                        :ref="measureRow"
                         :data-index="item.index"
                         :row-id="rowId(item.index)"
                         :row="rows[item.index]"
@@ -180,14 +180,16 @@ const activeDescendant = computed(() => {
     return virtualItems.value.some(item => item.index === focused) ? rowId(focused) : undefined;
 });
 
-/** `measureElement` wants the DOM node; a Vue component ref hands over its root. */
-const measure = (index: number) => (instance: Element | ComponentPublicInstance | null): void => {
+/**
+ * `measureElement` wants the DOM node; a Vue component ref hands over its root, which the
+ * row's `data-index` falls through to.
+ */
+function measureRow(instance: Element | ComponentPublicInstance | null): void {
     const element = instance instanceof Element ? instance : (instance?.$el as Element | undefined);
     if (element !== undefined && element !== null) {
-        element.setAttribute('data-index', index.toString());
         virtualizer.value.measureElement(element);
     }
-};
+}
 
 /** Keeps the focused row on screen when the keyboard moves past the rendered window. */
 watch(() => props.tree.focusedIndex.value, (index) => {

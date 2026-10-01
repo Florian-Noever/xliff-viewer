@@ -67,6 +67,14 @@ describe('the file header', () => {
         expect(wrapper.text()).toContain('2 units');
     });
 
+    it('counts a file of one unit in the singular', async () => {
+        const [file] = DOCUMENT.files;
+        const wrapper = mountWithDocument({ ...DOCUMENT, files: [{ ...file, units: file.units.slice(0, 1) }] });
+        await nextTick();
+
+        expect(wrapper.get('.count').text()).toBe('1 unit');
+    });
+
     it('titles the header with the app, and puts the file name beneath it', async () => {
         const wrapper = mountWithDocument();
         await nextTick();

@@ -7,7 +7,7 @@
                 <select
                     class="switcher-select"
                     :value="file.index"
-                    @change="emit('update:fileIndex', Number((($event.target) as HTMLSelectElement).value))"
+                    @change="selectFile($event)"
                 >
                     <option v-for="option in document.files" :key="option.index" :value="option.index">
                         {{ describe(option) }}
@@ -21,7 +21,7 @@
         <p class="line meta">
             <span class="languages">{{ file.sourceLanguage }} → {{ file.targetLanguage ?? '—' }}</span>
             <span v-if="subtitle !== undefined" class="file-name">{{ subtitle }}</span>
-            <span class="count">{{ summary.total }} units</span>
+            <span class="count">{{ unitCount }}</span>
             <span v-if="baseFile !== undefined" class="base-file">{{ baseFile }}</span>
         </p>
     </header>
@@ -47,6 +47,12 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{ 'update:fileIndex': [index: number] }>();
+
+function selectFile(event: Event): void {
+    emit('update:fileIndex', Number((event.target as HTMLSelectElement).value));
+}
+
+const unitCount = computed(() => (props.summary.total === 1 ? '1 unit' : `${props.summary.total} units`));
 
 /**
  * The app the translation belongs to, which is what a translator is working on — the file

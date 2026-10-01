@@ -34,6 +34,8 @@ export interface Search {
      * with it at the node — see `ancestorFilter.ts`.
      */
     readonly predicate: ComputedRef<NodePredicate | undefined>;
+    /** Replaces what the user typed, as the search field does. */
+    setQuery(query: string): void;
     clear(): void;
 }
 
@@ -146,6 +148,10 @@ export function useSearch(source: SearchSource): Search {
         return node => matcher(haystacks.get(node.key) ?? '');
     });
 
+    function setQuery(value: string): void {
+        query.value = value;
+    }
+
     function clear(): void {
         if (timer !== undefined) {
             clearTimeout(timer);
@@ -155,5 +161,5 @@ export function useSearch(source: SearchSource): Search {
         applied.value = '';
     }
 
-    return { query, applied: computed(() => applied.value), active, predicate, clear };
+    return { query, applied: computed(() => applied.value), active, predicate, setQuery, clear };
 }

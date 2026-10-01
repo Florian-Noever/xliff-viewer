@@ -1,8 +1,14 @@
 import { mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { nextTick } from 'vue';
+import { computed, defineComponent, nextTick } from 'vue';
 
 import App from '../../webview/App.vue';
+import Toolbar from '../../webview/components/Toolbar.vue';
+import { useEditMode } from '../../webview/composables/useEditMode';
+import { useSearch } from '../../webview/composables/useSearch';
+import { useStateFilter } from '../../webview/composables/useStateFilter';
+import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
+import { summariseUnits } from '../../shared/state';
 import { ExtensionMessageType } from '../../shared/messages';
 import { stubLayout } from './layoutStub';
 
@@ -77,6 +83,29 @@ afterEach(() => {
 });
 
 describe('the toolbar', () => {
+    it('gives each toolbar its own count id, which its search field points at', () => {
+        const [file] = DOCUMENT.files;
+        const TwoToolbars = defineComponent({
+            components: { Toolbar },
+            setup() {
+                const unitsById = computed(() => new Map(file.units.map(each => [each.id, each])));
+                return {
+                    search: useSearch({ file: computed(() => file), unitsById }),
+                    filter: useStateFilter({ summary: computed(() => summariseUnits(file.units)), unitsById, scope: computed(() => 'one') }),
+                    edit: useEditMode({ document: computed(() => DOCUMENT), settings: computed(() => DEFAULT_WEBVIEW_SETTINGS) }),
+                };
+            },
+            template: '<Toolbar :search="search" :filter="filter" :edit="edit" :match-count="1" /><Toolbar :search="search" :filter="filter" :edit="edit" :match-count="2" />',
+        });
+
+        const wrapper = mount(TwoToolbars);
+        mounted.push(wrapper);
+        const ids = wrapper.findAll('.match-count').map(count => count.attributes('id'));
+
+        expect(new Set(ids).size).toBe(2);
+        expect(wrapper.findAll('.search-input').map(input => input.attributes('aria-describedby'))).toEqual(ids);
+    });
+
     it('appears only once a document has arrived', async () => {
         const empty = mount(App);
         mounted.push(empty);

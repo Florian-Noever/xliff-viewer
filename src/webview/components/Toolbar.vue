@@ -9,8 +9,8 @@
                 type="search"
                 class="search-input"
                 placeholder="Search source, target, names and notes…"
-                :aria-describedby="matchCount === undefined ? undefined : 'filter-count'"
-                @keydown.esc.prevent="clear()"
+                :aria-describedby="matchCount === undefined ? undefined : countId"
+                @keydown.esc.prevent="search.clear()"
             >
         </label>
 
@@ -30,7 +30,7 @@
             </button>
         </div>
 
-        <span v-if="matchCount !== undefined" id="filter-count" class="match-count" role="status">
+        <span v-if="matchCount !== undefined" :id="countId" class="match-count" role="status">
             {{ matchCount === 0 ? 'no matches' : `${matchCount} matching` }}
         </span>
 
@@ -53,7 +53,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, useTemplateRef } from 'vue';
+import { computed, onMounted, onUnmounted, useId, useTemplateRef } from 'vue';
 
 import { stateLabel, stateTone } from '../stateTone';
 
@@ -79,7 +79,13 @@ const props = defineProps<{
 
 const emit = defineEmits<{ expandAll: []; collapseAll: [] }>();
 
-const { query, clear } = props.search;
+const query = computed({
+    get: () => props.search.query.value,
+    set: (value: string) => {
+        props.search.setQuery(value);
+    },
+});
+const countId = useId();
 const input = useTemplateRef<HTMLInputElement>('input');
 
 /** Ctrl+F focuses search, Escape clears it. Escape is on the input; this is the reach for it. */

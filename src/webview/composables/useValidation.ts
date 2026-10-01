@@ -4,7 +4,7 @@ import { hintsFor } from '../validation';
 
 import type { AlNodeDto, TransUnitDto, XliffFileDto } from '@shared/dto';
 import type { WebviewSettings } from '@shared/settings';
-import type { Hint } from '../validation';
+import type { Hint, HintOptions } from '../validation';
 import type { ComputedRef, Ref } from 'vue';
 
 /**
@@ -56,7 +56,7 @@ export function useValidation(source: ValidationSource): Validation {
     return { byUnit, countByKey };
 }
 
-function collect(units: readonly TransUnitDto[], options: Parameters<typeof hintsFor>[1]): ReadonlyMap<string, readonly Hint[]> {
+function collect(units: readonly TransUnitDto[], options: HintOptions): ReadonlyMap<string, readonly Hint[]> {
     const byUnit = new Map<string, readonly Hint[]>();
     for (const unit of units) {
         const hints = hintsFor(unit, options);
