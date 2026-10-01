@@ -98,7 +98,8 @@ export class XliffDocumentView implements DocumentView, vscode.Disposable {
      */
     public apply(change: SessionChange): void {
         if (change.kind === 'patched') {
-            this.post({ type: ExtensionMessageType.patchUnits, payload: { fileIndex: change.fileIndex, units: change.units } });
+            const units = change.units.map(unit => this.pairing?.withMarkers(change.fileIndex, unit) ?? unit);
+            this.post({ type: ExtensionMessageType.patchUnits, payload: { fileIndex: change.fileIndex, units } });
             return;
         }
         postUpdate(change.state, this.post);

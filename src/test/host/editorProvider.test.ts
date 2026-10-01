@@ -282,6 +282,33 @@ describe('what survives a re-parse', () => {
         expect(patchedUnits(harness.posted)).toEqual([expect.objectContaining({ target: 'Kunde', baseSource: 'Customer (renamed)' })]);
     });
 
+    it('keeps the markers on a unit its own edit sends back', async () => {
+        setVirtualFile('/w/App.g.xlf', BASE);
+        const harness = await openEditor(new FakeTextDocument('/w/App.de-DE.xlf', language('Customer')));
+        harness.send({ type: WebviewMessageType.ready });
+        await settle();
+
+        harness.posted.length = 0;
+        harness.send({ type: WebviewMessageType.updateTarget, fileIndex: 0, unitId: 'Table 1 - Property 2', value: 'Kundin' });
+        await settle();
+
+        expect(patchedUnits(harness.posted)).toEqual([expect.objectContaining({ target: 'Kundin', baseSource: 'Customer (renamed)' })]);
+    });
+
+    it('keeps an orphaned unit orphaned after its own edit', async () => {
+        setVirtualFile('/w/App.g.xlf', BASE);
+        const orphan = language('Customer').replace('Table 1 - Property 2', 'Table 1 - Property 9');
+        const harness = await openEditor(new FakeTextDocument('/w/App.de-DE.xlf', orphan));
+        harness.send({ type: WebviewMessageType.ready });
+        await settle();
+
+        harness.posted.length = 0;
+        harness.send({ type: WebviewMessageType.updateTarget, fileIndex: 0, unitId: 'Table 1 - Property 9', value: 'Kundin' });
+        await settle();
+
+        expect(patchedUnits(harness.posted)).toEqual([expect.objectContaining({ target: 'Kundin', orphaned: true })]);
+    });
+
     it('re-marks the units when the compiler rewrites the base file underneath', async () => {
         setVirtualFile('/w/App.g.xlf', BASE);
         const document = new FakeTextDocument('/w/App.de-DE.xlf', language('Customer'));
