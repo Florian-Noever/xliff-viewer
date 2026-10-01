@@ -6,5 +6,5 @@ type UpdateTargetMessage = Extract<WebviewMessage, { type: typeof WebviewMessage
 
 /** Writes a target. An omitted `state` means "let `xliffViewer.stateOnEdit` decide". */
 export function handleUpdateTarget(message: UpdateTargetMessage, context: HandlerContext): void | Promise<void> {
-    return context.session.updateTarget({ fileIndex: message.fileIndex, unitId: message.unitId }, message.value, message.state);
+    return context.view.updateTarget({ fileIndex: message.fileIndex, unitId: message.unitId }, message.value, message.state);
 }

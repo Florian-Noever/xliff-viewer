@@ -9,7 +9,7 @@ import { flushErrorMessages, flushLogs, resetMocks } from '../__mocks__/vscode';
 
 import type * as vscode from 'vscode';
 import type { HandlerContext } from '../../extension/handlers/handlerContext';
-import type { DocumentSession } from '../../extension/editor/documentSession';
+import type { DocumentView } from '../../extension/editor/documentView';
 import type { UnitReference } from '../../shared/model';
 import type { ExtensionMessage, WebviewMessage } from '../../shared/messages';
 
@@ -19,7 +19,7 @@ interface Recorded {
     readonly rest?: unknown;
 }
 
-function fixture(session?: Partial<DocumentSession>) {
+function fixture(view?: Partial<DocumentView>) {
     const calls: Recorded[] = [];
     const posted: ExtensionMessage[] = [];
 
@@ -30,12 +30,12 @@ function fixture(session?: Partial<DocumentSession>) {
     const context: HandlerContext = {
         post: message => posted.push(message),
         settings: () => DEFAULT_WEBVIEW_SETTINGS,
-        session: {
+        view: {
             sendDocument: () => record('sendDocument'),
             updateTarget: (unit, value, state) => record('updateTarget', unit, { value, state }),
             updateState: (unit, state) => record('updateState', unit, state),
             openSource: (target, unit) => record('openSource', unit, target),
-            ...session,
+            ...view,
         },
     };
 

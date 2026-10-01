@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import { DocumentSessionRegistry } from './documentSessionRegistry';
-import { createDocumentSession } from './documentView';
+import { XliffDocumentView } from './documentView';
 import { AlSourceIndexes } from '../services/alSourceIndex';
 import { BaseFileIndex } from '../services/baseFileIndex';
 import { BaseFileResolver } from '../services/baseFileResolver';
@@ -103,10 +103,14 @@ export class XliffEditorProvider implements vscode.CustomTextEditorProvider {
         const post = (message: ExtensionMessage): void => {
             void webviewPanel.webview.postMessage(message);
         };
-        const view = createDocumentSession(session, post, this.baseFiles, this.baseIndex, this.alSources);
+        const view = new XliffDocumentView(session, post, {
+            baseFiles: this.baseFiles,
+            baseIndex: this.baseIndex,
+            alSources: this.alSources,
+        });
         const context: HandlerContext = {
             post,
-            session: view,
+            view,
             settings: () => toWebviewSettings(readSettings(document.uri)),
         };
 

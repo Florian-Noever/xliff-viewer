@@ -11,5 +11,5 @@ import type { HandlerContext } from './handlerContext';
  */
 export function handleReady(context: HandlerContext): void | Promise<void> {
     context.post({ type: ExtensionMessageType.settings, payload: context.settings() });
-    return context.session.sendDocument();
+    return context.view.sendDocument();
 }

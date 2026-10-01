@@ -1,4 +1,4 @@
-import type { DocumentSession } from '../editor/documentSession';
+import type { DocumentView } from '../editor/documentView';
 
 import type { ExtensionMessage } from '../../shared/messages';
 import type { WebviewSettings } from '../../shared/settings';
@@ -10,7 +10,7 @@ import type { WebviewSettings } from '../../shared/settings';
  */
 export interface HandlerContext {
     readonly post: (message: ExtensionMessage) => void;
-    readonly session: DocumentSession;
+    readonly view: DocumentView;
     /** Read on demand, never captured: settings change while an editor is open. */
     readonly settings: () => WebviewSettings;
 }

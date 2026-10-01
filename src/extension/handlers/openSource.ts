@@ -12,5 +12,5 @@ export function handleOpenSource(message: OpenSourceMessage, context: HandlerCon
     const unit = message.fileIndex !== undefined && message.unitId !== undefined
         ? { fileIndex: message.fileIndex, unitId: message.unitId }
         : undefined;
-    return context.session.openSource(message.target, unit);
+    return context.view.openSource(message.target, unit);
 }

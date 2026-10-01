@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import { XliffDocumentSession } from '../../extension/editor/documentSession';
-import { createDocumentSession } from '../../extension/editor/documentView';
+import { XliffDocumentView } from '../../extension/editor/documentView';
 
 import { assertEqual, assertOk } from './assertions';
 
@@ -67,7 +67,7 @@ suite('what a real host does to a file we did not write by hand', () => {
 
         try {
             assertEqual(document.getText().startsWith(BOM), false, 'getText should not carry the BOM');
-            await createDocumentSession(session, () => { }).updateTarget({ fileIndex: 0, unitId: UNIT }, 'EditedTranslation');
+            await new XliffDocumentView(session, () => { }).updateTarget({ fileIndex: 0, unitId: UNIT }, 'EditedTranslation');
             assertEqual(await document.save(), true, 'the document did not save');
 
             const saved = new TextDecoder().decode(await vscode.workspace.fs.readFile(uri));
@@ -110,7 +110,7 @@ suite('what a real host does to a file we did not write by hand', () => {
         const { uri, document } = await openScratch('edit-entities.xlf');
         const session = new XliffDocumentSession(document);
         try {
-            await createDocumentSession(session, () => { }).updateTarget({ fileIndex: 0, unitId: UNIT }, 'A & B < C > D "quoted"');
+            await new XliffDocumentView(session, () => { }).updateTarget({ fileIndex: 0, unitId: UNIT }, 'A & B < C > D "quoted"');
             assertEqual(await document.save(), true, 'the document did not save');
 
             const saved = new TextDecoder().decode(await vscode.workspace.fs.readFile(uri));
@@ -152,7 +152,7 @@ suite('editing a target, in a real host', () => {
         const { uri, document } = await openScratch('edit-dirty.xlf');
         const session = new XliffDocumentSession(document);
         try {
-            await createDocumentSession(session, () => { }).updateTarget({ fileIndex: 0, unitId: UNIT }, 'EditedTranslation');
+            await new XliffDocumentView(session, () => { }).updateTarget({ fileIndex: 0, unitId: UNIT }, 'EditedTranslation');
 
             assertEqual(document.isDirty, true, 'the document should be dirty after an edit');
             assertEqual(
@@ -170,7 +170,7 @@ suite('editing a target, in a real host', () => {
         const { uri, document } = await openScratch('edit-undo.xlf');
         const session = new XliffDocumentSession(document);
         try {
-            await createDocumentSession(session, () => { }).updateTarget({ fileIndex: 0, unitId: UNIT }, 'EditedTranslation');
+            await new XliffDocumentView(session, () => { }).updateTarget({ fileIndex: 0, unitId: UNIT }, 'EditedTranslation');
             await vscode.commands.executeCommand('undo');
 
             assertEqual(document.getText(), ORIGINAL, 'undo did not restore the original text');
@@ -184,7 +184,7 @@ suite('editing a target, in a real host', () => {
         const { uri, document } = await openScratch('edit-save.xlf');
         const session = new XliffDocumentSession(document);
         try {
-            await createDocumentSession(session, () => { }).updateTarget({ fileIndex: 0, unitId: UNIT }, 'EditedTranslation');
+            await new XliffDocumentView(session, () => { }).updateTarget({ fileIndex: 0, unitId: UNIT }, 'EditedTranslation');
             assertEqual(await document.save(), true, 'the document did not save');
 
             const saved = new TextDecoder().decode(await vscode.workspace.fs.readFile(uri));
@@ -199,7 +199,7 @@ suite('editing a target, in a real host', () => {
         const { uri, document } = await openScratch('edit-noop.xlf');
         const session = new XliffDocumentSession(document);
         try {
-            await createDocumentSession(session, () => { }).updateTarget({ fileIndex: 0, unitId: UNIT }, 'ExampleTranslation');
+            await new XliffDocumentView(session, () => { }).updateTarget({ fileIndex: 0, unitId: UNIT }, 'ExampleTranslation');
 
             assertEqual(document.isDirty, false, 'an edit that changes nothing must not dirty the document');
             assertEqual(document.getText(), ORIGINAL, 'the text should be untouched');
@@ -215,7 +215,7 @@ suite('editing a target, in a real host', () => {
         const document = await vscode.workspace.openTextDocument(base);
         const session = new XliffDocumentSession(document);
         try {
-            await createDocumentSession(session, () => { }).updateTarget({ fileIndex: 0, unitId: UNIT }, 'EditedTranslation');
+            await new XliffDocumentView(session, () => { }).updateTarget({ fileIndex: 0, unitId: UNIT }, 'EditedTranslation');
 
             assertEqual(document.isDirty, false, 'a base file must not be edited');
             assertEqual(document.getText(), ORIGINAL, 'a base file must not be changed');

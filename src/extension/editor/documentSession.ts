@@ -10,10 +10,9 @@ import { fileNameOf } from '../services/uriNames';
 
 import type { TextEditRange } from '../xliff/writer';
 import type { XliffDocumentDto } from '../../shared/dto';
-import type { ErrorPayload, NavigationTarget } from '../../shared/messages';
+import type { ErrorPayload } from '../../shared/messages';
 import type { UnitReference, XliffDocument } from '../../shared/model';
 import type { TransUnitDto } from '../../shared/dto';
-import type { XliffState } from '../../shared/state';
 
 /**
  * One session per open document, owning the parsed model and the payload built from it.
@@ -28,17 +27,6 @@ const REPARSE_DEBOUNCE_MS = 150;
 
 /** What VS Code calls a UTF-8 file that starts with a byte-order mark. */
 const BOM_ENCODING = 'utf8bom';
-
-/** What the message handlers need from the open document. An interface, so dispatch is testable without a `TextDocument`. */
-export interface DocumentSession {
-    /** Answers `ready`: post `loading`, then `setDocument` or `error`. */
-    sendDocument(): void | Promise<void>;
-    /** An absent `state` means "apply `xliffViewer.stateOnEdit`". */
-    updateTarget(unit: UnitReference, value: string, state?: XliffState): void | Promise<void>;
-    updateState(unit: UnitReference, state: XliffState): void | Promise<void>;
-    /** Without a unit the document itself is opened — the error pane's "Open as text". */
-    openSource(target: NavigationTarget, unit?: UnitReference): void | Promise<void>;
-}
 
 export type SessionState =
     | {

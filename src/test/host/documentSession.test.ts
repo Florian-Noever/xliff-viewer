@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { XliffDocumentSession } from '../../extension/editor/documentSession';
 import { DocumentSessionRegistry } from '../../extension/editor/documentSessionRegistry';
-import { createDocumentSession } from '../../extension/editor/documentView';
+import { XliffDocumentView } from '../../extension/editor/documentView';
 import { BaseFileResolver } from '../../extension/services/baseFileResolver';
 import { Logger } from '../../extension/services/logger';
 import { ExtensionMessageType } from '../../shared/messages';
@@ -43,10 +43,9 @@ function sessionFor(document: FakeTextDocument): XliffDocumentSession {
 
 function view(session: XliffDocumentSession) {
     const posted: ExtensionMessage[] = [];
-    const facade = createDocumentSession(session, message => posted.push(message));
-    // `sendDocument` may be async by contract even though this implementation is not.
+    const facade = new XliffDocumentView(session, message => posted.push(message));
     const send = (): void => {
-        void facade.sendDocument();
+        facade.sendDocument();
     };
     return { posted, facade, send };
 }
@@ -177,7 +176,7 @@ describe('what a failing re-parse puts on the wire', () => {
         const document = openDocument('Fabrikam Base.de-DE.xlf');
         const session = sessionFor(document);
         const posted: ExtensionMessage[] = [];
-        const facade = createDocumentSession(session, message => posted.push(message));
+        const facade = new XliffDocumentView(session, message => posted.push(message));
         session.attach(change => facade.apply(change));
         session.current();
 
@@ -215,7 +214,7 @@ describe('what a failing re-parse puts on the wire', () => {
         const document = openDocument('Contoso App.de-DE.xlf');
         const session = sessionFor(document);
         const posted: ExtensionMessage[] = [];
-        const facade = createDocumentSession(session, message => posted.push(message));
+        const facade = new XliffDocumentView(session, message => posted.push(message));
         session.attach(change => facade.apply(change));
         session.current();
 
@@ -623,7 +622,7 @@ describe('recognising our own edit', () => {
         const document = openDocument('language.xlf', text);
         const session = sessionFor(document);
         const posted: ExtensionMessage[] = [];
-        const facade = createDocumentSession(session, message => posted.push(message));
+        const facade = new XliffDocumentView(session, message => posted.push(message));
         session.attach(change => facade.apply(change));
         session.current();
         posted.length = 0;
@@ -775,9 +774,9 @@ describe('recognising our own edit', () => {
         const session = sessionFor(document);
         const first: ExtensionMessage[] = [];
         const second: ExtensionMessage[] = [];
-        const facade = createDocumentSession(session, message => first.push(message));
+        const facade = new XliffDocumentView(session, message => first.push(message));
         session.attach(change => facade.apply(change));
-        const other = createDocumentSession(session, message => second.push(message));
+        const other = new XliffDocumentView(session, message => second.push(message));
         session.attach(change => other.apply(change));
         session.current();
         first.length = 0;
@@ -838,8 +837,8 @@ describe('the BOM a save does not keep', () => {
         // Two editors on one file are one file; the reader hears this once.
         const document = new FakeTextDocument('/w/App.de-DE.xlf', LANGUAGE, 'utf8bom');
         const session = sessionFor(document);
-        const first = createDocumentSession(session, () => { });
-        const second = createDocumentSession(session, () => { });
+        const first = new XliffDocumentView(session, () => { });
+        const second = new XliffDocumentView(session, () => { });
 
         await first.updateTarget(UNIT, 'First');
         await second.updateTarget(UNIT, 'Second');
@@ -990,13 +989,15 @@ describe('when base-file resolution itself fails', () => {
         const posted: ExtensionMessage[] = [];
 
         try {
-            const facade = createDocumentSession(session, message => posted.push(message), resolver);
-            await facade.sendDocument();
+            const facade = new XliffDocumentView(session, message => posted.push(message), { baseFiles: resolver });
+            facade.sendDocument();
+            await vi.waitFor(() => {
+                expect(flushLogs().join(' ')).toContain('Base-file resolution failed');
+            });
             const answers = posted.filter(message => message.type === ExtensionMessageType.baseFile);
 
             expect(answers).toHaveLength(1);
             expect(answers[0].payload).toBeNull();
-            expect(flushLogs().join(' ')).toContain('Base-file resolution failed');
             facade.dispose();
         } finally {
             resolver.dispose();

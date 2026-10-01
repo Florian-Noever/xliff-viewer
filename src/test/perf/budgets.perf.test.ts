@@ -8,7 +8,7 @@ import { outlineAl, scanHeaders } from '../../extension/al/alOutline';
 import { unitTarget } from '../../extension/al/alTarget';
 import { candidateObjects, locateUnit } from '../../extension/al/unitLocator';
 import { XliffDocumentSession } from '../../extension/editor/documentSession';
-import { createDocumentSession } from '../../extension/editor/documentView';
+import { XliffDocumentView } from '../../extension/editor/documentView';
 import { buildAlTree, groupRoots } from '../../extension/xliff/alTree';
 import { projectDocument } from '../../extension/xliff/dto';
 import { parseXliff } from '../../extension/xliff/parser';
@@ -159,7 +159,7 @@ describe('performance budgets on the large example file', () => {
         // a whole-document serialise, and the trim down to one changed line.
         const document = new FakeTextDocument(`/w/${LARGE}`, text);
         const session = new XliffDocumentSession(document as unknown as vscode.TextDocument);
-        const view = createDocumentSession(session, () => { });
+        const view = new XliffDocumentView(session, () => { });
         const unit = { fileIndex: 0, unitId: [...iterateUnits(parseXliff(text))][0].id };
 
         await view.updateTarget(unit, 'warm up');
@@ -179,7 +179,7 @@ describe('performance budgets on the large example file', () => {
             const session = new XliffDocumentSession(
                 new FakeTextDocument(`/w/${LARGE}`, text) as unknown as vscode.TextDocument,
             );
-            void createDocumentSession(session, () => { }).sendDocument();
+            new XliffDocumentView(session, () => { }).sendDocument();
             session.dispose();
         })).toBeLessThan(250);
     });
