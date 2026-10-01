@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { computed, defineComponent, ref } from 'vue';
-import { mount } from '@vue/test-utils';
+import { computed, ref } from 'vue';
 
 import { expandableKeys, flattenTree, keysToDepth, useTreeFlatten } from '../../webview/composables/useTreeFlatten';
 import { fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
+import { withSetup } from './support/withSetup';
 
 import type { AlNodeDto, TransUnitDto, XliffFileDto } from '../../shared/dto';
-import type { TreeView } from '../../webview/composables/useTreeFlatten';
 
 /**
  * Table 1
@@ -33,29 +32,17 @@ function file(tree: AlNodeDto[], hasAlIds = true, index = 0): XliffFileDto {
     return fileDto({ index, tree, units: [...UNITS.values()], hasAlIds });
 }
 
-/** `useTreeFlatten` uses `watch`, so it needs a real component scope. */
 function view(initial: XliffFileDto | undefined, depth = 1) {
     const active = ref<XliffFileDto | undefined>(initial);
     const expandDepth = ref(depth);
     const uri = ref<string | undefined>('file:///w/one.xlf');
-    let captured: TreeView | undefined;
-
-    mount(defineComponent({
-        setup() {
-            captured = useTreeFlatten({
-                file: computed(() => active.value),
-                unitsById: computed(() => UNITS),
-                defaultExpandDepth: computed(() => expandDepth.value),
-                documentUri: computed(() => uri.value),
-            });
-            return () => null;
-        },
+    const { result: tree } = withSetup(() => useTreeFlatten({
+        file: computed(() => active.value),
+        unitsById: computed(() => UNITS),
+        defaultExpandDepth: computed(() => expandDepth.value),
+        documentUri: computed(() => uri.value),
     }));
-
-    if (captured === undefined) {
-        throw new Error('composable did not run');
-    }
-    return { tree: captured, active, expandDepth, uri };
+    return { tree, active, expandDepth, uri };
 }
 
 describe('flattenTree', () => {

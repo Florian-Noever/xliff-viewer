@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { computed, defineComponent, nextTick, ref } from 'vue';
+import { computed, h, nextTick, ref } from 'vue';
 
 import TreeRow from '../../webview/components/TreeRow.vue';
 import UnitTree from '../../webview/components/UnitTree.vue';
@@ -10,11 +10,11 @@ import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { summariseTree } from '../../shared/state';
 import { stubLayout, STUB_ROW_HEIGHT as ROW } from './layoutStub';
 import { exampleUnitDto, fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
+import { withSetup } from './support/withSetup';
 
 import type { AlNodeDto, TransUnitDto, XliffFileDto } from '../../shared/dto';
 import type { WebviewSettings } from '../../shared/settings';
 import type { StateSummary } from '../../shared/state';
-import type { TreeView } from '../../webview/composables/useTreeFlatten';
 import type { UnitActions } from '../../webview/unitActions';
 
 /** The large fixture's scale: 230 objects and about 2500 units. */
@@ -56,29 +56,15 @@ function mountTree(
     editing = false,
 ) {
     const file = ref<XliffFileDto>(fileDto({ tree, units: [...units.values()], hasAlIds }));
-    let view: TreeView | undefined;
-
-    const wrapper = mount(defineComponent({
-        components: { UnitTree },
-        setup() {
-            const created = useTreeFlatten({
-                file: computed(() => file.value),
-                unitsById: computed(() => units),
-                defaultExpandDepth: computed(() => depth),
-                documentUri: computed(() => 'file:///w/one.xlf'),
-            });
-            view = created;
-            return { tree: created, summaries, settings, editing };
-        },
-        template: '<UnitTree :tree="tree" :summaries="summaries" :settings="settings" :editing="editing" />',
-    }), {
+    const { result: view, wrapper } = withSetup(() => useTreeFlatten({
+        file: computed(() => file.value),
+        unitsById: computed(() => units),
+        defaultExpandDepth: computed(() => depth),
+        documentUri: computed(() => 'file:///w/one.xlf'),
+    }), rows => h(UnitTree, { tree: rows, summaries, settings, editing }), {
         attachTo: document.body,
         global: { provide: { [UNIT_ACTIONS_KEY as symbol]: NO_ACTIONS } },
     });
-
-    if (view === undefined) {
-        throw new Error('composable did not run');
-    }
     return { wrapper, view, file };
 }
 

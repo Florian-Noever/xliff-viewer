@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
-import { computed, defineComponent, ref } from 'vue';
+import { computed, h, nextTick, ref } from 'vue';
 
 import Toolbar from '../../webview/components/Toolbar.vue';
 import UnitCard from '../../webview/components/UnitCard.vue';
@@ -12,52 +12,43 @@ import { UNIT_ACTIONS_KEY } from '../../webview/unitActions';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { SPEC_STATES, summariseUnits, XliffState } from '../../shared/state';
 import { documentDto, exampleUnitDto, fileDto } from '../support/dtoBuilders';
+import { withSetup } from './support/withSetup';
 
 import type { TransUnitDto, XliffDocumentDto } from '../../shared/dto';
 import type { WebviewSettings } from '../../shared/settings';
-import type { EditMode } from '../../webview/composables/useEditMode';
 
 const FILE = fileDto({ units: [exampleUnitDto()] });
 
 const DOCUMENT = documentDto([FILE]);
 
 /**
- * Mounts `useEditMode` — it holds a `watch`, so it needs a real scope — and optionally a
- * toolbar driven by it. One host component for both, because two would be two components
- * in one file for no gain.
+ * `useEditMode`, and the toolbar it drives when a test asks for one. The document and the
+ * settings change as the host would change them, and take effect before the next assertion.
  */
-const Host = defineComponent({
-    components: { Toolbar },
-    props: {
-        document: { type: Object as () => XliffDocumentDto | undefined, default: undefined },
-        settings: { type: Object as () => WebviewSettings, required: true },
-        withToolbar: { type: Boolean, default: false },
-    },
-    setup(hostProps, { expose }) {
-        const documentRef = computed(() => hostProps.document);
-        const settingsRef = computed(() => hostProps.settings);
-        const edit = useEditMode({ document: documentRef, settings: settingsRef });
+function editMode(document: XliffDocumentDto = DOCUMENT, settings: WebviewSettings = DEFAULT_WEBVIEW_SETTINGS, withToolbar = false) {
+    const documentRef = ref(document);
+    const settingsRef = ref(settings);
+    const { result, wrapper } = withSetup(() => {
         const file = ref(FILE);
-        const search = useSearch({ file: computed(() => file.value), unitsById: computed(() => new Map()) });
-        const filter = useStateFilter({
-            summary: computed(() => summariseUnits(file.value.units)),
-            unitsById: computed(() => new Map()),
-            scope: computed(() => 'one'),
-        });
-        expose({ edit });
-        return { search, filter, edit };
-    },
-    template: '<Toolbar v-if="withToolbar" :search="search" :filter="filter" :edit="edit" />',
-});
-
-function editMode(document?: XliffDocumentDto, settings: WebviewSettings = DEFAULT_WEBVIEW_SETTINGS, withToolbar = false) {
-    const wrapper = mount(Host, { props: { document: document ?? DOCUMENT, settings, withToolbar } });
-    const edit = (wrapper.vm as unknown as { edit: EditMode }).edit;
-    /** Settings as the host posts them, applied before the next assertion. */
+        return {
+            edit: useEditMode({ document: computed(() => documentRef.value), settings: computed(() => settingsRef.value) }),
+            search: useSearch({ file: computed(() => file.value), unitsById: computed(() => new Map()) }),
+            filter: useStateFilter({
+                summary: computed(() => summariseUnits(file.value.units)),
+                unitsById: computed(() => new Map()),
+                scope: computed(() => 'one'),
+            }),
+        };
+    }, ({ edit, search, filter }) => (withToolbar ? h(Toolbar, { search, filter, edit }) : null));
     const setSettings = async (next: WebviewSettings): Promise<void> => {
-        await wrapper.setProps({ settings: next });
+        settingsRef.value = next;
+        await nextTick();
     };
-    return { edit, wrapper, setSettings };
+    const setDocument = async (next: XliffDocumentDto): Promise<void> => {
+        documentRef.value = next;
+        await nextTick();
+    };
+    return { edit: result.edit, wrapper, setSettings, setDocument };
 }
 
 describe('whether editing is possible at all', () => {
@@ -187,19 +178,19 @@ describe('remembering a state the reader chose', () => {
     it('forgets when a different document arrives', async () => {
         // Unit ids repeat across files, so a choice made in one document must not follow
         // the reader into the next.
-        const { edit, wrapper } = editMode();
+        const { edit, setDocument } = editMode();
         edit.rememberState(0, 'Table 1 - Property 2', XliffState.signedOff);
 
-        await wrapper.setProps({ document: { ...DOCUMENT, uri: 'file:///w/Other.de-DE.xlf' } });
+        await setDocument({ ...DOCUMENT, uri: 'file:///w/Other.de-DE.xlf' });
 
         expect(edit.chosenState(0, 'Table 1 - Property 2')).toBeUndefined();
     });
 
     it('keeps the choice across a re-parse of the same document', async () => {
-        const { edit, wrapper } = editMode();
+        const { edit, setDocument } = editMode();
         edit.rememberState(0, 'Table 1 - Property 2', XliffState.signedOff);
 
-        await wrapper.setProps({ document: { ...DOCUMENT, files: [{ ...FILE, units: [exampleUnitDto({ target: 'Edited' })] }] } });
+        await setDocument({ ...DOCUMENT, files: [{ ...FILE, units: [exampleUnitDto({ target: 'Edited' })] }] });
 
         expect(edit.chosenState(0, 'Table 1 - Property 2')).toBe(XliffState.signedOff);
     });

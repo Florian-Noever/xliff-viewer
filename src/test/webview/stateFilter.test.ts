@@ -1,6 +1,5 @@
-import { mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { computed, defineComponent, nextTick, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 
 import { useStateFilter } from '../../webview/composables/useStateFilter';
 import { visibleNodes } from '../../webview/ancestorFilter';
@@ -8,6 +7,7 @@ import { summariseUnits, XliffState } from '../../shared/state';
 import { stubLayout } from './layoutStub';
 import { documentDto, fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
 import { mountApp } from './support/mountApp';
+import { withSetup } from './support/withSetup';
 
 import type { AlNodeDto } from '../../shared/dto';
 import type { StateFilter } from '../../webview/composables/useStateFilter';
@@ -37,21 +37,11 @@ const DOCUMENT = documentDto([fileDto({ tree: TREE, units: UNITS })]);
 const unitsById = new Map(UNITS.map(each => [each.id, each]));
 
 function filterOnly(): StateFilter {
-    let captured: StateFilter | undefined;
-    mount(defineComponent({
-        setup() {
-            captured = useStateFilter({
-                summary: computed(() => summariseUnits(UNITS)),
-                unitsById: computed(() => unitsById),
-                scope: computed(() => scope.value),
-            });
-            return () => null;
-        },
-    }));
-    if (captured === undefined) {
-        throw new Error('composable did not run');
-    }
-    return captured;
+    return withSetup(() => useStateFilter({
+        summary: computed(() => summariseUnits(UNITS)),
+        unitsById: computed(() => unitsById),
+        scope: computed(() => scope.value),
+    })).result;
 }
 
 const scope = ref('file:///w/App.de-DE.xlf#0');

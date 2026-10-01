@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
-import { computed, defineComponent, ref } from 'vue';
+import { computed, ref } from 'vue';
 
 import ProgressBar from '../../webview/components/ProgressBar.vue';
 import StateBadge from '../../webview/components/StateBadge.vue';
@@ -8,6 +8,7 @@ import { useRollup } from '../../webview/composables/useRollup';
 import { stateLabel, StateTone, stateTone } from '../../webview/stateTone';
 import { SPEC_STATES, summariseUnits, XliffState } from '../../shared/state';
 import { fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
+import { withSetup } from './support/withSetup';
 
 import type { TransUnitDto, XliffFileDto } from '../../shared/dto';
 import type { StateSummary } from '../../shared/state';
@@ -152,21 +153,11 @@ describe('useRollup', () => {
     ];
 
     function rollupOf(file: XliffFileDto | undefined): Rollup {
-        let captured: Rollup | undefined;
         const active = ref(file);
-        mount(defineComponent({
-            setup() {
-                captured = useRollup({
-                    file: computed(() => active.value),
-                    unitsById: computed(() => new Map((active.value?.units ?? []).map(each => [each.id, each]))),
-                });
-                return () => null;
-            },
-        }));
-        if (captured === undefined) {
-            throw new Error('composable did not run');
-        }
-        return captured;
+        return withSetup(() => useRollup({
+            file: computed(() => active.value),
+            unitsById: computed(() => new Map((active.value?.units ?? []).map(each => [each.id, each]))),
+        })).result;
     }
 
     const file = fileDto({ tree, units });

@@ -1,6 +1,5 @@
-import { mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { defineComponent, nextTick } from 'vue';
+import { nextTick } from 'vue';
 
 import { useXliffDocument } from '../../webview/composables/useXliffDocument';
 import { ExtensionMessageType, WebviewMessageType } from '../../shared/messages';
@@ -9,6 +8,7 @@ import { summariseUnits } from '../../shared/state';
 import { clearPostedMessages, postedMessages } from '../setup/webview';
 import { documentDto, fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
 import { receive } from './support/mountApp';
+import { withSetup } from './support/withSetup';
 
 import type { ExtensionMessage } from '../../shared/messages';
 import type { XliffDocument } from '../../webview/composables/useXliffDocument';
@@ -25,26 +25,7 @@ const DOCUMENT = documentDto([
     fileDto({ index: 1, targetLanguage: 'fr-FR', units: [unitDto('Table 1', { source: 'Customer', target: 'Client' })] }),
 ]);
 
-/**
- * Mounts the composable inside a throwaway component — `onMounted` means it can only run
- * in a real setup scope — and hands back what it returned.
- */
-function host(render: (state: XliffDocument) => unknown) {
-    let captured: XliffDocument | undefined;
-    const wrapper = mount(defineComponent({
-        setup() {
-            captured = useXliffDocument();
-            const state = captured;
-            return () => render(state);
-        },
-    }));
-    if (captured === undefined) {
-        throw new Error('composable did not run');
-    }
-    return { state: captured, wrapper };
-}
-
-const useIt = (): XliffDocument => host(() => null).state;
+const useIt = (): XliffDocument => withSetup(useXliffDocument).result;
 
 const sendDocument = (): void => {
     receive({ type: ExtensionMessageType.setDocument, payload: DOCUMENT });
@@ -73,7 +54,7 @@ describe('mounting', () => {
     });
 
     it('stops listening once unmounted', async () => {
-        const { wrapper } = host(state => state.document.value?.fileName ?? '');
+        const { wrapper } = withSetup(useXliffDocument, state => state.document.value?.fileName ?? '');
 
         wrapper.unmount();
         sendDocument();

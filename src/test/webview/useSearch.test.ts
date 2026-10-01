@@ -1,11 +1,11 @@
-import { mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { computed, defineComponent, nextTick, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 
 import { buildSearchIndex, toMatcher, useSearch } from '../../webview/composables/useSearch';
 import { flattenTree } from '../../webview/composables/useTreeFlatten';
 import { visibleNodes } from '../../webview/ancestorFilter';
 import { fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
+import { withSetup } from './support/withSetup';
 
 import type { AlNodeDto, TransUnitDto, XliffFileDto } from '../../shared/dto';
 import type { Search, SearchSource } from '../../webview/composables/useSearch';
@@ -34,23 +34,9 @@ const UNITS = new Map<string, TransUnitDto>([
 
 const FILE = fileDto({ tree: TREE, units: [...UNITS.values()] });
 
-/**
- * Mounts the composable in a throwaway component — `useSearch` holds a `watch`, so it
- * needs a scope — and renders its predicate, so the computeds stay live.
- */
+/** Renders the predicate, so the computeds behind it stay live. */
 function mountSearch(source: SearchSource): Search {
-    let captured: Search | undefined;
-    mount(defineComponent({
-        setup() {
-            captured = useSearch(source);
-            const search = captured;
-            return () => String(search.predicate.value?.(TREE[0]) ?? '');
-        },
-    }));
-    if (captured === undefined) {
-        throw new Error('composable did not run');
-    }
-    return captured;
+    return withSetup(() => useSearch(source), search => String(search.predicate.value?.(TREE[0]) ?? '')).result;
 }
 
 function searchIn(file: XliffFileDto = FILE): Search {
