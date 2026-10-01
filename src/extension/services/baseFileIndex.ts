@@ -18,7 +18,6 @@ import { iterateUnits } from '../../shared/model';
  */
 export class BaseFileIndex implements vscode.Disposable {
     private readonly cache = new Map<string, ReadonlyMap<string, string>>();
-    private readonly subscriptions: vscode.Disposable[] = [];
     private readonly changed = new vscode.EventEmitter<vscode.Uri>();
 
     /**
@@ -29,16 +28,6 @@ export class BaseFileIndex implements vscode.Disposable {
      * already on screen were computed from the old one.
      */
     public readonly onDidChange: vscode.Event<vscode.Uri> = this.changed.event;
-
-    public constructor() {
-        const watcher = vscode.workspace.createFileSystemWatcher('**/*.g.xlf');
-        this.subscriptions.push(
-            watcher,
-            watcher.onDidChange(uri => this.forget(uri)),
-            watcher.onDidDelete(uri => this.forget(uri)),
-            watcher.onDidCreate(uri => this.forget(uri)),
-        );
-    }
 
     /**
      * Empty when the file cannot be read or parsed — which is a reason to show no markers,
@@ -56,18 +45,15 @@ export class BaseFileIndex implements vscode.Disposable {
         return sources;
     }
 
-    public dispose(): void {
-        for (const subscription of this.subscriptions) {
-            subscription.dispose();
-        }
-        this.subscriptions.length = 0;
-        this.cache.clear();
-        this.changed.dispose();
-    }
-
-    private forget(uri: vscode.Uri): void {
+    /** Drops what was read from a base file that appeared, changed or went away, and says so. */
+    public forget(uri: vscode.Uri): void {
         this.cache.delete(uri.toString());
         this.changed.fire(uri);
+    }
+
+    public dispose(): void {
+        this.cache.clear();
+        this.changed.dispose();
     }
 
     private async read(baseUri: vscode.Uri): Promise<ReadonlyMap<string, string>> {

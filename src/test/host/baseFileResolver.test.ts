@@ -7,7 +7,6 @@ import { Logger } from '../../extension/services/logger';
 import {
     configurationListenerCount,
     fireConfigurationChange,
-    fireFileWatcher,
     flushLogs,
     removeVirtualFile,
     resetMocks,
@@ -260,13 +259,13 @@ describe('caching and invalidation', () => {
         expect(flushLogs().filter(line => line.includes('Base file for'))).toHaveLength(0);
     });
 
-    it('starts over when a .g.xlf is deleted', async () => {
+    it('starts over once invalidated, as a .g.xlf coming or going does', async () => {
         workspaceWith('/w/T/App.de-DE.xlf', '/w/T/App.g.xlf');
         const document = uri('/w/T/App.de-DE.xlf');
         expect((await resolver.resolve(document, false)).uri).toBeDefined();
 
         removeVirtualFile('/w/T/App.g.xlf');
-        fireFileWatcher('deleted', '/w/T/App.g.xlf');
+        resolver.invalidate();
 
         expect((await resolver.resolve(document, false)).uri).toBeUndefined();
     });
@@ -293,16 +292,14 @@ describe('caching and invalidation', () => {
         expect((await resolver.resolve(document, false)).source).toBe(BaseFileSource.sibling);
     });
 
-    it('stops listening once disposed', async () => {
+    it('watches no files itself, and stops listening once disposed', async () => {
         workspaceWith('/w/T/App.de-DE.xlf', '/w/T/App.g.xlf');
         await resolver.resolve(uri('/w/T/App.de-DE.xlf'), false);
-        const watching = watcherCount();
         const configuring = configurationListenerCount();
 
         resolver.dispose();
 
-        expect(watcherCount()).toBe(watching - 1);
+        expect(watcherCount()).toBe(0);
         expect(configurationListenerCount()).toBe(configuring - 1);
-        expect(() => fireFileWatcher('deleted', '/w/T/App.g.xlf')).not.toThrow();
     });
 });

@@ -48,8 +48,6 @@ export class BasePairing implements vscode.Disposable {
 
         // The base file is somebody else's artefact: the AL compiler rewrites it while this
         // document stays untouched, and the markers on screen were computed from the old one.
-        // The resolver clears its own cache from the same watcher event, and it is constructed
-        // first, so by the time this runs both caches are already cold.
         this.subscription = baseIndex?.onDidChange(() => {
             this.announce();
         });

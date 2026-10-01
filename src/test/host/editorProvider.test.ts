@@ -578,13 +578,12 @@ describe('Go to source, from the panel', () => {
         expect(harness.posted.filter(message => message.type === ExtensionMessageType.alSource).map(message => message.payload)).toEqual([{ available: false }]);
     });
 
-    it('stops listening for AL files once the panel is gone', async () => {
-        const listening = emitterListenerCount();
+    it('lets go of the app\'s AL index once the panel is gone', async () => {
         const harness = await openInApp();
-        expect(emitterListenerCount()).toBeGreaterThan(listening);
+        const watching = watcherCount();
 
         harness.dispose();
-        expect(emitterListenerCount()).toBe(listening);
+        expect(watcherCount()).toBe(watching - 1);
         harness.posted.length = 0;
         setVirtualFile('/w/src/Customer.Table.al', CUSTOMER);
         fireFileWatcher('created', '/w/src/Customer.Table.al');

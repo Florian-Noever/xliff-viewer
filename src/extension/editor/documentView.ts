@@ -11,7 +11,7 @@ import { ExtensionMessageType, NavigationTarget } from '../../shared/messages';
 import { findUnit } from '../../shared/model';
 
 import type { SessionChange, SessionState, XliffDocumentSession } from './documentSession';
-import type { AlSourceIndex, AlSourceIndexes } from '../services/alSourceIndex';
+import type { AlIndexLease, AlSourceIndexes } from '../services/alSourceIndex';
 import type { BaseFileIndex } from '../services/baseFileIndex';
 import type { BaseFileResolver } from '../services/baseFileResolver';
 import type { ExtensionMessage } from '../../shared/messages';
@@ -49,7 +49,7 @@ export class XliffDocumentView implements DocumentView, vscode.Disposable {
     private readonly baseFiles: BaseFileResolver | undefined;
     private readonly alSources: AlSourceIndexes | undefined;
     private readonly pairing: BasePairing | undefined;
-    private readonly alIndex: Promise<AlSourceIndex | undefined> | undefined;
+    private readonly alLease: Promise<AlIndexLease | undefined> | undefined;
     private readonly subscriptions: vscode.Disposable[] = [];
     private disposed = false;
     private alQuestions = 0;
@@ -64,14 +64,25 @@ export class XliffDocumentView implements DocumentView, vscode.Disposable {
             : new BasePairing(session, post, services.baseFiles, services.baseIndex);
 
         // Whether there is AL source to go to is a fact about the app, not the document: it is
-        // told once per `ready`, and again only when the app's AL files come or go.
-        this.alIndex = services.alSources?.forFile(session.uri);
-        void this.alIndex?.then((index) => {
-            if (index !== undefined && !this.disposed) {
-                this.subscriptions.push(index.onDidChangeFiles(() => {
-                    this.announceAl();
-                }));
+        // told once per `ready`, and again only when the app's AL files come or go. Holding the
+        // lease keeps the app's index alive while this panel is open.
+        this.alLease = services.alSources?.acquire(session.uri);
+        void this.alLease?.then((lease) => {
+            if (lease === undefined) {
+                return;
             }
+            if (this.disposed) {
+                lease.release();
+                return;
+            }
+            this.subscriptions.push(
+                lease.index.onDidChangeFiles(() => {
+                    this.announceAl();
+                }),
+                new vscode.Disposable(() => {
+                    lease.release();
+                }),
+            );
         });
     }
 
@@ -162,11 +173,11 @@ export class XliffDocumentView implements DocumentView, vscode.Disposable {
 
     /** Answers can overtake each other, so only the answer to the latest question is posted. */
     private announceAl(): void {
-        if (this.alIndex === undefined) {
+        if (this.alLease === undefined) {
             return;
         }
         const question = ++this.alQuestions;
-        void hasAlSource(this.alIndex, this.session).then((available) => {
+        void hasAlSource(this.alLease, this.session).then((available) => {
             if (question === this.alQuestions && !this.disposed) {
                 this.post({ type: ExtensionMessageType.alSource, payload: { available } });
             }
@@ -206,9 +217,9 @@ async function showSource(
 }
 
 /** Whether the app has AL files at all. Having none is an answer, not a failure. */
-async function hasAlSource(alIndex: Promise<AlSourceIndex | undefined>, session: XliffDocumentSession): Promise<boolean> {
+async function hasAlSource(alLease: Promise<AlIndexLease | undefined>, session: XliffDocumentSession): Promise<boolean> {
     try {
-        return await (await alIndex)?.hasAlFiles() ?? false;
+        return await (await alLease)?.index.hasAlFiles() ?? false;
     } catch (error: unknown) {
         Logger.warn(`Looking for AL source failed for ${session.uri.path}: ${error instanceof Error ? error.message : 'unknown error'}`);
         return false;

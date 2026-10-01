@@ -6,7 +6,7 @@ import { revealAsText, revealInBaseFile } from './navigation';
 import { showTransientNotice } from './transientNotice';
 import { fileNameOf } from './uriNames';
 
-import type { AlSourceIndexes } from './alSourceIndex';
+import type { AlIndexLease, AlSourceIndexes } from './alSourceIndex';
 import type { BaseFileResolver } from './baseFileResolver';
 import type { UnitLocation } from '../al/unitLocator';
 
@@ -50,12 +50,14 @@ async function openDeclaration(request: SourceRequest, alSources: AlSourceIndexe
         return undefined;
     }
 
+    // Held for the click. An open panel of the app holds the index too, so it outlives this.
+    let lease: AlIndexLease | undefined;
     try {
-        const index = await alSources.forFile(request.document);
-        if (index === undefined) {
+        lease = await alSources.acquire(request.document);
+        if (lease === undefined) {
             return undefined;
         }
-        const { result, documents } = await index.locate(target);
+        const { result, documents } = await lease.index.locate(target);
         switch (result.kind) {
             case 'found':
                 await revealDeclaration(documents, result.location);
@@ -69,13 +71,15 @@ async function openDeclaration(request: SourceRequest, alSources: AlSourceIndexe
                 return SourceOutcome.declaration;
             }
             default:
-                Logger.info(`No AL declaration found for ${request.unitId} in ${index.scope.folder.path}.`);
+                Logger.info(`No AL declaration found for ${request.unitId} in ${lease.index.scope.folder.path}.`);
                 return undefined;
         }
     } catch (error: unknown) {
         // The AL source is the better answer, not the only one: the base file still is.
         Logger.warn(`Looking for the AL source of ${request.unitId} failed: ${error instanceof Error ? error.message : 'unknown error'}`);
         return undefined;
+    } finally {
+        lease?.release();
     }
 }
 

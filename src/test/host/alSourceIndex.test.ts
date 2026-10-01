@@ -294,36 +294,104 @@ describe('AlSourceIndex', () => {
 });
 
 describe('AlSourceIndexes', () => {
-    it('shares one index between the translation files of one app', async () => {
+    const GERMAN = uri(`${APP}/Translations/a.de-DE.xlf`);
+    const FRENCH = uri(`${APP}/Translations/a.fr-FR.xlf`);
+    const BASE_FILE = uri(`${APP}/Translations/Contoso.g.xlf`);
+
+    let indexes: AlSourceIndexes;
+
+    beforeEach(() => {
         setVirtualFile(`${APP}/app.json`, '{}');
-        const indexes = new AlSourceIndexes();
+        indexes = new AlSourceIndexes();
+    });
 
-        const first = await indexes.forFile(uri(`${APP}/Translations/a.de-DE.xlf`));
-        const second = await indexes.forFile(uri(`${APP}/Translations/a.fr-FR.xlf`));
-
-        expect(first).toBeDefined();
-        expect(second).toBe(first);
+    afterEach(() => {
         indexes.dispose();
+    });
+
+    it('shares one index, and one watcher, between the translation files of one app', async () => {
+        const watching = watcherCount();
+
+        const first = await indexes.acquire(GERMAN);
+        const second = await indexes.acquire(FRENCH);
+
+        expect(first?.index).toBeDefined();
+        expect(second?.index).toBe(first?.index);
+        expect(watcherCount()).toBe(watching + 1);
+    });
+
+    it('disposes the index, and its watcher, once the last lease is released', async () => {
+        const watching = watcherCount();
+        const first = await indexes.acquire(GERMAN);
+        const second = await indexes.acquire(FRENCH);
+
+        first?.release();
+        expect(watcherCount()).toBe(watching + 1);
+        second?.release();
+        expect(watcherCount()).toBe(watching);
+
+        expect((await indexes.acquire(GERMAN))?.index).not.toBe(first?.index);
+    });
+
+    it('counts a lease released twice only once', async () => {
+        const watching = watcherCount();
+        const first = await indexes.acquire(GERMAN);
+        const second = await indexes.acquire(FRENCH);
+
+        first?.release();
+        first?.release();
+
+        expect(watcherCount()).toBe(watching + 1);
+        second?.release();
+        expect(watcherCount()).toBe(watching);
+    });
+
+    it('keeps an index that a panel holds alive through a click', async () => {
+        setVirtualFile(`${APP}/src/Order.Table.al`, TABLE);
+        setVirtualFile(BASE_FILE.path, `<xliff><trans-unit id="${CAPTION}"/></xliff>`);
+        const held = await indexes.acquire(GERMAN);
+        const watching = watcherCount();
+
+        expect(await goToSource({ document: BASE_FILE, isBaseFile: true, unitId: CAPTION }, indexes, undefined)).toBe(SourceOutcome.declaration);
+
+        expect(watcherCount()).toBe(watching);
+        expect((await indexes.acquire(FRENCH))?.index).toBe(held?.index);
+    });
+
+    it('lets go of an index that only a click acquired', async () => {
+        setVirtualFile(`${APP}/src/Order.Table.al`, TABLE);
+        setVirtualFile(BASE_FILE.path, `<xliff><trans-unit id="${CAPTION}"/></xliff>`);
+        const watching = watcherCount();
+
+        expect(await goToSource({ document: BASE_FILE, isBaseFile: true, unitId: CAPTION }, indexes, undefined)).toBe(SourceOutcome.declaration);
+
+        expect(watcherCount()).toBe(watching);
     });
 
     it('takes changed preprocessor symbols from the next click on', async () => {
         setVirtualFile(`${APP}/app.json`, JSON.stringify({ preprocessorSymbols: ['A'] }));
         setVirtualFile(`${APP}/src/Order.Table.al`, '#if B\ntable 50100 "Contoso Order" { Caption = \'Contoso Order\'; }\n#endif\n');
-        setVirtualFile(`${APP}/Translations/Contoso.g.xlf`, `<xliff><trans-unit id="${CAPTION}"/></xliff>`);
-        const indexes = new AlSourceIndexes();
-        const request = { document: uri(`${APP}/Translations/Contoso.g.xlf`), isBaseFile: true, unitId: CAPTION };
+        setVirtualFile(BASE_FILE.path, `<xliff><trans-unit id="${CAPTION}"/></xliff>`);
+        // Held as an open panel holds it, so both clicks ask the same index.
+        await indexes.acquire(GERMAN);
+        const request = { document: BASE_FILE, isBaseFile: true, unitId: CAPTION };
 
         expect(await goToSource(request, indexes, undefined)).toBe(SourceOutcome.ownFile);
         setVirtualFile(`${APP}/app.json`, JSON.stringify({ preprocessorSymbols: ['B'] }));
         expect(await goToSource(request, indexes, undefined)).toBe(SourceOutcome.declaration);
-        indexes.dispose();
     });
 
     it('has none for a file outside any workspace folder and any app', async () => {
         setWorkspaceRoot(undefined);
-        const indexes = new AlSourceIndexes();
 
-        expect(await indexes.forFile(uri('/elsewhere/a.xlf'))).toBeUndefined();
+        expect(await indexes.acquire(uri('/elsewhere/a.xlf'))).toBeUndefined();
+    });
+
+    it('hands out nothing once disposed, and builds nothing to hand out', async () => {
+        const watching = watcherCount();
         indexes.dispose();
+
+        expect(await indexes.acquire(GERMAN)).toBeUndefined();
+        expect(watcherCount()).toBe(watching);
     });
 });

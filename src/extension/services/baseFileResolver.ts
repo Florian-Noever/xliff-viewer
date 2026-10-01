@@ -41,13 +41,7 @@ export class BaseFileResolver implements vscode.Disposable {
     private readonly subscriptions: vscode.Disposable[] = [];
 
     public constructor() {
-        // A base file appearing, moving or being deleted changes every answer.
-        const watcher = vscode.workspace.createFileSystemWatcher(`**/*${BASE_SUFFIX}`);
         this.subscriptions.push(
-            watcher,
-            watcher.onDidCreate(() => this.invalidate()),
-            watcher.onDidDelete(() => this.invalidate()),
-            watcher.onDidChange(() => this.invalidate()),
             vscode.workspace.onDidChangeConfiguration((event) => {
                 if (event.affectsConfiguration(SETTINGS_SECTION) || event.affectsConfiguration(XLIFF_SYNC_SECTION)) {
                     this.invalidate();
@@ -60,7 +54,10 @@ export class BaseFileResolver implements vscode.Disposable {
         );
     }
 
-    /** Drops every cached answer; the next `resolve` starts over. */
+    /**
+     * Drops every cached answer; the next `resolve` starts over. A base file appearing,
+     * moving or being deleted changes every answer, so this runs on each of those too.
+     */
     public invalidate(): void {
         this.cache.clear();
     }

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { BaseFileIndex, compareToBase } from '../../extension/services/baseFileIndex';
 import { Logger } from '../../extension/services/logger';
-import { fireFileWatcher, flushLogs, resetMocks, setVirtualFile, watcherCount } from '../__mocks__/vscode';
+import { flushLogs, resetMocks, setVirtualFile, watcherCount } from '../__mocks__/vscode';
 
 /**
  * The comparison is exact string equality on source, never trimmed — a trailing space is
@@ -53,13 +53,16 @@ describe('BaseFileIndex', () => {
         expect(flushLogs().filter(line => line.includes('Indexed'))).toHaveLength(0);
     });
 
-    it('re-reads after the base file changes on disk', async () => {
+    it('re-reads a base file it is told changed, and says which', async () => {
         setVirtualFile('/w/App.g.xlf', document([['a', 'A']]));
         await index.sourcesOf(BASE);
+        const told: string[] = [];
+        index.onDidChange(uri => told.push(uri.path));
 
         setVirtualFile('/w/App.g.xlf', document([['a', 'A'], ['b', 'B']]));
-        fireFileWatcher('changed', '/w/App.g.xlf');
+        index.forget(BASE);
 
+        expect(told).toEqual(['/w/App.g.xlf']);
         expect((await index.sourcesOf(BASE)).size).toBe(2);
     });
 
@@ -78,15 +81,15 @@ describe('BaseFileIndex', () => {
         expect(flushLogs().some(line => line.includes('Could not index'))).toBe(true);
     });
 
-    it('stops watching once disposed', async () => {
-        setVirtualFile('/w/App.g.xlf', document([['a', 'A']]));
-        await index.sourcesOf(BASE);
-        const watching = watcherCount();
+    it('watches nothing itself, and tells no one once disposed', () => {
+        const told: string[] = [];
+        index.onDidChange(uri => told.push(uri.path));
 
         index.dispose();
+        index.forget(BASE);
 
-        expect(watcherCount()).toBe(watching - 1);
-        expect(() => fireFileWatcher('changed', '/w/App.g.xlf')).not.toThrow();
+        expect(watcherCount()).toBe(0);
+        expect(told).toEqual([]);
     });
 });
 

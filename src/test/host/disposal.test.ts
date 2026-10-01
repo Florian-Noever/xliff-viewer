@@ -9,6 +9,7 @@ import {
     documentChangeListenerCount,
     emitterListenerCount,
     FakeTextDocument,
+    holdFileRead,
     resetMocks,
     setVirtualFile,
     setWorkspaceRoot,
@@ -104,9 +105,11 @@ afterEach(() => {
 describe('twenty editors', () => {
     it('leave nothing behind when they are closed', async () => {
         const provider = new XliffEditorProvider(vscode.Uri.file('/ext'));
-        // The provider's own base-file resolver watches configuration for its whole life,
-        // so the baseline is what a provider with no editors already holds.
+        // The provider's own base-file resolver and watcher listen for its whole life, so
+        // the baseline is what a provider with no editors already holds.
         const baseline = configurationListenerCount();
+        const baselineEmitters = emitterListenerCount();
+        const baselineWatchers = watcherCount();
         const panels: Panel[] = [];
 
         for (let index = 0; index < 20; index++) {
@@ -119,7 +122,9 @@ describe('twenty editors', () => {
         await settle();
         expect(documentChangeListenerCount()).toBe(20);
         expect(configurationListenerCount()).toBe(baseline + 20);
-        expect(emitterListenerCount()).toBeGreaterThanOrEqual(20);
+        expect(emitterListenerCount()).toBeGreaterThanOrEqual(baselineEmitters + 20);
+        // Twenty files of one app share one AL index.
+        expect(watcherCount()).toBe(baselineWatchers + 1);
 
         for (const panel of panels) {
             panel.close();
@@ -127,12 +132,14 @@ describe('twenty editors', () => {
 
         expect(documentChangeListenerCount()).toBe(0);
         expect(configurationListenerCount()).toBe(baseline);
-        expect(emitterListenerCount()).toBe(0);
+        expect(emitterListenerCount()).toBe(baselineEmitters);
+        expect(watcherCount()).toBe(baselineWatchers);
         expect(panels.map(panel => panel.listening())).toEqual(panels.map(() => 0));
 
         provider.dispose();
 
         expect(configurationListenerCount()).toBe(0);
+        expect(emitterListenerCount()).toBe(0);
         expect(watcherCount()).toBe(0);
     });
 
@@ -159,6 +166,22 @@ describe('twenty editors', () => {
 
         expect(documentChangeListenerCount()).toBe(0);
         expect(configurationListenerCount()).toBe(baseline);
+    });
+
+    it('let go of an AL index that arrives after they closed', async () => {
+        const provider = new XliffEditorProvider(vscode.Uri.file('/ext'));
+        const watching = watcherCount();
+        // The app is still being looked up when the panel closes.
+        const release = holdFileRead('/w/app.json');
+        const panel = fakePanel();
+        await provider.resolveCustomTextEditor(document('closed-early'), panel.panel, {} as vscode.CancellationToken);
+
+        panel.close();
+        release();
+        await settle();
+
+        expect(watcherCount()).toBe(watching);
+        provider.dispose();
     });
 
     it('are all disposed when the provider itself goes', async () => {

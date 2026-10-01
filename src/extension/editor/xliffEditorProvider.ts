@@ -5,6 +5,7 @@ import { XliffDocumentView } from './documentView';
 import { AlSourceIndexes } from '../services/alSourceIndex';
 import { BaseFileIndex } from '../services/baseFileIndex';
 import { BaseFileResolver } from '../services/baseFileResolver';
+import { BaseFileWatcher } from '../services/baseFileWatcher';
 import { getWebviewHtml, localResourceRoots } from './webviewHtml';
 import { dispatch } from '../handlers';
 import { Logger } from '../services/logger';
@@ -36,12 +37,20 @@ export class XliffEditorProvider implements vscode.CustomTextEditorProvider {
 
     private readonly extensionUri: vscode.Uri;
     private readonly registry = new DocumentSessionRegistry();
+    private readonly baseFileWatcher = new BaseFileWatcher();
     private readonly baseFiles = new BaseFileResolver();
     private readonly baseIndex = new BaseFileIndex();
     private readonly alSources = new AlSourceIndexes();
+    private readonly baseFileChanges: vscode.Disposable;
 
     public constructor(extensionUri: vscode.Uri) {
         this.extensionUri = extensionUri;
+        // The resolver forgets before the index tells the panels, so a panel that announces
+        // again finds neither cache stale.
+        this.baseFileChanges = this.baseFileWatcher.onDidChange((uri) => {
+            this.baseFiles.invalidate();
+            this.baseIndex.forget(uri);
+        });
     }
 
     public static register(context: vscode.ExtensionContext): vscode.Disposable {
@@ -59,6 +68,8 @@ export class XliffEditorProvider implements vscode.CustomTextEditorProvider {
     }
 
     public dispose(): void {
+        this.baseFileChanges.dispose();
+        this.baseFileWatcher.dispose();
         this.registry.dispose();
         this.baseFiles.dispose();
         this.baseIndex.dispose();

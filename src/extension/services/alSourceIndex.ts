@@ -237,31 +237,68 @@ async function readText(uri: vscode.Uri): Promise<string> {
     return open === undefined ? new TextDecoder().decode(await vscode.workspace.fs.readFile(uri)) : open.getText();
 }
 
-/** One index per app, shared by every translation file of it. */
-export class AlSourceIndexes implements vscode.Disposable {
-    private readonly indexes = new Map<string, AlSourceIndex>();
+/** A hold on an app's index, which lives while anyone holds it. Released once. */
+export interface AlIndexLease {
+    readonly index: AlSourceIndex;
+    release(): void;
+}
 
-    /** The index of the app a file belongs to; undefined when it belongs to none. */
-    public async forFile(file: vscode.Uri): Promise<AlSourceIndex | undefined> {
+interface HeldIndex {
+    readonly index: AlSourceIndex;
+    holders: number;
+}
+
+/**
+ * One index per app, shared by every translation file of it, and kept only while held: the
+ * last release disposes the index and its watcher.
+ */
+export class AlSourceIndexes implements vscode.Disposable {
+    private readonly held = new Map<string, HeldIndex>();
+    private disposed = false;
+
+    /** A lease on the index of the app a file belongs to; undefined when it belongs to none. */
+    public async acquire(file: vscode.Uri): Promise<AlIndexLease | undefined> {
         const scope = await alScopeFor(file);
-        if (scope === undefined) {
+        if (scope === undefined || this.disposed) {
             return undefined;
         }
         const key = scope.folder.toString();
-        let index = this.indexes.get(key);
-        if (index === undefined) {
-            index = new AlSourceIndex(scope);
-            this.indexes.set(key, index);
-        }
-        // Asked on every click, so a changed `app.json` counts from the next one on.
-        index.useSymbols(scope.symbols);
-        return index;
+        const entry = this.held.get(key) ?? this.hold(key, scope);
+        entry.holders++;
+        // Asked on every acquire, so a changed `app.json` counts from the next click on.
+        entry.index.useSymbols(scope.symbols);
+        return this.leaseOf(key, entry);
     }
 
     public dispose(): void {
-        for (const index of this.indexes.values()) {
+        this.disposed = true;
+        for (const { index } of this.held.values()) {
             index.dispose();
         }
-        this.indexes.clear();
+        this.held.clear();
+    }
+
+    private hold(key: string, scope: AlScope): HeldIndex {
+        const entry = { index: new AlSourceIndex(scope), holders: 0 };
+        this.held.set(key, entry);
+        return entry;
+    }
+
+    private leaseOf(key: string, entry: HeldIndex): AlIndexLease {
+        let released = false;
+        return {
+            index: entry.index,
+            release: () => {
+                if (released) {
+                    return;
+                }
+                released = true;
+                entry.holders--;
+                if (entry.holders === 0 && this.held.get(key) === entry) {
+                    entry.index.dispose();
+                    this.held.delete(key);
+                }
+            },
+        };
     }
 }
