@@ -151,7 +151,7 @@
         "watch:vite": "vite build --watch",
         "build:webview": "vite build",
         "dev:webview": "vite",
-        "check-types": "tsc --noEmit && tsc --noEmit -p src/test/tsconfig.json && vue-tsc --noEmit -p src/webview/tsconfig.json && vue-tsc --noEmit -p src/test/webview/tsconfig.json",
+        "check-types": "tsc --noEmit && tsc --noEmit -p src/test/tsconfig.json && tsc --noEmit -p src/test/integration/tsconfig.json && vue-tsc --noEmit -p src/webview/tsconfig.json && vue-tsc --noEmit -p src/test/webview/tsconfig.json",
         "lint": "eslint src --max-warnings 0",
         "pretest": "run-s bundle build:webview",
         "test": "vitest run --project data --project host --project webview --project repo && vitest run --project perf",

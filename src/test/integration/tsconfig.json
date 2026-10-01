@@ -1,0 +1,16 @@
+{
+    "extends": "../tsconfig.json",
+    "compilerOptions": {
+        // Mocha's globals are the integration tests' alone: in a Vitest file, `it` and
+        // `describe` must be imported, and a file that forgets fails to compile.
+        "types": [
+            "node",
+            "vscode",
+            "mocha"
+        ]
+    },
+    "include": [
+        "**/*.ts"
+    ],
+    "exclude": []
+}

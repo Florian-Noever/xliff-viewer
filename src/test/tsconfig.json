@@ -8,8 +8,7 @@
         "moduleResolution": "Bundler",
         "types": [
             "node",
-            "vscode",
-            "mocha"
+            "vscode"
         ],
         // The perf project times the webview's own pure search and flatten code, which
         // addresses src/shared through the alias the webview build gives it.
@@ -23,6 +22,7 @@
         "**/*.ts"
     ],
     "exclude": [
-        "webview"
+        "webview",
+        "integration"
     ]
 }
