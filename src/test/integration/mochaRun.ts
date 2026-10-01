@@ -1,3 +1,6 @@
+/** How long one integration test may take, the same on both hosts. */
+export const TEST_TIMEOUT_MS = 20_000;
+
 interface Runnable {
     run(callback: (failures: number) => void): unknown;
 }
