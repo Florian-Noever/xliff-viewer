@@ -26,14 +26,13 @@ import {
     setWorkspaceRoot,
     watcherCount,
 } from '../__mocks__/vscode';
-import { fakeWebviewPanel } from '../support/fakeWebviewPanel';
+import { fakeWebviewPanel, WEBVIEW_TEMPLATE } from '../support/fakeWebviewPanel';
 
 import type { TransUnitDto } from '../../shared/dto';
 import type { ExtensionMessage } from '../../shared/messages';
 import type { FakeWebviewPanel } from '../support/fakeWebviewPanel';
 
 const EXTENSION_URI = vscode.Uri.file('/ext');
-const TEMPLATE = '<script nonce="%NONCE%" src="%SCRIPT_URI%"></script><link href="%CSS_URI%"><meta content="%CSP_SOURCE%">';
 const FIXTURE = `<?xml version="1.0" encoding="utf-8"?>
 <xliff version="1.2"><file source-language="en-US" target-language="de-DE" original="App"><body>
   <trans-unit id="Table 1 - Property 2"><source>Customer</source><target state="translated">Kunde</target>
@@ -63,7 +62,7 @@ const settle = async (): Promise<void> => {
 
 beforeEach(() => {
     vi.useFakeTimers();
-    setVirtualFile('/ext/media/webview.html', TEMPLATE);
+    setVirtualFile('/ext/media/webview.html', WEBVIEW_TEMPLATE);
     flushLogs();
 });
 

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { assert, describe, expect, it } from 'vitest';
 
 import { UnknownUnitError } from '../../extension/xliff/errors';
 import { parseXliff } from '../../extension/xliff/parser';
@@ -13,14 +13,6 @@ const LANGUAGE_FILE = FIXTURE.german;
 const LARGE_FILE = FIXTURE.large;
 const BASE_FILE = FIXTURE.base;
 const MINIMAL_FILE = FIXTURE.minimal;
-
-/** Narrows without a `!` assertion, which the project's lint rules forbid. */
-function required<T>(value: T | null | undefined, what: string): T {
-    if (value === null || value === undefined) {
-        throw new Error(`expected ${what}`);
-    }
-    return value;
-}
 
 /** What the host will do with the edit: splice it into the current text. */
 function apply(text: string, edit: TextEditRange): string {
@@ -55,13 +47,19 @@ describe('trimToEdit', () => {
     });
 
     it('handles a pure deletion', () => {
-        const edit = required(trimToEdit('abcdef', 'abef'), 'an edit');
+        const edit = trimToEdit('abcdef', 'abef');
+        assert.exists(edit, 'an edit');
         expect(apply('abcdef', edit)).toBe('abef');
     });
 
     it('handles a change at the very start and at the very end', () => {
-        expect(apply('abc', required(trimToEdit('abc', 'Xbc'), 'an edit'))).toBe('Xbc');
-        expect(apply('abc', required(trimToEdit('abc', 'abX'), 'an edit'))).toBe('abX');
+        const atStart = trimToEdit('abc', 'Xbc');
+        const atEnd = trimToEdit('abc', 'abX');
+        assert.exists(atStart, 'an edit');
+        assert.exists(atEnd, 'an edit');
+
+        expect(apply('abc', atStart)).toBe('Xbc');
+        expect(apply('abc', atEnd)).toBe('abX');
     });
 
     it('never splits a surrogate pair', () => {
@@ -69,7 +67,8 @@ describe('trimToEdit', () => {
         // halves, producing an offset that is not a valid document position.
         const before = 'a\u{1F600}b';
         const after = 'a\u{1F601}b';
-        const edit = required(trimToEdit(before, after), 'an edit');
+        const edit = trimToEdit(before, after);
+        assert.exists(edit, 'an edit');
 
         expect(isHighSurrogateAt(before, edit.start - 1)).toBe(false);
         expect(apply(before, edit)).toBe(after);
@@ -79,7 +78,8 @@ describe('trimToEdit', () => {
 describe('setTarget', () => {
     it('produces an edit covering only the edited <target>', () => {
         const { text, document, units } = load(LARGE_FILE);
-        const edit = required(setTarget(document, text, { fileIndex: 0, unitId: units[1200].id, value: 'NEUER WERT' }), 'an edit');
+        const edit = setTarget(document, text, { fileIndex: 0, unitId: units[1200].id, value: 'NEUER WERT' });
+        assert.exists(edit, 'an edit');
 
         const replaced = text.slice(edit.start, edit.end);
         // The whole document was serialised; the trim narrowed it to one element.
@@ -90,7 +90,8 @@ describe('setTarget', () => {
 
     it('splices back to exactly what the serialiser produced', () => {
         const { text, document, units } = load(LANGUAGE_FILE);
-        const edit = required(setTarget(document, text, { fileIndex: 0, unitId: units[7].id, value: 'Anderer Text' }), 'an edit');
+        const edit = setTarget(document, text, { fileIndex: 0, unitId: units[7].id, value: 'Anderer Text' });
+        assert.exists(edit, 'an edit');
         expect(apply(text, edit)).toBe(serialiseXliff(document));
     });
 
@@ -113,10 +114,8 @@ describe('setTarget', () => {
 
     it('writes the self-closing form when the value is cleared', () => {
         const { text, document, units } = load(LANGUAGE_FILE);
-        const edit = required(
-            setTarget(document, text, { fileIndex: 0, unitId: units[0].id, value: '', state: 'needs-translation' }),
-            'an edit',
-        );
+        const edit = setTarget(document, text, { fileIndex: 0, unitId: units[0].id, value: '', state: 'needs-translation' });
+        assert.exists(edit, 'an edit');
 
         // Assert on the applied result: `newText` is only the differing span, because the
         // surrounding `<target state="` and `>` are common prefix and suffix.
@@ -131,10 +130,8 @@ describe('setTarget', () => {
         const unit = units[5];
         expect(unit.target).toBeUndefined();
 
-        const edit = required(
-            setTarget(document, text, { fileIndex: 0, unitId: unit.id, value: 'Übersetzt', state: 'translated' }),
-            'an edit',
-        );
+        const edit = setTarget(document, text, { fileIndex: 0, unitId: unit.id, value: 'Übersetzt', state: 'translated' });
+        assert.exists(edit, 'an edit');
         const result = apply(text, edit);
         expect(result).toBe(serialiseXliff(document));
 
@@ -149,7 +146,8 @@ describe('setTarget', () => {
     it('preserves attributes the named fields do not model', () => {
         const { document, units } = load(LANGUAGE_FILE);
         const unit = units[0];
-        const target = required(unit.target, 'a target');
+        const target = unit.target;
+        assert.exists(target, 'a target');
 
         // A target carrying an attribute we never enumerated.
         unit.target = { ...target, attributes: { ...target.attributes, 'custom-attr': 'keep-me' } };
@@ -167,13 +165,15 @@ describe('setTarget', () => {
 
     it('encodes special characters in the written value', () => {
         const { text, document, units } = load(LANGUAGE_FILE);
-        const edit = required(setTarget(document, text, { fileIndex: 0, unitId: units[2].id, value: 'a & b <c>' }), 'an edit');
+        const edit = setTarget(document, text, { fileIndex: 0, unitId: units[2].id, value: 'a & b <c>' });
+        assert.exists(edit, 'an edit');
         expect(edit.newText).toContain('a &amp; b &lt;c&gt;');
     });
 
     it('keeps a whitespace-only value rather than treating it as empty', () => {
         const { text, document, units } = load(LANGUAGE_FILE);
-        const edit = required(setTarget(document, text, { fileIndex: 0, unitId: units[4].id, value: ' ' }), 'an edit');
+        const edit = setTarget(document, text, { fileIndex: 0, unitId: units[4].id, value: ' ' });
+        assert.exists(edit, 'an edit');
 
         const result = apply(text, edit);
         expect(result).toContain('> </target>');
@@ -219,7 +219,8 @@ describe('setState', () => {
         const unit = units[0];
         const value = unit.target?.value;
 
-        const edit = required(setState(document, text, { fileIndex: 0, unitId: unit.id }, 'needs-review-translation'), 'an edit');
+        const edit = setState(document, text, { fileIndex: 0, unitId: unit.id }, 'needs-review-translation');
+        assert.exists(edit, 'an edit');
         const result = apply(text, edit);
 
         expect(unit.target?.value).toBe(value);
@@ -262,14 +263,16 @@ describe('a document with several <file> elements', () => {
 
     it('writes the target of the named <file> only', () => {
         const document = parseXliff(TWO_FILES);
-        const edit = required(setTarget(document, TWO_FILES, { fileIndex: 1, unitId: 'shared', value: 'Salut' }), 'an edit');
+        const edit = setTarget(document, TWO_FILES, { fileIndex: 1, unitId: 'shared', value: 'Salut' });
+        assert.exists(edit, 'an edit');
 
         expect(targetsOf(apply(TWO_FILES, edit)).map(target => target?.value)).toEqual(['Hallo', 'Salut']);
     });
 
     it('changes the state in the named <file> only', () => {
         const document = parseXliff(TWO_FILES);
-        const edit = required(setState(document, TWO_FILES, { fileIndex: 1, unitId: 'shared' }, 'needs-review-translation'), 'an edit');
+        const edit = setState(document, TWO_FILES, { fileIndex: 1, unitId: 'shared' }, 'needs-review-translation');
+        assert.exists(edit, 'an edit');
 
         expect(targetsOf(apply(TWO_FILES, edit)).map(target => target?.state)).toEqual(['translated', 'needs-review-translation']);
     });
@@ -285,7 +288,8 @@ describe('a document with several <file> elements', () => {
 describe('the round-trip stays green after a write', () => {
     it('a written document re-parses and re-serialises to itself', () => {
         const { text, document, units } = load(LANGUAGE_FILE);
-        const edit = required(setTarget(document, text, { fileIndex: 0, unitId: units[10].id, value: 'Runde zwei' }), 'an edit');
+        const edit = setTarget(document, text, { fileIndex: 0, unitId: units[10].id, value: 'Runde zwei' });
+        assert.exists(edit, 'an edit');
         const written = apply(text, edit);
 
         expect(serialiseXliff(parseXliff(written))).toBe(written);
@@ -301,7 +305,9 @@ describe('a line break a translator typed', () => {
 
     it('survives the write, the re-parse and the re-serialise', () => {
         const { text, document, units } = load(LANGUAGE_FILE);
-        const written = apply(text, required(setTarget(document, text, { fileIndex: 0, unitId: units[10].id, value: TYPED }), 'an edit'));
+        const edit = setTarget(document, text, { fileIndex: 0, unitId: units[10].id, value: TYPED });
+        assert.exists(edit, 'an edit');
+        const written = apply(text, edit);
 
         const reparsed = parseXliff(written);
         expect([...iterateUnits(reparsed)].find(unit => unit.id === units[10].id)?.target?.value).toBe(TYPED);
@@ -318,7 +324,9 @@ describe('a line break a translator typed', () => {
         const source = readFixture(MINIMAL_FILE).split('\n').join('\r\n');
         const document = parseXliff(source);
         const units = [...iterateUnits(document)];
-        const written = apply(source, required(setTarget(document, source, { fileIndex: 0, unitId: units[0].id, value: TYPED }), 'an edit'));
+        const edit = setTarget(document, source, { fileIndex: 0, unitId: units[0].id, value: TYPED });
+        assert.exists(edit, 'an edit');
+        const written = apply(source, edit);
 
         expect(written.split('\r\n')).toHaveLength(source.split('\r\n').length + 1);
         expect(written.replace(/\r\n/g, '')).not.toContain('\n');
@@ -329,7 +337,9 @@ describe('a line break a translator typed', () => {
         // `Text.\\` is one line to XML and a line break to AL. It is a character like any
         // other here, and nothing in the write path may treat it as an escape.
         const { text, document, units } = load(LANGUAGE_FILE);
-        const written = apply(text, required(setTarget(document, text, { fileIndex: 0, unitId: units[10].id, value: 'Achtung! \\Weiter?' }), 'an edit'));
+        const edit = setTarget(document, text, { fileIndex: 0, unitId: units[10].id, value: 'Achtung! \\Weiter?' });
+        assert.exists(edit, 'an edit');
+        const written = apply(text, edit);
 
         expect(written).toContain('>Achtung! \\Weiter?</target>');
         expect([...iterateUnits(parseXliff(written))].find(unit => unit.id === units[10].id)?.target?.value).toBe('Achtung! \\Weiter?');

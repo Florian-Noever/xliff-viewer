@@ -98,7 +98,7 @@ describe('one edit changes only what was edited', () => {
             const { before: was, after: now } = span(original, edit);
             const delta = original.includes('\r\n') ? now - was : 0;
 
-            expect(after.startsWith('﻿'), `${name}: BOM`).toBe(original.startsWith('﻿'));
+            expect(after.startsWith('\uFEFF'), `${name}: BOM`).toBe(original.startsWith('\uFEFF'));
             expect(after.includes('\r\n'), `${name}: CRLF`).toBe(original.includes('\r\n'));
             expect(after.split('\r\n').length, `${name}: CRLF count`).toBe(original.split('\r\n').length + delta);
         });

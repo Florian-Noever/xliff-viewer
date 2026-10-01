@@ -71,7 +71,7 @@ async function discard(uri: vscode.Uri): Promise<void> {
 }
 
 /** A file with a BOM, CRLF throughout, and a target to edit. */
-const BOM = '﻿';
+const BOM = '\uFEFF';
 const CRLF_WITH_BOM = BOM + ORIGINAL.split('\n').join('\r\n');
 
 suite('what a real host does to a file we did not write by hand', () => {

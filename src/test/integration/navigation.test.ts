@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
-import { FIXTURE, idOf  } from '../fixtures/corpus';
+import { hashedIdOf } from '../fixtures/alApp';
+import { FIXTURE } from '../fixtures/corpus';
 import { BaseFileResolver } from '../../extension/services/baseFileResolver';
 import { findUnitOffset, revealAsText, revealInBaseFile } from '../../extension/services/navigation';
 import { assertEqual, assertOk } from './assertions';
@@ -15,7 +16,7 @@ import { assertEqual, assertOk } from './assertions';
  * carry, and a base file that is not there at all.
  */
 
-const KNOWN_UNIT = idOf([{ type: 'Table', name: 'Contoso Setup' }, { type: 'Property', name: 'Caption' }]);
+const KNOWN_UNIT = hashedIdOf([{ type: 'Table', name: 'Contoso Setup' }, { type: 'Property', name: 'Caption' }]);
 
 function workspaceUri(...segments: string[]): vscode.Uri {
     const folders = vscode.workspace.workspaceFolders;

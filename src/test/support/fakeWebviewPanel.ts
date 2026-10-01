@@ -2,6 +2,9 @@ import * as vscode from 'vscode';
 
 import type { ExtensionMessage } from '../../shared/messages';
 
+/** The smallest template the provider can fill: each placeholder once, and nothing else. */
+export const WEBVIEW_TEMPLATE = '<script nonce="%NONCE%" src="%SCRIPT_URI%"></script><link href="%CSS_URI%"><meta content="%CSP_SOURCE%">';
+
 /** A webview panel as the provider sees one, with the controls a test drives it by. */
 export interface FakeWebviewPanel {
     readonly panel: vscode.WebviewPanel;

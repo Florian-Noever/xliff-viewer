@@ -9,7 +9,7 @@
  * like rather than on one layout.
  */
 
-import { appUnits } from './alApp';
+import { appUnits, identifier } from './alApp';
 
 import type { AlApp, AlLabel, AlMember, AlMethod, AlObject, AlProperty, AppUnit } from './alApp';
 
@@ -133,10 +133,6 @@ function literal(text: string): string {
     return `'${text.replace(/'/g, '\'\'')}'`;
 }
 
-function sanitize(name: string): string {
-    return name.replace(/[^A-Za-z0-9]/g, '');
-}
-
 /** One file's objects, and where the file goes. */
 interface FilePlan {
     readonly path: string;
@@ -163,7 +159,7 @@ function planFiles(app: AlApp): FilePlan[] {
             }
             continue;
         }
-        plans.push({ path: `${folder}/${sanitize(object.name)}.${object.kind}.al`, namespace: object.namespace, objects: [object] });
+        plans.push({ path: `${folder}/${identifier(object.name)}.${object.kind}.al`, namespace: object.namespace, objects: [object] });
     }
 
     return plans;

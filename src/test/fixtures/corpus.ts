@@ -13,12 +13,12 @@
  * the same names; `alNameHash.test.ts` holds that function to values AL is known to write.
  */
 
-import { appUnits, quoteNameIfNeeded } from './alApp';
+import { appUnits, hashedIdOf, identifier, quoteNameIfNeeded } from './alApp';
 import { renderApp } from './alRender';
 import { NORTHWIND } from './northwind';
 import { alNameHash } from '../../extension/xliff/alNameHash';
 
-import type { AlApp, AlLabel, AlProperty } from './alApp';
+import type { AlApp, AlLabel, AlProperty, PathStep } from './alApp';
 import type { AppManifest } from './alRender';
 
 export const FIXTURE = {
@@ -36,13 +36,8 @@ export interface FixtureFile {
     readonly text: string;
 }
 
-export interface Segment {
-    readonly type: string;
-    readonly name: string;
-}
-
 interface Draft {
-    readonly path: readonly Segment[];
+    readonly path: readonly PathStep[];
     readonly source: string;
     readonly german: string;
     /** Replaces the Developer note the unit would otherwise get. */
@@ -52,7 +47,7 @@ interface Draft {
     readonly maxwidth?: number;
     readonly alObjectTarget?: string;
     /** What an extension extends: the base object's type and name. */
-    readonly target?: Segment;
+    readonly target?: PathStep;
     /** Exempt from the file's untranslated pattern. */
     readonly keep?: boolean;
     /** The id, when it is not the path's names hashed: a readable, namespaced id. */
@@ -81,7 +76,7 @@ type NamedText = readonly [string, string, string];
 
 const LF = '\n';
 const CRLF = '\r\n';
-const BOM = '﻿';
+const BOM = '\uFEFF';
 const DECLARATION_LOWER = '<?xml version="1.0" encoding="utf-8"?>';
 const DECLARATION_UPPER = '<?xml version="1.0" encoding="UTF-8"?>';
 const XLIFF_OPEN = '<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">';
@@ -216,18 +211,13 @@ const WORDS: Readonly<Record<string, string>> = {
 
 const PLACEHOLDER_ROLES: readonly string[] = ['%1 = Record', '%2 = Value', '%3 = Limit', '%4 = Error'];
 
-export function idOf(path: readonly Segment[]): string {
-    return path.map(each => `${each.type} ${alNameHash(each.name)}`).join(' - ');
-}
-
 /** The path as the generator note writes it: types and names. */
-function namesOf(path: readonly Segment[]): string {
+function namesOf(path: readonly PathStep[]): string {
     return path.map(each => `${each.type} ${each.name}`).join(' - ');
 }
 
-const segment = (type: string, name: string): Segment => ({ type, name });
-const property = (name: string): Segment => segment('Property', name);
-const identifier = (text: string): string => text.replace(/[^A-Za-z0-9]/g, '');
+const segment = (type: string, name: string): PathStep => ({ type, name });
+const property = (name: string): PathStep => segment('Property', name);
 const toGerman = (text: string): string => text.split(' ').map(word => WORDS[word] ?? word).join(' ');
 
 function at<T>(list: readonly T[], index: number): T {
@@ -240,15 +230,15 @@ function placeholderNote(text: string): string | undefined {
     return count === 0 ? undefined : PLACEHOLDER_ROLES.slice(0, count).join(', ');
 }
 
-function caption(path: readonly Segment[], english: string, german: string, extra: Partial<Draft> = {}): Draft {
+function caption(path: readonly PathStep[], english: string, german: string, extra: Partial<Draft> = {}): Draft {
     return { path: [...path, property('Caption')], source: english, german, ...extra };
 }
 
-function toolTip(path: readonly Segment[], english: string, german: string, extra: Partial<Draft> = {}): Draft {
+function toolTip(path: readonly PathStep[], english: string, german: string, extra: Partial<Draft> = {}): Draft {
     return { path: [...path, property('ToolTip')], source: english, german, ...extra };
 }
 
-function label(path: readonly Segment[], [name, english, german]: NamedText, extra: Partial<Draft> = {}): Draft {
+function label(path: readonly PathStep[], [name, english, german]: NamedText, extra: Partial<Draft> = {}): Draft {
     return { path: [...path, segment('NamedType', name)], source: english, german, note: placeholderNote(english), ...extra };
 }
 
@@ -372,7 +362,7 @@ function assertDistinct(units: readonly Unit[]): void {
             }
             names.set(key, each.name);
         }
-        const id = unit.id ?? idOf(unit.path);
+        const id = unit.id ?? hashedIdOf(unit.path);
         if (ids.has(id)) {
             throw new Error(`two units share the id ${id}`);
         }
@@ -478,7 +468,7 @@ const BASE_ENUMS = [
  */
 function labelCodeunit(): Draft[] {
     const root = [segment('Codeunit', LABEL_CODEUNIT)];
-    const method = (name: string): Segment[] => [...root, segment('Method', name)];
+    const method = (name: string): PathStep[] => [...root, segment('Method', name)];
     const ordinary = (name: string, count: number, offset: number): Draft[] =>
         Array.from({ length: count }, (_, index) => label(method(name), at(LABELS, offset + index)));
     const url = 'https://relay.fabrikam.example/api?sv=2024-05-04&sig=Q29udG9zbw';
@@ -704,7 +694,7 @@ function factsOf(units: readonly Unit[]): CorpusFacts {
         translated: units.filter(unit => unit.translated && (unit.state ?? 'translated') === 'translated').length,
         untranslated: units.filter(unit => !unit.translated).length,
         withObjectTarget: units.filter(unit => unit.alObjectTarget !== undefined).length,
-        rootObjects: new Set(units.map(unit => idOf(unit.path.slice(0, 1)))).size,
+        rootObjects: new Set(units.map(unit => hashedIdOf(unit.path.slice(0, 1)))).size,
         objectTypes: new Set(units.map(unit => unit.path[0].type)).size,
     };
 }
@@ -774,7 +764,7 @@ function targetOf(unit: Unit, role: Role): string | undefined {
 }
 
 function renderUnit(unit: Unit, role: Role): string[] {
-    const attributes = [`id="${escapeAttribute(unit.id ?? idOf(unit.path))}"`];
+    const attributes = [`id="${escapeAttribute(unit.id ?? hashedIdOf(unit.path))}"`];
     if (unit.maxwidth !== undefined) {
         attributes.push(`maxwidth="${unit.maxwidth}"`);
     }

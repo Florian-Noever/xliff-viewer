@@ -9,6 +9,8 @@ import { iterateNodes, iterateUnitNodes } from '../support/alTreeWalk';
 import { AL_FIXTURE_NAMES, FIXTURE, FIXTURE_NAMES, fixtureUnits } from '../support/fixtures';
 import { notedUnit, unit } from '../support/modelBuilders';
 
+const grouped = (...ids: string[]) => groupRoots(buildAlTree(ids.map(id => unit(id))));
+
 describe('the large corpus file', () => {
     const units = fixtureUnits(FIXTURE.large);
     const roots = buildAlTree(units);
@@ -162,7 +164,6 @@ describe('shape', () => {
 });
 
 describe('the object-type level', () => {
-    const grouped = (...ids: string[]) => groupRoots(buildAlTree(ids.map(id => unit(id))));
 
     it('wraps the roots in one node per type', () => {
         const tree = grouped('Table 1 - Property 9', 'Page 2 - Property 9', 'Table 3 - Property 9');
@@ -324,7 +325,6 @@ describe('naming', () => {
 });
 
 describe('the namespace level', () => {
-    const grouped = (...ids: string[]) => groupRoots(buildAlTree(ids.map(id => unit(id))));
 
     it('puts the namespaces first, each with type groups of its own', () => {
         const tree = grouped(

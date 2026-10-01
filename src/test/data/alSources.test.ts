@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { outlineAl } from '../../extension/al/alOutline';
-import { appUnits, translationRoot } from '../fixtures/alApp';
+import { appUnits, translationRoot, identifier  } from '../fixtures/alApp';
 import { Precision, renderApp } from '../fixtures/alRender';
 import { corpusApps } from '../fixtures/corpus';
 import { NORTHWIND } from '../fixtures/northwind';
@@ -111,7 +111,7 @@ describe('the committed AL sources cover what real source does', () => {
 
         expect(folded.length).toBeGreaterThanOrEqual(4);
         for (const unit of folded) {
-            expect(northwind.expected.get(unit.id)?.file, unit.id).toContain(unit.declaring.name.replace(/[^A-Za-z0-9]/g, ''));
+            expect(northwind.expected.get(unit.id)?.file, unit.id).toContain(identifier(unit.declaring.name));
         }
     });
 });

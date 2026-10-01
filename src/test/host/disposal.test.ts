@@ -13,7 +13,7 @@ import {
     setWorkspaceRoot,
     watcherCount,
 } from '../__mocks__/vscode';
-import { fakeWebviewPanel } from '../support/fakeWebviewPanel';
+import { fakeWebviewPanel, WEBVIEW_TEMPLATE } from '../support/fakeWebviewPanel';
 
 import type { FakeWebviewPanel } from '../support/fakeWebviewPanel';
 
@@ -22,7 +22,6 @@ import type { FakeWebviewPanel } from '../support/fakeWebviewPanel';
  * in any single one and only adds up over a long session.
  */
 
-const TEMPLATE = '<script nonce="%NONCE%" src="%SCRIPT_URI%"></script><link href="%CSS_URI%"><meta content="%CSP_SOURCE%">';
 const FIXTURE = `<?xml version="1.0" encoding="utf-8"?>
 <xliff version="1.2"><file source-language="en-US" target-language="de-DE" original="App"><body>
   <trans-unit id="Table 1 - Property 2"><source>Customer</source><target state="translated">Kunde</target></trans-unit>
@@ -35,7 +34,7 @@ const document = (name: string): vscode.TextDocument =>
 const settle = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 0));
 
 beforeEach(() => {
-    setVirtualFile('/ext/media/webview.html', TEMPLATE);
+    setVirtualFile('/ext/media/webview.html', WEBVIEW_TEMPLATE);
     // An app with AL source, so every view also subscribes to its AL files.
     setWorkspaceRoot('/w');
     setVirtualFile('/w/app.json', '{}');

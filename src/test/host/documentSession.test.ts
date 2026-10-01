@@ -439,8 +439,8 @@ describe('opening the raw file', () => {
     });
 });
 
-describe('writing a target', () => {
-    const LANGUAGE = `<?xml version="1.0" encoding="utf-8"?>
+/** A language file of two translated units, written as AL writes one. */
+const LANGUAGE = `<?xml version="1.0" encoding="utf-8"?>
 <xliff version="1.2">
   <file source-language="en-US" target-language="de-DE" original="App">
     <body>
@@ -448,11 +448,16 @@ describe('writing a target', () => {
         <source>Customer</source>
         <target state="translated">ExampleTranslation</target>
       </trans-unit>
+      <trans-unit id="Table 1 - Property 3">
+        <source>Vendor</source>
+        <target state="translated">AnotherTranslation</target>
+      </trans-unit>
     </body>
   </file>
 </xliff>
 `;
 
+describe('writing a target', () => {
     /** Applies the one edit the session produced to the text it was produced against. */
     function applied(document: FakeTextDocument, before: string): string {
         const edits = flushAppliedEdits();
@@ -618,23 +623,6 @@ describe('what the write path refuses', () => {
     });
 });
 describe('recognising our own edit', () => {
-    const LANGUAGE = `<?xml version="1.0" encoding="utf-8"?>
-<xliff version="1.2">
-  <file source-language="en-US" target-language="de-DE" original="App">
-    <body>
-      <trans-unit id="Table 1 - Property 2">
-        <source>Customer</source>
-        <target state="translated">ExampleTranslation</target>
-      </trans-unit>
-      <trans-unit id="Table 1 - Property 3">
-        <source>Vendor</source>
-        <target state="translated">AnotherTranslation</target>
-      </trans-unit>
-    </body>
-  </file>
-</xliff>
-`;
-
     const UNIT = { fileIndex: 0, unitId: 'Table 1 - Property 2' };
     const types = (posted: readonly ExtensionMessage[]) => posted.map(message => message.type);
 
@@ -906,19 +894,6 @@ describe('recognising our own edit', () => {
     });
 });
 describe('the BOM a save does not keep', () => {
-    const LANGUAGE = `<?xml version="1.0" encoding="utf-8"?>
-<xliff version="1.2">
-  <file source-language="en-US" target-language="de-DE" original="App">
-    <body>
-      <trans-unit id="Table 1 - Property 2">
-        <source>ExampleSourceText</source>
-        <target state="translated">ExampleTranslation</target>
-      </trans-unit>
-    </body>
-  </file>
-</xliff>
-`;
-
     const UNIT = { fileIndex: 0, unitId: 'Table 1 - Property 2' };
 
     it('says so the first time such a file is edited', async () => {
@@ -973,18 +948,7 @@ describe('the BOM a save does not keep', () => {
 });
 
 describe('what an edit does to the state', () => {
-    const LANGUAGE = `<?xml version="1.0" encoding="utf-8"?>
-<xliff version="1.2">
-  <file source-language="en-US" target-language="de-DE" original="App">
-    <body>
-      <trans-unit id="Table 1 - Property 2">
-        <source>ExampleSourceText</source>
-        <target state="needs-translation">ExampleTranslation</target>
-      </trans-unit>
-    </body>
-  </file>
-</xliff>
-`;
+    const NEEDING_TRANSLATION = LANGUAGE.replace('<target state="translated">ExampleTranslation</target>', '<target state="needs-translation">ExampleTranslation</target>');
 
     const UNIT = { fileIndex: 0, unitId: 'Table 1 - Property 2' };
 
@@ -999,7 +963,7 @@ describe('what an edit does to the state', () => {
         return (after.split('\n').find(line => line.includes('<target')) ?? '(no target)').trim();
     }
 
-    function opened(text = LANGUAGE) {
+    function opened(text = NEEDING_TRANSLATION) {
         const document = openDocument('language.xlf', text);
         const { facade } = view(sessionFor(document));
         return { document, facade };
@@ -1010,7 +974,7 @@ describe('what an edit does to the state', () => {
 
         await facade.updateTarget(UNIT, 'EditedTranslation');
 
-        expect(targetLine(document, LANGUAGE)).toBe('<target state="translated">EditedTranslation</target>');
+        expect(targetLine(document, NEEDING_TRANSLATION)).toBe('<target state="translated">EditedTranslation</target>');
     });
 
     it('follows the setting rather than a hard-coded default', async () => {
@@ -1019,7 +983,7 @@ describe('what an edit does to the state', () => {
 
         await facade.updateTarget(UNIT, 'EditedTranslation');
 
-        expect(targetLine(document, LANGUAGE)).toBe('<target state="needs-review-translation">EditedTranslation</target>');
+        expect(targetLine(document, NEEDING_TRANSLATION)).toBe('<target state="needs-review-translation">EditedTranslation</target>');
     });
 
     it('reads the setting at edit time, so changing it needs no reload', async () => {
@@ -1028,7 +992,7 @@ describe('what an edit does to the state', () => {
         setConfigOverride('xliffViewer.stateOnEdit', XliffState.signedOff);
         await facade.updateTarget(UNIT, 'EditedTranslation');
 
-        expect(targetLine(document, LANGUAGE)).toBe('<target state="signed-off">EditedTranslation</target>');
+        expect(targetLine(document, NEEDING_TRANSLATION)).toBe('<target state="signed-off">EditedTranslation</target>');
     });
 
     it('ignores a stateOnEdit the spec does not define, rather than writing it', async () => {
@@ -1037,7 +1001,7 @@ describe('what an edit does to the state', () => {
 
         await facade.updateTarget(UNIT, 'EditedTranslation');
 
-        expect(targetLine(document, LANGUAGE)).toBe('<target state="translated">EditedTranslation</target>');
+        expect(targetLine(document, NEEDING_TRANSLATION)).toBe('<target state="translated">EditedTranslation</target>');
     });
 
     it('leaves a state the reader chose alone', async () => {
@@ -1046,7 +1010,7 @@ describe('what an edit does to the state', () => {
 
         await facade.updateTarget(UNIT, 'EditedTranslation', XliffState.needsReviewTranslation);
 
-        expect(targetLine(document, LANGUAGE)).toBe('<target state="needs-review-translation">EditedTranslation</target>');
+        expect(targetLine(document, NEEDING_TRANSLATION)).toBe('<target state="needs-review-translation">EditedTranslation</target>');
     });
 
     it('sets needs-translation when the target is cleared, and writes AL self-closing form', async () => {
@@ -1054,7 +1018,7 @@ describe('what an edit does to the state', () => {
 
         await facade.updateTarget(UNIT, '');
 
-        expect(targetLine(document, LANGUAGE)).toBe('<target state="needs-translation"/>');
+        expect(targetLine(document, NEEDING_TRANSLATION)).toBe('<target state="needs-translation"/>');
     });
 
     it('lets clearing outrank even a state the reader chose', async () => {
@@ -1063,11 +1027,11 @@ describe('what an edit does to the state', () => {
 
         await facade.updateTarget(UNIT, '', XliffState.signedOff);
 
-        expect(targetLine(document, LANGUAGE)).toBe('<target state="needs-translation"/>');
+        expect(targetLine(document, NEEDING_TRANSLATION)).toBe('<target state="needs-translation"/>');
     });
 
     it('gives a unit with no target one, indented where the serialiser puts it', async () => {
-        const withoutTarget = LANGUAGE.replace('        <target state="needs-translation">ExampleTranslation</target>\n', '');
+        const withoutTarget = NEEDING_TRANSLATION.replace('        <target state="needs-translation">ExampleTranslation</target>\n', '');
         const { document, facade } = opened(withoutTarget);
 
         await facade.updateTarget(UNIT, 'FirstTranslation');
@@ -1080,7 +1044,7 @@ describe('what an edit does to the state', () => {
 
         await facade.updateState(UNIT, XliffState.needsAdaptation);
 
-        expect(targetLine(document, LANGUAGE)).toBe('<target state="needs-adaptation">ExampleTranslation</target>');
+        expect(targetLine(document, NEEDING_TRANSLATION)).toBe('<target state="needs-adaptation">ExampleTranslation</target>');
     });
 });
 

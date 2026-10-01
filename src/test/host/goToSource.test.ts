@@ -7,6 +7,7 @@ import { goToSource, SourceOutcome } from '../../extension/services/goToSource';
 import { showTransientNotice } from '../../extension/services/transientNotice';
 import { alNameHash } from '../../extension/xliff/alNameHash';
 import {
+    FakeTextDocument,
     flushExecutedCommands,
     flushInfoMessages,
     flushProgress,
@@ -54,22 +55,14 @@ function request(unitId: string, overrides: Partial<SourceRequest> = {}): Source
     return { document: vscode.Uri.file(LANGUAGE), isBaseFile: false, unitId, ...overrides };
 }
 
-function offsetAt(text: string, position: { readonly line: number; readonly character: number }): number {
-    const lines = text.split('\n');
-    let offset = position.character;
-    for (let line = 0; line < position.line; line++) {
-        offset += lines[line].length + 1;
-    }
-    return offset;
-}
-
 /** Where the one document shown was shown, and what its selection covers. */
 function shownSelection(text: string): { path: string; selected: string } {
     const shown = flushShownDocuments();
     expect(shown).toHaveLength(1);
     const { path, selection } = shown[0];
     expect(selection).toBeDefined();
-    return { path, selected: selection === undefined ? '' : text.slice(offsetAt(text, selection.start), offsetAt(text, selection.end)) };
+    const document = new FakeTextDocument(path, text);
+    return { path, selected: selection === undefined ? '' : text.slice(document.offsetAt(selection.start), document.offsetAt(selection.end)) };
 }
 
 let alSources: AlSourceIndexes;

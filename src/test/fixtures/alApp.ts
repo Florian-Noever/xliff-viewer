@@ -18,6 +18,7 @@
  */
 
 import { alNameHash } from '../../extension/xliff/alNameHash';
+import { SEGMENT_SEPARATOR } from '../../shared/unitPath';
 
 export interface Text {
     readonly source: string;
@@ -85,6 +86,16 @@ export interface PathStep {
     readonly name: string;
 }
 
+/** A path's id in its hashed form: each step's type, and the hash of its name. */
+export function hashedIdOf(path: readonly PathStep[]): string {
+    return path.map(step => `${step.type} ${alNameHash(step.name)}`).join(SEGMENT_SEPARATOR);
+}
+
+/** A name with everything but its letters and digits taken out, as an identifier or a file name takes it. */
+export function identifier(name: string): string {
+    return name.replace(/[^A-Za-z0-9]/g, '');
+}
+
 /** One trans-unit of the app, as the compiler writes it. */
 export interface AppUnit extends Text {
     readonly id: string;
@@ -128,7 +139,7 @@ export function translationRoot(app: AlApp, object: AlObject): AlObject {
         .reduce((lowest, each) => (each.id < lowest.id ? each : lowest), object);
 }
 
-function idOf(app: AlApp, root: AlObject, path: readonly PathStep[]): string {
+function unitIdOf(app: AlApp, root: AlObject, path: readonly PathStep[]): string {
     const steps: PathStep[] = [
         ...(app.namespacedIds && root.namespace !== undefined ? [{ type: 'Namespace', name: root.namespace }] : []),
         { type: root.kind, name: root.name },
@@ -140,7 +151,7 @@ function idOf(app: AlApp, root: AlObject, path: readonly PathStep[]): string {
             return readable;
         }
     }
-    return steps.map(step => `${step.type} ${alNameHash(step.name)}`).join(' - ');
+    return hashedIdOf(steps);
 }
 
 function noteOf(app: AlApp, declaring: AlObject, path: readonly PathStep[]): string {
@@ -163,7 +174,7 @@ export function appUnits(app: AlApp): AppUnit[] {
         const push = (path: readonly PathStep[], element: AlProperty | AlLabel, alObjectTarget: string | undefined, label?: AlLabel): void => {
             const text: Text = element;
             units.push({
-                id: idOf(app, root, path),
+                id: unitIdOf(app, root, path),
                 generatorNote: noteOf(app, object, path),
                 developerNote: label?.comment ?? `de-DE=${text.german}`,
                 source: text.source,
@@ -184,7 +195,7 @@ export function appUnits(app: AlApp): AppUnit[] {
             for (const method of list) {
                 if (method.apiCaption !== undefined) {
                     units.push({
-                        id: idOf(app, root, [...path, { type: 'Method', name: String(method.apiCaption.methodId) }]),
+                        id: unitIdOf(app, root, [...path, { type: 'Method', name: String(method.apiCaption.methodId) }]),
                         generatorNote: noteOf(app, object, [...path, { type: 'Method', name: method.name }]),
                         developerNote: `de-DE=${method.apiCaption.german}`,
                         source: method.apiCaption.source,
