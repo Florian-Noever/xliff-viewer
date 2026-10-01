@@ -2,16 +2,15 @@ import { mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, defineComponent, nextTick } from 'vue';
 
-import App from '../../webview/App.vue';
 import Toolbar from '../../webview/components/Toolbar.vue';
 import { useEditMode } from '../../webview/composables/useEditMode';
 import { useSearch } from '../../webview/composables/useSearch';
 import { useStateFilter } from '../../webview/composables/useStateFilter';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { summariseUnits } from '../../shared/state';
-import { ExtensionMessageType } from '../../shared/messages';
 import { stubLayout } from './layoutStub';
 import { documentDto, fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
+import { mountApp } from './support/mountApp';
 
 const DOCUMENT = documentDto([fileDto({
     tree: [
@@ -28,22 +27,13 @@ const DOCUMENT = documentDto([fileDto({
     ],
 })]);
 
-function open() {
-    // Attached to the document so focus assertions mean something.
-    const wrapper = mount(App, { attachTo: document.body });
-    window.dispatchEvent(new MessageEvent('message', {
-        data: { type: ExtensionMessageType.setDocument, payload: DOCUMENT },
-    }));
-    return wrapper;
-}
-
-async function search(wrapper: ReturnType<typeof open>, query: string): Promise<void> {
+async function search(wrapper: ReturnType<typeof mountApp>, query: string): Promise<void> {
     await wrapper.get('.search-input').setValue(query);
     vi.advanceTimersByTime(200);
     await nextTick();
 }
 
-const rowKeys = (wrapper: ReturnType<typeof open>): string[] =>
+const rowKeys = (wrapper: ReturnType<typeof mountApp>): string[] =>
     wrapper.findAll('.tree-row .name, .tree-row .legend-name').map(row => row.text());
 
 let restore: () => void;
@@ -82,16 +72,16 @@ describe('the toolbar', () => {
     });
 
     it('appears only once a document has arrived', async () => {
-        const empty = mount(App);
+        const empty = mountApp();
         expect(empty.find('.toolbar').exists()).toBe(false);
 
-        const opened = open();
+        const opened = mountApp(DOCUMENT);
         await nextTick();
         expect(opened.find('.toolbar').exists()).toBe(true);
     });
 
     it('has an accessible name for the search box', async () => {
-        const wrapper = open();
+        const wrapper = mountApp(DOCUMENT);
         await nextTick();
 
         expect(wrapper.get('.search').text()).toContain('Search translation units');
@@ -99,7 +89,7 @@ describe('the toolbar', () => {
     });
 
     it('says how many matched, and only while searching', async () => {
-        const wrapper = open();
+        const wrapper = mountApp(DOCUMENT);
         await nextTick();
         expect(wrapper.find('.match-count').exists()).toBe(false);
 
@@ -111,7 +101,7 @@ describe('the toolbar', () => {
     });
 
     it('focuses the box on Ctrl+F', async () => {
-        const wrapper = open();
+        const wrapper = mountApp(DOCUMENT);
         await nextTick();
 
         window.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', ctrlKey: true, bubbles: true }));
@@ -123,7 +113,7 @@ describe('the toolbar', () => {
 
 describe('searching the tree', () => {
     it('shows the matches and their ancestors, and nothing else', async () => {
-        const wrapper = open();
+        const wrapper = mountApp(DOCUMENT);
         await nextTick();
         expect(rowKeys(wrapper)).toEqual(['Customer', 'Caption', 'ToolTip', 'Vendor', 'Caption']);
 
@@ -133,7 +123,7 @@ describe('searching the tree', () => {
     });
 
     it('reaches a match through a collapsed ancestor', async () => {
-        const wrapper = open();
+        const wrapper = mountApp(DOCUMENT);
         await nextTick();
         // Collapse everything the user can see first.
         for (const chevron of wrapper.findAll('.chevron')) {
@@ -147,7 +137,7 @@ describe('searching the tree', () => {
     });
 
     it('restores the tree, and the expansion the user had, when the search is cleared', async () => {
-        const wrapper = open();
+        const wrapper = mountApp(DOCUMENT);
         await nextTick();
         await wrapper.findAll('.chevron')[0].trigger('click'); // collapse "Customer"
         expect(rowKeys(wrapper)).toEqual(['Customer', 'Vendor', 'Caption']);
@@ -164,7 +154,7 @@ describe('searching the tree', () => {
     });
 
     it('empties the tree when nothing matches, rather than showing everything', async () => {
-        const wrapper = open();
+        const wrapper = mountApp(DOCUMENT);
         await nextTick();
 
         await search(wrapper, 'zzzz');

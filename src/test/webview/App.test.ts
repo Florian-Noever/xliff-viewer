@@ -1,14 +1,10 @@
-import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 import { nextTick } from 'vue';
 
-import App from '../../webview/App.vue';
 import { ExtensionMessageType } from '../../shared/messages';
 import { clearPostedMessages, postedMessages } from '../setup/webview';
 import { documentDto, fileDto, unitDto } from '../support/dtoBuilders';
-
-import type { XliffDocumentDto } from '../../shared/dto';
-import type { ExtensionMessage } from '../../shared/messages';
+import { mountApp, receive } from './support/mountApp';
 
 const DOCUMENT = documentDto([fileDto({
     original: 'Contoso-Base',
@@ -18,29 +14,19 @@ const DOCUMENT = documentDto([fileDto({
     ],
 })], { uri: 'file:///w/Contoso-Base.de-DE.xlf', fileName: 'Contoso-Base.de-DE.xlf' });
 
-const send = (message: ExtensionMessage): void => {
-    window.dispatchEvent(new MessageEvent('message', { data: message }));
-};
-
-function mountWithDocument(payload: XliffDocumentDto = DOCUMENT) {
-    const wrapper = mount(App);
-    send({ type: ExtensionMessageType.setDocument, payload });
-    return wrapper;
-}
-
 describe('before a document arrives', () => {
     it('says so rather than rendering an empty shell', () => {
-        expect(mount(App).text()).toContain('Waiting for a document');
+        expect(mountApp().text()).toContain('Waiting for a document');
     });
 
     it('posts exactly one ready on mount', () => {
         clearPostedMessages();
-        mount(App);
+        mountApp();
         expect(postedMessages).toEqual([{ type: 'ready' }]);
     });
 
     it('injects the design tokens onto the document element', () => {
-        mount(App);
+        mountApp();
         expect(document.documentElement.style.getPropertyValue('--gap')).toBe('12px');
         expect(document.documentElement.style.getPropertyValue('--row-height')).toBe('24px');
     });
@@ -48,7 +34,7 @@ describe('before a document arrives', () => {
 
 describe('the file header', () => {
     it('names the file, both languages and the unit count', async () => {
-        const wrapper = mountWithDocument();
+        const wrapper = mountApp(DOCUMENT);
         await nextTick();
 
         expect(wrapper.text()).toContain('Contoso-Base.de-DE.xlf');
@@ -59,14 +45,14 @@ describe('the file header', () => {
 
     it('counts a file of one unit in the singular', async () => {
         const [file] = DOCUMENT.files;
-        const wrapper = mountWithDocument({ ...DOCUMENT, files: [{ ...file, units: file.units.slice(0, 1) }] });
+        const wrapper = mountApp({ ...DOCUMENT, files: [{ ...file, units: file.units.slice(0, 1) }] });
         await nextTick();
 
         expect(wrapper.get('.count').text()).toBe('1 unit');
     });
 
     it('titles the header with the app, and puts the file name beneath it', async () => {
-        const wrapper = mountWithDocument();
+        const wrapper = mountApp(DOCUMENT);
         await nextTick();
 
         expect(wrapper.get('.app-name').text()).toBe('Contoso-Base');
@@ -75,7 +61,7 @@ describe('the file header', () => {
 
     it('keeps the file name as the title when the file declares no app', async () => {
         // `original` is optional in XLIFF. A blank heading would be worse than a repeated name.
-        const wrapper = mountWithDocument({
+        const wrapper = mountApp({
             ...DOCUMENT,
             files: [{ ...DOCUMENT.files[0], original: undefined }],
         });
@@ -86,13 +72,13 @@ describe('the file header', () => {
     });
 
     it('marks a read-only document, so nobody wonders why editing is absent', async () => {
-        const wrapper = mountWithDocument({ ...DOCUMENT, isBaseFile: true, readOnly: true });
+        const wrapper = mountApp({ ...DOCUMENT, isBaseFile: true, readOnly: true });
         await nextTick();
         expect(wrapper.get('.tag').text()).toBe('base file · read-only');
     });
 
     it('says only "read-only" for a language file that cannot be written, and why on hover', async () => {
-        const wrapper = mountWithDocument({ ...DOCUMENT, readOnly: true, readOnlyReason: 'This file is read-only.' });
+        const wrapper = mountApp({ ...DOCUMENT, readOnly: true, readOnlyReason: 'This file is read-only.' });
         await nextTick();
         expect(wrapper.get('.tag').text()).toBe('read-only');
         expect(wrapper.get('.tag').attributes('title')).toBe('This file is read-only.');
@@ -100,20 +86,20 @@ describe('the file header', () => {
 
     it('shows the file-level percentage', async () => {
         // One translated of two translatable is 50 %.
-        const wrapper = mountWithDocument();
+        const wrapper = mountApp(DOCUMENT);
         await nextTick();
         expect(wrapper.get('.percent').text()).toBe('50 %');
     });
 
     it('does not mark an editable one', async () => {
-        const wrapper = mountWithDocument();
+        const wrapper = mountApp(DOCUMENT);
         await nextTick();
         expect(wrapper.find('.tag').exists()).toBe(false);
     });
 
     it('shows a dash for a file with no target language', async () => {
         const [file] = DOCUMENT.files;
-        const wrapper = mountWithDocument({
+        const wrapper = mountApp({
             ...DOCUMENT,
             files: [{ index: 0, sourceLanguage: file.sourceLanguage, tree: [], units: file.units, hasAlIds: false }],
         });
@@ -127,9 +113,9 @@ describe('failure', () => {
     const error = { type: ExtensionMessageType.error, payload: { message: 'Unclosed tag', line: 12, col: 5 } } as const;
 
     it('takes the whole view when nothing has ever parsed', async () => {
-        const wrapper = mount(App);
+        const wrapper = mountApp();
 
-        send(error);
+        receive(error);
         await nextTick();
 
         expect(wrapper.get('.status-pane').classes()).toContain('pane');
@@ -138,8 +124,8 @@ describe('failure', () => {
     });
 
     it('leaves the document readable behind a banner', async () => {
-        const wrapper = mountWithDocument();
-        send(error);
+        const wrapper = mountApp(DOCUMENT);
+        receive(error);
         await nextTick();
 
         expect(wrapper.get('.status-pane').classes()).toContain('banner');
@@ -148,8 +134,8 @@ describe('failure', () => {
     });
 
     it('offers the raw file, which is the only action left when nothing parses', async () => {
-        const wrapper = mount(App);
-        send(error);
+        const wrapper = mountApp();
+        receive(error);
         await nextTick();
         clearPostedMessages();
 

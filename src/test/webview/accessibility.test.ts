@@ -1,11 +1,14 @@
-import { flushPromises, mount } from '@vue/test-utils';
+import { flushPromises } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { nextTick } from 'vue';
 
-import App from '../../webview/App.vue';
 import { useAnnouncer } from '../../webview/composables/useAnnouncer';
 import { DEV_DOCUMENT } from '../../webview/fixtures/devDocument';
 import { stubLayout } from './layoutStub';
+import { ExtensionMessageType } from '../../shared/messages';
+import { mountApp, receive } from './support/mountApp';
+
+import type { TransUnitDto } from '../../shared/dto';
 
 /** Checked against what the DOM of a mounted app says, not what the components meant to say. */
 
@@ -38,14 +41,8 @@ function accessibleName(element: Element): string {
     return own !== '' ? own : '';
 }
 
-/** Delivers a message from the host at once, rather than a task later as `postMessage` does. */
-function receive(data: unknown): void {
-    window.dispatchEvent(new MessageEvent('message', { data }));
-}
-
-async function app(): Promise<ReturnType<typeof mount>> {
-    const wrapper = mount(App, { attachTo: document.body });
-    receive({ type: 'setDocument', payload: DEV_DOCUMENT });
+async function app(): Promise<ReturnType<typeof mountApp>> {
+    const wrapper = mountApp(DEV_DOCUMENT);
     await flushPromises();
     return wrapper;
 }
@@ -191,9 +188,9 @@ describe('what the live region says', () => {
     const first = DEV_DOCUMENT.files[0].units[0];
 
     /** A patch, the way the host sends one after an edit it accepted. */
-    async function patch(units: readonly unknown[]): Promise<string> {
+    async function patch(units: readonly TransUnitDto[]): Promise<string> {
         const wrapper = await app();
-        receive({ type: 'patchUnits', payload: { fileIndex: 0, units } });
+        receive({ type: ExtensionMessageType.patchUnits, payload: { fileIndex: 0, units } });
         await flushPromises();
         return wrapper.get('[role="status"][aria-live="polite"]').text();
     }

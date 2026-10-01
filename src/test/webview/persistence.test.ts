@@ -1,11 +1,12 @@
-import { flushPromises, mount } from '@vue/test-utils';
+import { flushPromises } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 
-import App from '../../webview/App.vue';
 import { DEV_DOCUMENT } from '../../webview/fixtures/devDocument';
 import { stubLayout } from './layoutStub';
 import { setWebviewState, webviewState, webviewStateWrites } from '../setup/webview';
+import { ExtensionMessageType } from '../../shared/messages';
+import { mountApp, receive } from './support/mountApp';
 
 import type { PersistedView } from '../../webview/composables/usePersistedState';
 
@@ -16,17 +17,11 @@ import type { PersistedView } from '../../webview/composables/usePersistedState'
 
 const WRITE_THROTTLE_MS = 250;
 
-type Mounted = ReturnType<typeof mount>;
+type Mounted = ReturnType<typeof mountApp>;
 
-/** Delivers a message from the host at once, rather than a task later as `postMessage` does. */
-function receive(data: unknown): void {
-    window.dispatchEvent(new MessageEvent('message', { data }));
-}
-
-/** Mounts the app and answers `ready` with the fixture, the way the host does. */
+/** Mounts the app with the fixture, and waits until it has rendered. */
 async function open(): Promise<Mounted> {
-    const wrapper = mount(App, { attachTo: document.body });
-    receive({ type: 'setDocument', payload: DEV_DOCUMENT });
+    const wrapper = mountApp(DEV_DOCUMENT);
     await flushPromises();
     return wrapper;
 }
@@ -65,7 +60,7 @@ afterEach(() => {
 
 describe('what a hidden tab remembers', () => {
     it('saves nothing until there is a document to save it for', async () => {
-        mount(App, { attachTo: document.body });
+        mountApp();
         await nextTick();
         await settle();
 
@@ -136,7 +131,7 @@ describe('what a hidden tab remembers', () => {
         const expanded = second.findAll('[role="treeitem"]').length;
 
         // A re-parse of the same document, which is what an edit produces.
-        receive({ type: 'setDocument', payload: DEV_DOCUMENT });
+        receive({ type: ExtensionMessageType.setDocument, payload: DEV_DOCUMENT });
         await flushPromises();
 
         expect(expanded).toBeGreaterThan(collapsed);

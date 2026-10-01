@@ -1,15 +1,11 @@
-import { mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { nextTick } from 'vue';
 
-import App from '../../webview/App.vue';
 import { DEV_DOCUMENT } from '../../webview/fixtures/devDocument';
-import { ExtensionMessageType } from '../../shared/messages';
 import { stubLayout } from './layoutStub';
 import { documentDto, fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
 import { XliffState } from '../../shared/state';
-
-import type { XliffDocumentDto } from '../../shared/dto';
+import { mountApp } from './support/mountApp';
 
 /**
  * AL emits exactly one `<file>`, so a document with several has to be built by hand.
@@ -37,14 +33,6 @@ const FRENCH = fileDto({
 
 const TWO_FILES = documentDto([GERMAN, FRENCH], { uri: 'file:///w/App.xlf', fileName: 'App.xlf' });
 
-function open(document: XliffDocumentDto) {
-    const wrapper = mount(App);
-    window.dispatchEvent(new MessageEvent('message', {
-        data: { type: ExtensionMessageType.setDocument, payload: document },
-    }));
-    return wrapper;
-}
-
 let restore: () => void;
 
 beforeEach(() => {
@@ -57,7 +45,7 @@ afterEach(() => {
 
 describe('a document with one <file>', () => {
     it('renders no switcher at all — which is every AL-generated file', async () => {
-        const wrapper = open({ ...TWO_FILES, files: [GERMAN] });
+        const wrapper = mountApp({ ...TWO_FILES, files: [GERMAN] });
         await nextTick();
 
         expect(wrapper.find('.switcher').exists()).toBe(false);
@@ -65,7 +53,7 @@ describe('a document with one <file>', () => {
     });
 
     it('renders no switcher for the dev fixture either', async () => {
-        const wrapper = open(DEV_DOCUMENT);
+        const wrapper = mountApp(DEV_DOCUMENT);
         await nextTick();
 
         expect(DEV_DOCUMENT.files).toHaveLength(1);
@@ -75,7 +63,7 @@ describe('a document with one <file>', () => {
 
 describe('a document with several', () => {
     it('offers one option per file, named so they can be told apart', async () => {
-        const wrapper = open(TWO_FILES);
+        const wrapper = mountApp(TWO_FILES);
         await nextTick();
 
         const options = wrapper.findAll('option');
@@ -87,7 +75,7 @@ describe('a document with several', () => {
     });
 
     it('falls back to a position when a file declares no original', async () => {
-        const wrapper = open({
+        const wrapper = mountApp({
             ...TWO_FILES,
             files: [{ ...GERMAN, original: undefined }, { ...FRENCH, original: undefined }],
         });
@@ -100,7 +88,7 @@ describe('a document with several', () => {
     });
 
     it('starts on the first file', async () => {
-        const wrapper = open(TWO_FILES);
+        const wrapper = mountApp(TWO_FILES);
         await nextTick();
 
         expect(wrapper.get('.languages').text()).toBe('en-US → de-DE');
@@ -108,7 +96,7 @@ describe('a document with several', () => {
     });
 
     it('changes the header, the summary and the tree when switched', async () => {
-        const wrapper = open(TWO_FILES);
+        const wrapper = mountApp(TWO_FILES);
         await nextTick();
         expect(wrapper.get('.percent').text()).toBe('100 %');
         expect(wrapper.findAll('.tree-row')).toHaveLength(2);
@@ -124,7 +112,7 @@ describe('a document with several', () => {
     });
 
     it('shows no row from the file it left behind', async () => {
-        const wrapper = open(TWO_FILES);
+        const wrapper = mountApp(TWO_FILES);
         await nextTick();
 
         await wrapper.get('select').setValue('1');
@@ -134,7 +122,7 @@ describe('a document with several', () => {
     });
 
     it('is a labelled control, reachable by Tab and operable by keyboard', async () => {
-        const wrapper = open(TWO_FILES);
+        const wrapper = mountApp(TWO_FILES);
         await nextTick();
 
         const label = wrapper.get('.switcher');
@@ -146,7 +134,7 @@ describe('a document with several', () => {
     });
 
     it('gives the first file back its expansion when switched back', async () => {
-        const wrapper = open(TWO_FILES);
+        const wrapper = mountApp(TWO_FILES);
         await nextTick();
 
         // Collapse the German file's only root, then leave and come back.

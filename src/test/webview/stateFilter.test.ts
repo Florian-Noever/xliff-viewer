@@ -2,13 +2,12 @@ import { mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, defineComponent, nextTick, ref } from 'vue';
 
-import App from '../../webview/App.vue';
 import { useStateFilter } from '../../webview/composables/useStateFilter';
 import { visibleNodes } from '../../webview/ancestorFilter';
-import { ExtensionMessageType } from '../../shared/messages';
 import { summariseUnits, XliffState } from '../../shared/state';
 import { stubLayout } from './layoutStub';
 import { documentDto, fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
+import { mountApp } from './support/mountApp';
 
 import type { AlNodeDto } from '../../shared/dto';
 import type { StateFilter } from '../../webview/composables/useStateFilter';
@@ -57,15 +56,7 @@ function filterOnly(): StateFilter {
 
 const scope = ref('file:///w/App.de-DE.xlf#0');
 
-function open() {
-    const wrapper = mount(App, { attachTo: document.body });
-    window.dispatchEvent(new MessageEvent('message', {
-        data: { type: ExtensionMessageType.setDocument, payload: DOCUMENT },
-    }));
-    return wrapper;
-}
-
-const rowNames = (wrapper: ReturnType<typeof open>): string[] =>
+const rowNames = (wrapper: ReturnType<typeof mountApp>): string[] =>
     wrapper.findAll('.tree-row .name, .tree-row .legend-name').map(row => row.text());
 
 let restore: () => void;
@@ -143,7 +134,7 @@ describe('useStateFilter', () => {
 
 describe('the chips in the toolbar', () => {
     it('are toggle buttons that say whether they are on', async () => {
-        const wrapper = open();
+        const wrapper = mountApp(DOCUMENT);
         await nextTick();
 
         const chips = wrapper.findAll('.chip');
@@ -158,7 +149,7 @@ describe('the chips in the toolbar', () => {
     });
 
     it('narrows the tree to that state and its ancestors', async () => {
-        const wrapper = open();
+        const wrapper = mountApp(DOCUMENT);
         await nextTick();
         expect(rowNames(wrapper)).toEqual(['Customer', 'Caption', 'ToolTip', 'Vendor', 'Caption', 'ToolTip']);
 
@@ -170,7 +161,7 @@ describe('the chips in the toolbar', () => {
     });
 
     it('restores the whole tree when the last chip is turned off', async () => {
-        const wrapper = open();
+        const wrapper = mountApp(DOCUMENT);
         await nextTick();
 
         await wrapper.findAll('.chip')[0].trigger('click');
@@ -183,14 +174,14 @@ describe('the chips in the toolbar', () => {
 });
 
 describe('search and filter together', () => {
-    async function search(wrapper: ReturnType<typeof open>, query: string): Promise<void> {
+    async function search(wrapper: ReturnType<typeof mountApp>, query: string): Promise<void> {
         await wrapper.get('.search-input').setValue(query);
         vi.advanceTimersByTime(200);
         await nextTick();
     }
 
     it('shows only the units matching both', async () => {
-        const wrapper = open();
+        const wrapper = mountApp(DOCUMENT);
         await nextTick();
 
         // "Kunde" matches two translated units; "Vendor number" is the empty one.
@@ -214,7 +205,7 @@ describe('search and filter together', () => {
 
 describe('expand all and collapse all', () => {
     it('open and close the whole tree', async () => {
-        const wrapper = open();
+        const wrapper = mountApp(DOCUMENT);
         await nextTick();
 
         await wrapper.findAll('.action')[1].trigger('click'); // collapse all
@@ -227,7 +218,7 @@ describe('expand all and collapse all', () => {
     });
 
     it('expand-all with a filter running opens only what the filter shows', async () => {
-        const wrapper = open();
+        const wrapper = mountApp(DOCUMENT);
         await nextTick();
         await wrapper.findAll('.action')[1].trigger('click'); // collapse all first
 

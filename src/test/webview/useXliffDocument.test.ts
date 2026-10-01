@@ -8,6 +8,7 @@ import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { summariseUnits } from '../../shared/state';
 import { clearPostedMessages, postedMessages } from '../setup/webview';
 import { documentDto, fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
+import { receive } from './support/mountApp';
 
 import type { ExtensionMessage } from '../../shared/messages';
 import type { XliffDocument } from '../../webview/composables/useXliffDocument';
@@ -45,12 +46,8 @@ function host(render: (state: XliffDocument) => unknown) {
 
 const useIt = (): XliffDocument => host(() => null).state;
 
-const send = (message: ExtensionMessage): void => {
-    window.dispatchEvent(new MessageEvent('message', { data: message }));
-};
-
 const sendDocument = (): void => {
-    send({ type: ExtensionMessageType.setDocument, payload: DOCUMENT });
+    receive({ type: ExtensionMessageType.setDocument, payload: DOCUMENT });
 };
 
 beforeEach(() => {
@@ -107,7 +104,7 @@ describe('applying messages', () => {
     it('tracks loading and clears it when the document lands', () => {
         const state = useIt();
 
-        send({ type: ExtensionMessageType.loading, payload: { message: 'Parsing…' } });
+        receive({ type: ExtensionMessageType.loading, payload: { message: 'Parsing…' } });
         expect(state.loading.value).toBe('Parsing…');
         expect(state.blocking.value).toBe(true);
 
@@ -120,7 +117,7 @@ describe('applying messages', () => {
         const state = useIt();
 
         sendDocument();
-        send({ type: ExtensionMessageType.error, payload: { message: 'Unclosed tag', line: 4 } });
+        receive({ type: ExtensionMessageType.error, payload: { message: 'Unclosed tag', line: 4 } });
 
         expect(state.document.value).toBeDefined();
         expect(state.error.value?.message).toBe('Unclosed tag');
@@ -130,7 +127,7 @@ describe('applying messages', () => {
     it('blocks on a failure that has nothing behind it', () => {
         const state = useIt();
 
-        send({ type: ExtensionMessageType.error, payload: { message: 'Unclosed tag' } });
+        receive({ type: ExtensionMessageType.error, payload: { message: 'Unclosed tag' } });
 
         expect(state.blocking.value).toBe(true);
     });
@@ -138,7 +135,7 @@ describe('applying messages', () => {
     it('clears the error when a parse succeeds', () => {
         const state = useIt();
 
-        send({ type: ExtensionMessageType.error, payload: { message: 'Unclosed tag' } });
+        receive({ type: ExtensionMessageType.error, payload: { message: 'Unclosed tag' } });
         sendDocument();
 
         expect(state.error.value).toBeUndefined();
@@ -148,7 +145,7 @@ describe('applying messages', () => {
         const state = useIt();
 
         sendDocument();
-        send({ type: ExtensionMessageType.settings, payload: { ...DEFAULT_WEBVIEW_SETTINGS, editMode: true } });
+        receive({ type: ExtensionMessageType.settings, payload: { ...DEFAULT_WEBVIEW_SETTINGS, editMode: true } });
 
         expect(state.settings.value.editMode).toBe(true);
         expect(state.document.value?.fileName).toBe('App.de-DE.xlf');
@@ -166,7 +163,7 @@ describe('applying messages', () => {
         const state = useIt();
 
         sendDocument();
-        send({ type: ExtensionMessageType.alSource, payload: { available: true } });
+        receive({ type: ExtensionMessageType.alSource, payload: { available: true } });
         sendDocument();
 
         expect(state.alSourceAvailable.value).toBe(true);
@@ -175,8 +172,8 @@ describe('applying messages', () => {
     it('takes a later answer about AL source, which comes when files come or go', () => {
         const state = useIt();
 
-        send({ type: ExtensionMessageType.alSource, payload: { available: true } });
-        send({ type: ExtensionMessageType.alSource, payload: { available: false } });
+        receive({ type: ExtensionMessageType.alSource, payload: { available: true } });
+        receive({ type: ExtensionMessageType.alSource, payload: { available: false } });
 
         expect(state.alSourceAvailable.value).toBe(false);
     });
@@ -226,7 +223,7 @@ describe('the active file', () => {
 
         sendDocument();
         state.activeFileIndex.value = 1;
-        send({ type: ExtensionMessageType.setDocument, payload: { ...DOCUMENT, uri: 'file:///w/Other.de-DE.xlf' } });
+        receive({ type: ExtensionMessageType.setDocument, payload: { ...DOCUMENT, uri: 'file:///w/Other.de-DE.xlf' } });
 
         expect(state.activeFileIndex.value).toBe(0);
     });
@@ -236,7 +233,7 @@ describe('the active file', () => {
 
         sendDocument();
         state.activeFileIndex.value = 1;
-        send({ type: ExtensionMessageType.setDocument, payload: { ...DOCUMENT, files: [DOCUMENT.files[0]] } });
+        receive({ type: ExtensionMessageType.setDocument, payload: { ...DOCUMENT, files: [DOCUMENT.files[0]] } });
 
         expect(state.activeFileIndex.value).toBe(0);
     });
@@ -280,7 +277,7 @@ describe('openAsText', () => {
 
 describe('patchUnits', () => {
     const patch = (fileIndex: number, units: unknown[]): void =>
-        send({ type: ExtensionMessageType.patchUnits, payload: { fileIndex, units } } as ExtensionMessage);
+        receive({ type: ExtensionMessageType.patchUnits, payload: { fileIndex, units } } as ExtensionMessage);
 
     it('replaces only the units it names, leaving the rest identical', () => {
         const state = useIt();
