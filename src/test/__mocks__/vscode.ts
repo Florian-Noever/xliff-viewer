@@ -24,6 +24,7 @@ let warningMessages: string[] = [];
 let infoMessages: string[] = [];
 let messageCalls: MessageCall[] = [];
 let appliedEdits: EditRecord[] = [];
+let applyEditResult: boolean | Error = true;
 let fileReads: string[] = [];
 let fileWrites: { path: string; content: string }[] = [];
 let configOverrides: Record<string, unknown> = {};
@@ -425,6 +426,12 @@ export const workspace = {
         // As the real one does, rewrite the document and fire the change event only after
         // yielding: another edit can land in that gap, before the session sees its own.
         await Promise.resolve();
+        if (applyEditResult instanceof Error) {
+            throw applyEditResult;
+        }
+        if (!applyEditResult) {
+            return false;
+        }
         for (const entry of edit.entries) {
             const document = editableDocuments.get(entry.uri);
             document?.applyEdit(entry.range, entry.newText);
@@ -621,6 +628,11 @@ export function removeVirtualFile(path: string): void {
 }
 
 /** Which QuickPick entry the next `showQuickPick` returns; undefined means cancelled. */
+/** What `workspace.applyEdit` answers from now on: applied, refused, or rejected with this error. */
+export function setApplyEditResult(result: boolean | Error): void {
+    applyEditResult = result;
+}
+
 export function setQuickPickResult(index: number | undefined): void {
     quickPickChoice = index;
 }
@@ -737,6 +749,7 @@ export function resetMocks(): void {
     infoMessages = [];
     messageCalls = [];
     appliedEdits = [];
+    applyEditResult = true;
     fileReads = [];
     fileWrites = [];
     configOverrides = {};

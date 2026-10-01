@@ -264,6 +264,20 @@ describe('the card in edit mode', () => {
         expect(calls).toHaveLength(1);
     });
 
+    it('shows the saved values again when the host sends the unit back unchanged', async () => {
+        // What the host does when it refuses an edit: the same values, as a new object.
+        const { wrapper } = card();
+        const field = wrapper.get('textarea').element as HTMLTextAreaElement;
+        const state = wrapper.get('select').element as HTMLSelectElement;
+        field.value = 'TypedTranslation';
+        state.value = XliffState.signedOff;
+
+        await wrapper.setProps({ unit: unit() });
+
+        expect(field.value).toBe('ExampleTranslation');
+        expect(state.value).toBe(XliffState.translated);
+    });
+
     it('says nothing at all when the field was never touched', async () => {
         const { wrapper, calls } = card();
 

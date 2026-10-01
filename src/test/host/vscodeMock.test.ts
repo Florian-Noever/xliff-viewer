@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import * as vscode from 'vscode';
 
-import { flushAppliedEdits, flushErrorMessages, flushFileReads, resetMocks, setConfigOverride, setVirtualFile } from '../__mocks__/vscode';
+import { flushAppliedEdits, flushErrorMessages, flushFileReads, resetMocks, setApplyEditResult, setConfigOverride, setVirtualFile } from '../__mocks__/vscode';
 
 afterEach(() => {
     resetMocks();
@@ -58,6 +58,17 @@ describe('vscode mock', () => {
         expect(applied).toHaveLength(1);
         expect(applied[0].newText).toBe('neu');
         expect(applied[0].uri).toContain('/ws/a.xlf');
+    });
+
+    it('answers applyEdit as told: applied, refused or rejected', async () => {
+        const edit = new vscode.WorkspaceEdit();
+        expect(await vscode.workspace.applyEdit(edit)).toBe(true);
+
+        setApplyEditResult(false);
+        expect(await vscode.workspace.applyEdit(edit)).toBe(false);
+
+        setApplyEditResult(new Error('gone'));
+        await expect(vscode.workspace.applyEdit(edit)).rejects.toThrow('gone');
     });
 
     it('fires events through EventEmitter', () => {

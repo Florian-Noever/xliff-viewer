@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 import { Logger } from '../services/logger';
 import { readSettings } from '../services/settings';
-import { containsComment } from '../xliff/writer';
+import { containsComment, rememberTarget } from '../xliff/writer';
 import { XliffState } from '../../shared/state';
 
 import type { SessionState, XliffDocumentSession } from './documentSession';
@@ -34,40 +34,48 @@ export function stateAfterEdit(session: XliffDocumentSession, value: string, cho
 /**
  * The one path that changes a file.
  *
- * Everything it refuses, it refuses **before** touching the model, and says why: a viewer
- * that silently does nothing is worse than one that explains itself.
+ * Every refusal says why, leaves the model as the file is, and calls `onRefused`, whose job
+ * is to put the saved value back on screen: a viewer that silently keeps what was typed is
+ * worse than one that explains itself.
  */
 export async function writeEdit(
     session: XliffDocumentSession,
     unit: UnitReference,
     mutate: (state: EditableState) => TextEditRange | null,
+    onRefused: () => void,
 ): Promise<void> {
     const state = session.synchronise();
 
     if (state.kind !== 'document') {
         void vscode.window.showInformationMessage('This file cannot be edited until it parses.');
+        onRefused();
         return;
     }
     if (state.dto.readOnly) {
         void vscode.window.showInformationMessage(state.dto.isBaseFile
             ? 'This is the base file, which the AL compiler owns. Edit the language file instead.'
             : 'This file is read-only.');
+        onRefused();
         return;
     }
     // The parser drops comments, so writing this document would delete them. Refusing
     // costs an edit; the alternative costs somebody's comment.
     if (containsComment(state.text)) {
         void vscode.window.showInformationMessage('This file contains XML comments, which this editor does not preserve. Edit it as text instead.');
+        onRefused();
         return;
     }
 
+    const restore = rememberTarget(state.model, unit);
     let edit: TextEditRange | null;
     try {
         edit = mutate(state);
     } catch (error: unknown) {
+        restore();
         const message = error instanceof Error ? error.message : 'The edit could not be applied.';
         Logger.warn(`Edit to ${unit.unitId} failed: ${message}`);
         void vscode.window.showErrorMessage(message);
+        onRefused();
         return;
     }
 
@@ -77,11 +85,21 @@ export async function writeEdit(
         return;
     }
 
-    const applied = await session.applyEdit(edit, unit);
+    // The model already holds the edit; a refusal must take it back out, or the next
+    // edit would write this one too.
+    if (!await session.applyEdit(edit, unit)) {
+        restore();
+        void vscode.window.showWarningMessage(
+            'The edit could not be applied, so the target shows its saved value again. '
+            + 'VS Code refused it, which usually means the file is open read-only.',
+        );
+        onRefused();
+        return;
+    }
 
     // Said after the first edit rather than on open: a reader who never edits has nothing
     // to be warned about, and this is only true of a file that gets saved.
-    if (applied && session.claimBomWarning()) {
+    if (session.claimBomWarning()) {
         void vscode.window.showWarningMessage(
             'This file begins with a UTF-8 byte-order mark, which VS Code does not write back when it saves. '
             + 'The translations are unaffected; the first three bytes of the file will change.',

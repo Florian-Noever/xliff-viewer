@@ -268,6 +268,20 @@ describe('what survives a re-parse', () => {
         ]);
     });
 
+    it('keeps a unit\'s markers when a refused edit sends it back', async () => {
+        setVirtualFile('/w/App.g.xlf', BASE);
+        const commented = language('Customer').replace('<body>', '<body><!-- kept -->');
+        const harness = await openEditor(new FakeTextDocument('/w/App.de-DE.xlf', commented));
+        harness.send({ type: WebviewMessageType.ready });
+        await settle();
+
+        harness.posted.length = 0;
+        harness.send({ type: WebviewMessageType.updateTarget, fileIndex: 0, unitId: 'Table 1 - Property 2', value: 'Kundin' });
+        await settle();
+
+        expect(patchedUnits(harness.posted)).toEqual([expect.objectContaining({ target: 'Kunde', baseSource: 'Customer (renamed)' })]);
+    });
+
     it('re-marks the units when the compiler rewrites the base file underneath', async () => {
         setVirtualFile('/w/App.g.xlf', BASE);
         const document = new FakeTextDocument('/w/App.de-DE.xlf', language('Customer'));

@@ -113,11 +113,15 @@ export class XliffDocumentView implements DocumentView, vscode.Disposable {
             unitId: unit.unitId,
             value,
             state: stateAfterEdit(this.session, value, state),
-        }));
+        }), () => {
+            this.resendUnit(unit);
+        });
     }
 
     public updateState(unit: UnitReference, state: XliffState): Promise<void> {
-        return writeEdit(this.session, unit, edit => setState(edit.model, edit.text, unit, state));
+        return writeEdit(this.session, unit, edit => setState(edit.model, edit.text, unit, state), () => {
+            this.resendUnit(unit);
+        });
     }
 
     /** Two targets: the unit's own "Go to source", and the raw XML for the error pane, which has no unit to name. */
@@ -134,6 +138,25 @@ export class XliffDocumentView implements DocumentView, vscode.Disposable {
             subscription.dispose();
         }
         this.subscriptions.length = 0;
+    }
+
+    /**
+     * Sends one unit again as this panel should show it. The webview replaces the unit, which
+     * puts a field the reader typed into back to the saved value.
+     */
+    private resendUnit(unit: UnitReference): void {
+        const current = this.session.current();
+        const parsed = current.kind === 'document' ? current : this.session.lastGoodState();
+        const saved = parsed?.dto.files
+            .find(file => file.index === unit.fileIndex)?.units
+            .find(each => each.id === unit.unitId);
+        if (saved === undefined) {
+            return;
+        }
+        this.post({
+            type: ExtensionMessageType.patchUnits,
+            payload: { fileIndex: unit.fileIndex, units: [this.pairing?.withMarkers(unit.fileIndex, saved) ?? saved] },
+        });
     }
 
     /** Answers can overtake each other, so only the answer to the latest question is posted. */

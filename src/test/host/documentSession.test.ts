@@ -22,6 +22,7 @@ import {
     flushLogs,
     flushWarningMessages,
     resetMocks,
+    setApplyEditResult,
     setConfigOverride,
     setWritableFileSystem,
 } from '../__mocks__/vscode';
@@ -796,6 +797,65 @@ describe('recognising our own edit', () => {
 
         expect(types(posted)).toEqual([ExtensionMessageType.patchUnits, ExtensionMessageType.patchUnits]);
         expect(document.getText()).toBe(LANGUAGE.replace('ExampleTranslation', 'Second'));
+    });
+
+    describe('when the editor refuses it', () => {
+        const SAVED = [expect.objectContaining({ id: UNIT.unitId, target: 'ExampleTranslation' })];
+
+        it('sends the unit again with its saved value, and says why', async () => {
+            const { facade, posted } = edited(LANGUAGE);
+            setApplyEditResult(false);
+
+            await facade.updateTarget(UNIT, 'EditedTranslation');
+
+            expect(posted).toEqual([{ type: ExtensionMessageType.patchUnits, payload: { fileIndex: 0, units: SAVED } }]);
+            expect(flushWarningMessages()).toEqual([expect.stringContaining('shows its saved value again')]);
+        });
+
+        it('takes the edit back out of the model, so the next edit does not write it too', async () => {
+            const { document, facade } = edited(LANGUAGE);
+            setApplyEditResult(false);
+            await facade.updateTarget(UNIT, 'EditedTranslation');
+
+            setApplyEditResult(true);
+            await facade.updateTarget({ fileIndex: 0, unitId: 'Table 1 - Property 3' }, 'Changed');
+
+            expect(document.getText()).toBe(LANGUAGE.replace('AnotherTranslation', 'Changed'));
+        });
+
+        it('treats an edit that throws as refused, and forgets it was pending', async () => {
+            const { document, facade, posted } = edited(LANGUAGE);
+            setApplyEditResult(new Error('the editor went away'));
+
+            await facade.updateTarget(UNIT, 'EditedTranslation');
+
+            expect(posted).toEqual([{ type: ExtensionMessageType.patchUnits, payload: { fileIndex: 0, units: SAVED } }]);
+            expect(flushWarningMessages()).toHaveLength(1);
+            expect(flushLogs().join('\n')).toContain('the editor went away');
+
+            // The same span and text from somebody else is now their edit, not ours.
+            const [attempted] = flushAppliedEdits();
+            const start = document.offsetAt(attempted.range.start);
+            posted.length = 0;
+            vi.useFakeTimers();
+            fireTextDocumentChange(document, [{
+                rangeOffset: start,
+                rangeLength: document.offsetAt(attempted.range.end) - start,
+                text: attempted.newText,
+            }]);
+            vi.advanceTimersByTime(200);
+
+            expect(types(posted)).toEqual([ExtensionMessageType.setDocument]);
+        });
+
+        it('sends the unit again on every other refusal too', async () => {
+            const { facade, posted } = edited(LANGUAGE.replace('<body>', '<body>\n      <!-- kept -->'));
+
+            await facade.updateState(UNIT, XliffState.signedOff);
+
+            expect(posted).toEqual([{ type: ExtensionMessageType.patchUnits, payload: { fileIndex: 0, units: SAVED } }]);
+            expect(flushInfoMessages()).toEqual([expect.stringContaining('XML comments')]);
+        });
     });
 });
 describe('the BOM a save does not keep', () => {

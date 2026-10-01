@@ -139,6 +139,22 @@ export function setTarget(
     return edit;
 }
 
+/**
+ * Captures a unit's target as it is now and returns what puts it back: the write path's way
+ * back when the editor refuses an edit the model already holds. A no-op for a unit the
+ * document does not have.
+ */
+export function rememberTarget(document: XliffDocument, reference: UnitReference): () => void {
+    const unit = findUnit(document, reference);
+    if (unit === undefined) {
+        return () => { };
+    }
+    const target = unit.target;
+    return () => {
+        unit.target = target;
+    };
+}
+
 /** Changes only the state, leaving the target text alone. */
 export function setState(
     document: XliffDocument,

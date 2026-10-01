@@ -5,12 +5,15 @@ import { ExtensionMessageType } from '../../shared/messages';
 
 import type * as vscode from 'vscode';
 import type { XliffDocumentSession } from './documentSession';
-import type { BaseFileIndex } from '../services/baseFileIndex';
+import type { BaseFileIndex, UnitComparison } from '../services/baseFileIndex';
 import type { BaseFileResolver } from '../services/baseFileResolver';
-import type { XliffDocumentDto } from '../../shared/dto';
+import type { TransUnitDto, XliffDocumentDto } from '../../shared/dto';
 import type { ExtensionMessage } from '../../shared/messages';
 
-const EMPTY: ReadonlySet<string> = new Set();
+/** What a unit carries when the base file disagrees with it. */
+type Markers = Omit<UnitComparison, 'id'>;
+
+const NO_MARKERS: ReadonlyMap<string, Markers> = new Map();
 
 /**
  * One panel's pairing of a document with its base file: which base file it is, and which
@@ -23,11 +26,11 @@ export class BasePairing implements vscode.Disposable {
     private readonly baseIndex: BaseFileIndex | undefined;
     private readonly subscription: vscode.Disposable | undefined;
     /**
-     * Which units this panel has been told are orphaned or source-changed, per `<file>`.
-     * `patchUnits` can only *set* a marker; clearing one means sending the unit again
-     * without it, which needs knowing what was sent.
+     * The markers this panel has been sent, per `<file>` and unit. `patchUnits` can only
+     * *set* a marker; clearing one means sending the unit again without it, and any unit sent
+     * for another reason has to carry its markers along.
      */
-    private readonly marked = new Map<number, ReadonlySet<string>>();
+    private readonly marked = new Map<number, ReadonlyMap<string, Markers>>();
 
     public constructor(
         session: XliffDocumentSession,
@@ -55,6 +58,11 @@ export class BasePairing implements vscode.Disposable {
     /** Posts the base file, then the markers, once resolution finishes. Never awaited: the document must not wait for it. */
     public announce(dto: XliffDocumentDto): void {
         void this.announceBaseFile(dto);
+    }
+
+    /** The unit as this panel shows it: with the markers it was last sent, if any. */
+    public withMarkers(fileIndex: number, unit: TransUnitDto): TransUnitDto {
+        return { ...unit, ...this.marked.get(fileIndex)?.get(unit.id) };
     }
 
     public dispose(): void {
@@ -105,16 +113,16 @@ export class BasePairing implements vscode.Disposable {
             const differences = sources.size === 0 ? [] : compareToBase(file.units, sources);
             const byId = new Map(file.units.map(unit => [unit.id, unit]));
 
-            const nowMarked = new Set(differences.map(difference => difference.id));
-            const previously = this.marked.get(file.index) ?? EMPTY;
+            const nowMarked = new Map(differences.map(({ id, ...markers }) => [id, markers]));
+            const previously = this.marked.get(file.index) ?? NO_MARKERS;
             this.marked.set(file.index, nowMarked);
 
-            const set = differences.flatMap((difference) => {
-                const unit = byId.get(difference.id);
-                return unit === undefined ? [] : [{ ...unit, orphaned: difference.orphaned, baseSource: difference.baseSource }];
+            const set = [...nowMarked.keys()].flatMap((id) => {
+                const unit = byId.get(id);
+                return unit === undefined ? [] : [this.withMarkers(file.index, unit)];
             });
             // The DTO's own unit carries no markers, so sending it again is how one comes off.
-            const cleared = [...previously]
+            const cleared = [...previously.keys()]
                 .filter(id => !nowMarked.has(id))
                 .flatMap((id) => {
                     const unit = byId.get(id);

@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { UnknownUnitError } from '../../extension/xliff/errors';
 import { parseXliff } from '../../extension/xliff/parser';
 import { serialiseXliff } from '../../extension/xliff/serialise';
-import { setState, setTarget, trimToEdit, type TextEditRange } from '../../extension/xliff/writer';
+import { rememberTarget, setState, setTarget, trimToEdit, type TextEditRange } from '../../extension/xliff/writer';
 import { iterateFileUnits, iterateUnits } from '../../shared/model';
 
 import type { XliffDocument, XliffTransUnit } from '../../shared/model';
@@ -193,6 +193,38 @@ describe('setTarget', () => {
         const result = apply(text, edit);
         expect(result).toContain('> </target>');
         expect(result).toBe(serialiseXliff(document));
+    });
+});
+
+describe('rememberTarget', () => {
+    it('puts back the target an edit replaced', () => {
+        const { text, document, units } = load(LANGUAGE_FILE);
+        const unit = { fileIndex: 0, unitId: units[3].id };
+        const restore = rememberTarget(document, unit);
+
+        setTarget(document, text, { ...unit, value: 'Verworfen' });
+        restore();
+
+        expect(serialiseXliff(document)).toBe(text);
+    });
+
+    it('takes a target away again from a unit that had none', () => {
+        const { text, document, units } = load(BASE_FILE);
+        const unit = { fileIndex: 0, unitId: units[0].id };
+        const restore = rememberTarget(document, unit);
+
+        setTarget(document, text, { ...unit, value: 'Neu' });
+        restore();
+
+        expect(serialiseXliff(document)).toBe(text);
+    });
+
+    it('does nothing for a unit the document does not have', () => {
+        const { text, document } = load(LANGUAGE_FILE);
+
+        rememberTarget(document, { fileIndex: 0, unitId: 'nope' })();
+
+        expect(serialiseXliff(document)).toBe(text);
     });
 });
 

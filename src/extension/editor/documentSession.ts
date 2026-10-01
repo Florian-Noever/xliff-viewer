@@ -161,10 +161,9 @@ export class XliffDocumentSession {
         const workspaceEdit = new vscode.WorkspaceEdit();
         workspaceEdit.replace(this.textDocument.uri, range, edit.newText);
 
-        const applied = await vscode.workspace.applyEdit(workspaceEdit);
+        const applied = await this.request(workspaceEdit);
         if (!applied) {
             this.pending = undefined;
-            Logger.warn(`The edit to ${this.fileName()} was refused by the editor.`);
         }
         return applied;
     }
@@ -246,6 +245,20 @@ export class XliffDocumentSession {
 
         this.announce({ kind: 'patched', fileIndex: pending.fileIndex, units: [patched] });
         return true;
+    }
+
+    /** `workspace.applyEdit`, with a rejection read as the refusal it is. */
+    private async request(edit: vscode.WorkspaceEdit): Promise<boolean> {
+        try {
+            const applied = await vscode.workspace.applyEdit(edit);
+            if (!applied) {
+                Logger.warn(`The edit to ${this.fileName()} was refused by the editor.`);
+            }
+            return applied;
+        } catch (error: unknown) {
+            Logger.warn(`The edit to ${this.fileName()} failed: ${error instanceof Error ? error.message : 'unknown error'}`);
+            return false;
+        }
     }
 
     private reparse(): void {
