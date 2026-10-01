@@ -1,7 +1,7 @@
 /** A virtual file system: files by path, the reads and writes made on it, and watchers. */
 
 import { Disposable } from './events';
-import { normalisePath, patternMatches, Uri } from './uri';
+import { normalisePath, pathMatcher, Uri } from './uri';
 
 import type { RelativePattern } from './uri';
 
@@ -84,7 +84,7 @@ export function findFiles(pattern: string | RelativePattern, _exclude?: unknown,
     if (!searchAvailable) {
         return Promise.resolve([]);
     }
-    const found = Object.keys(virtualFiles).filter(path => patternMatches(pattern, path)).map(path => Uri.file(path));
+    const found = Object.keys(virtualFiles).filter(pathMatcher(pattern)).map(path => Uri.file(path));
     return Promise.resolve(maxResults === undefined ? found : found.slice(0, maxResults));
 }
 
@@ -162,7 +162,7 @@ export function setSearchAvailable(available: boolean): void {
 /** Fires every file-system watcher whose pattern selects the path, as a file appearing, changing or vanishing would. */
 export function fireFileWatcher(kind: WatchedKind, path: string): void {
     for (const watcher of [...watchers]) {
-        if (patternMatches(watcher.pattern, path)) {
+        if (pathMatcher(watcher.pattern)(path)) {
             for (const listener of [...watcher.listeners[kind]]) {
                 listener(Uri.file(path));
             }

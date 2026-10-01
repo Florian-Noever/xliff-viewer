@@ -214,6 +214,15 @@ describe('vscode mock', () => {
         expect(await vscode.workspace.findFiles('**/*.al', undefined, 1)).toHaveLength(1);
     });
 
+    it('matches brace alternatives and character classes, as VS Code\'s globs do', async () => {
+        setVirtualFile('/ws/Translations/App.g.xlf', '');
+        setVirtualFile('/ws/i18n/Other.g.xlf', '');
+        setVirtualFile('/ws/docs/Notes.g.xlf', '');
+
+        expect((await vscode.workspace.findFiles('**/{Translations,i18n}/*.g.xlf')).map(uri => uri.path)).toEqual(['/ws/Translations/App.g.xlf', '/ws/i18n/Other.g.xlf']);
+        expect((await vscode.workspace.findFiles('**/[A-N]*.g.xlf')).map(uri => uri.path)).toEqual(['/ws/Translations/App.g.xlf', '/ws/docs/Notes.g.xlf']);
+    });
+
     it('finds nothing when search is off, as in a host without a search provider', async () => {
         setVirtualFile('/ws/T/App.g.xlf', '');
         setSearchAvailable(false);

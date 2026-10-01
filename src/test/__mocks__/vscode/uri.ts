@@ -1,5 +1,6 @@
 /** URIs, and the globs that select them. */
 
+import picomatch from 'picomatch';
 import { URI, Utils } from 'vscode-uri';
 
 /**
@@ -38,33 +39,16 @@ export class RelativePattern {
     }
 }
 
-/** A `**` / `*` / `?` glob as a regular expression over a whole path. */
-function globRegex(pattern: string): RegExp {
-    // One pass with a replacer: expanding `**` in an earlier pass would leave `*`
-    // characters that a later single-`*` pass would rewrite again.
-    const source = pattern.replace(/\*\*\/|\*\*|\*|\?|[.+^${}()|[\]\\]/g, (token) => {
-        switch (token) {
-            case '**/':
-                return '(?:.*/)?';
-            case '**':
-                return '.*';
-            case '*':
-                return '[^/]*';
-            case '?':
-                return '[^/]';
-            default:
-                return `\\${token}`;
-        }
-    });
-    return new RegExp(`^${source}$`);
-}
-
-/** Whether a virtual path is one the pattern selects: a plain glob from the root, or one relative to its folder. */
-export function patternMatches(pattern: string | RelativePattern, path: string): boolean {
+/**
+ * Which virtual paths a pattern selects: a plain glob from the root, written with or without
+ * its leading slash, or a glob relative to its folder. Dot files match, as VS Code's do.
+ */
+export function pathMatcher(pattern: string | RelativePattern): (path: string) => boolean {
     if (typeof pattern === 'string') {
-        const regex = globRegex(pattern);
-        return regex.test(path) || regex.test(path.replace(/^\//, ''));
+        const matches = picomatch(pattern, { dot: true });
+        return path => matches(path) || matches(path.replace(/^\//, ''));
     }
     const base = pattern.baseUri.path.endsWith('/') ? pattern.baseUri.path : `${pattern.baseUri.path}/`;
-    return path.startsWith(base) && globRegex(pattern.pattern).test(path.slice(base.length));
+    const matches = picomatch(pattern.pattern, { dot: true });
+    return path => path.startsWith(base) && matches(path.slice(base.length));
 }
