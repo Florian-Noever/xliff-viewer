@@ -1,4 +1,4 @@
-import { canonicalPropertyName, declaresMember, extendedKeyword, extensionKeywords, isTransparent, objectKeyword } from './alSymbolKinds';
+import { canonicalPropertyName, declaresMember, extendedKeyword, extensionKeywords, isTransparentKeyword, objectKeyword } from './alSymbolKinds';
 import { alNameHash } from '../xliff/alNameHash';
 
 import type { IndexedObject } from './alHeaderIndex';
@@ -216,7 +216,7 @@ function membersOf(container: AlDeclaration, segment: TargetSegment): AlDeclarat
             if (child.kind === 'method') {
                 continue;
             }
-            if (child.kind === 'member' && !isTransparent(child) && child.name !== undefined
+            if (child.kind === 'member' && !isTransparentKeyword(child.keyword) && child.name !== undefined
                 && declaresMember(child, segment.type) && named(child.name.text, segment)) {
                 found.push(child);
             }

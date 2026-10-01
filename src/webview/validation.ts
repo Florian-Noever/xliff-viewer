@@ -1,4 +1,4 @@
-import { XliffState } from '@shared/state';
+import { isCompleteState } from '@shared/state';
 
 import type { TransUnitDto } from '@shared/dto';
 
@@ -59,9 +59,6 @@ const CHARACTERS = 'char';
 /** `%1` is AL's; `#1` is matched too because other XLIFF producers use it. */
 const PLACEHOLDER = /%\d+|#\d+/g;
 
-/** The states that claim the work is done, and which an empty target therefore contradicts. */
-const FINISHED: readonly XliffState[] = [XliffState.translated, XliffState.signedOff, XliffState.final];
-
 export function hintsFor(unit: TransUnitDto, options: HintOptions): readonly Hint[] {
     const target = unit.target;
     if (target === undefined || !unit.translate) {
@@ -72,7 +69,7 @@ export function hintsFor(unit: TransUnitDto, options: HintOptions): readonly Hin
         // The only thing worth saying about an empty target is that the file calls it done.
         // Everything else — no placeholders, no overrun — is a restatement of "untranslated",
         // which the state already says.
-        return unit.declaredState !== undefined && FINISHED.includes(unit.declaredState)
+        return unit.declaredState !== undefined && isCompleteState(unit.declaredState)
             ? [{ kind: HintKind.statedButEmpty, message: `This target is empty, but the file declares it ${unit.declaredState}.` }]
             : [];
     }

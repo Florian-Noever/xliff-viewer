@@ -1,5 +1,6 @@
 import { alNameHash } from './alNameHash';
 import { canonicalHash, parseUnitId } from './unitId';
+import { NoteFrom } from '../../shared/notes';
 import { NAMESPACE_TYPE, SEGMENT_SEPARATOR } from '../../shared/unitPath';
 
 import type { UnitIdSegment } from './unitId';
@@ -11,9 +12,6 @@ import type { XliffNote, XliffTransUnit } from '../../shared/model';
  * The tree itself is built from the id and its hashes; everything here is label text
  * only, so a failure degrades the display and never the structure.
  */
-
-export const GENERATOR_NOTE_FROM = 'Xliff Generator';
-const DEVELOPER_NOTE_FROM = 'Developer';
 
 /** One suggestion: a language tag, `=`, the text. Anchored, so `%1 = Document No.` is none. */
 const LANGUAGE_ENTRY = /^([A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*)=([\s\S]*)$/;
@@ -129,12 +127,12 @@ function noteSplits(body: string, types: readonly string[]): string[][] {
 
 /** The `Xliff Generator` note's text, or undefined when the unit has none. */
 export function generatorNote(unit: XliffTransUnit): string | undefined {
-    return findNote(unit.notes, GENERATOR_NOTE_FROM);
+    return findNote(unit.notes, NoteFrom.generator);
 }
 
 /** The `Developer` note's text, or undefined when the unit has none. */
 export function developerNote(unit: XliffTransUnit): string | undefined {
-    return findNote(unit.notes, DEVELOPER_NOTE_FROM);
+    return findNote(unit.notes, NoteFrom.developer);
 }
 
 function findNote(notes: readonly XliffNote[], from: string): string | undefined {

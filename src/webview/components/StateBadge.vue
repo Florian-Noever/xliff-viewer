@@ -50,19 +50,19 @@ const title = computed(() => (props.muted === true ? `translate="no" — ${state
 }
 
 .tone-done {
-    color: var(--vscode-testing-iconPassed, var(--vscode-charts-green));
+    color: var(--tone-done);
 }
 
 .tone-pending {
-    color: var(--vscode-editorWarning-foreground, var(--vscode-charts-yellow));
+    color: var(--tone-pending);
 }
 
 .tone-absent {
-    color: var(--vscode-errorForeground, var(--vscode-inputValidation-errorBorder));
+    color: var(--tone-absent);
 }
 
 .tone-muted {
-    color: var(--vscode-descriptionForeground);
+    color: var(--tone-muted);
 }
 
 .tone-muted .dot {

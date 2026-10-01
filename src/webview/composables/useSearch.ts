@@ -1,5 +1,7 @@
 import { computed, ref, watch } from 'vue';
 
+import { escapeRegExp } from '@shared/escapeRegExp';
+
 import type { AlNodeDto, TransUnitDto, XliffFileDto } from '@shared/dto';
 import type { NodePredicate } from '../ancestorFilter';
 import type { ComputedRef, Ref } from 'vue';
@@ -105,7 +107,7 @@ export function toMatcher(query: string): (haystackText: string) => boolean {
 
     const pattern = needle
         .split('*')
-        .map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+        .map(escapeRegExp)
         .join(WITHIN_FIELD);
     const expression = new RegExp(pattern, 's');
     return text => expression.test(text);

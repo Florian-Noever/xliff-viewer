@@ -76,6 +76,14 @@ const OVERSCAN = 8;
 const CONTROL_SELECTOR = 'input, textarea, select, button, [contenteditable="true"]';
 
 /** Key → intent. The mapping is presentation; what each intent *does* is the composable's. */
+/** Opens or closes the focused row, when it has anything to open. */
+function toggleFocused(tree: TreeView): void {
+    const row = tree.rows.value[tree.focusedIndex.value];
+    if (row?.hasChildren === true) {
+        tree.toggle(row.key);
+    }
+}
+
 const KEY_ACTIONS: Readonly<Record<string, (tree: TreeView) => void>> = {
     ArrowDown: tree => tree.moveFocus(1),
     ArrowUp: tree => tree.moveFocus(-1),
@@ -83,18 +91,8 @@ const KEY_ACTIONS: Readonly<Record<string, (tree: TreeView) => void>> = {
     ArrowLeft: tree => tree.collapseFocused(),
     Home: tree => tree.moveFocus(Number.NEGATIVE_INFINITY),
     End: tree => tree.moveFocus(Number.POSITIVE_INFINITY),
-    Enter: (tree) => {
-        const row = tree.rows.value[tree.focusedIndex.value];
-        if (row?.hasChildren === true) {
-            tree.toggle(row.key);
-        }
-    },
-    ' ': (tree) => {
-        const row = tree.rows.value[tree.focusedIndex.value];
-        if (row?.hasChildren === true) {
-            tree.toggle(row.key);
-        }
-    },
+    Enter: toggleFocused,
+    ' ': toggleFocused,
 };
 
 const emit = defineEmits<{ scrolled: [row: number] }>();

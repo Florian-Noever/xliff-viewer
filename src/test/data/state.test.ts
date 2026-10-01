@@ -9,6 +9,7 @@ import { iterateUnits } from '../../shared/model';
 import {
     COMPLETE_STATES,
     effectiveState,
+    isCompleteState,
     isKnownState,
     isSpecState,
     SPEC_STATES,
@@ -144,6 +145,13 @@ function unit(id: string, target?: XliffTarget, translate = true): XliffTransUni
 }
 
 const target = (value: string, state?: string): XliffTarget => ({ attributes: state === undefined ? {} : { state }, state, value });
+
+describe('isCompleteState', () => {
+    it('is true for translated, signed-off and final, out of all thirteen states', () => {
+        expect(STATE_SEVERITY).toHaveLength(13);
+        expect(STATE_SEVERITY.filter(state => isCompleteState(state))).toEqual([XliffState.translated, XliffState.signedOff, XliffState.final]);
+    });
+});
 
 describe('effectiveState', () => {
     it('is missing when the unit has no target at all', () => {

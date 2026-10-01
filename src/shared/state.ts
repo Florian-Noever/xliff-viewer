@@ -77,6 +77,8 @@ export const COMPLETE_STATES = [
     XliffState.final,
 ] as const satisfies readonly XliffState[];
 
+const COMPLETE: ReadonlySet<string> = new Set<string>(COMPLETE_STATES);
+
 const RANK: ReadonlyMap<string, number> = new Map(STATE_SEVERITY.map((state, index) => [state, index]));
 
 /** Position in the severity order — lower is worse. */
@@ -92,6 +94,11 @@ export function isKnownState(value: unknown): value is XliffState {
 /** True only for the ten values that may legally appear as a `state` attribute. */
 export function isSpecState(value: unknown): value is XliffState {
     return typeof value === 'string' && (SPEC_STATES as readonly string[]).includes(value);
+}
+
+/** True for the states that count as done: translated, signed off, or final. */
+export function isCompleteState(state: XliffState): boolean {
+    return COMPLETE.has(state);
 }
 
 /** The worse of two states, by `STATE_SEVERITY`. */
@@ -159,8 +166,6 @@ export interface StateSummary {
     readonly percent: number;
 }
 
-const COMPLETE: ReadonlySet<string> = new Set<string>(COMPLETE_STATES);
-
 interface SummaryAccumulator {
     total: number;
     translatable: number;
@@ -182,7 +187,7 @@ function addUnit(accumulator: SummaryAccumulator, unit: UnitState): void {
     }
 
     accumulator.translatable++;
-    if (COMPLETE.has(unit.state)) {
+    if (isCompleteState(unit.state)) {
         accumulator.translatedCount++;
     }
     accumulator.worst = accumulator.worst === undefined ? unit.state : worstState(accumulator.worst, unit.state);

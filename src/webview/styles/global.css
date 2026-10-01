@@ -16,6 +16,12 @@
     --radius-card: 8px;
 
     --duration-spin: 0.8s;
+
+    /* The four state tones the filter chips, the progress bars and the badges share. */
+    --tone-done: var(--vscode-testing-iconPassed, var(--vscode-charts-green));
+    --tone-pending: var(--vscode-editorWarning-foreground, var(--vscode-charts-yellow));
+    --tone-absent: var(--vscode-errorForeground, var(--vscode-inputValidation-errorBorder));
+    --tone-muted: var(--vscode-descriptionForeground);
 }
 
 html,

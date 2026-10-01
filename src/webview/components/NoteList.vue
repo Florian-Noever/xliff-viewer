@@ -6,7 +6,7 @@
             <dd v-else class="value">{{ note.value }}</dd>
         </template>
         <template v-if="generatorNote !== undefined">
-            <dt class="from">Xliff Generator</dt>
+            <dt class="from">{{ NoteFrom.generator }}</dt>
             <dd class="value">{{ generatorNote }}</dd>
         </template>
     </dl>
@@ -15,7 +15,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-import { DEVELOPER_NOTE } from '../constants';
+import { NoteFrom } from '@shared/notes';
 
 import type { XliffNoteDto } from '@shared/dto';
 
@@ -43,7 +43,7 @@ const props = defineProps<{
 
 const notes = computed(() => (props.showDeveloperNotes
     ? props.notes
-    : props.notes.filter(note => note.from !== DEVELOPER_NOTE)));
+    : props.notes.filter(note => note.from !== NoteFrom.developer)));
 </script>
 
 <style scoped>

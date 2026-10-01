@@ -99,11 +99,6 @@ export function declaresMember(declaration: AlDeclaration, segmentType: string):
         && (kind.sections === undefined || (declaration.section !== undefined && kind.sections.has(declaration.section)));
 }
 
-/** True for a member whose children belong to what contains it. */
-export function isTransparent(declaration: AlDeclaration): boolean {
-    return isTransparentKeyword(declaration.keyword);
-}
-
 /** True for a keyword that adds to or moves within what contains it, so it opens no section of its own. */
 export function isTransparentKeyword(keyword: string): boolean {
     return TRANSPARENT.has(keyword);

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { outlineAl, scanHeaders } from '../../extension/al/alOutline';
-import { canonicalPropertyName, declaresMember, isTransparent } from '../../extension/al/alSymbolKinds';
+import { canonicalPropertyName, declaresMember, isTransparentKeyword } from '../../extension/al/alSymbolKinds';
 import {
     API_PAGE, CODEUNIT, CUSTOMIZATION, DIRECTIVES, DOTNET_AND_ADDIN, EDGES, ENUM, INTERFACE, PAGE, PAGE_EXTENSION,
     PROFILE_AND_PERMISSIONS, QUERY, REPORT, SNIPPETS, TABLE, TWO_OBJECTS, XMLPORT,
@@ -306,6 +306,6 @@ describe('the kind table', () => {
     it('sees through what an extension adds after', () => {
         const added = named(PAGE_EXTENSION, 'addafter', 'Name');
 
-        expect(added !== undefined && isTransparent(added)).toBe(true);
+        expect(added !== undefined && isTransparentKeyword(added.keyword)).toBe(true);
     });
 });

@@ -1,7 +1,8 @@
 import { buildAlTree, groupRoots, isNamespaceNode } from './alTree';
-import { developerHint, developerNote, GENERATOR_NOTE_FROM, hasAlStructure } from './names';
+import { developerHint, developerNote, hasAlStructure } from './names';
 
 import { iterateFileUnits } from '../../shared/model';
+import { NoteFrom } from '../../shared/notes';
 import { effectiveState, isSpecState } from '../../shared/state';
 
 import type { AlNodeDto, BaseFileDto, TransUnitDto, XliffDocumentDto, XliffFileDto } from '../../shared/dto';
@@ -126,7 +127,7 @@ export function projectUnit(unit: XliffTransUnit, targetLanguage: string | undef
         sizeUnit: unit.sizeUnit,
         alObjectTarget: unit.alObjectTarget,
         notes: unit.notes
-            .filter(note => note.from !== GENERATOR_NOTE_FROM)
+            .filter(note => note.from !== NoteFrom.generator)
             .map(note => ({ from: note.from, value: note.value })),
         developerHint: developerHint(developerNote(unit), targetLanguage),
     };

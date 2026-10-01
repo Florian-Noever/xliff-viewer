@@ -236,12 +236,11 @@ class OutlineReader {
     private readLabel(): AlProperty {
         const keyword = this.current();
         this.index++;
-        const name = this.readArguments().find(argument => argument.length === 1
-            && (argument[0].kind === AlTokenKind.identifier || argument[0].kind === AlTokenKind.quoted));
+        const name = firstNameArgument(this.readArguments());
         if (this.is(';')) {
             this.index++;
         }
-        return { name: this.nameOf(name?.[0] ?? keyword), range: { start: keyword.start, end: this.lastEnd() } };
+        return { name: this.nameOf(name ?? keyword), range: { start: keyword.start, end: this.lastEnd() } };
     }
 
     /** `field(1; "No."; Code[20]) { … }` — named by its first argument that is a name. */
@@ -250,10 +249,9 @@ class OutlineReader {
         this.index++;
 
         const member = this.declaration(AlDeclarationKind.member, keyword, start, section);
-        const name = this.readArguments().find(argument => argument.length === 1
-            && (argument[0].kind === AlTokenKind.identifier || argument[0].kind === AlTokenKind.quoted));
+        const name = firstNameArgument(this.readArguments());
         if (name !== undefined) {
-            member.name = this.nameOf(name[0]);
+            member.name = this.nameOf(name);
         }
 
         if (this.is('{')) {
@@ -544,4 +542,10 @@ class OutlineReader {
     private lastEnd(): number {
         return this.tokens[Math.min(this.index, this.tokens.length) - 1]?.end ?? 0;
     }
+}
+
+/** The first argument that is a single name: what a member, or a label in its long form, is called. */
+function firstNameArgument(argumentList: readonly (readonly AlToken[])[]): AlToken | undefined {
+    return argumentList.find(argument => argument.length === 1
+        && (argument[0].kind === AlTokenKind.identifier || argument[0].kind === AlTokenKind.quoted))?.[0];
 }

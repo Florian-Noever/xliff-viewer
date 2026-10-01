@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 
 import { Logger } from './logger';
+import { encodeAttribute } from '../xliff/serialise';
+import { escapeRegExp } from '../../shared/escapeRegExp';
 
 /**
  * Getting back to the file.
@@ -38,27 +40,14 @@ export function findUnitLine(text: string, unitId: string): number | undefined {
 function indexOfUnit(text: string, unitId: string): number | undefined {
     // Anchored to the element: an id also appears inside the Xliff Generator note of other
     // units, and matching one of those would send the reader to the wrong place.
-    for (const candidate of [escapeAttribute(unitId), unitId]) {
-        const pattern = new RegExp(`<trans-unit[^>]*\\sid="${escapeRegex(candidate)}"`);
+    for (const candidate of [encodeAttribute(unitId), unitId]) {
+        const pattern = new RegExp(`<trans-unit[^>]*\\sid="${escapeRegExp(candidate)}"`);
         const match = pattern.exec(text);
         if (match !== null) {
             return match.index;
         }
     }
     return undefined;
-}
-
-/** What the serialiser writes into an attribute, so the search matches the file on disk. */
-function escapeAttribute(value: string): string {
-    return value
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-}
-
-function escapeRegex(value: string): string {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**

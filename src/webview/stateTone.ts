@@ -1,4 +1,4 @@
-import { isKnownState, XliffState } from '@shared/state';
+import { isCompleteState, isKnownState, XliffState } from '@shared/state';
 
 /**
  * How a translation state is coloured.
@@ -23,7 +23,6 @@ export const StateTone = {
 } as const;
 export type StateTone = typeof StateTone[keyof typeof StateTone];
 
-const DONE: ReadonlySet<string> = new Set<string>([XliffState.translated, XliffState.signedOff, XliffState.final]);
 const ABSENT: ReadonlySet<string> = new Set<string>([XliffState.missing, XliffState.empty, XliffState.unknown]);
 
 export function stateTone(state: XliffState): StateTone {
@@ -31,7 +30,7 @@ export function stateTone(state: XliffState): StateTone {
         // A payload carrying something outside the union is broken, not optimistic.
         return StateTone.absent;
     }
-    if (DONE.has(state)) {
+    if (isCompleteState(state)) {
         return StateTone.done;
     }
     return ABSENT.has(state) ? StateTone.absent : StateTone.pending;
