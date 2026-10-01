@@ -17,6 +17,10 @@ import type { StateSummary } from '../../shared/state';
 import type { TreeView } from '../../webview/composables/useTreeFlatten';
 import type { UnitActions } from '../../webview/unitActions';
 
+/** The large fixture's scale: 230 objects and about 2500 units. */
+const LARGE_ROOTS = 230;
+const LARGE_MEMBERS = 11;
+
 /** `roots` objects, each with `members` children. */
 function bigTree(roots: number, members: number): { tree: AlNodeDto[]; units: Map<string, TransUnitDto> } {
     const units = new Map<string, TransUnitDto>();
@@ -97,10 +101,10 @@ afterEach(() => {
 
 describe('virtualisation', () => {
     it('renders a window over thousands of rows, not all of them', async () => {
-        const { wrapper, view } = mountTree(...Object.values(bigTree(230, 11)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        const { wrapper, view } = mountTree(...Object.values(bigTree(LARGE_ROOTS, LARGE_MEMBERS)) as [AlNodeDto[], Map<string, TransUnitDto>]);
         await nextTick();
 
-        expect(view.rows.value.length).toBe(230 + 230 * 11);
+        expect(view.rows.value.length).toBe(LARGE_ROOTS + LARGE_ROOTS * LARGE_MEMBERS);
 
         const rendered = wrapper.findAll('.tree-row').length;
         expect(rendered).toBeGreaterThan(0);
@@ -109,7 +113,7 @@ describe('virtualisation', () => {
     });
 
     it('reserves the full scroll height, so the scrollbar tells the truth', async () => {
-        const { wrapper, view } = mountTree(...Object.values(bigTree(230, 11)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        const { wrapper, view } = mountTree(...Object.values(bigTree(LARGE_ROOTS, LARGE_MEMBERS)) as [AlNodeDto[], Map<string, TransUnitDto>]);
         await nextTick();
 
         const height = Number.parseInt(wrapper.get('.spacer').attributes('style')?.match(/height:\s*(\d+)/)?.[1] ?? '0', 10);
@@ -120,7 +124,7 @@ describe('virtualisation', () => {
     it('grows the rendered window no further when the tree grows', async () => {
         const small = mountTree(...Object.values(bigTree(10, 4)) as [AlNodeDto[], Map<string, TransUnitDto>]);
         await nextTick();
-        const large = mountTree(...Object.values(bigTree(230, 11)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        const large = mountTree(...Object.values(bigTree(LARGE_ROOTS, LARGE_MEMBERS)) as [AlNodeDto[], Map<string, TransUnitDto>]);
         await nextTick();
 
         expect(large.wrapper.findAll('.tree-row').length)
