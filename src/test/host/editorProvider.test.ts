@@ -8,6 +8,7 @@ import { ExtensionMessageType, WebviewMessageType } from '../../shared/messages'
 import {
     customEditorRegistrations,
     documentChangeListenerCount,
+    emitterListenerCount,
     FakeTextDocument,
     fireConfigurationChange,
     fireFileWatcher,
@@ -545,9 +546,12 @@ describe('Go to source, from the panel', () => {
     });
 
     it('stops listening for AL files once the panel is gone', async () => {
+        const listening = emitterListenerCount();
         const harness = await openInApp();
+        expect(emitterListenerCount()).toBeGreaterThan(listening);
 
         harness.dispose();
+        expect(emitterListenerCount()).toBe(listening);
         harness.posted.length = 0;
         setVirtualFile('/w/src/Customer.Table.al', CUSTOMER);
         fireFileWatcher('created', '/w/src/Customer.Table.al');

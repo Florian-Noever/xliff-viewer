@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { BaseFileIndex, compareToBase } from '../../extension/services/baseFileIndex';
 import { Logger } from '../../extension/services/logger';
-import { fireFileWatcher, flushLogs, resetMocks, setVirtualFile } from '../__mocks__/vscode';
+import { fireFileWatcher, flushLogs, resetMocks, setVirtualFile, watcherCount } from '../__mocks__/vscode';
 
 /**
  * The comparison is exact string equality on source, never trimmed — a trailing space is
@@ -78,11 +78,14 @@ describe('BaseFileIndex', () => {
         expect(flushLogs().some(line => line.includes('Could not index'))).toBe(true);
     });
 
-    it('stops listening once disposed', async () => {
+    it('stops watching once disposed', async () => {
         setVirtualFile('/w/App.g.xlf', document([['a', 'A']]));
         await index.sourcesOf(BASE);
+        const watching = watcherCount();
+
         index.dispose();
 
+        expect(watcherCount()).toBe(watching - 1);
         expect(() => fireFileWatcher('changed', '/w/App.g.xlf')).not.toThrow();
     });
 });

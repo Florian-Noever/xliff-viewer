@@ -5,6 +5,7 @@ import { BaseFileResolver, BaseFileSource } from '../../extension/services/baseF
 import { appNameOf, fileNameOf } from '../../extension/services/uriNames';
 import { Logger } from '../../extension/services/logger';
 import {
+    configurationListenerCount,
     fireConfigurationChange,
     fireFileWatcher,
     flushLogs,
@@ -15,6 +16,7 @@ import {
     setVirtualFile,
     setWorkspaceRoot,
     setWorkspaceTrusted,
+    watcherCount,
 } from '../__mocks__/vscode';
 
 /** XLIFF Sync declares a base-file setting; NAB AL Tools declares none, so it has no tests here. */
@@ -294,10 +296,13 @@ describe('caching and invalidation', () => {
     it('stops listening once disposed', async () => {
         workspaceWith('/w/T/App.de-DE.xlf', '/w/T/App.g.xlf');
         await resolver.resolve(uri('/w/T/App.de-DE.xlf'), false);
+        const watching = watcherCount();
+        const configuring = configurationListenerCount();
 
-        expect(() => {
-            resolver.dispose();
-            fireFileWatcher('deleted', '/w/T/App.g.xlf');
-        }).not.toThrow();
+        resolver.dispose();
+
+        expect(watcherCount()).toBe(watching - 1);
+        expect(configurationListenerCount()).toBe(configuring - 1);
+        expect(() => fireFileWatcher('deleted', '/w/T/App.g.xlf')).not.toThrow();
     });
 });

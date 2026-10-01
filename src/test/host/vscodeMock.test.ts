@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import * as vscode from 'vscode';
 
-import { FakeTextDocument, flushAppliedEdits, flushErrorMessages, flushFileReads, holdFileRead, reportEditsInPieces, resetMocks, setApplyEditResult, setConfigOverride, setUserConfigOverride, setVirtualFile, setWorkspaceTrusted } from '../__mocks__/vscode';
+import { emitterListenerCount, FakeTextDocument, flushAppliedEdits, flushErrorMessages, flushFileReads, holdFileRead, reportEditsInPieces, resetMocks, setApplyEditResult, setConfigOverride, setUserConfigOverride, setVirtualFile, setWorkspaceTrusted } from '../__mocks__/vscode';
 
 afterEach(() => {
     resetMocks();
@@ -156,8 +156,10 @@ describe('vscode mock', () => {
         const seen: string[] = [];
         const subscription = emitter.event(value => seen.push(value));
         emitter.fire('one');
+        expect(emitterListenerCount()).toBe(1);
         subscription.dispose();
         emitter.fire('two');
         expect(seen).toEqual(['one']);
+        expect(emitterListenerCount()).toBe(0);
     });
 });

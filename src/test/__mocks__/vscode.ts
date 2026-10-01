@@ -163,8 +163,19 @@ export class Disposable {
     }
 }
 
+/** Every emitter made since the last reset, so a test can count who still listens. */
+const emitters = new Set<{ readonly listenerCount: number }>();
+
 export class EventEmitter<T> {
     private readonly listeners: ((value: T) => void)[] = [];
+
+    public constructor() {
+        emitters.add(this);
+    }
+
+    public get listenerCount(): number {
+        return this.listeners.length;
+    }
 
     public readonly event = (listener: (value: T) => void): Disposable => {
         this.listeners.push(listener);
@@ -679,6 +690,15 @@ export function fireFileWatcher(kind: WatchedKind, path: string): void {
     }
 }
 
+/** How many listeners all event emitters hold between them — a disposal spy. */
+export function emitterListenerCount(): number {
+    let count = 0;
+    for (const emitter of emitters) {
+        count += emitter.listenerCount;
+    }
+    return count;
+}
+
 /** How many watchers are live — a disposal spy. */
 export function watcherCount(): number {
     return watchers.length;
@@ -776,6 +796,7 @@ export function resetMocks(): void {
     messageCalls = [];
     appliedEdits = [];
     applyEditResult = true;
+    emitters.clear();
     editsInPieces = false;
     heldReads.clear();
     fileReads = [];

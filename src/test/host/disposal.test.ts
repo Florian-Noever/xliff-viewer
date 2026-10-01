@@ -7,9 +7,12 @@ import { WebviewMessageType } from '../../shared/messages';
 import {
     configurationListenerCount,
     documentChangeListenerCount,
+    emitterListenerCount,
     FakeTextDocument,
     resetMocks,
     setVirtualFile,
+    setWorkspaceRoot,
+    watcherCount,
 } from '../__mocks__/vscode';
 
 import type { ExtensionMessage } from '../../shared/messages';
@@ -29,6 +32,8 @@ interface Panel {
     readonly panel: vscode.WebviewPanel;
     close(): void;
     ready(): void;
+    /** How many message listeners the panel still holds. */
+    listening(): number;
     readonly posted: ExtensionMessage[];
 }
 
@@ -49,7 +54,9 @@ function fakePanel(): Panel {
             },
             onDidReceiveMessage: (listener: (message: unknown) => void) => {
                 listeners.push(listener);
-                return new vscode.Disposable(() => { });
+                return new vscode.Disposable(() => {
+                    listeners.splice(listeners.indexOf(listener), 1);
+                });
             },
         },
         onDidDispose: (handler: () => void) => {
@@ -61,6 +68,7 @@ function fakePanel(): Panel {
     return {
         panel,
         posted,
+        listening: () => listeners.length,
         ready: () => {
             for (const listener of listeners) {
                 listener({ type: WebviewMessageType.ready });
@@ -77,9 +85,16 @@ function fakePanel(): Panel {
 const document = (name: string): vscode.TextDocument =>
     new FakeTextDocument(`/w/${name}.xlf`, FIXTURE) as unknown as vscode.TextDocument;
 
+/** Lets the views' asynchronous subscriptions land. */
+const settle = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 0));
+
 beforeEach(() => {
     Logger.initialize({ subscriptions: [] } as unknown as vscode.ExtensionContext, 'test');
     setVirtualFile('/ext/media/webview.html', TEMPLATE);
+    // An app with AL source, so every view also subscribes to its AL files.
+    setWorkspaceRoot('/w');
+    setVirtualFile('/w/app.json', '{}');
+    setVirtualFile('/w/src/Customer.Table.al', 'table 50100 Customer { }');
 });
 
 afterEach(() => {
@@ -101,8 +116,10 @@ describe('twenty editors', () => {
             panel.ready();
         }
 
+        await settle();
         expect(documentChangeListenerCount()).toBe(20);
         expect(configurationListenerCount()).toBe(baseline + 20);
+        expect(emitterListenerCount()).toBeGreaterThanOrEqual(20);
 
         for (const panel of panels) {
             panel.close();
@@ -110,10 +127,13 @@ describe('twenty editors', () => {
 
         expect(documentChangeListenerCount()).toBe(0);
         expect(configurationListenerCount()).toBe(baseline);
+        expect(emitterListenerCount()).toBe(0);
+        expect(panels.map(panel => panel.listening())).toEqual(panels.map(() => 0));
 
         provider.dispose();
 
         expect(configurationListenerCount()).toBe(0);
+        expect(watcherCount()).toBe(0);
     });
 
     it('share one session when they are twenty views of the same document', async () => {
