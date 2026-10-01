@@ -15,8 +15,18 @@ describe('alNameHash', () => {
         expect(alNameHash('')).toBe('18652612');
     });
 
-    it('hashes both bytes of a character outside ASCII', () => {
+    it('hashes a Latin-1 name', () => {
         expect(alNameHash('Größe')).toBe('1085276355');
+    });
+
+    // Each code unit is two bytes, and these have a high byte that is not zero.
+    it.each([
+        ['€', '143838320'],
+        ['Kosten in €', '3112713173'],
+        ['中文', '3377253005'],
+        ['😀', '860495273'],
+    ])('hashes both bytes of every code unit in %s', (name, hash) => {
+        expect(alNameHash(name)).toBe(hash);
     });
 
     it('is case-sensitive, because AL hashes a name as it is declared', () => {
