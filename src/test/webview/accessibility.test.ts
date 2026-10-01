@@ -1,4 +1,5 @@
 import { flushPromises } from '@vue/test-utils';
+import { computeAccessibleName } from 'dom-accessibility-api';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { nextTick } from 'vue';
 
@@ -13,33 +14,6 @@ import type { TransUnitDto } from '../../shared/dto';
 /** Checked against what the DOM of a mounted app says, not what the components meant to say. */
 
 const INTERACTIVE = 'a[href], button, input, select, textarea';
-
-/**
- * The name a screen reader would read, by the parts of the accname algorithm that apply
- * here: `aria-label`, `aria-labelledby`, a wrapping or associated `<label>`, own text.
- *
- * The wrapping `<label>` is why this is a function and not a check for `aria-label` — the
- * search box is named that way, and a scan without it reports a defect that is not there.
- */
-function accessibleName(element: Element): string {
-    const label = element.getAttribute('aria-label');
-    if (label !== null && label.trim() !== '') {
-        return label;
-    }
-    const labelledBy = element.getAttribute('aria-labelledby');
-    if (labelledBy !== null) {
-        const named = labelledBy.split(/\s+/).map(id => element.ownerDocument.getElementById(id)?.textContent ?? '').join(' ');
-        if (named.trim() !== '') {
-            return named.trim();
-        }
-    }
-    const wrapping = element.closest('label');
-    if (wrapping !== null && (wrapping.textContent ?? '').trim() !== '') {
-        return (wrapping.textContent ?? '').trim();
-    }
-    const own = (element.textContent ?? '').trim();
-    return own !== '' ? own : '';
-}
 
 async function app(): Promise<ReturnType<typeof mountApp>> {
     const wrapper = mountApp(DEV_DOCUMENT);
@@ -62,10 +36,24 @@ describe('what a screen reader is told', () => {
         const wrapper = await app();
         const elements = [...wrapper.element.querySelectorAll(INTERACTIVE)];
 
-        const unnamed = elements.filter(each => accessibleName(each) === '').map(each => each.outerHTML.slice(0, 80));
+        const unnamed = elements.filter(each => computeAccessibleName(each) === '').map(each => each.outerHTML.slice(0, 80));
 
         expect(elements.length).toBeGreaterThan(20);
         expect(unnamed).toEqual([]);
+    });
+
+    it('names each target field by the label that points at it', async () => {
+        const wrapper = await app();
+        await wrapper.get('.edit-toggle').trigger('click');
+        await flushPromises();
+        const fields = [...wrapper.element.querySelectorAll('textarea')];
+
+        expect(fields.length).toBeGreaterThan(0);
+        for (const field of fields) {
+            const label = wrapper.element.querySelector(`label[for="${field.id}"]`);
+            expect(label?.contains(field)).toBe(false);
+            expect(computeAccessibleName(field)).toBe(label?.textContent?.trim());
+        }
     });
 
     it('takes no element out of the tab order and puts none ahead of it', async () => {
