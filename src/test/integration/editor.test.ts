@@ -1,5 +1,8 @@
 import * as vscode from 'vscode';
 
+import { parseXliff } from '../../extension/xliff/parser';
+import { validateStructure } from '../../extension/xliff/validate';
+
 import { assertArrayEqual, assertContains, assertEqual, assertOk } from './assertions';
 
 const VIEW_TYPE = 'xliff-viewer.editor';
@@ -19,21 +22,21 @@ function findExtension(): vscode.Extension<unknown> {
     return extension;
 }
 
-const CORPUS = [
-    'Contoso App.g.xlf',
-    'Contoso App.en-US.xlf',
-    'Contoso App.de-DE.xlf',
-    'Fabrikam Base.de-DE.xlf',
-    'minimal.xlf',
-];
-
-function exampleUri(name: string): vscode.Uri {
+function fixtureFolder(): vscode.Uri {
     const folders = vscode.workspace.workspaceFolders;
     assertOk(folders && folders.length > 0, 'no workspace folder is open');
-    return vscode.Uri.joinPath(folders[0].uri, 'src', 'test', 'fixtures', 'xliff', name);
+    return vscode.Uri.joinPath(folders[0].uri, 'src', 'test', 'fixtures', 'xliff');
 }
 
-const fixtureUri = (): vscode.Uri => exampleUri('minimal.xlf');
+const fixtureUri = (name: string): vscode.Uri => vscode.Uri.joinPath(fixtureFolder(), name);
+
+/** Every fixture in the folder, so a new one is opened without being listed here. */
+async function fixtureNames(): Promise<string[]> {
+    const entries = await vscode.workspace.fs.readDirectory(fixtureFolder());
+    const names = entries.filter(([name, type]) => type === vscode.FileType.File && name.endsWith('.xlf')).map(([name]) => name);
+    assertOk(names.includes('minimal.xlf'), 'the fixture folder did not list its files');
+    return names.sort();
+}
 
 suite('XLIFF custom editor', () => {
     test('the extension activates', async () => {
@@ -50,7 +53,7 @@ suite('XLIFF custom editor', () => {
         assertOk(editors, 'no customEditors contribution');
         assertEqual(editors.length, 1, 'expected exactly one custom editor');
         assertEqual(editors[0].viewType, VIEW_TYPE, 'wrong viewType');
-        // Must stay "default" or "Reopen with Text Editor" disappears.
+        // "default" opens .xlf files in the viewer.
         assertEqual(editors[0].priority, 'default', 'priority must be "default"');
         assertArrayEqual(
             editors[0].selector.map(entry => entry.filenamePattern).sort(),
@@ -59,40 +62,27 @@ suite('XLIFF custom editor', () => {
         );
     });
 
-    test('opens a fixture with the custom editor', async () => {
-        await vscode.commands.executeCommand('vscode.openWith', fixtureUri(), VIEW_TYPE);
+    test('opens every fixture in this custom editor, and every fixture parses', async () => {
+        for (const name of await fixtureNames()) {
+            const uri = fixtureUri(name);
+            await vscode.commands.executeCommand('vscode.openWith', uri, VIEW_TYPE);
+            try {
+                const input = vscode.window.tabGroups.activeTabGroup.activeTab?.input;
+                assertOk(input instanceof vscode.TabInputCustom, `${name} did not open in a custom editor`);
+                assertEqual(input.viewType, VIEW_TYPE, `${name} opened in another custom editor`);
 
-        const activeTab = vscode.window.tabGroups.activeTabGroup.activeTab;
-        assertOk(activeTab, 'no active tab after opening the fixture');
-        assertEqual(activeTab.label, 'minimal.xlf', 'unexpected active tab');
-
-        await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-    });
-
-    test('every example file opens with the custom editor', async () => {
-        // The host is where a parse failure would surface, and the web host is where it
-        // would surface differently; this suite runs in both.
-        for (const name of CORPUS) {
-            await vscode.commands.executeCommand('vscode.openWith', exampleUri(name), VIEW_TYPE);
-
-            const activeTab = vscode.window.tabGroups.activeTabGroup.activeTab;
-            assertOk(activeTab, `no active tab after opening ${name}`);
-            assertEqual(activeTab.label, name, `unexpected active tab for ${name}`);
-
-            await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+                const text = (await vscode.workspace.openTextDocument(uri)).getText();
+                validateStructure(parseXliff(text));
+            } finally {
+                await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+            }
         }
     });
 
-    test('every example file still opens as plain text', async () => {
-        for (const name of CORPUS) {
-            const document = await vscode.workspace.openTextDocument(exampleUri(name));
+    test('every fixture still opens as plain text', async () => {
+        for (const name of await fixtureNames()) {
+            const document = await vscode.workspace.openTextDocument(fixtureUri(name));
             assertContains(document.getText(), '<xliff', `${name} did not load as XLIFF text`);
         }
-    });
-
-    test('the same fixture still opens as plain text', async () => {
-        const document = await vscode.workspace.openTextDocument(fixtureUri());
-        assertContains(document.getText(), '<xliff', 'fixture did not load as XLIFF text');
-        assertOk(document.getText().length > 0, 'fixture is empty');
     });
 });
