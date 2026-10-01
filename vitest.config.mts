@@ -18,7 +18,7 @@ const WORKER_MEMORY = 512 * 1024 * 1024;
 const MAX_WORKERS = Math.max(1, Math.min(availableParallelism(), Math.floor(totalmem() / WORKER_MEMORY)));
 
 /**
- * Four projects:
+ * Five projects:
  *
  *   data    — pure. NO alias for `vscode`, deliberately: a data test that imports it
  *             must fail to resolve. That failure is the standing proof that
@@ -26,9 +26,11 @@ const MAX_WORKERS = Math.max(1, Math.min(availableParallelism(), Math.floor(tota
  *             UPDATE_FIXTURES=1 its global setup rewrites the generated fixtures first.
  *   host    — `vscode` aliased to the hand-written mock.
  *   webview — jsdom, the Vue plugin, and an `acquireVsCodeApi` stub.
+ *   repo    — checks on the repository rather than on code: the manifest, the docs, the
+ *             webview's sources and what the package ships. The last needs a build.
  *   perf    — the wall-clock budgets, one file at a time and on their own: a timing
  *             assertion that depends on what else is running is not an assertion.
- *             `npm test` runs this project after the other three.
+ *             `npm test` runs this project after the other four.
  */
 export default defineConfig({
     test: {
@@ -40,6 +42,13 @@ export default defineConfig({
                     environment: 'node',
                     include: ['src/test/data/**/*.test.ts'],
                     globalSetup: [resolvePath('./src/test/setup/fixtures.ts')],
+                },
+            },
+            {
+                test: {
+                    name: 'repo',
+                    environment: 'node',
+                    include: ['src/test/repo/**/*.test.ts'],
                 },
             },
             {

@@ -166,8 +166,8 @@ npm ci                   # install exactly what package-lock.json pins
 npm run compile          # check-types + lint + esbuild (both targets) + vite build
 npm run watch            # all four watchers, which is what F5 starts
 npm run check-types      # tsc for the host and tests, vue-tsc for the webview
-npm run lint             # eslint src
-npm test                 # build, then vitest: data, host, webview and the perf budgets
+npm run lint             # eslint src, with no warning allowed
+npm test                 # build, then vitest: data, host, webview, repo and the perf budgets
 npm run test:integration # build, then @vscode/test-electron and @vscode/test-web
 npm run dev:webview      # the webview alone, against a fixture document
 npm run package          # vsce package
@@ -175,11 +175,11 @@ npm run package          # vsce package
 
 `npm run dev:webview` serves the UI with no extension host behind it, rendering a projection of the largest fixture file. A drift test rebuilds that document from the file and fails if it has been hand-edited, so the dev server always shows what the extension actually sends.
 
-**Install scripts are opt-in.** npm 11 runs a dependency's install script only when `allowScripts` in `package.json` approves it. Two are: `@playwright/browser-chromium`, which downloads the browser the web integration tests run in, and `esbuild`. Without the first, those tests cannot start — and they **hang** rather than fail, so if they ever sit silent after a dependency update, check `npm install-scripts ls` first. `@vscode/vsce-sign` is denied: packaging does not need it, and releases are published by CI.
+**Install scripts are opt-in.** npm 11 runs a dependency's install script only when `allowScripts` in `package.json` approves it. Two are: `@playwright/browser-chromium`, which downloads the browser the web integration tests run in, and `esbuild`. Without the first, those tests cannot start — and they **hang** rather than fail, so if they ever sit silent after a dependency update, check `npm install-scripts ls` first. `@vscode/vsce-sign` is denied: packaging does not need it, and releases are published by CI. So is `unrs-resolver`, whose script only re-checks a native binding that already arrives as a locked optional package.
 
 ### Tests
 
-Four Vitest projects: `data` (pure, and deliberately *without* a `vscode` alias, so a data test that imports it fails to resolve), `host` (a hand-written `vscode` mock), `webview` (jsdom), and `perf` (the wall-clock budgets, run serially so they measure the code rather than the load).
+Five Vitest projects: `data` (pure, and deliberately *without* a `vscode` alias, so a data test that imports it fails to resolve), `host` (a hand-written `vscode` mock), `webview` (jsdom), `repo` (checks on the repository rather than the code: the manifest, the docs, the webview's sources and what the package ships, which needs a build), and `perf` (the wall-clock budgets, run serially so they measure the code rather than the load).
 
 The XLIFF the tests read is invented. `src/test/fixtures/corpus.ts` generates every file in `src/test/fixtures/xliff/` in the exact shape the AL compiler writes, along with the AL source of its apps in `src/test/fixtures/al/`, and the dev server's documents in `src/webview/fixtures/` are built from the same corpus. A test fails if a committed file drifts from what is generated. After changing a generator, rewrite the files with the command below; the `data` project writes them once, before any of its tests run (in PowerShell, set `$env:UPDATE_FIXTURES = '1'` first and run the command without the prefix):
 
