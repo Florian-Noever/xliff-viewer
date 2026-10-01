@@ -230,7 +230,7 @@ describe('the object-type level', () => {
 
     it('keeps a Table and a Page of one name apart, in different groups', () => {
         // The hash is of the *name*, so those two collide on hash alone.
-        const tree = grouped('Table 1932994227 - Property 1', 'Page 1932994227 - Property 1');
+        const tree = grouped(`Table ${alNameHash('Contoso Customer')} - Property 1`, `Page ${alNameHash('Contoso Customer')} - Property 1`);
 
         expect(tree.map(node => node.key)).toEqual([`${OBJECT_TYPE_GROUP_PREFIX}Table`, `${OBJECT_TYPE_GROUP_PREFIX}Page`]);
         expect(tree.every(node => node.children.length === 1)).toBe(true);

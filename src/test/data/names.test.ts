@@ -28,7 +28,7 @@ const namesOf = (id: string, note: string | undefined): string[] | undefined => 
 
 describe('hasAlStructure', () => {
     it('accepts a hashed AL id', () => {
-        expect(hasAlStructure('Table 3783554337 - Property 2879900210')).toBe(true);
+        expect(hasAlStructure(`Table ${h('PTE Contoso Methods Setup')} - Property 2879900210`)).toBe(true);
     });
 
     it('accepts a readable AL id, quoted names and all', () => {
@@ -38,14 +38,14 @@ describe('hasAlStructure', () => {
     it('rejects an id with a segment that carries no value', () => {
         // id="1" is a legal XLIFF id carrying no AL structure.
         expect(hasAlStructure('1')).toBe(false);
-        expect(hasAlStructure('Table 3783554337 - Property')).toBe(false);
+        expect(hasAlStructure(`Table ${h('PTE Contoso Methods Setup')} - Property`)).toBe(false);
     });
 });
 
 describe('readGeneratorNote', () => {
     it('reads the declaring object, then one name per segment after it', () => {
         expect(read(
-            'Table 3783554337 - Field 4264183382 - Property 2879900210',
+            `Table ${h('PTE Contoso Methods Setup')} - Field ${h('Contoso Method')} - Property 2879900210`,
             'Table PTE Contoso Methods Setup - Field Contoso Method - Property Caption',
         )).toEqual({ declaring: { type: 'Table', name: 'PTE Contoso Methods Setup' }, names: ['Contoso Method', 'Caption'] });
     });
@@ -53,14 +53,14 @@ describe('readGeneratorNote', () => {
     it('keeps an object name that itself contains the separator', () => {
         // The whole reason for anchoring on types: splitting on " - " breaks such a name.
         expect(namesOf(
-            'Report 4233182435 - Property 2879900210',
+            `Report ${h('Contoso Orders - Summary')} - Property ${h('Caption')}`,
             'Report Contoso Orders - Summary - Property Caption',
         )).toEqual(['Contoso Orders - Summary', 'Caption']);
     });
 
     it('handles a name with both a separator and dots', () => {
         expect(namesOf(
-            'Report 4136116345 - NamedType 3401550051',
+            `Report ${h('Contoso Calc. Lines - Req. Wksh.')} - NamedType ${h('Text042Lbl')}`,
             'Report Contoso Calc. Lines - Req. Wksh. - NamedType Text042Lbl',
         )).toEqual(['Contoso Calc. Lines - Req. Wksh.', 'Text042Lbl']);
     });

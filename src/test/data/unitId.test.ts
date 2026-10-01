@@ -22,11 +22,12 @@ const unitsOf = (name: string) => {
     return [...iterateUnits(document)];
 };
 const CORPUS = ['Contoso App.g.xlf', 'Fabrikam Base.de-DE.xlf'];
+const h = alNameHash;
 
 describe('splitUnitId', () => {
     it('splits a hashed id on the separator', () => {
-        expect(splitUnitId('Table 3783554337 - Field 4264183382 - Property 2879900210'))
-            .toEqual(['Table 3783554337', 'Field 4264183382', 'Property 2879900210']);
+        expect(splitUnitId(`Table ${h('PTE Contoso Methods Setup')} - Field ${h('Contoso Method')} - Property 2879900210`))
+            .toEqual([`Table ${h('PTE Contoso Methods Setup')}`, `Field ${h('Contoso Method')}`, 'Property 2879900210']);
     });
 
     it('does not split inside a quoted name', () => {
@@ -52,8 +53,8 @@ describe('splitUnitId', () => {
 
 describe('parseUnitId', () => {
     it('reads a hashed segment as type and hash', () => {
-        expect(parseUnitId('Table 3783554337 - Property 2879900210')).toEqual([
-            { type: 'Table', value: '3783554337', hash: '3783554337' },
+        expect(parseUnitId(`Table ${h('PTE Contoso Methods Setup')} - Property 2879900210`)).toEqual([
+            { type: 'Table', value: h('PTE Contoso Methods Setup'), hash: h('PTE Contoso Methods Setup') },
             { type: 'Property', value: '2879900210', hash: '2879900210' },
         ]);
     });
@@ -85,7 +86,7 @@ describe('parseUnitId', () => {
 
 describe('canonicalPath', () => {
     it('leaves a hashed id exactly as it is', () => {
-        const id = 'Table 3783554337 - Field 4264183382 - Property 2879900210';
+        const id = `Table ${h('PTE Contoso Methods Setup')} - Field ${h('Contoso Method')} - Property 2879900210`;
         expect(canonicalPath(parseUnitId(id))).toBe(id);
     });
 
