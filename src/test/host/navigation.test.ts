@@ -60,9 +60,15 @@ describe('findUnitOffset', () => {
         expect(lineOf(DOCUMENT, 'Codeunit 9 & Friends - NamedType 4')).toBe(14);
     });
 
-    it('anchors to the element, so an id quoted inside a note does not win', () => {
-        // "Table 1 - Property 2" also appears in the Developer note of the next unit.
-        expect(lineOf(DOCUMENT, 'Table 1 - Property 2')).toBe(5);
+    it('anchors to the element, so the id written in an earlier note does not win', () => {
+        const text = [
+            '<trans-unit id="Table 1 - Property 1">',
+            '  <note from="Developer">Was id="Table 1 - Property 2" before</note>',
+            '</trans-unit>',
+            '<trans-unit id="Table 1 - Property 2">',
+        ].join('\n');
+
+        expect(lineOf(text, 'Table 1 - Property 2')).toBe(3);
     });
 
     it('is undefined for a unit the text does not carry', () => {
