@@ -17,6 +17,7 @@ import {
     flushLogs,
     flushProgressTitles,
     flushShownDocuments,
+    holdFileRead,
     removeVirtualFile,
     resetMocks,
     setConfigOverride,
@@ -307,6 +308,54 @@ describe('what survives a re-parse', () => {
         await settle();
 
         expect(patchedUnits(harness.posted)).toEqual([expect.objectContaining({ target: 'Kundin', orphaned: true })]);
+    });
+
+    describe('while the base file is still being read', () => {
+        async function opened(text: string) {
+            setVirtualFile('/w/App.g.xlf', BASE);
+            const release = holdFileRead('/w/App.g.xlf');
+            const harness = await openEditor(new FakeTextDocument('/w/App.de-DE.xlf', text));
+            harness.send({ type: WebviewMessageType.ready });
+            await settle();
+            return { harness, release };
+        }
+
+        it('marks the unit as it is now, not as it was when the reading began', async () => {
+            const { harness, release } = await opened(language('Customer'));
+            harness.send({ type: WebviewMessageType.updateTarget, fileIndex: 0, unitId: 'Table 1 - Property 2', value: 'Kundin' });
+            await settle();
+
+            harness.posted.length = 0;
+            release();
+            await settle();
+
+            expect(patchedUnits(harness.posted)).toEqual([expect.objectContaining({ target: 'Kundin', baseSource: 'Customer (renamed)' })]);
+        });
+
+        it('posts nothing from a reading a newer one overtook', async () => {
+            const { harness, release } = await opened(language('Customer'));
+            // The base file now agrees with the document, and the newer reading says so.
+            setVirtualFile('/w/App.g.xlf', BASE.replace('Customer (renamed)', 'Customer'));
+            fireFileWatcher('changed', '/w/App.g.xlf');
+            await settle();
+
+            harness.posted.length = 0;
+            release();
+            await settle();
+
+            expect(patchedUnits(harness.posted)).toEqual([]);
+        });
+
+        it('posts nothing once the panel is closed', async () => {
+            const { harness, release } = await opened(language('Customer'));
+            harness.dispose();
+
+            harness.posted.length = 0;
+            release();
+            await settle();
+
+            expect(harness.posted).toEqual([]);
+        });
     });
 
     it('re-marks the units when the compiler rewrites the base file underneath', async () => {

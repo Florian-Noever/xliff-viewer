@@ -31,6 +31,9 @@ export class BasePairing implements vscode.Disposable {
      * for another reason has to carry its markers along.
      */
     private readonly marked = new Map<number, ReadonlyMap<string, Markers>>();
+    /** Counts announcements, so one that a newer one overtook posts nothing. */
+    private runs = 0;
+    private disposed = false;
 
     public constructor(
         session: XliffDocumentSession,
@@ -48,16 +51,17 @@ export class BasePairing implements vscode.Disposable {
         // The resolver clears its own cache from the same watcher event, and it is constructed
         // first, so by the time this runs both caches are already cold.
         this.subscription = baseIndex?.onDidChange(() => {
-            const state = session.current();
-            if (state.kind === 'document') {
-                this.announce(state.dto);
-            }
+            this.announce();
         });
     }
 
-    /** Posts the base file, then the markers, once resolution finishes. Never awaited: the document must not wait for it. */
-    public announce(dto: XliffDocumentDto): void {
-        void this.announceBaseFile(dto);
+    /**
+     * Posts the base file, then the markers, once resolution finishes. Never awaited: the
+     * document must not wait for it. Only the latest announcement posts anything.
+     */
+    public announce(): void {
+        const run = ++this.runs;
+        void this.announceBaseFile(() => run === this.runs && !this.disposed);
     }
 
     /** The unit as this panel shows it: with the markers it was last sent, if any. */
@@ -66,17 +70,34 @@ export class BasePairing implements vscode.Disposable {
     }
 
     public dispose(): void {
+        this.disposed = true;
         this.subscription?.dispose();
     }
 
-    /** Posts `baseFile` once resolution finishes. Not finding one is a result, not a failure. */
-    private async announceBaseFile(dto: XliffDocumentDto): Promise<void> {
+    /**
+     * Posts `baseFile` once resolution finishes. Not finding one is a result, not a failure.
+     *
+     * Reads the document from the session after each wait rather than holding on to it: an
+     * edit can land in the meantime, and markers built from an older payload would put its
+     * old target back on screen.
+     */
+    private async announceBaseFile(isCurrent: () => boolean): Promise<void> {
+        const state = this.session.current();
+        if (state.kind !== 'document') {
+            return;
+        }
+
         let resolved;
         try {
-            resolved = await this.baseFiles.resolve(this.session.uri, dto.isBaseFile);
+            resolved = await this.baseFiles.resolve(this.session.uri, state.dto.isBaseFile);
         } catch (error: unknown) {
             Logger.warn(`Base-file resolution failed for ${this.session.uri.path}: ${error instanceof Error ? error.message : 'unknown error'}`);
-            this.post({ type: ExtensionMessageType.baseFile, payload: null });
+            if (isCurrent()) {
+                this.post({ type: ExtensionMessageType.baseFile, payload: null });
+            }
+            return;
+        }
+        if (!isCurrent()) {
             return;
         }
 
@@ -92,8 +113,12 @@ export class BasePairing implements vscode.Disposable {
         const sources = resolved.uri === undefined || this.baseIndex === undefined
             ? new Map<string, string>()
             : await this.baseIndex.sourcesOf(resolved.uri);
+        const latest = this.session.current();
+        if (!isCurrent() || latest.kind !== 'document') {
+            return;
+        }
 
-        this.announceStaleUnits(sources, dto);
+        this.announceStaleUnits(sources, latest.dto);
     }
 
     /**

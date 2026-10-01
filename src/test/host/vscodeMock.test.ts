@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import * as vscode from 'vscode';
 
-import { flushAppliedEdits, flushErrorMessages, flushFileReads, resetMocks, setApplyEditResult, setConfigOverride, setVirtualFile } from '../__mocks__/vscode';
+import { flushAppliedEdits, flushErrorMessages, flushFileReads, holdFileRead, resetMocks, setApplyEditResult, setConfigOverride, setVirtualFile } from '../__mocks__/vscode';
 
 afterEach(() => {
     resetMocks();
@@ -24,6 +24,23 @@ describe('vscode mock', () => {
         const bytes = await vscode.workspace.fs.readFile(vscode.Uri.file('/ws/App.g.xlf'));
         expect(new TextDecoder().decode(bytes)).toBe('<xliff/>');
         expect(flushFileReads()).toEqual(['/ws/App.g.xlf']);
+    });
+
+    it('holds a read until released, answering with the file as it was when asked', async () => {
+        setVirtualFile('/ws/App.g.xlf', 'before');
+        const release = holdFileRead('/ws/App.g.xlf');
+        let answer: string | undefined;
+        const reading = vscode.workspace.fs.readFile(vscode.Uri.file('/ws/App.g.xlf')).then((bytes) => {
+            answer = new TextDecoder().decode(bytes);
+        });
+
+        setVirtualFile('/ws/App.g.xlf', 'after');
+        await Promise.resolve();
+        expect(answer).toBeUndefined();
+
+        release();
+        await reading;
+        expect(answer).toBe('before');
     });
 
     it('rejects a missing file', async () => {

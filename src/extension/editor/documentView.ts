@@ -84,7 +84,7 @@ export class XliffDocumentView implements DocumentView, vscode.Disposable {
         // Resolution is async and must not hold up the document. The webview shows
         // the tree first and learns about the base file when it is known.
         if (state.kind === 'document') {
-            this.pairing?.announce(state.dto);
+            this.pairing?.announce();
         }
         this.announceAl();
     }
@@ -104,7 +104,7 @@ export class XliffDocumentView implements DocumentView, vscode.Disposable {
         }
         postUpdate(change.state, this.post);
         if (change.state.kind === 'document') {
-            this.pairing?.announce(change.state.dto);
+            this.pairing?.announce();
         }
     }
 

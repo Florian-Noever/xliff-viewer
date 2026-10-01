@@ -25,6 +25,7 @@ let infoMessages: string[] = [];
 let messageCalls: MessageCall[] = [];
 let appliedEdits: EditRecord[] = [];
 let applyEditResult: boolean | Error = true;
+const heldReads = new Map<string, Promise<void>>();
 let fileReads: string[] = [];
 let fileWrites: { path: string; content: string }[] = [];
 let configOverrides: Record<string, unknown> = {};
@@ -352,13 +353,18 @@ export const workspace = {
         },
     }),
     fs: {
-        readFile: (uri: Uri): Promise<Uint8Array> => {
+        readFile: async (uri: Uri): Promise<Uint8Array> => {
             fileReads.push(uri.path);
             const content = virtualFiles[uri.path];
-            if (content === undefined) {
-                return Promise.reject(new Error(`ENOENT: ${uri.path}`));
+            const held = heldReads.get(uri.path);
+            if (held !== undefined) {
+                heldReads.delete(uri.path);
+                await held;
             }
-            return Promise.resolve(new TextEncoder().encode(content));
+            if (content === undefined) {
+                throw new Error(`ENOENT: ${uri.path}`);
+            }
+            return new TextEncoder().encode(content);
         },
         writeFile: (uri: Uri, content: Uint8Array): Promise<void> => {
             const text = new TextDecoder().decode(content);
@@ -628,6 +634,20 @@ export function removeVirtualFile(path: string): void {
 }
 
 /** Which QuickPick entry the next `showQuickPick` returns; undefined means cancelled. */
+/**
+ * Holds the next `workspace.fs.readFile` of `path` until the returned function is called. The
+ * read answers with the file as it was when it was asked for, as a read already under way does.
+ */
+export function holdFileRead(path: string): () => void {
+    let release = (): void => { };
+    heldReads.set(path, new Promise<void>((resolve) => {
+        release = resolve;
+    }));
+    return () => {
+        release();
+    };
+}
+
 /** What `workspace.applyEdit` answers from now on: applied, refused, or rejected with this error. */
 export function setApplyEditResult(result: boolean | Error): void {
     applyEditResult = result;
@@ -750,6 +770,7 @@ export function resetMocks(): void {
     messageCalls = [];
     appliedEdits = [];
     applyEditResult = true;
+    heldReads.clear();
     fileReads = [];
     fileWrites = [];
     configOverrides = {};
