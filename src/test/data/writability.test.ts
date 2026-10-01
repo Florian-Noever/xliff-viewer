@@ -1,10 +1,7 @@
-import { readdirSync, readFileSync } from 'node:fs';
-import { fileURLToPath, URL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { parseXliff } from '../../extension/xliff/parser';
-
-const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
+import { FIXTURE_NAMES, readFixture } from '../support/fixtures';
 
 /** A one-file document whose <body> holds `body`. */
 const document = (body: string, beforeBody = ''): string => `<?xml version="1.0" encoding="utf-8"?>
@@ -50,8 +47,8 @@ describe('what an edit could not write back', () => {
         expect(unsupportedIn('<xliff version="1.2"><file source-language="en"><body><trans-unit id="a"><source>s</source></trans-unit></body></file></xliff>')).toBeUndefined();
     });
 
-    it.each(readdirSync(FIXTURES).filter(name => name.endsWith('.xlf')))('finds nothing in %s', (name) => {
-        expect(unsupportedIn(readFileSync(`${FIXTURES}/${name}`, 'utf8'))).toBeUndefined();
+    it.each(FIXTURE_NAMES)('finds nothing in %s', (name) => {
+        expect(unsupportedIn(readFixture(name))).toBeUndefined();
     });
 });
 

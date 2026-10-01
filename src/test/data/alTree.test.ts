@@ -1,29 +1,11 @@
-import { readFileSync } from 'node:fs';
-import { fileURLToPath, URL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { buildAlTree, groupRoots, NO_NAMESPACE_GROUP_KEY, OBJECT_TYPE_GROUP_PREFIX } from '../../extension/xliff/alTree';
 import { alNameHash } from '../../extension/xliff/alNameHash';
-import { parseXliff } from '../../extension/xliff/parser';
-import { iterateUnits } from '../../shared/model';
 import { iterateNodes, iterateUnitNodes } from '../support/alTreeWalk';
+import { AL_FIXTURE_NAMES, FIXTURE, FIXTURE_NAMES, fixtureUnits } from '../support/fixtures';
 
 import type { XliffNote, XliffTransUnit } from '../../shared/model';
-
-const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
-const CORPUS = ['Contoso App.g.xlf', 'Contoso App.en-US.xlf', 'Contoso App.de-DE.xlf', 'Fabrikam Base.de-DE.xlf', 'minimal.xlf', 'Northwind App.g.xlf', 'Northwind App.de-DE.xlf'];
-/** Every corpus file but the hand-written one, whose single id has no AL structure. */
-const AL_CORPUS = CORPUS.filter(name => name !== 'minimal.xlf');
-const parsed = new Map<string, ReturnType<typeof parseXliff>>();
-/** Parsed once per file: several tests walk every file, and the large one is megabytes. */
-const unitsOf = (name: string) => {
-    let document = parsed.get(name);
-    if (document === undefined) {
-        document = parseXliff(readFileSync(`${FIXTURES}/${name}`, 'utf8'));
-        parsed.set(name, document);
-    }
-    return [...iterateUnits(document)];
-};
 
 function unit(id: string, generatorNote?: string): XliffTransUnit {
     const notes: XliffNote[] = generatorNote === undefined
@@ -33,7 +15,7 @@ function unit(id: string, generatorNote?: string): XliffTransUnit {
 }
 
 describe('the large corpus file', () => {
-    const units = unitsOf('Fabrikam Base.de-DE.xlf');
+    const units = fixtureUnits(FIXTURE.large);
     const roots = buildAlTree(units);
 
     it('yields the known number of root objects', () => {
@@ -61,7 +43,7 @@ describe('the large corpus file', () => {
 
 describe('grouping is by hash, never by name', () => {
     // AL hashes a symbol's *name*, so a Table and a Page of one name share a hash.
-    const largeUnits = unitsOf('Fabrikam Base.de-DE.xlf');
+    const largeUnits = fixtureUnits(FIXTURE.large);
     const largeRoots = buildAlTree(largeUnits);
     const pages = new Map(largeRoots.filter(node => node.segment.type === 'Page').map(node => [node.segment.hash, node]));
     const table = largeRoots.find(node => node.segment.type === 'Table' && pages.has(node.segment.hash));
@@ -142,7 +124,7 @@ describe('shape', () => {
     });
 
     it('handles an id with no AL structure as a single flat node', () => {
-        const roots = buildAlTree(unitsOf('minimal.xlf'));
+        const roots = buildAlTree(fixtureUnits(FIXTURE.minimal));
 
         expect(roots).toHaveLength(1);
         expect(roots[0].key).toBe('1');
@@ -179,7 +161,6 @@ describe('shape', () => {
         expect(buildAlTree([])).toEqual([]);
     });
 });
-
 
 describe('the object-type level', () => {
     const grouped = (...ids: string[]) => groupRoots(buildAlTree(ids.map(id => unit(id))));
@@ -237,7 +218,7 @@ describe('the object-type level', () => {
     });
 
     it('groups the large corpus file into its known object types, keeping every root', () => {
-        const tree = groupRoots(buildAlTree(unitsOf('Fabrikam Base.de-DE.xlf')));
+        const tree = groupRoots(buildAlTree(fixtureUnits(FIXTURE.large)));
 
         expect(tree).toHaveLength(9);
         expect(tree.reduce((sum, group) => sum + group.children.length, 0)).toBe(230);
@@ -391,7 +372,7 @@ describe('the namespace level', () => {
 });
 
 describe('the namespaced corpus file', () => {
-    const units = unitsOf('Northwind App.de-DE.xlf');
+    const units = fixtureUnits(FIXTURE.namespacedGerman);
     const tree = groupRoots(buildAlTree(units));
     const objects = [...iterateNodes(tree)].filter(node => node.depth === 1 && node.synthetic !== true);
 
@@ -430,16 +411,16 @@ describe('the namespaced corpus file', () => {
 
 describe('a group key can never be a node key', () => {
     it('holds because no node of any corpus file has a key that starts like a group key', () => {
-        for (const name of CORPUS) {
-            for (const node of iterateNodes(buildAlTree(unitsOf(name)))) {
+        for (const name of FIXTURE_NAMES) {
+            for (const node of iterateNodes(buildAlTree(fixtureUnits(name)))) {
                 expect(node.key.startsWith(OBJECT_TYPE_GROUP_PREFIX) || node.key === NO_NAMESPACE_GROUP_KEY, `${name}: ${node.key}`).toBe(false);
             }
         }
     });
 
     it('holds for every group the corpus produces, at every level', () => {
-        for (const name of AL_CORPUS) {
-            const all = unitsOf(name);
+        for (const name of AL_FIXTURE_NAMES) {
+            const all = fixtureUnits(name);
             const ids = new Set(all.map(each => each.id));
             const groups = [...iterateNodes(groupRoots(buildAlTree(all)))].filter(node => node.synthetic === true);
 

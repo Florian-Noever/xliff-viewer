@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { fileURLToPath, URL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { projectDocument } from '../../extension/xliff/dto';
@@ -7,16 +5,13 @@ import { parseXliff } from '../../extension/xliff/parser';
 import { iterateUnits } from '../../shared/model';
 import { summariseTree, summariseUnits, XliffState } from '../../shared/state';
 import { generateNamespacedFabrikam } from '../fixtures/corpus';
+import { AL_FIXTURE_NAMES, FIXTURE, FIXTURE_NAMES, readFixture } from '../support/fixtures';
 
 import type { AlNodeDto, TransUnitDto, XliffDocumentDto, XliffFileDto } from '../../shared/dto';
 import type { UnitState } from '../../shared/state';
 
-const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
-const AL_FILES = ['Contoso App.g.xlf', 'Contoso App.en-US.xlf', 'Contoso App.de-DE.xlf', 'Fabrikam Base.de-DE.xlf', 'Northwind App.g.xlf', 'Northwind App.de-DE.xlf'];
-const CORPUS = [...AL_FILES, 'minimal.xlf'];
-
 function project(name: string): XliffDocumentDto {
-    const text = readFileSync(`${FIXTURES}/${name}`, 'utf8');
+    const text = readFixture(name);
     return projectDocument(parseXliff(text), { uri: `file:///${name}`, fileName: name });
 }
 
@@ -55,13 +50,13 @@ const twoFiles = (id: string) => `<?xml version="1.0" encoding="utf-8"?>
 
 describe('shape', () => {
     it('gives every corpus file exactly one XliffFileDto', () => {
-        for (const name of CORPUS) {
+        for (const name of FIXTURE_NAMES) {
             expect(project(name).files, name).toHaveLength(1);
         }
     });
 
     it('carries the file metadata the header needs', () => {
-        const [file] = project('Fabrikam Base.de-DE.xlf').files;
+        const [file] = project(FIXTURE.large).files;
 
         expect(file.index).toBe(0);
         expect(file.sourceLanguage).toBe('en-US');
@@ -71,7 +66,7 @@ describe('shape', () => {
     });
 
     it('holds no model internals', () => {
-        const serialised = JSON.stringify(project('Contoso App.de-DE.xlf'));
+        const serialised = JSON.stringify(project(FIXTURE.german));
 
         expect(serialised).not.toContain('attributes');
         expect(serialised).not.toContain('hasBom');
@@ -81,7 +76,7 @@ describe('shape', () => {
     });
 
     it('carries no per-node summary — the webview rolls up', () => {
-        const serialised = JSON.stringify(project('Contoso App.de-DE.xlf'));
+        const serialised = JSON.stringify(project(FIXTURE.german));
 
         expect(serialised).not.toContain('translatedCount');
         expect(serialised).not.toContain('byState');
@@ -91,8 +86,8 @@ describe('shape', () => {
 
 describe('units', () => {
     it('projects every unit of the model exactly once', () => {
-        for (const name of CORPUS) {
-            const text = readFileSync(`${FIXTURES}/${name}`, 'utf8');
+        for (const name of FIXTURE_NAMES) {
+            const text = readFixture(name);
             const modelIds = [...iterateUnits(parseXliff(text))].map(unit => unit.id);
             const dto = projectDocument(parseXliff(text), { uri: 'file:///x', fileName: name });
             const projected = dto.files.flatMap(file => file.units).map(unit => unit.id);
@@ -103,7 +98,7 @@ describe('units', () => {
 
     it('gives every unit exactly one node whose key is its id', () => {
         // The DTO ships no `unitId`: a node carries a unit precisely when its key is one.
-        for (const name of CORPUS) {
+        for (const name of FIXTURE_NAMES) {
             for (const file of project(name).files) {
                 const keys = [...walk(file.tree)].map(node => node.key);
 
@@ -116,7 +111,7 @@ describe('units', () => {
     });
 
     it('projects a unit in full', () => {
-        const [file] = project('Fabrikam Base.de-DE.xlf').files;
+        const [file] = project(FIXTURE.large).files;
         const unit = unitById(file, 'Codeunit 562451849 - Method 2574094843 - NamedType 2945922260');
 
         expect(unit).toEqual({
@@ -135,7 +130,7 @@ describe('units', () => {
     });
 
     it('carries al-object-target where the file has one', () => {
-        const [file] = project('Fabrikam Base.de-DE.xlf').files;
+        const [file] = project(FIXTURE.large).files;
         const targeted = file.units.filter(unit => unit.alObjectTarget !== undefined);
 
         expect(targeted.length).toBeGreaterThan(0);
@@ -143,8 +138,8 @@ describe('units', () => {
     });
 
     it('distinguishes an absent target from an empty one', () => {
-        const base = project('Contoso App.g.xlf').files[0];
-        const language = project('Fabrikam Base.de-DE.xlf').files[0];
+        const base = project(FIXTURE.base).files[0];
+        const language = project(FIXTURE.large).files[0];
 
         expect(base.units.every(unit => unit.target === undefined)).toBe(true);
         expect(base.units.every(unit => unit.state === XliffState.missing)).toBe(true);
@@ -168,7 +163,7 @@ describe('units', () => {
     });
 
     it('drops the Xliff Generator note but keeps the Developer one', () => {
-        const [file] = project('Fabrikam Base.de-DE.xlf').files;
+        const [file] = project(FIXTURE.large).files;
         const serialised = JSON.stringify(file);
         const method = [...walk(file.tree)].find(node => node.type === 'Method')?.name ?? '';
 
@@ -231,13 +226,13 @@ describe('several <file> elements', () => {
 
 describe('hasAlIds', () => {
     it('is true for every AL-generated file', () => {
-        for (const name of AL_FILES) {
+        for (const name of AL_FIXTURE_NAMES) {
             expect(project(name).files[0].hasAlIds, name).toBe(true);
         }
     });
 
     it('is false for a file whose ids carry no AL structure', () => {
-        expect(project('minimal.xlf').files[0].hasAlIds).toBe(false);
+        expect(project(FIXTURE.minimal).files[0].hasAlIds).toBe(false);
     });
 
     it('is true when only some ids are AL-shaped, so the tree is still worth showing', () => {
@@ -253,7 +248,7 @@ describe('hasAlIds', () => {
 
 describe('isBaseFile and readOnly', () => {
     it('recognises a .g.xlf', () => {
-        const dto = project('Contoso App.g.xlf');
+        const dto = project(FIXTURE.base);
 
         expect(dto.isBaseFile).toBe(true);
         expect(dto.readOnly).toBe(true);
@@ -262,7 +257,7 @@ describe('isBaseFile and readOnly', () => {
 
     it('does not call a language file a base file just because it translates into its own language', () => {
         // This fixture is en-US → en-US, and every unit has a target.
-        const dto = project('Contoso App.en-US.xlf');
+        const dto = project(FIXTURE.english);
 
         expect(dto.isBaseFile).toBe(false);
         expect(dto.readOnly).toBe(false);
@@ -299,8 +294,8 @@ describe('isBaseFile and readOnly', () => {
     });
 
     it('lets the caller force read-only on a document that is not a base file', () => {
-        const text = readFileSync(`${FIXTURES}/minimal.xlf`, 'utf8');
-        const dto = projectDocument(parseXliff(text), { uri: 'file:///x', fileName: 'minimal.xlf', readOnly: true });
+        const text = readFixture(FIXTURE.minimal);
+        const dto = projectDocument(parseXliff(text), { uri: 'file:///x', fileName: FIXTURE.minimal, readOnly: true });
 
         expect(dto.isBaseFile).toBe(false);
         expect(dto.readOnly).toBe(true);
@@ -308,16 +303,16 @@ describe('isBaseFile and readOnly', () => {
     });
 
     it('distinguishes an unresolved base file from one that was looked for', () => {
-        const text = readFileSync(`${FIXTURES}/minimal.xlf`, 'utf8');
+        const text = readFixture(FIXTURE.minimal);
 
-        expect(projectDocument(parseXliff(text), { uri: 'file:///x', fileName: 'minimal.xlf' }).baseFile).toBeUndefined();
-        expect(projectDocument(parseXliff(text), { uri: 'file:///x', fileName: 'minimal.xlf', baseFile: null }).baseFile).toBeNull();
+        expect(projectDocument(parseXliff(text), { uri: 'file:///x', fileName: FIXTURE.minimal }).baseFile).toBeUndefined();
+        expect(projectDocument(parseXliff(text), { uri: 'file:///x', fileName: FIXTURE.minimal, baseFile: null }).baseFile).toBeNull();
     });
 });
 
 describe('the tree it hands over', () => {
     it('is the same shape summariseTree expects', () => {
-        const [file] = project('Fabrikam Base.de-DE.xlf').files;
+        const [file] = project(FIXTURE.large).files;
         const states = new Map<string, UnitState>(
             file.units.map(unit => [unit.id, { state: unit.state, translate: unit.translate }]),
         );
@@ -330,7 +325,7 @@ describe('the tree it hands over', () => {
     });
 
     it('puts the object types on top, and nothing else there', () => {
-        const [file] = project('Fabrikam Base.de-DE.xlf').files;
+        const [file] = project(FIXTURE.large).files;
 
         expect(file.tree.every(node => node.group === true)).toBe(true);
         expect(file.tree).toHaveLength(9);
@@ -339,7 +334,7 @@ describe('the tree it hands over', () => {
     });
 
     it('marks the groups and only the groups', () => {
-        const [file] = project('Fabrikam Base.de-DE.xlf').files;
+        const [file] = project(FIXTURE.large).files;
         const marked = [...walk(file.tree)].filter(node => node.group === true);
 
         expect(marked).toHaveLength(9);
@@ -347,14 +342,14 @@ describe('the tree it hands over', () => {
     });
 
     it('leaves a file with no AL structure ungrouped', () => {
-        const [file] = project('minimal.xlf').files;
+        const [file] = project(FIXTURE.minimal).files;
 
         expect(file.hasAlIds).toBe(false);
         expect(file.tree.some(node => node.group === true)).toBe(false);
     });
 
     it('names the nodes it can', () => {
-        const [file] = project('Fabrikam Base.de-DE.xlf').files;
+        const [file] = project(FIXTURE.large).files;
         const unnamed = [...walk(file.tree)].filter(node => node.name === undefined);
 
         expect(unnamed).toHaveLength(0);
@@ -363,7 +358,7 @@ describe('the tree it hands over', () => {
 
 describe('budget', () => {
     it('serialises the large file inside the payload budget', () => {
-        const bytes = Buffer.byteLength(JSON.stringify(project('Fabrikam Base.de-DE.xlf')), 'utf8');
+        const bytes = Buffer.byteLength(JSON.stringify(project(FIXTURE.large)), 'utf8');
 
         // A StateSummary on every node, or the generator note, would push the payload past this.
         expect(bytes).toBeLessThan(1250 * 1024);
@@ -381,17 +376,17 @@ describe('budget', () => {
 
 describe('namespaced ids', () => {
     it('marks the file whose ids name namespaces', () => {
-        expect(project('Northwind App.de-DE.xlf').files[0].namespaced).toBe(true);
+        expect(project(FIXTURE.namespacedGerman).files[0].namespaced).toBe(true);
     });
 
     it('leaves every other file unmarked, so its payload is unchanged', () => {
-        for (const name of CORPUS.filter(each => !each.startsWith('Northwind'))) {
+        for (const name of FIXTURE_NAMES.filter(each => !each.startsWith('Northwind'))) {
             expect('namespaced' in project(name).files[0], name).toBe(false);
         }
     });
 
     it('ships the namespaces as real nodes and the levels below them as groups', () => {
-        const [file] = project('Northwind App.de-DE.xlf').files;
+        const [file] = project(FIXTURE.namespacedGerman).files;
         const namespaces = file.tree.filter(node => node.group !== true);
 
         expect(namespaces.every(node => node.type === 'Namespace' && node.name !== undefined)).toBe(true);
@@ -446,7 +441,7 @@ describe('what the header will show', () => {
     const summaryOf = (name: string) => summariseUnits(project(name).files[0].units);
 
     it('gives a partly translated file its known percentage and a worst state of empty', () => {
-        const summary = summaryOf('Fabrikam Base.de-DE.xlf');
+        const summary = summaryOf(FIXTURE.large);
 
         expect(summary.percent).toBe(86);
         expect(summary.worst).toBe(XliffState.empty);
@@ -454,14 +449,14 @@ describe('what the header will show', () => {
     });
 
     it('gives a base file 0 % and a worst state of missing', () => {
-        const summary = summaryOf('Contoso App.g.xlf');
+        const summary = summaryOf(FIXTURE.base);
 
         expect(summary.percent).toBe(0);
         expect(summary.worst).toBe(XliffState.missing);
     });
 
     it('rolls the tree up to the same totals the flat summary reports', () => {
-        const [file] = project('Fabrikam Base.de-DE.xlf').files;
+        const [file] = project(FIXTURE.large).files;
         const summaries = summariseTree(file.tree, new Map(file.units.map(unit => [unit.id, unit])));
 
         const roots = file.tree.reduce((sum, node) => sum + (summaries.get(node.key)?.translatedCount ?? 0), 0);

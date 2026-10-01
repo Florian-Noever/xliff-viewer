@@ -4,8 +4,8 @@ import { fileURLToPath, URL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { FIXTURE, generateAlSources, generateCorpus } from '../fixtures/corpus';
+import { FIXTURE_FOLDER, readFixture } from '../support/fixtures';
 
-const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
 const AL_FIXTURES = fileURLToPath(new URL('../fixtures/al', import.meta.url));
 const generated = generateCorpus();
 const generatedAl = generateAlSources();
@@ -23,12 +23,12 @@ function filesBelow(folder: string, prefix = ''): string[] {
  */
 describe('fixture corpus', () => {
     it('holds exactly the files the generator writes', () => {
-        expect(readdirSync(FIXTURES).sort()).toEqual(generated.map(file => file.name).sort());
+        expect(readdirSync(FIXTURE_FOLDER).sort()).toEqual(generated.map(file => file.name).sort());
     });
 
     it.each(generated.map(file => [file.name, file.text] as const))('%s is exactly what the generator writes', (name, text) => {
         // Compared as a boolean: a failing `toBe` on a megabyte of XML prints all of it.
-        expect(readFileSync(`${FIXTURES}/${name}`, 'utf8') === text, `${name} was edited; regenerate it with UPDATE_FIXTURES=1`).toBe(true);
+        expect(readFixture(name) === text, `${name} was edited; regenerate it with UPDATE_FIXTURES=1`).toBe(true);
     });
 
     it('holds exactly the AL sources the generator writes', () => {
@@ -40,14 +40,14 @@ describe('fixture corpus', () => {
     });
 
     it('reads the minimal fixture as XLIFF text', () => {
-        const text = readFileSync(`${FIXTURES}/${FIXTURE.minimal}`, 'utf8');
+        const text = readFixture(FIXTURE.minimal);
         expect(text).toContain('<xliff');
         expect(text).toContain('<trans-unit id="1">');
     });
 
     it('sees a BOM on the base file and none on the language file', () => {
-        const base = readFileSync(`${FIXTURES}/${FIXTURE.base}`, 'utf8');
-        const language = readFileSync(`${FIXTURES}/${FIXTURE.german}`, 'utf8');
+        const base = readFixture(FIXTURE.base);
+        const language = readFixture(FIXTURE.german);
         expect(base.charCodeAt(0)).toBe(0xfeff);
         expect(language.charCodeAt(0)).not.toBe(0xfeff);
     });

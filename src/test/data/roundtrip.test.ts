@@ -1,9 +1,8 @@
-import { readFileSync, readdirSync } from 'node:fs';
-import { fileURLToPath, URL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { parseXliff } from '../../extension/xliff/parser';
 import { serialiseXliff } from '../../extension/xliff/serialise';
+import { FIXTURE, FIXTURE_NAMES, readFixture } from '../support/fixtures';
 
 /**
  * With a whole-file writer, a serialiser bug does not corrupt one element — it rewrites
@@ -11,8 +10,6 @@ import { serialiseXliff } from '../../extension/xliff/serialise';
  * fix the parser, never weaken the assertion.
  */
 
-const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
-const read = (name: string): string => readFileSync(`${FIXTURES}/${name}`, 'utf8');
 const roundTrip = (text: string): string => serialiseXliff(parseXliff(text));
 
 /** Reports the first differing line, so a failure says where rather than just "not equal". */
@@ -30,22 +27,20 @@ function firstDifference(a: string, b: string): string {
     return 'identical line-by-line but not byte-identical (line endings or trailing newline)';
 }
 
-const CORPUS = readdirSync(FIXTURES);
-
 describe('round-trip invariant', () => {
     it('the corpus holds the expected number of files', () => {
-        expect(CORPUS).toHaveLength(7);
+        expect(FIXTURE_NAMES).toHaveLength(7);
     });
 
     // Asserted per file so a failure names the file.
-    it.each(CORPUS)('%s is byte-identical after parse → serialise', (name) => {
-        const original = read(name);
+    it.each(FIXTURE_NAMES)('%s is byte-identical after parse → serialise', (name) => {
+        const original = readFixture(name);
         const rebuilt = roundTrip(original);
         expect(rebuilt, firstDifference(original, rebuilt)).toBe(original);
     });
 
     it('preserves the BOM and CRLF of the base file', () => {
-        const original = read('Contoso App.g.xlf');
+        const original = readFixture(FIXTURE.base);
         const rebuilt = roundTrip(original);
 
         expect(rebuilt.charCodeAt(0)).toBe(0xfeff);
@@ -54,21 +49,21 @@ describe('round-trip invariant', () => {
     });
 
     it('round-trips the namespace-less, non-AL file', () => {
-        const original = read('minimal.xlf');
+        const original = readFixture(FIXTURE.minimal);
         expect(roundTrip(original)).toBe(original);
     });
 
     it('adds no trailing newline to a file that has none', () => {
-        for (const name of CORPUS) {
-            const original = read(name);
+        for (const name of FIXTURE_NAMES) {
+            const original = readFixture(name);
             expect(/\r?\n$/.test(original), `${name} unexpectedly ends with a newline`).toBe(false);
             expect(/\r?\n$/.test(roundTrip(original)), `${name} gained a trailing newline`).toBe(false);
         }
     });
 
     it('is idempotent — serialising twice changes nothing further', () => {
-        for (const name of CORPUS) {
-            const once = roundTrip(read(name));
+        for (const name of FIXTURE_NAMES) {
+            const once = roundTrip(readFixture(name));
             expect(roundTrip(once), name).toBe(once);
         }
     });
@@ -77,7 +72,7 @@ describe('round-trip invariant', () => {
 
 describe('a single edit changes only that target', () => {
     it('touches nothing outside the edited <target> element', () => {
-        const original = read('Contoso App.de-DE.xlf');
+        const original = readFixture(FIXTURE.german);
         const document = parseXliff(original);
 
         const unit = document.files[0].body.groups[0].units[3];
@@ -106,7 +101,7 @@ describe('a single edit changes only that target', () => {
     });
 
     it('clearing a target produces the self-closing form AL emits', () => {
-        const document = parseXliff(read('Contoso App.de-DE.xlf'));
+        const document = parseXliff(readFixture(FIXTURE.german));
         const unit = document.files[0].body.groups[0].units[0];
         if (unit.target === undefined) {
             throw new Error('fixture unit has no target');
@@ -131,7 +126,7 @@ describe('encoding', () => {
     });
 
     it('encodes > even where it is optional, as AL does', () => {
-        const large = read('Fabrikam Base.de-DE.xlf');
+        const large = readFixture(FIXTURE.large);
         expect(large).toContain('&gt;');
         expect(roundTrip(large)).toBe(large);
     });

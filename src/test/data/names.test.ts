@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { fileURLToPath, URL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { alNameHash } from '../../extension/xliff/alNameHash';
@@ -10,12 +8,9 @@ import {
     hasAlStructure,
     readGeneratorNote,
 } from '../../extension/xliff/names';
-import { parseXliff } from '../../extension/xliff/parser';
 import { parseUnitId } from '../../extension/xliff/unitId';
-import { iterateUnits } from '../../shared/model';
+import { FIXTURE, fixtureUnits } from '../support/fixtures';
 
-const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
-const unitsOf = (name: string) => [...iterateUnits(parseXliff(readFileSync(`${FIXTURES}/${name}`, 'utf8')))];
 const h = alNameHash;
 
 const read = (id: string, note: string | undefined) => readGeneratorNote(parseUnitId(id), note);
@@ -121,10 +116,10 @@ describe('names for every corpus unit', () => {
     // The regression guard for the whole naming approach. It is an exact count on
     // purpose: a percentage threshold would let a regression hide.
     it.each([
-        ['Contoso App.g.xlf', 500],
-        ['Fabrikam Base.de-DE.xlf', 2500],
+        [FIXTURE.base, 500],
+        [FIXTURE.large, 2500],
     ])('%s: every one of %i units yields names', (file, expected) => {
-        const units = unitsOf(file);
+        const units = fixtureUnits(file);
         expect(units).toHaveLength(expected);
 
         const named = units.filter(unit => read(unit.id, generatorNote(unit)) !== undefined);
@@ -132,13 +127,13 @@ describe('names for every corpus unit', () => {
     });
 
     it('produces one name per id segment, for every unit', () => {
-        for (const unit of unitsOf('Fabrikam Base.de-DE.xlf')) {
+        for (const unit of fixtureUnits(FIXTURE.large)) {
             expect(namesOf(unit.id, generatorNote(unit)), unit.id).toHaveLength(parseUnitId(unit.id).length);
         }
     });
 
     it('never yields an empty name', () => {
-        for (const unit of unitsOf('Contoso App.g.xlf')) {
+        for (const unit of fixtureUnits(FIXTURE.base)) {
             for (const name of namesOf(unit.id, generatorNote(unit)) ?? []) {
                 expect(name.length, unit.id).toBeGreaterThan(0);
             }
@@ -216,7 +211,7 @@ describe('developerHint', () => {
     });
 
     it('parses every developer note in the corpus without throwing', () => {
-        for (const unit of unitsOf('Fabrikam Base.de-DE.xlf')) {
+        for (const unit of fixtureUnits(FIXTURE.large)) {
             expect(() => developerHint(developerNote(unit), 'de-DE'), unit.id).not.toThrow();
         }
     });

@@ -9,7 +9,7 @@ import { goToSource, SourceOutcome } from '../../extension/services/goToSource';
 import { findUnitOffset } from '../../extension/services/navigation';
 import { appUnits, translationRoot } from '../fixtures/alApp';
 import { renderApp } from '../fixtures/alRender';
-import { AL_APPS, CONTOSO_MANIFEST, contosoApp, fabrikamApp, NORTHWIND_MANIFEST } from '../fixtures/corpus';
+import { AL_APPS, CONTOSO_MANIFEST, contosoApp, fabrikamApp, FIXTURE, NORTHWIND_MANIFEST } from '../fixtures/corpus';
 import { NORTHWIND } from '../fixtures/northwind';
 import { assertEqual, assertOk } from './assertions';
 
@@ -117,7 +117,7 @@ suite('AL source, in whichever host this is', () => {
         const alSources = new AlSourceIndexes();
         const baseFiles = new BaseFileResolver();
         try {
-            const outcome = await goToSource(requestFor('Contoso App.de-DE.xlf', unit), alSources, baseFiles);
+            const outcome = await goToSource(requestFor(FIXTURE.german, unit), alSources, baseFiles);
             const editor = vscode.window.activeTextEditor;
 
             assertEqual(outcome, SourceOutcome.declaration, `${unit.id} was not opened in its AL source`);
@@ -135,8 +135,8 @@ suite('AL source, in whichever host this is', () => {
         const [unit] = appUnits(contosoApp());
         const baseFiles = new BaseFileResolver();
         try {
-            const outcome = await goToSource(requestFor('Contoso App.de-DE.xlf', unit), undefined, baseFiles);
-            const editor = editorFor(workspaceUri(...XLIFF, 'Contoso App.g.xlf'));
+            const outcome = await goToSource(requestFor(FIXTURE.german, unit), undefined, baseFiles);
+            const editor = editorFor(workspaceUri(...XLIFF, FIXTURE.base));
 
             assertEqual(outcome, SourceOutcome.baseFile, `${unit.id} was not shown in the base file`);
             assertOk(editor, 'the base file did not open as text');
@@ -155,7 +155,7 @@ suite('AL source, in whichever host this is', () => {
         const alSources = new AlSourceIndexes();
         const baseFiles = new BaseFileResolver();
         try {
-            assertEqual(await goToSource(requestFor('Fabrikam Base.de-DE.xlf', unit), alSources, baseFiles), SourceOutcome.nowhere, `${unit.id} was found somewhere`);
+            assertEqual(await goToSource(requestFor(FIXTURE.large, unit), alSources, baseFiles), SourceOutcome.nowhere, `${unit.id} was found somewhere`);
         } finally {
             alSources.dispose();
             baseFiles.dispose();

@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { fileURLToPath, URL } from 'node:url';
 import { assert, describe, expect, it } from 'vitest';
 
 import { parseXliff } from '../../extension/xliff/parser';
@@ -7,25 +5,13 @@ import { encodeAttribute } from '../../extension/xliff/serialise';
 import { setTarget } from '../../extension/xliff/writer';
 import { escapeRegExp } from '../../shared/escapeRegExp';
 import { iterateUnits } from '../../shared/model';
+import { FIXTURE, FIXTURE_NAMES, readFixture } from '../support/fixtures';
 
 /**
  * An edit made through the real write path changes only the bytes it edits; `roundtrip.test.ts`
  * covers the no-op case. Every fixture runs, because they differ in the ways that break writers:
  * a BOM, CRLF, no namespace, a self-closing target, no targets at all.
  */
-
-const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
-const read = (name: string): string => readFileSync(`${FIXTURES}/${name}`, 'utf8');
-
-const CORPUS = [
-    'Contoso App.g.xlf',
-    'Contoso App.en-US.xlf',
-    'Contoso App.de-DE.xlf',
-    'Fabrikam Base.de-DE.xlf',
-    'minimal.xlf',
-    'Northwind App.g.xlf',
-    'Northwind App.de-DE.xlf',
-];
 
 const EDITED = 'ZZZ EDITED ZZZ';
 
@@ -61,9 +47,9 @@ function differences(before: string, after: string): [number, string, string][] 
 }
 
 describe('one edit changes only what was edited', () => {
-    for (const name of CORPUS) {
+    for (const name of FIXTURE_NAMES) {
         it(`holds for ${name}`, () => {
-            const original = read(name);
+            const original = readFixture(name);
             const document = parseXliff(original);
             const [unit] = [...iterateUnits(document)];
             const hadTarget = unit.target !== undefined;
@@ -101,7 +87,7 @@ describe('one edit changes only what was edited', () => {
         });
 
         it(`preserves the line endings and the BOM of ${name}`, () => {
-            const original = read(name);
+            const original = readFixture(name);
             const document = parseXliff(original);
             const [unit] = [...iterateUnits(document)];
             const edit = setTarget(document, original, { fileIndex: 0, unitId: unit.id, value: EDITED, state: 'translated' });
@@ -118,7 +104,7 @@ describe('one edit changes only what was edited', () => {
         });
 
         it(`keeps every other unit byte-identical in ${name}`, () => {
-            const original = read(name);
+            const original = readFixture(name);
             const document = parseXliff(original);
             const units = [...iterateUnits(document)];
             const edited = units[Math.min(3, units.length - 1)];
@@ -139,7 +125,7 @@ describe('one edit changes only what was edited', () => {
     it('narrows the edit to the element, not to the file', () => {
         // If the trimmed range ever spans more than the edited element, the serialiser has
         // drifted from the file's own formatting.
-        const original = read('Fabrikam Base.de-DE.xlf');
+        const original = readFixture(FIXTURE.large);
         const document = parseXliff(original);
         const [unit] = [...iterateUnits(document)];
 

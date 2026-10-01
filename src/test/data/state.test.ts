@@ -1,10 +1,6 @@
-import { readFileSync } from 'node:fs';
-import { fileURLToPath, URL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { buildAlTree } from '../../extension/xliff/alTree';
-import { parseXliff } from '../../extension/xliff/parser';
-import { iterateUnits } from '../../shared/model';
 import {
     COMPLETE_STATES,
     effectiveState,
@@ -19,6 +15,7 @@ import {
     worstState,
     XliffState,
 } from '../../shared/state';
+import { FIXTURE, fixtureUnits } from '../support/fixtures';
 
 import type { XliffTarget, XliffTransUnit } from '../../shared/model';
 import type { UnitState } from '../../shared/state';
@@ -130,14 +127,8 @@ describe('COMPLETE_STATES', () => {
     });
 });
 
-const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
-
-function unitsOf(name: string): XliffTransUnit[] {
-    return [...iterateUnits(parseXliff(readFileSync(`${FIXTURES}/${name}`, 'utf8')))];
-}
-
 const asUnitState = (each: XliffTransUnit): UnitState => ({ state: effectiveState(each), translate: each.translate });
-const summaryOf = (name: string) => summariseUnits(unitsOf(name).map(asUnitState));
+const summaryOf = (name: string) => summariseUnits(fixtureUnits(name).map(asUnitState));
 
 function unit(id: string, target?: XliffTarget, translate = true): XliffTransUnit {
     return { attributes: { id }, id, translate, source: 's', target, notes: [] };
@@ -181,13 +172,13 @@ describe('effectiveState', () => {
         // The `minimal.xlf` fixture is exactly this. `unknown` rather than `translated`,
         // because `unknown` cannot hide behind a green badge.
         expect(effectiveState(unit('a', target('t')))).toBe(XliffState.unknown);
-        expect(effectiveState(unitsOf('minimal.xlf')[0])).toBe(XliffState.unknown);
+        expect(effectiveState(fixtureUnits(FIXTURE.minimal)[0])).toBe(XliffState.unknown);
     });
 });
 
 describe('the corpus, summarised', () => {
     it('reports the large language file exactly', () => {
-        expect(summaryOf('Fabrikam Base.de-DE.xlf')).toEqual({
+        expect(summaryOf(FIXTURE.large)).toEqual({
             total: 2500,
             translatable: 2500,
             byState: { empty: 362, translated: 2138 },
@@ -198,7 +189,7 @@ describe('the corpus, summarised', () => {
     });
 
     it('reports a base file as entirely missing', () => {
-        const summary = summaryOf('Contoso App.g.xlf');
+        const summary = summaryOf(FIXTURE.base);
 
         expect(summary.worst).toBe(XliffState.missing);
         expect(summary.percent).toBe(0);
@@ -207,7 +198,7 @@ describe('the corpus, summarised', () => {
     });
 
     it('reports the outliers in a mostly translated file', () => {
-        const summary = summaryOf('Contoso App.de-DE.xlf');
+        const summary = summaryOf(FIXTURE.german);
 
         expect(summary.byState[XliffState.needsTranslation]).toBe(1);
         expect(summary.byState[XliffState.needsAdaptation]).toBe(1);
@@ -217,11 +208,11 @@ describe('the corpus, summarised', () => {
 
     it('never rounds up to 100 while a unit is outstanding', () => {
         // This fixture's ratio rounds to 100, so Math.round alone would report it complete.
-        expect(summaryOf('Contoso App.de-DE.xlf').percent).toBe(99);
+        expect(summaryOf(FIXTURE.german).percent).toBe(99);
     });
 
     it('reports a fully translated file as 100', () => {
-        expect(summaryOf('Contoso App.en-US.xlf').percent).toBe(100);
+        expect(summaryOf(FIXTURE.english).percent).toBe(100);
     });
 });
 
@@ -348,7 +339,7 @@ describe('summariseTree', () => {
     });
 
     it('accounts for every unit of the large file exactly once', () => {
-        const units = unitsOf('Fabrikam Base.de-DE.xlf');
+        const units = fixtureUnits(FIXTURE.large);
         const map = new Map(units.map(each => [each.id, asUnitState(each)]));
         const roots = buildAlTree(units);
         const rolled = summariseTree(roots, map);

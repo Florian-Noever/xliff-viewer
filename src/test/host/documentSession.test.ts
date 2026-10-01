@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { fileURLToPath, URL } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { XliffDocumentSession } from '../../extension/editor/documentSession';
@@ -25,15 +23,13 @@ import {
     setConfigOverride,
     setWritableFileSystem,
 } from '../__mocks__/vscode';
+import { FIXTURE, readFixture } from '../support/fixtures';
 
 import type * as vscode from 'vscode';
 import type { SessionState } from '../../extension/editor/documentSession';
 import type { ExtensionMessage } from '../../shared/messages';
 
-const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
-const read = (name: string): string => readFileSync(`${FIXTURES}/${name}`, 'utf8');
-
-function openDocument(name: string, text = read(name)): FakeTextDocument {
+function openDocument(name: string, text = readFixture(name)): FakeTextDocument {
     return new FakeTextDocument(`/w/${name}`, text);
 }
 
@@ -78,7 +74,7 @@ afterEach(() => {
 
 describe('opening a document', () => {
     it('posts loading, then one setDocument carrying every unit', () => {
-        const session = sessionFor(openDocument('Fabrikam Base.de-DE.xlf'));
+        const session = sessionFor(openDocument(FIXTURE.large));
         const { posted, send } = view(session);
 
         send();
@@ -89,7 +85,7 @@ describe('opening a document', () => {
     });
 
     it('reports a base file as read-only', () => {
-        const session = sessionFor(openDocument('Contoso App.g.xlf'));
+        const session = sessionFor(openDocument(FIXTURE.base));
         const { posted, send } = view(session);
 
         send();
@@ -100,7 +96,7 @@ describe('opening a document', () => {
     });
 
     it('reports a language file as editable', () => {
-        const session = sessionFor(openDocument('Contoso App.de-DE.xlf'));
+        const session = sessionFor(openDocument(FIXTURE.german));
         const { posted, send } = view(session);
 
         send();
@@ -111,7 +107,7 @@ describe('opening a document', () => {
 
     it('reports a document on a read-only file system as read-only', () => {
         setWritableFileSystem('file', false);
-        const session = sessionFor(openDocument('Contoso App.de-DE.xlf'));
+        const session = sessionFor(openDocument(FIXTURE.german));
         const { posted, send } = view(session);
 
         send();
@@ -122,7 +118,7 @@ describe('opening a document', () => {
     });
 
     it('parses once however many views ask for it', () => {
-        const session = sessionFor(openDocument('Contoso App.de-DE.xlf'));
+        const session = sessionFor(openDocument(FIXTURE.german));
 
         view(session).send();
         view(session).send();
@@ -186,7 +182,7 @@ describe('what a failing re-parse puts on the wire', () => {
         // The panel already displays the last good document; re-sending it would cost a
         // whole DTO per failing keystroke burst.
         vi.useFakeTimers();
-        const document = openDocument('Fabrikam Base.de-DE.xlf');
+        const document = openDocument(FIXTURE.large);
         const session = sessionFor(document);
         const posted: ExtensionMessage[] = [];
         const facade = new XliffDocumentView(session, message => posted.push(message));
@@ -203,7 +199,7 @@ describe('what a failing re-parse puts on the wire', () => {
 
     it('still gives a view that has nothing the last good document first', () => {
         vi.useFakeTimers();
-        const document = openDocument('Contoso App.de-DE.xlf');
+        const document = openDocument(FIXTURE.german);
         const session = sessionFor(document);
         session.attach(() => { /* keeps the session live */ });
         session.current();
@@ -224,14 +220,14 @@ describe('what a failing re-parse puts on the wire', () => {
 
     it('sends the document again when a re-parse succeeds — the content really did change', () => {
         vi.useFakeTimers();
-        const document = openDocument('Contoso App.de-DE.xlf');
+        const document = openDocument(FIXTURE.german);
         const session = sessionFor(document);
         const posted: ExtensionMessage[] = [];
         const facade = new XliffDocumentView(session, message => posted.push(message));
         session.attach(change => facade.apply(change));
         session.current();
 
-        document.setText(read('Contoso App.en-US.xlf'));
+        document.setText(readFixture(FIXTURE.english));
         fireTextDocumentChange(document);
         vi.advanceTimersByTime(200);
 
@@ -245,7 +241,7 @@ describe('reacting to an external edit', () => {
     });
 
     it('re-parses once for a burst of changes, after the debounce', () => {
-        const document = openDocument('Contoso App.de-DE.xlf');
+        const document = openDocument(FIXTURE.german);
         const session = sessionFor(document);
         const states: SessionState[] = [];
         session.attach((change) => {
@@ -269,7 +265,7 @@ describe('reacting to an external edit', () => {
     });
 
     it('does not drop the final change of a burst', () => {
-        const document = openDocument('Contoso App.de-DE.xlf');
+        const document = openDocument(FIXTURE.german);
         const session = sessionFor(document);
         const states: SessionState[] = [];
         session.attach((change) => {
@@ -281,7 +277,7 @@ describe('reacting to an external edit', () => {
 
         fireTextDocumentChange(document);
         vi.advanceTimersByTime(100);
-        document.setText(read('Contoso App.en-US.xlf'));
+        document.setText(readFixture(FIXTURE.english));
         fireTextDocumentChange(document);
         vi.advanceTimersByTime(200);
 
@@ -291,7 +287,7 @@ describe('reacting to an external edit', () => {
     });
 
     it('notifies every attached view of one re-parse', () => {
-        const document = openDocument('Contoso App.de-DE.xlf');
+        const document = openDocument(FIXTURE.german);
         const session = sessionFor(document);
         const first: SessionState[] = [];
         const second: SessionState[] = [];
@@ -317,7 +313,7 @@ describe('reacting to an external edit', () => {
     });
 
     it('ignores a change to a different document', () => {
-        const document = openDocument('Contoso App.de-DE.xlf');
+        const document = openDocument(FIXTURE.german);
         const session = sessionFor(document);
         const states: SessionState[] = [];
         session.attach((change) => {
@@ -333,7 +329,7 @@ describe('reacting to an external edit', () => {
     });
 
     it('ignores an event that carries no content change', () => {
-        const document = openDocument('Contoso App.de-DE.xlf');
+        const document = openDocument(FIXTURE.german);
         const session = sessionFor(document);
         const states: SessionState[] = [];
         session.attach((change) => {
@@ -349,7 +345,7 @@ describe('reacting to an external edit', () => {
     });
 
     it('stops re-parsing once disposed', () => {
-        const document = openDocument('Contoso App.de-DE.xlf');
+        const document = openDocument(FIXTURE.german);
         const session = sessionFor(document);
         const states: SessionState[] = [];
         session.attach((change) => {
@@ -370,7 +366,7 @@ describe('reacting to an external edit', () => {
 describe('the registry', () => {
     it('hands two editors of one document the same session', () => {
         const registry = track(new DocumentSessionRegistry());
-        const document = openDocument('minimal.xlf');
+        const document = openDocument(FIXTURE.minimal);
 
         expect(registry.acquire(document as unknown as vscode.TextDocument))
             .toBe(registry.acquire(document as unknown as vscode.TextDocument));
@@ -380,7 +376,7 @@ describe('the registry', () => {
 
     it('keeps the session alive while a second editor still holds it', () => {
         const registry = track(new DocumentSessionRegistry());
-        const document = openDocument('minimal.xlf');
+        const document = openDocument(FIXTURE.minimal);
         const session = registry.acquire(document as unknown as vscode.TextDocument);
         registry.acquire(document as unknown as vscode.TextDocument);
 
@@ -421,7 +417,7 @@ describe('the registry', () => {
 
 describe('opening the raw file', () => {
     it('opens the document itself with the built-in editor', async () => {
-        const session = sessionFor(openDocument('minimal.xlf'));
+        const session = sessionFor(openDocument(FIXTURE.minimal));
         const { facade } = view(session);
 
         await facade.openSource('text');
@@ -1095,7 +1091,7 @@ describe('when base-file resolution itself fails', () => {
         // the first, or the header waits for an answer that is never coming.
         const resolver = new BaseFileResolver();
         vi.spyOn(resolver, 'resolve').mockRejectedValue(new Error('the workspace went away'));
-        const session = sessionFor(openDocument('Contoso App.de-DE.xlf', read('Contoso App.de-DE.xlf')));
+        const session = sessionFor(openDocument(FIXTURE.german, readFixture(FIXTURE.german)));
         const posted: ExtensionMessage[] = [];
 
         try {

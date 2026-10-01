@@ -1,20 +1,15 @@
-import { readFileSync } from 'node:fs';
-import { fileURLToPath, URL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { outlineAl } from '../../extension/al/alOutline';
-import { parseXliff } from '../../extension/xliff/parser';
-import { iterateUnits } from '../../shared/model';
 import { appUnits, translationRoot } from '../fixtures/alApp';
 import { Precision, renderApp } from '../fixtures/alRender';
 import { CONTOSO_MANIFEST, contosoApp, fabrikamApp, NORTHWIND_MANIFEST } from '../fixtures/corpus';
 import { NORTHWIND } from '../fixtures/northwind';
+import { FIXTURE, fixtureUnits } from '../support/fixtures';
 
 import type { AlDeclaration, AlOutline } from '../../extension/al/alOutline';
 import type { AlApp } from '../fixtures/alApp';
 import type { AppManifest, RenderedApp } from '../fixtures/alRender';
-
-const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
 
 interface Case {
     readonly app: AlApp;
@@ -23,9 +18,9 @@ interface Case {
 }
 
 const CASES: Readonly<Record<string, Case>> = {
-    'Contoso App': { app: contosoApp(), manifest: CONTOSO_MANIFEST, xliff: 'Contoso App.g.xlf' },
-    'Northwind App': { app: NORTHWIND, manifest: NORTHWIND_MANIFEST, xliff: 'Northwind App.g.xlf' },
-    'Fabrikam Base': { app: fabrikamApp(), manifest: CONTOSO_MANIFEST, xliff: 'Fabrikam Base.de-DE.xlf' },
+    'Contoso App': { app: contosoApp(), manifest: CONTOSO_MANIFEST, xliff: FIXTURE.base },
+    'Northwind App': { app: NORTHWIND, manifest: NORTHWIND_MANIFEST, xliff: FIXTURE.namespacedBase },
+    'Fabrikam Base': { app: fabrikamApp(), manifest: CONTOSO_MANIFEST, xliff: FIXTURE.large },
 };
 
 const rendered = new Map<string, RenderedApp>(Object.entries(CASES).map(([name, each]) => [name, renderApp(each.app, each.manifest)]));
@@ -66,7 +61,7 @@ describe.each(Object.keys(CASES))('the AL source of %s', (name) => {
     const source = renderedOf(name);
 
     it('declares exactly the units its XLIFF file carries', () => {
-        const fileIds = new Set([...iterateUnits(parseXliff(readFileSync(`${FIXTURES}/${xliff}`, 'utf8')))].map(unit => unit.id));
+        const fileIds = new Set(fixtureUnits(xliff).map(unit => unit.id));
 
         expect(new Set(appUnits(app).map(unit => unit.id))).toEqual(fileIds);
     });

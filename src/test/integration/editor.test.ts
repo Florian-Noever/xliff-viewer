@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 
+import { FIXTURE } from '../fixtures/corpus';
 import { parseXliff } from '../../extension/xliff/parser';
 import { validateStructure } from '../../extension/xliff/validate';
 import { assertArrayEqual, assertContains, assertEqual, assertOk } from './assertions';
@@ -33,7 +34,7 @@ const fixtureUri = (name: string): vscode.Uri => vscode.Uri.joinPath(fixtureFold
 async function fixtureNames(): Promise<string[]> {
     const entries = await vscode.workspace.fs.readDirectory(fixtureFolder());
     const names = entries.filter(([name, type]) => type === vscode.FileType.File && name.endsWith('.xlf')).map(([name]) => name);
-    assertOk(names.includes('minimal.xlf'), 'the fixture folder did not list its files');
+    assertOk(names.includes(FIXTURE.minimal), 'the fixture folder did not list its files');
     return names.sort();
 }
 

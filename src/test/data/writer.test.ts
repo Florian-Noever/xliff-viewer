@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { fileURLToPath, URL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { UnknownUnitError } from '../../extension/xliff/errors';
@@ -7,16 +5,14 @@ import { parseXliff } from '../../extension/xliff/parser';
 import { serialiseXliff } from '../../extension/xliff/serialise';
 import { rememberTarget, setState, setTarget, trimToEdit, type TextEditRange } from '../../extension/xliff/writer';
 import { iterateFileUnits, iterateUnits } from '../../shared/model';
+import { FIXTURE, readFixture } from '../support/fixtures';
 
 import type { XliffDocument, XliffTransUnit } from '../../shared/model';
 
-const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
-const read = (name: string): string => readFileSync(`${FIXTURES}/${name}`, 'utf8');
-
-const LANGUAGE_FILE = 'Contoso App.de-DE.xlf';
-const LARGE_FILE = 'Fabrikam Base.de-DE.xlf';
-const BASE_FILE = 'Contoso App.g.xlf';
-const MINIMAL_FILE = 'minimal.xlf';
+const LANGUAGE_FILE = FIXTURE.german;
+const LARGE_FILE = FIXTURE.large;
+const BASE_FILE = FIXTURE.base;
+const MINIMAL_FILE = FIXTURE.minimal;
 
 /** Narrows without a `!` assertion, which the project's lint rules forbid. */
 function required<T>(value: T | null | undefined, what: string): T {
@@ -32,7 +28,7 @@ function apply(text: string, edit: TextEditRange): string {
 }
 
 function load(name: string): { text: string; document: XliffDocument; units: XliffTransUnit[] } {
-    const text = read(name);
+    const text = readFixture(name);
     const document = parseXliff(text);
     return { text, document, units: [...iterateUnits(document)] };
 }
@@ -329,7 +325,7 @@ describe('a line break a translator typed', () => {
         // `minimal.xlf` rather than a larger fixture, because the assertion counts line endings
         // and every target in it is one line — a target that already spans two would make
         // the count depend on the fixture rather than on the writer.
-        const source = read(MINIMAL_FILE).split('\n').join('\r\n');
+        const source = readFixture(MINIMAL_FILE).split('\n').join('\r\n');
         const document = parseXliff(source);
         const units = [...iterateUnits(document)];
         const written = apply(source, required(setTarget(document, source, { fileIndex: 0, unitId: units[0].id, value: TYPED }), 'an edit'));

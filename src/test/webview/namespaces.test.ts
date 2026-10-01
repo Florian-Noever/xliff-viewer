@@ -7,6 +7,7 @@ import { visibleNodes } from '../../webview/ancestorFilter';
 import { buildSearchIndex, toMatcher } from '../../webview/composables/useSearch';
 import { indexNodes, reconstructGeneratorNote } from '../../webview/generatorNote';
 import { appUnits, translationRoot } from '../fixtures/alApp';
+import { FIXTURE } from '../fixtures/corpus';
 import { NORTHWIND } from '../fixtures/northwind';
 
 import type { AlNodeDto, TransUnitDto } from '../../shared/dto';
@@ -16,7 +17,7 @@ import type { UnitState } from '../../shared/state';
 // `import.meta.url` is not a file URL and `node:fs` has nothing to resolve against.
 const files: Record<string, string> = import.meta.glob('../fixtures/xliff/Northwind App.de-DE.xlf', { query: '?raw', import: 'default', eager: true });
 const [text] = Object.values(files);
-const [file] = projectDocument(parseXliff(text), { uri: 'file:///Northwind App.de-DE.xlf', fileName: 'Northwind App.de-DE.xlf' }).files;
+const [file] = projectDocument(parseXliff(text), { uri: `file:///${FIXTURE.namespacedGerman}`, fileName: FIXTURE.namespacedGerman }).files;
 const unitsById = new Map<string, TransUnitDto>(file.units.map(unit => [unit.id, unit]));
 
 function* walk(nodes: readonly AlNodeDto[]): Generator<AlNodeDto> {

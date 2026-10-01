@@ -1,42 +1,28 @@
-import { readFileSync } from 'node:fs';
-import { fileURLToPath, URL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { XliffParseError } from '../../extension/xliff/errors';
 import { parseXliff } from '../../extension/xliff/parser';
 import { validateStructure } from '../../extension/xliff/validate';
 import { iterateUnits } from '../../shared/model';
+import { FIXTURE, FIXTURE_NAMES, fixtureUnits, readFixture } from '../support/fixtures';
 
-const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
-const read = (name: string): string => readFileSync(`${FIXTURES}/${name}`, 'utf8');
-const parse = (name: string) => parseXliff(read(name));
-const unitsOf = (name: string) => [...iterateUnits(parse(name))];
-
-const CORPUS = {
-    baseFile: 'Contoso App.g.xlf',
-    enUs: 'Contoso App.en-US.xlf',
-    deDe: 'Contoso App.de-DE.xlf',
-    large: 'Fabrikam Base.de-DE.xlf',
-    minimal: 'minimal.xlf',
-    namespacedBase: 'Northwind App.g.xlf',
-    namespacedGerman: 'Northwind App.de-DE.xlf',
-} as const;
+const parse = (name: string) => parseXliff(readFixture(name));
 
 describe('unit counts', () => {
     it.each([
-        [CORPUS.baseFile, 500],
-        [CORPUS.enUs, 500],
-        [CORPUS.deDe, 500],
-        [CORPUS.large, 2500],
-        [CORPUS.minimal, 1],
-        [CORPUS.namespacedBase, 40],
-        [CORPUS.namespacedGerman, 40],
+        [FIXTURE.base, 500],
+        [FIXTURE.english, 500],
+        [FIXTURE.german, 500],
+        [FIXTURE.large, 2500],
+        [FIXTURE.minimal, 1],
+        [FIXTURE.namespacedBase, 40],
+        [FIXTURE.namespacedGerman, 40],
     ])('%s has %i units', (name, expected) => {
-        expect(unitsOf(name)).toHaveLength(expected);
+        expect(fixtureUnits(name)).toHaveLength(expected);
     });
 
     it('produces a structurally valid model for every corpus file', () => {
-        for (const name of Object.values(CORPUS)) {
+        for (const name of FIXTURE_NAMES) {
             expect(() => validateStructure(parse(name)), name).not.toThrow();
         }
     });
@@ -44,7 +30,7 @@ describe('unit counts', () => {
 
 describe('document format', () => {
     it('reads the base file as BOM + CRLF, with no trailing newline', () => {
-        const { format } = parse(CORPUS.baseFile);
+        const { format } = parse(FIXTURE.base);
         expect(format.hasBom).toBe(true);
         expect(format.eol).toBe('\r\n');
         expect(format.hasTrailingNewline).toBe(false);
@@ -52,7 +38,7 @@ describe('document format', () => {
     });
 
     it('reads a language file as no BOM + LF, and keeps the declaration case', () => {
-        const { format } = parse(CORPUS.deDe);
+        const { format } = parse(FIXTURE.german);
         expect(format.hasBom).toBe(false);
         expect(format.eol).toBe('\n');
         expect(format.hasTrailingNewline).toBe(false);
@@ -63,12 +49,12 @@ describe('document format', () => {
 
 describe('the base file', () => {
     it('has no <target> anywhere — it is the generator output', () => {
-        const units = unitsOf(CORPUS.baseFile);
+        const units = fixtureUnits(FIXTURE.base);
         expect(units.filter(unit => unit.target !== undefined)).toHaveLength(0);
     });
 
     it('reports source-language equal to target-language', () => {
-        const [file] = parse(CORPUS.baseFile).files;
+        const [file] = parse(FIXTURE.base).files;
         expect(file.sourceLanguage).toBe('en-US');
         expect(file.targetLanguage).toBe('en-US');
         expect(file.original).toBe('Contoso App');
@@ -77,7 +63,7 @@ describe('the base file', () => {
 
 describe('the large language file', () => {
     it('matches the known unit, target and edge-case counts', () => {
-        const units = unitsOf(CORPUS.large);
+        const units = fixtureUnits(FIXTURE.large);
 
         const withTarget = units.filter(unit => unit.target !== undefined);
         expect(units).toHaveLength(2500);
@@ -90,7 +76,7 @@ describe('the large language file', () => {
     });
 
     it('records the states the file declares', () => {
-        const states = unitsOf(CORPUS.large)
+        const states = fixtureUnits(FIXTURE.large)
             .map(unit => unit.target?.state)
             .filter((state): state is string => state !== undefined);
         const counts = states.reduce<Record<string, number>>((acc, state) => {
@@ -101,14 +87,14 @@ describe('the large language file', () => {
     });
 
     it('carries al-object-target on the units that have it', () => {
-        expect(unitsOf(CORPUS.large).filter(unit => unit.alObjectTarget !== undefined)).toHaveLength(790);
+        expect(fixtureUnits(FIXTURE.large).filter(unit => unit.alObjectTarget !== undefined)).toHaveLength(790);
     });
 
 });
 
 describe('the minimal, non-AL file', () => {
     it('parses with no namespace and no <group>', () => {
-        const document = parse(CORPUS.minimal);
+        const document = parse(FIXTURE.minimal);
         expect(document.xmlns).toBeUndefined();
         expect(document.version).toBe('1.2');
 
@@ -229,7 +215,7 @@ describe('the variants the parser must handle', () => {
 
 describe('attributes bag', () => {
     it('keeps the namespace attributes the named fields do not model', () => {
-        const document = parse(CORPUS.deDe);
+        const document = parse(FIXTURE.german);
         expect(Object.keys(document.attributes)).toEqual([
             'version',
             'xmlns',
@@ -241,12 +227,12 @@ describe('attributes bag', () => {
     });
 
     it('keeps trans-unit attributes in document order', () => {
-        const unit = unitsOf(CORPUS.deDe)[0];
+        const unit = fixtureUnits(FIXTURE.german)[0];
         expect(Object.keys(unit.attributes)).toEqual(['id', 'size-unit', 'translate', 'xml:space']);
     });
 
     it('populates attributes on every element kind', () => {
-        const document = parse(CORPUS.deDe);
+        const document = parse(FIXTURE.german);
         const [file] = document.files;
         const [group] = file.body.groups;
         const unit = group.units[0];
@@ -260,7 +246,7 @@ describe('attributes bag', () => {
 
 describe('entities', () => {
     it('decodes the predefined entities', () => {
-        const unit = unitsOf(CORPUS.large).find(u => u.source.includes('sig='));
+        const unit = fixtureUnits(FIXTURE.large).find(u => u.source.includes('sig='));
         expect(unit?.source).toContain('&');
         expect(unit?.source).not.toContain('&amp;');
     });

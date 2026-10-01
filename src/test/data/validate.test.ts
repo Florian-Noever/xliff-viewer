@@ -1,14 +1,10 @@
-import { readFileSync, readdirSync } from 'node:fs';
-import { fileURLToPath, URL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { XliffParseError } from '../../extension/xliff/errors';
 import { validateStructure, validateXml } from '../../extension/xliff/validate';
+import { FIXTURE, FIXTURE_NAMES, readFixture } from '../support/fixtures';
 
 import type { XliffDocument, XliffFile, XliffGroup, XliffTransUnit } from '../../shared/model';
-
-const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
-const read = (name: string): string => readFileSync(`${FIXTURES}/${name}`, 'utf8');
 
 // ── model builders ───────────────────────────────────────────────────────────
 function unit(id: string): XliffTransUnit {
@@ -77,15 +73,14 @@ const UNQUOTED_ATTRIBUTE = `<?xml version="1.0"?>
 
 describe('validateXml', () => {
     it('accepts every file in the corpus', () => {
-        const files = readdirSync(FIXTURES);
-        expect(files).toHaveLength(7);
-        for (const name of files) {
-            expect(() => validateXml(read(name)), name).not.toThrow();
+        expect(FIXTURE_NAMES).toHaveLength(7);
+        for (const name of FIXTURE_NAMES) {
+            expect(() => validateXml(readFixture(name)), name).not.toThrow();
         }
     });
 
     it('accepts the BOM-prefixed base file', () => {
-        const text = read('Contoso App.g.xlf');
+        const text = readFixture(FIXTURE.base);
         expect(text.charCodeAt(0)).toBe(0xfeff);
         expect(() => validateXml(text)).not.toThrow();
     });

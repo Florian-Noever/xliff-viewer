@@ -6,7 +6,7 @@
  * builds, so the dev server always shows what the extension would send for those files.
  */
 
-import { generateCorpus } from './corpus';
+import { FIXTURE, generateCorpus } from './corpus';
 import { projectDocument } from '../../extension/xliff/dto';
 import { parseXliff } from '../../extension/xliff/parser';
 import { splitUnitId } from '../../shared/unitPath';
@@ -14,10 +14,10 @@ import { splitUnitId } from '../../shared/unitPath';
 import type { FixtureFile } from './corpus';
 import type { XliffDocumentDto } from '../../shared/dto';
 
-export const DEV_FIXTURE_SOURCE = 'Fabrikam Base.de-DE.xlf';
+export const DEV_FIXTURE_SOURCE = FIXTURE.large;
 
 /** The namespaced sample, shown whole when the dev server's URL asks for `?namespaced`. */
-export const DEV_NAMESPACED_SOURCE = 'Northwind App.de-DE.xlf';
+export const DEV_NAMESPACED_SOURCE = FIXTURE.namespacedGerman;
 
 /**
  * Five root objects, chosen for what they cover rather than for being first:

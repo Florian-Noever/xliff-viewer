@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { fileURLToPath, URL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { indexedObjects } from '../../extension/al/alHeaderIndex';
@@ -24,6 +22,7 @@ import { FakeTextDocument } from '../__mocks__/vscode';
 import { renderApp } from '../fixtures/alRender';
 import { CONTOSO_MANIFEST, fabrikamApp, generateNamespacedFabrikam } from '../fixtures/corpus';
 import { generatorNote } from '../../extension/xliff/names';
+import { FIXTURE, readFixture } from '../support/fixtures';
 
 import type * as vscode from 'vscode';
 import type { AlOutline } from '../../extension/al/alOutline';
@@ -39,9 +38,8 @@ import type { UnitState } from '../../shared/state';
  * `perf` project runs them one file at a time, after everything else.
  */
 
-const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
-const LARGE = 'Fabrikam Base.de-DE.xlf';
-const text = readFileSync(`${FIXTURES}/${LARGE}`, 'utf8');
+const LARGE = FIXTURE.large;
+const text = readFixture(LARGE);
 
 /** Best of several: the fastest run is the one least disturbed by everything else. */
 function fastest(attempts: number, run: () => void): number {
