@@ -53,6 +53,41 @@ describe('what the webview does with motion and with a forced palette', () => {
     });
 });
 
+describe('what the webview takes from the theme', () => {
+    const DEV_THEME = 'devTheme.css';
+    const exceptDevTheme = (): { path: string; text: string }[] => styled().filter(file => !file.path.endsWith(`/${DEV_THEME}`));
+
+    it('defines no theme colour of its own outside the dev server\'s stand-in', () => {
+        // VS Code passes a webview only the colours the theme defines; a fallback declared
+        // here would replace every colour a theme leaves out, dark or light.
+        const declaring = exceptDevTheme().filter(file => /--vscode-[\w-]+\s*:/.test(file.text));
+
+        expect(declaring.map(file => file.path.split('/').pop())).toEqual([]);
+    });
+
+    it('writes no colour literal outside the dev server\'s stand-in', () => {
+        const literal = /(?<![\w-])(#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\()/;
+
+        expect(exceptDevTheme().filter(file => literal.test(file.text)).map(file => file.path.split('/').pop())).toEqual([]);
+    });
+
+    it('loads the stand-in in the dev server and nowhere else', () => {
+        const read = (path: string): string => readFileSync(fileURLToPath(new URL(`../../../${path}`, import.meta.url)), 'utf8');
+
+        expect(read('index.html')).toContain(DEV_THEME);
+        expect(read('media/webview.html')).not.toContain(DEV_THEME);
+        expect(read('src/webview/main.ts')).not.toContain(DEV_THEME);
+        expect(styled().filter(file => file.text.includes(DEV_THEME))).toEqual([]);
+    });
+
+    it('gives a fallback to the colours a standard theme leaves undefined', () => {
+        // An undefined variable inside a border shorthand drops the whole border.
+        const bare = /var\(--vscode-(input-border|button-border|inputValidation-errorForeground)\)/;
+
+        expect(styled().filter(file => bare.test(file.text)).map(file => file.path.split('/').pop())).toEqual([]);
+    });
+});
+
 describe('the chips row of a unit card', () => {
     it('has one rule, which starts the row where the values start', () => {
         const card = styled().find(file => file.path.endsWith('/UnitCard.vue'))?.text ?? '';

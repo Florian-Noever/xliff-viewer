@@ -363,7 +363,7 @@ const hint = computed(() => {
     max-inline-size: min(var(--field-max-inline), 100%);
     /* Room to put the caret before the first character and after the last one. */
     padding: 3px 7px;
-    border: 1px solid var(--vscode-input-border);
+    border: 1px solid var(--vscode-input-border, transparent);
     border-radius: var(--radius-sm);
     background: var(--vscode-input-background);
     color: var(--vscode-input-foreground);
@@ -376,7 +376,7 @@ const hint = computed(() => {
 .state-select {
     margin-inline-start: auto;
     padding: 0 4px;
-    border: 1px solid var(--vscode-input-border);
+    border: 1px solid var(--vscode-input-border, transparent);
     border-radius: var(--radius-sm);
     background: var(--vscode-input-background);
     color: var(--vscode-input-foreground);

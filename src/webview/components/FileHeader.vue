@@ -124,7 +124,7 @@ const baseFile = computed(() => {
 
 .switcher-select {
     padding: 2px 4px;
-    border: 1px solid var(--vscode-input-border);
+    border: 1px solid var(--vscode-input-border, transparent);
     border-radius: var(--radius-sm);
     background: var(--vscode-input-background);
     color: var(--vscode-input-foreground);

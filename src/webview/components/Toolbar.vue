@@ -122,7 +122,7 @@ onUnmounted(() => {
     flex: 1;
     min-width: 0;
     padding: 3px 6px;
-    border: 1px solid var(--vscode-input-border);
+    border: 1px solid var(--vscode-input-border, transparent);
     border-radius: var(--radius-sm);
     background: var(--vscode-input-background);
     color: var(--vscode-input-foreground);
@@ -212,7 +212,7 @@ onUnmounted(() => {
 
 .action {
     padding: 2px 8px;
-    border: 1px solid var(--vscode-button-border);
+    border: 1px solid var(--vscode-button-border, transparent);
     border-radius: var(--radius-sm);
     background: var(--vscode-button-secondaryBackground);
     color: var(--vscode-button-secondaryForeground);

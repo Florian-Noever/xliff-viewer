@@ -315,7 +315,7 @@ const pairing = computed(() => {
 
 .action {
     padding: 1px 7px;
-    border: 1px solid var(--vscode-button-border);
+    border: 1px solid var(--vscode-button-border, transparent);
     border-radius: var(--radius-sm);
     background: var(--vscode-button-secondaryBackground);
     color: var(--vscode-button-secondaryForeground);

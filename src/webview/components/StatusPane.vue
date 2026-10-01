@@ -78,7 +78,7 @@ const position = computed(() => {
 .status-pane.is-error {
     border-color: var(--vscode-inputValidation-errorBorder);
     background: var(--vscode-inputValidation-errorBackground);
-    color: var(--vscode-inputValidation-errorForeground);
+    color: var(--vscode-inputValidation-errorForeground, var(--vscode-foreground));
 }
 
 .icon {
@@ -107,7 +107,7 @@ const position = computed(() => {
     margin-left: auto;
     flex: none;
     padding: 4px 10px;
-    border: 1px solid var(--vscode-button-border);
+    border: 1px solid var(--vscode-button-border, transparent);
     border-radius: var(--radius-md);
     background: var(--vscode-button-secondaryBackground);
     color: var(--vscode-button-secondaryForeground);

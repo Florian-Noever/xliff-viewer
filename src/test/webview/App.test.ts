@@ -163,13 +163,13 @@ describe('failure', () => {
 
 describe('theming', () => {
     it('hardcodes no colour anywhere in the webview', () => {
-        // global.css is exempt: its literals are the dev-server fallbacks that a real
-        // webview overrides with the live theme.
+        // devTheme.css is exempt: it is the dev server's stand-in for a theme, and VS Code
+        // never loads it.
         const sources = import.meta.glob('../../webview/**/*.{vue,css}', { query: '?raw', import: 'default', eager: true });
         const literal = /(?<![\w-])(#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\()/;
 
         const offenders = Object.entries(sources)
-            .filter(([path]) => !path.endsWith('global.css'))
+            .filter(([path]) => !path.endsWith('devTheme.css'))
             .filter(([, source]) => literal.test(source))
             .map(([path]) => path);
 

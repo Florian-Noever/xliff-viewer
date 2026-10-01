@@ -1,0 +1,34 @@
+/* Dark defaults for the Vite dev server. VS Code defines these itself and never loads this file. */
+:root {
+    --vscode-font-family: ui-sans-serif, system-ui, sans-serif;
+    --vscode-font-size: 13px;
+    --vscode-foreground: #cccccc;
+    --vscode-descriptionForeground: #9d9d9d;
+    --vscode-editor-background: #1e1e1e;
+    --vscode-editorWidget-background: #252526;
+    --vscode-panel-border: #454545;
+    --vscode-focusBorder: #007fd4;
+    --vscode-progressBar-background: #0e70c0;
+
+    --vscode-input-background: #3c3c3c;
+    --vscode-input-foreground: #cccccc;
+    --vscode-input-border: #3c3c3c;
+    --vscode-input-placeholderForeground: #8c8c8c;
+
+    --vscode-list-hoverBackground: rgba(255, 255, 255, 0.06);
+    --vscode-list-activeSelectionBackground: #094771;
+
+    --vscode-button-border: transparent;
+    --vscode-button-secondaryBackground: #3a3d41;
+    --vscode-button-secondaryForeground: #cccccc;
+    --vscode-button-secondaryHoverBackground: #45494e;
+
+    --vscode-errorForeground: #f48771;
+    --vscode-editorWarning-foreground: #cca700;
+    --vscode-inputValidation-errorBorder: #be1100;
+    --vscode-inputValidation-errorBackground: #5a1d1d;
+    --vscode-inputValidation-errorForeground: #cccccc;
+    --vscode-charts-green: #89d185;
+    --vscode-charts-yellow: #cca700;
+    --vscode-testing-iconPassed: #73c991;
+}
