@@ -433,7 +433,7 @@ describe('a group key can never be a node key', () => {
     it('holds because no node of any corpus file has a key that starts like a group key', () => {
         for (const name of CORPUS) {
             for (const node of iterateNodes(buildAlTree(unitsOf(name)))) {
-                expect(/^[a-z]+:/.test(node.key), `${name}: ${node.key}`).toBe(false);
+                expect(node.key.startsWith(OBJECT_TYPE_GROUP_PREFIX) || node.key === NO_NAMESPACE_GROUP_KEY, `${name}: ${node.key}`).toBe(false);
             }
         }
     });
