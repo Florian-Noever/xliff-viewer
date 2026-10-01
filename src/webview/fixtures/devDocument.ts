@@ -1594,8 +1594,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                             "from": "Developer",
                             "value": "%1 = Record, %2 = Value"
                         }
-                    ],
-                    "developerHint": "%1 = Record, %2 = Value"
+                    ]
                 },
                 {
                     "id": "PageExtension 3965510573 - Control 2961552353 - Property 2879900210",
@@ -1770,8 +1769,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                             "from": "Developer",
                             "value": "%1 = Record, %2 = Value"
                         }
-                    ],
-                    "developerHint": "%1 = Record, %2 = Value"
+                    ]
                 },
                 {
                     "id": "Codeunit 562451849 - Method 2574094843 - NamedType 2945922260",
@@ -1787,7 +1785,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                             "value": "de-DE=keine|en-US=none"
                         }
                     ],
-                    "developerHint": "keine|en-US=none"
+                    "developerHint": "keine"
                 },
                 {
                     "id": "Codeunit 562451849 - Method 2574094843 - NamedType 2141140146",
@@ -1801,8 +1799,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                             "from": "Developer",
                             "value": "%1 = Record, %2 = Value"
                         }
-                    ],
-                    "developerHint": "%1 = Record, %2 = Value"
+                    ]
                 },
                 {
                     "id": "Codeunit 562451849 - Method 2574094843 - NamedType 3187300792",
@@ -1816,8 +1813,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                             "from": "Developer",
                             "value": "%1 = Record, %2 = Value"
                         }
-                    ],
-                    "developerHint": "%1 = Record, %2 = Value"
+                    ]
                 },
                 {
                     "id": "Codeunit 562451849 - Method 2574094843 - NamedType 4277721231",
@@ -1831,8 +1827,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                             "from": "Developer",
                             "value": "%1 = Record"
                         }
-                    ],
-                    "developerHint": "%1 = Record"
+                    ]
                 },
                 {
                     "id": "Codeunit 562451849 - Method 2574094843 - NamedType 2779639592",
@@ -1846,8 +1841,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                             "from": "Developer",
                             "value": "%1 = Record, %2 = Value"
                         }
-                    ],
-                    "developerHint": "%1 = Record, %2 = Value"
+                    ]
                 },
                 {
                     "id": "Codeunit 562451849 - Method 2474569616 - NamedType 3204780081",
@@ -1861,8 +1855,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                             "from": "Developer",
                             "value": "%1 = Record, %2 = Value, %3 = Limit, %4 = Error"
                         }
-                    ],
-                    "developerHint": "%1 = Record, %2 = Value, %3 = Limit, %4 = Error"
+                    ]
                 },
                 {
                     "id": "Codeunit 562451849 - Method 2474569616 - NamedType 2364039393",
@@ -1937,8 +1930,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                             "from": "Developer",
                             "value": "%1 = Record, %2 = Value"
                         }
-                    ],
-                    "developerHint": "%1 = Record, %2 = Value"
+                    ]
                 },
                 {
                     "id": "Codeunit 562451849 - Method 4227372758 - NamedType 2455756963",
@@ -1952,8 +1944,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                             "from": "Developer",
                             "value": "%1 = Record"
                         }
-                    ],
-                    "developerHint": "%1 = Record"
+                    ]
                 },
                 {
                     "id": "Codeunit 562451849 - Method 4227372758 - NamedType 987543024",
@@ -1967,8 +1958,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                             "from": "Developer",
                             "value": "%1 = Record"
                         }
-                    ],
-                    "developerHint": "%1 = Record"
+                    ]
                 },
                 {
                     "id": "Codeunit 562451849 - Method 4227372758 - NamedType 2082848491",
@@ -1983,8 +1973,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                             "from": "Developer",
                             "value": "%1 = Record, %2 = Value"
                         }
-                    ],
-                    "developerHint": "%1 = Record, %2 = Value"
+                    ]
                 },
                 {
                     "id": "Codeunit 562451849 - Method 4227372758 - NamedType 2367821945",
@@ -1998,8 +1987,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                             "from": "Developer",
                             "value": "%1 = Record"
                         }
-                    ],
-                    "developerHint": "%1 = Record"
+                    ]
                 },
                 {
                     "id": "Codeunit 562451849 - Method 2459202162 - NamedType 1847808964",
@@ -2028,8 +2016,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                             "from": "Developer",
                             "value": "%1 = Record, %2 = Value"
                         }
-                    ],
-                    "developerHint": "%1 = Record, %2 = Value"
+                    ]
                 },
                 {
                     "id": "Codeunit 562451849 - Method 2459202162 - NamedType 1649695370",
@@ -2073,8 +2060,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                             "from": "Developer",
                             "value": "%1 = Record, %2 = Value"
                         }
-                    ],
-                    "developerHint": "%1 = Record, %2 = Value"
+                    ]
                 },
                 {
                     "id": "Codeunit 562451849 - Method 3820981559 - NamedType 4277721231",
@@ -2089,8 +2075,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                             "from": "Developer",
                             "value": "%1 = Record"
                         }
-                    ],
-                    "developerHint": "%1 = Record"
+                    ]
                 },
                 {
                     "id": "Codeunit 562451849 - Method 3820981559 - NamedType 2779639592",
@@ -2104,8 +2089,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                             "from": "Developer",
                             "value": "%1 = Record, %2 = Value"
                         }
-                    ],
-                    "developerHint": "%1 = Record, %2 = Value"
+                    ]
                 },
                 {
                     "id": "Codeunit 562451849 - Method 3820981559 - NamedType 2364039393",
@@ -2163,8 +2147,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                             "from": "Developer",
                             "value": "%1 = Record"
                         }
-                    ],
-                    "developerHint": "%1 = Record"
+                    ]
                 },
                 {
                     "id": "Codeunit 562451849 - Method 3785214030 - NamedType 2082848491",
@@ -2178,8 +2161,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                             "from": "Developer",
                             "value": "%1 = Record, %2 = Value"
                         }
-                    ],
-                    "developerHint": "%1 = Record, %2 = Value"
+                    ]
                 },
                 {
                     "id": "Codeunit 562451849 - Method 3785214030 - NamedType 2367821945",
@@ -2194,8 +2176,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                             "from": "Developer",
                             "value": "%1 = Record"
                         }
-                    ],
-                    "developerHint": "%1 = Record"
+                    ]
                 },
                 {
                     "id": "Codeunit 562451849 - Method 3785214030 - NamedType 1460637839",
@@ -2209,8 +2190,7 @@ export const DEV_DOCUMENT: XliffDocumentDto = {
                             "from": "Developer",
                             "value": "%1 = Record, %2 = Value"
                         }
-                    ],
-                    "developerHint": "%1 = Record, %2 = Value"
+                    ]
                 },
                 {
                     "id": "Codeunit 562451849 - Method 3785214030 - NamedType 1649695370",

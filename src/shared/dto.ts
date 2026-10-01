@@ -55,7 +55,7 @@ export interface TransUnitDto {
     readonly alObjectTarget?: string;
     /** The `Xliff Generator` note is **not** here — its content is already the node names. */
     readonly notes: readonly XliffNoteDto[];
-    /** The text of a `Developer` note, with any `xx-XX=` prefix stripped. */
+    /** What the `Developer` note suggests for this file's target language, when it suggests anything. */
     readonly developerHint?: string;
     /**
      * True when the base file no longer carries this id — the unit was removed from the AL

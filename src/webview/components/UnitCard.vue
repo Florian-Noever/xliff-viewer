@@ -92,7 +92,6 @@ import { computed, useId } from 'vue';
 import MetaChips from './MetaChips.vue';
 import NoteList from './NoteList.vue';
 import StateBadge from './StateBadge.vue';
-import { DEVELOPER_NOTE } from '../constants';
 import { stateLabel } from '../stateTone';
 import { translationLabel, translations } from '../translations';
 import { useUnitActions } from '../unitActions';
@@ -259,19 +258,12 @@ const visible = computed(() => {
 });
 
 /**
- * The `Developer` note with its `xx-XX=` prefix stripped.
- *
- * Shown only where it tells the reader something new: not when the note had no prefix to
- * strip, and not when the translator has already used the suggestion, which would only
- * print the target a second time.
+ * What the `Developer` note suggests for this file's language, shown only where it tells the
+ * reader something new: not once the translator has used it, which would print the target twice.
  */
 const hint = computed(() => {
     const suggestion = props.unit.developerHint;
-    if (!props.settings.showDeveloperNotes || suggestion === undefined || suggestion === props.unit.target) {
-        return undefined;
-    }
-    const raw = props.unit.notes.find(note => note.from === DEVELOPER_NOTE)?.value;
-    return raw === suggestion ? undefined : suggestion;
+    return props.settings.showDeveloperNotes && suggestion !== props.unit.target ? suggestion : undefined;
 });
 </script>
 

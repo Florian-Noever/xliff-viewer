@@ -15,8 +15,10 @@ import type { XliffNote, XliffTransUnit } from '../../shared/model';
 export const GENERATOR_NOTE_FROM = 'Xliff Generator';
 const DEVELOPER_NOTE_FROM = 'Developer';
 
-/** `de-DE=…`, `en-US=…`. Deliberately anchored: `%1 = Document No.` must not match. */
-const LANGUAGE_PREFIX = /^([a-z]{2}(?:-[A-Za-z0-9]{2,8})?)=([\s\S]*)$/;
+/** One suggestion: a language tag, `=`, the text. Anchored, so `%1 = Document No.` is none. */
+const LANGUAGE_ENTRY = /^([A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*)=([\s\S]*)$/;
+/** A `|` that starts another suggestion, rather than one inside a suggestion's text. */
+const ENTRY_SEPARATOR = /\s*\|\s*(?=[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*=)/;
 
 /**
  * True when every segment is `<Type> <value>` — i.e. the id is AL-shaped.
@@ -139,27 +141,30 @@ function findNote(notes: readonly XliffNote[], from: string): string | undefined
     return notes.find(note => note.from === from)?.value;
 }
 
-export interface DeveloperHint {
-    /** Present only when the note actually began `xx-XX=`. */
-    readonly language?: string;
-    /** The suggestion, or the whole note when there was no language prefix. */
-    readonly text: string;
+/**
+ * The suggestions a `Developer` note makes, by lowercased language: `de-DE=Kunde|fr-FR=Client`.
+ * Empty for free text such as `%1 = Document No.`. The first suggestion for a language wins.
+ */
+export function developerSuggestions(note: string | undefined): ReadonlyMap<string, string> {
+    const suggestions = new Map<string, string>();
+    if (note === undefined || !LANGUAGE_ENTRY.test(note)) {
+        return suggestions;
+    }
+    for (const entry of note.split(ENTRY_SEPARATOR)) {
+        const match = LANGUAGE_ENTRY.exec(entry);
+        if (match === null) {
+            continue;
+        }
+        const language = match[1].toLowerCase();
+        if (!suggestions.has(language)) {
+            suggestions.set(language, match[2]);
+        }
+    }
+    return suggestions;
 }
 
-/**
- * Reads a `Developer` note as a translator hint.
- *
- * AL developers usually write `de-DE=<suggestion>`, but the note is free text such as
- * `%1 = Document No.`, or empty. **Never assume the prefix** — an unprefixed note is
- * returned whole, with no language.
- */
-export function developerHint(note: string | undefined): DeveloperHint | undefined {
-    if (note === undefined || note === '') {
-        return undefined;
-    }
-
-    const match = LANGUAGE_PREFIX.exec(note);
-    return match === null
-        ? { text: note }
-        : { language: match[1], text: match[2] };
+/** The note's suggestion for one target language, or undefined when it makes none, or an empty one. */
+export function developerHint(note: string | undefined, targetLanguage: string | undefined): string | undefined {
+    const suggestion = targetLanguage === undefined ? undefined : developerSuggestions(note).get(targetLanguage.toLowerCase());
+    return suggestion === '' ? undefined : suggestion;
 }

@@ -131,7 +131,7 @@ describe('units', () => {
             sizeUnit: 'char',
             alObjectTarget: undefined,
             notes: [{ from: 'Developer', value: 'de-DE=keine|en-US=none' }],
-            developerHint: 'keine|en-US=none',
+            developerHint: 'keine',
         });
     });
 
@@ -180,13 +180,22 @@ describe('units', () => {
         expect(serialised).toContain('"from":"Developer"');
     });
 
-    it('keeps an unprefixed Developer note whole as the hint', () => {
+    it('makes no suggestion from an unprefixed Developer note', () => {
         const dto = projectXml(`<?xml version="1.0" encoding="utf-8"?>
 <xliff version="1.2"><file source-language="en" target-language="de"><body>
   <trans-unit id="1"><source>a</source><target>b</target><note from="Developer">%1 = Document No.</note></trans-unit>
 </body></file></xliff>`);
 
-        expect(unitById(dto.files[0], '1').developerHint).toBe('%1 = Document No.');
+        expect(unitById(dto.files[0], '1').developerHint).toBeUndefined();
+    });
+
+    it('makes no suggestion from a note in a language other than the file\'s', () => {
+        const dto = projectXml(`<?xml version="1.0" encoding="utf-8"?>
+<xliff version="1.2"><file source-language="en-US" target-language="fr-FR"><body>
+  <trans-unit id="1"><source>Customer</source><target>Client</target><note from="Developer">de-DE=Kunde</note></trans-unit>
+</body></file></xliff>`);
+
+        expect(unitById(dto.files[0], '1').developerHint).toBeUndefined();
     });
 
     it('marks a translate="no" unit without hiding it', () => {

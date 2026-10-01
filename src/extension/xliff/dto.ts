@@ -99,7 +99,7 @@ function projectFile(file: XliffFile, index: number): XliffFileDto {
         // A file with no AL structure has no types to group by, and its flat list is
         // already the right answer.
         tree: projectNodes(hasAlIds ? groupRoots(roots) : roots),
-        units: models.map(projectUnit),
+        units: models.map(unit => projectUnit(unit, file.targetLanguage)),
         hasAlIds,
         ...(namespaced ? { namespaced: true as const } : {}),
     };
@@ -110,7 +110,7 @@ function projectFile(file: XliffFile, index: number): XliffFileDto {
  * whole document. There must be exactly one projection, or a patched unit and its
  * neighbours start disagreeing about what a unit looks like.
  */
-export function projectUnit(unit: XliffTransUnit): TransUnitDto {
+export function projectUnit(unit: XliffTransUnit, targetLanguage: string | undefined): TransUnitDto {
     const declared = unit.target?.state;
     const state = effectiveState(unit);
 
@@ -128,7 +128,7 @@ export function projectUnit(unit: XliffTransUnit): TransUnitDto {
         notes: unit.notes
             .filter(note => note.from !== GENERATOR_NOTE_FROM)
             .map(note => ({ from: note.from, value: note.value })),
-        developerHint: developerHint(developerNote(unit))?.text,
+        developerHint: developerHint(developerNote(unit), targetLanguage),
     };
 }
 

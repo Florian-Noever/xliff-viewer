@@ -232,7 +232,7 @@ export class XliffDocumentSession {
             return false;
         }
 
-        const patched = projectUnit(unit);
+        const patched = projectUnit(unit, state.model.files[pending.fileIndex].targetLanguage);
         this.state = { ...state, text: pending.expectedText, dto: withUnit(state.dto, pending.fileIndex, patched) };
         this.lastGood = this.state;
 

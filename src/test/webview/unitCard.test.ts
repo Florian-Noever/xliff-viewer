@@ -192,7 +192,7 @@ describe('NoteList', () => {
 });
 
 describe('the Developer hint', () => {
-    it('shows the suggestion with its language prefix stripped', () => {
+    it('shows the suggestion the note makes for the file\'s language', () => {
         const wrapper = card({
             target: 'Kundin',
             notes: [{ from: 'Developer', value: 'de-DE=Kunde' }],
@@ -215,16 +215,6 @@ describe('the Developer hint', () => {
 
         expect(wrapper.find('.aside').exists()).toBe(false);
         expect(wrapper.text()).toContain('de-DE=Kunde');
-    });
-
-    it('says nothing extra when the note had no prefix to strip', () => {
-        const wrapper = card({
-            notes: [{ from: 'Developer', value: '%1 = Document No.' }],
-            developerHint: '%1 = Document No.',
-        });
-
-        expect(wrapper.find('.aside').exists()).toBe(false);
-        expect(wrapper.text()).toContain('%1 = Document No.');
     });
 
     it('follows showDeveloperNotes', () => {

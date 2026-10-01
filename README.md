@@ -92,7 +92,7 @@ The tree is a single tab stop with the arrow keys moving inside it, which is how
 | Setting | Type | Default | Effect |
 | --- | --- | --- | --- |
 | `xliffViewer.baseFile` | `string` | `""` | An explicit base-file path or glob. Empty means "work it out" — see below |
-| `xliffViewer.showDeveloperNotes` | `boolean` | `true` | Show `Developer` notes and the suggestion parsed out of them |
+| `xliffViewer.showDeveloperNotes` | `boolean` | `true` | Show `Developer` notes, and the suggestion they make for the file's language |
 | `xliffViewer.showGeneratorNotes` | `boolean` | `false` | Show the `Xliff Generator` note, rebuilt from the tree |
 | `xliffViewer.defaultExpandDepth` | `number` | `1` | How many levels of real structure a file opens to |
 | `xliffViewer.editMode` | `boolean` | `false` | Open files with editing already on, instead of read-only |

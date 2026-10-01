@@ -172,38 +172,53 @@ describe('note lookup', () => {
 });
 
 describe('developerHint', () => {
-    it('splits the usual lang=suggestion form', () => {
-        expect(developerHint('de-DE=Contoso Methoden Name')).toEqual({
-            language: 'de-DE',
-            text: 'Contoso Methoden Name',
-        });
+    it('gives the suggestion for the file\'s own language, whatever its case', () => {
+        expect(developerHint('de-DE=Contoso Methoden Name', 'de-DE')).toBe('Contoso Methoden Name');
+        expect(developerHint('de-DE=Kunde', 'DE-de')).toBe('Kunde');
+        expect(developerHint('de-DE=Kunde', 'de-de')).toBe('Kunde');
+        expect(developerHint('de=Hallo', 'de')).toBe('Hallo');
     });
 
-    it('accepts a bare two-letter language', () => {
-        expect(developerHint('de=Hallo')).toEqual({ language: 'de', text: 'Hallo' });
+    it('gives nothing for another language', () => {
+        expect(developerHint('de-DE=Kunde', 'fr-FR')).toBeUndefined();
     });
 
-    it('returns free text whole, without inventing a language', () => {
-        // An unanchored prefix rule would read "%1 " as a language and mangle the note.
-        expect(developerHint('%1 = Document No.')).toEqual({ text: '%1 = Document No.' });
-        expect(developerHint('Erstellt am')).toEqual({ text: 'Erstellt am' });
-        expect(developerHint('Verkauf - Auftragsbestätigung %1')).toEqual({
-            text: 'Verkauf - Auftragsbestätigung %1',
-        });
+    it('picks the language\'s entry from a note that names several, the first if it repeats', () => {
+        expect(developerHint('de-DE=Kunde|fr-FR=Client', 'fr-FR')).toBe('Client');
+        expect(developerHint('de-DE=Kunde|fr-FR=Client', 'de-DE')).toBe('Kunde');
+        expect(developerHint('de-DE=Kunde | fr-FR=Client', 'fr-FR')).toBe('Client');
+        expect(developerHint('de-DE=Kunde | fr-FR=Client', 'de-DE')).toBe('Kunde');
+        expect(developerHint('de-DE=Erste|de-DE=Zweite', 'de-DE')).toBe('Erste');
     });
 
-    it('returns undefined for an absent or empty note', () => {
-        expect(developerHint(undefined)).toBeUndefined();
-        expect(developerHint('')).toBeUndefined();
+    it('keeps a | that starts no other entry as part of the text', () => {
+        expect(developerHint('de-DE=A|B', 'de-DE')).toBe('A|B');
     });
 
-    it('keeps an empty suggestion after a real prefix', () => {
-        expect(developerHint('de-DE=')).toEqual({ language: 'de-DE', text: '' });
+    it('makes no suggestion from free text', () => {
+        // An unanchored rule would read "%1 " as a language and mangle the note.
+        for (const note of ['%1 = Document No.', 'Erstellt am', 'Verkauf - Auftragsbestätigung %1']) {
+            expect(developerHint(note, 'de-DE'), note).toBeUndefined();
+        }
+    });
+
+    it('counts an empty suggestion as none', () => {
+        expect(developerHint('de-DE=', 'de-DE')).toBeUndefined();
+    });
+
+    it('accepts a three-letter language', () => {
+        expect(developerHint('fil-PH=Kamusta', 'fil-PH')).toBe('Kamusta');
+    });
+
+    it('gives nothing without a note or a target language', () => {
+        expect(developerHint(undefined, 'de-DE')).toBeUndefined();
+        expect(developerHint('', 'de-DE')).toBeUndefined();
+        expect(developerHint('de-DE=Kunde', undefined)).toBeUndefined();
     });
 
     it('parses every developer note in the corpus without throwing', () => {
         for (const unit of unitsOf('Fabrikam Base.de-DE.xlf')) {
-            expect(() => developerHint(developerNote(unit)), unit.id).not.toThrow();
+            expect(() => developerHint(developerNote(unit), 'de-DE'), unit.id).not.toThrow();
         }
     });
 });
