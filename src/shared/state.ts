@@ -1,8 +1,8 @@
 /**
  * The translation-state domain and its roll-up.
  *
- * The roll-up lives here, in `src/shared/`, because the **webview** computes it, so the
- * DTO does not have to ship a summary per node.
+ * The roll-up is pure, so it sits here beside the severity order it applies. The webview
+ * runs it, which spares the DTO a summary per node.
  *
  * An `as const` object rather than a TypeScript `enum`: this crosses the `postMessage`
  * boundary and is serialised to JSON.

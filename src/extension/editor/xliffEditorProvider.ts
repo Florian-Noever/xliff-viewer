@@ -16,13 +16,6 @@ import type { HandlerContext } from '../handlers/handlerContext';
 import type { ExtensionMessage } from '../../shared/messages';
 
 /**
- * Wraps a `TextDocument` rather than owning its own model, so dirty state, undo/redo,
- * save, hot exit and "Reopen with Text Editor" all come from VS Code.
- *
- * The provider owns no parsing itself — it acquires the document's session, connects one
- * webview to it, and drops both when the panel closes.
- */
-/**
  * VS Code names these by the theme they are *for*, not by their own colour: `light` is shown
  * under a light theme, so it is the dark-inked icon.
  */
@@ -31,6 +24,13 @@ const TAB_ICON = {
     dark: ['assets', 'icon-light.svg'],
 } as const;
 
+/**
+ * Wraps a `TextDocument` rather than owning its own model, so dirty state, undo/redo,
+ * save, hot exit and "Reopen with Text Editor" all come from VS Code.
+ *
+ * The provider owns no parsing itself — it acquires the document's session, connects one
+ * webview to it, and drops both when the panel closes.
+ */
 export class XliffEditorProvider implements vscode.CustomTextEditorProvider {
     public static readonly viewType = 'xliff-viewer.editor';
 

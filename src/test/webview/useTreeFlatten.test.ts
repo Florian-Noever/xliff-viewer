@@ -326,6 +326,16 @@ describe('an edit does not disturb the tree', () => {
         expect(tree.rows.value.map(row => row.key)).toEqual(opened);
     });
 
+    it('keeps a restored expansion through a re-parse of the same document', () => {
+        const { tree, active } = view(file(TREE), 0);
+
+        tree.restore({ expanded: { 0: ['Table 1'] }, focused: { 0: 'Table 1 - Property 4' } });
+        active.value = { ...file(TREE), units: [...UNITS.values()] };
+
+        expect(tree.rows.value.map(row => row.key)).toEqual(['Table 1', 'Table 1 - Field 2', 'Table 1 - Property 4', 'Table 5']);
+        expect(tree.focusedKey.value).toBe('Table 1 - Property 4');
+    });
+
     it('keeps the focused row where it was', () => {
         const { tree, active } = view(file(TREE), 1);
         tree.focus('Table 1 - Property 4');

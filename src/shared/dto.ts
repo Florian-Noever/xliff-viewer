@@ -84,7 +84,8 @@ export interface AlNodeDto {
     readonly name?: string;
     readonly children: readonly AlNodeDto[];
     /**
-     * Set on the synthetic object-type level, and only there.
+     * Set on the levels the tree adds above the objects — object-type groups and
+     * "(no namespace)" — and only there.
      *
      * A flag rather than a key-prefix test on the far side: the key's namespace exists to
      * stop collisions, and making the webview read meaning out of it would turn a private

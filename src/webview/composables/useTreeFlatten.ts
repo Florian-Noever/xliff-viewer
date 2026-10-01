@@ -33,7 +33,7 @@ export interface TreeRow {
     readonly expanded: boolean;
     /** Present when this node carries a unit — a leaf, usually, but an id can be another's prefix. */
     readonly unit?: TransUnitDto;
-    /** The synthetic object-type level, which is a label rather than a symbol. */
+    /** A level the tree adds — an object-type group or "(no namespace)" — rather than a symbol. */
     readonly group?: true;
     /** One-based position among its siblings, for `aria-posinset`. */
     readonly position: number;
@@ -310,8 +310,9 @@ export function useTreeFlatten(source: TreeSource): TreeView {
                 next.set(file, { expanded: new Set(keys), focusedKey: saved.focused[index] });
             }
         }
-        // The URI the watcher remembers moves with it, or the next document-change check
-        // treats this as a new document and reseeds the state just put back.
+        // Recorded here too, so the document-change watcher keeps what was put back,
+        // whichever of the two runs first.
+        statefulUri = source.documentUri.value;
         byFile.value = next;
     }
 

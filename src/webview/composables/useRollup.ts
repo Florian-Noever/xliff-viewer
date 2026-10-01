@@ -9,9 +9,8 @@ import type { ComputedRef } from 'vue';
 /**
  * The state roll-up, computed here in the webview.
  *
- * It is a thin composable on purpose. The arithmetic lives once in `src/shared/state.ts`
- * and is shared with the host; reimplementing any of it here is how the two ends start
- * disagreeing about what "86 %" means.
+ * It is a thin composable on purpose: the arithmetic lives once in `src/shared/state.ts`, and
+ * this feeds it the active file.
  *
  * `TransUnitDto` satisfies `UnitState` structurally — it carries `state` and `translate` —
  * so the DTO's own unit index is the roll-up's input with no conversion in between. That
