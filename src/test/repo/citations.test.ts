@@ -1,6 +1,8 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
 import { describe, expect, it } from 'vitest';
+
+import { listFiles } from '../support/files';
 
 const REPO = new URL('../../../', import.meta.url);
 const SELF = fileURLToPath(import.meta.url);
@@ -10,14 +12,9 @@ const ROOT_FILES = ['esbuild.mjs', 'eslint.config.mjs', 'vite.config.mts', 'vite
 
 const CITATION = /\bDEC-\d{3}\b|\bD-\d{2}\b|§\s?\d|\\u00[aA]7\d|\b(?:TOOL|DATA|TREE|HOST|UI|FIND|NAV|EDIT|POLISH|REVIEW)-\d{2}[a-z]?\b|MASTER_PLAN|ROADMAP|OPEN_QUESTIONS|DECISIONS\.md|STATUS\.md|gob-numberingtool|al-actionimage-viewer/;
 
-function walk(folder: string): string[] {
-    return readdirSync(new URL(`${folder}/`, REPO), { withFileTypes: true }).flatMap((entry) => {
-        const path = `${folder}/${entry.name}`;
-        return entry.isDirectory() ? walk(path) : [path];
-    });
-}
+const filesIn = (folder: string): string[] => listFiles(fileURLToPath(new URL(`${folder}/`, REPO))).map(path => `${folder}/${path}`);
 
-const scanned = (): string[] => [...FOLDERS.flatMap(walk), ...ROOT_FILES].filter(path => fileURLToPath(new URL(path, REPO)) !== SELF);
+const scanned = (): string[] => [...FOLDERS.flatMap(filesIn), ...ROOT_FILES].filter(path => fileURLToPath(new URL(path, REPO)) !== SELF);
 
 function citations(path: string): string[] {
     return readFileSync(new URL(path, REPO), 'utf8')

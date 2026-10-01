@@ -4,18 +4,12 @@ import { fileURLToPath, URL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { FIXTURE, generateAlSources, generateCorpus } from '../fixtures/corpus';
+import { listFiles } from '../support/files';
 import { FIXTURE_FOLDER, readFixture } from '../support/fixtures';
 
 const AL_FIXTURES = fileURLToPath(new URL('../fixtures/al', import.meta.url));
 const generated = generateCorpus();
 const generatedAl = generateAlSources();
-
-/** Every file below a folder, by its path relative to it, with forward slashes. */
-function filesBelow(folder: string, prefix = ''): string[] {
-    return readdirSync(folder, { withFileTypes: true }).flatMap(entry => (entry.isDirectory()
-        ? filesBelow(join(folder, entry.name), `${prefix}${entry.name}/`)
-        : [`${prefix}${entry.name}`]));
-}
 
 /**
  * The data project runs with no mocks at all. This smoke test also pins what every
@@ -32,7 +26,7 @@ describe('fixture corpus', () => {
     });
 
     it('holds exactly the AL sources the generator writes', () => {
-        expect(filesBelow(AL_FIXTURES).sort()).toEqual(generatedAl.map(file => file.name).sort());
+        expect(listFiles(AL_FIXTURES)).toEqual(generatedAl.map(file => file.name).sort());
     });
 
     it.each(generatedAl.map(file => [file.name, file.text] as const))('%s is exactly what the generator writes', (name, text) => {

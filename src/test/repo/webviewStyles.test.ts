@@ -1,26 +1,20 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
+import { listFiles } from '../support/files';
+
 /**
- * Only a source scan can check motion and forced colours: jsdom applies no stylesheet. It lives
- * in `data` because the webview tsconfig has no node types, and there `import.meta.glob` with
- * `?raw` returns an empty string for a `.css` file: Vite's CSS pipeline claims it first.
+ * Only a source scan can check motion and forced colours: jsdom applies no stylesheet. It runs
+ * in a node project because the webview tsconfig has no node types, and there
+ * `import.meta.glob` with `?raw` returns an empty string for a `.css` file: Vite's CSS
+ * pipeline claims it first.
  */
 
 const WEBVIEW = fileURLToPath(new URL('../../webview', import.meta.url));
 
-function sources(directory: string, matching: RegExp): { path: string; text: string }[] {
-    return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-        const path = `${directory}/${entry.name}`;
-        if (entry.isDirectory()) {
-            return sources(path, matching);
-        }
-        return matching.test(entry.name) ? [{ path, text: readFileSync(path, 'utf8') }] : [];
-    });
-}
-
-const styled = (): { path: string; text: string }[] => sources(WEBVIEW, /\.(vue|css)$/);
+const styled = (): { path: string; text: string }[] =>
+    listFiles(WEBVIEW, /\.(vue|css)$/).map(path => ({ path, text: readFileSync(`${WEBVIEW}/${path}`, 'utf8') }));
 
 describe('what the webview does with motion and with a forced palette', () => {
     it('reads more than a handful of files, so a passing scan means something', () => {
