@@ -386,7 +386,7 @@ const hint = computed(() => {
 
 /* No label of their own, so they start where the values do. */
 .chips {
-    padding-inline-start: calc(9px + var(--label-column) + var(--gap));
+    padding-inline: calc(9px + var(--label-column) + var(--gap)) 9px;
 }
 
 .label {
@@ -445,10 +445,6 @@ const hint = computed(() => {
 .hint-mark {
     flex: none;
     color: var(--vscode-editorWarning-foreground);
-}
-
-.chips {
-    padding-inline: 9px;
 }
 
 .pairing {

@@ -52,3 +52,13 @@ describe('what the webview does with motion and with a forced palette', () => {
         expect(guarded.sort()).toEqual(['ProgressBar.vue', 'Toolbar.vue', 'global.css']);
     });
 });
+
+describe('the chips row of a unit card', () => {
+    it('has one rule, which starts the row where the values start', () => {
+        const card = styled().find(file => file.path.endsWith('/UnitCard.vue'))?.text ?? '';
+        const rules = card.match(/^\.chips \{[^}]*\}/gm) ?? [];
+
+        expect(rules).toHaveLength(1);
+        expect(rules[0]).toContain('var(--label-column)');
+    });
+});
