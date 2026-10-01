@@ -11,6 +11,11 @@ import { describe, expect, it } from 'vitest';
 
 interface Manifest {
     readonly version: string;
+    readonly capabilities?: {
+        readonly untrustedWorkspaces?: { readonly supported?: unknown; readonly description?: string; readonly restrictedConfigurations?: readonly string[] };
+        readonly virtualWorkspaces?: unknown;
+    };
+    readonly contributes: { readonly configuration: { readonly properties: Readonly<Record<string, unknown>> } };
     readonly qna?: string | false;
     readonly homepage?: string;
     readonly repository?: { readonly url?: string };
@@ -38,5 +43,24 @@ describe('the manifest, as the registries read it', () => {
 
     it('carries a version without a prerelease label, which extension versions cannot have', () => {
         expect(manifest.version).toMatch(/^\d+\.\d+\.\d+$/);
+    });
+});
+
+describe('Restricted Mode', () => {
+    it('is supported in part, and the manifest says which part', () => {
+        expect(manifest.capabilities?.untrustedWorkspaces?.supported).toBe('limited');
+        expect(manifest.capabilities?.untrustedWorkspaces?.description).toBeTruthy();
+    });
+
+    it('restricts the base-file path, and only settings the extension declares', () => {
+        const restricted = manifest.capabilities?.untrustedWorkspaces?.restrictedConfigurations ?? [];
+        const declared = Object.keys(manifest.contributes.configuration.properties);
+
+        expect(restricted).toContain('xliffViewer.baseFile');
+        expect(restricted.filter(key => !declared.includes(key))).toEqual([]);
+    });
+
+    it('declares that it works in a virtual workspace', () => {
+        expect(manifest.capabilities?.virtualWorkspaces).toBe(true);
     });
 });

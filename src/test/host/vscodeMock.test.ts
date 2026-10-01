@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import * as vscode from 'vscode';
 
-import { FakeTextDocument, flushAppliedEdits, flushErrorMessages, flushFileReads, holdFileRead, reportEditsInPieces, resetMocks, setApplyEditResult, setConfigOverride, setVirtualFile } from '../__mocks__/vscode';
+import { FakeTextDocument, flushAppliedEdits, flushErrorMessages, flushFileReads, holdFileRead, reportEditsInPieces, resetMocks, setApplyEditResult, setConfigOverride, setUserConfigOverride, setVirtualFile, setWorkspaceTrusted } from '../__mocks__/vscode';
 
 afterEach(() => {
     resetMocks();
@@ -59,6 +59,26 @@ describe('vscode mock', () => {
         const config = vscode.workspace.getConfiguration('xliffViewer');
         expect(config.get('baseFile', '')).toBe('Translations/App.g.xlf');
         expect(config.get('editMode', false)).toBe(false);
+    });
+
+    it('tells user values from workspace values, and trust from Restricted Mode', () => {
+        setConfigOverride('section.key', 'workspace');
+        setUserConfigOverride('section.key', 'user');
+        let granted = 0;
+        const listening = vscode.workspace.onDidGrantWorkspaceTrust(() => {
+            granted++;
+        });
+
+        expect(vscode.workspace.getConfiguration('section').inspect('key')).toEqual({ key: 'section.key', globalValue: 'user', workspaceValue: 'workspace' });
+        expect(vscode.workspace.getConfiguration('section').get('key')).toBe('workspace');
+        expect(vscode.workspace.isTrusted).toBe(true);
+        setWorkspaceTrusted(false);
+        expect(vscode.workspace.isTrusted).toBe(false);
+        setWorkspaceTrusted(true);
+        listening.dispose();
+        setWorkspaceTrusted(false);
+        setWorkspaceTrusted(true);
+        expect(granted).toBe(1);
     });
 
     it('records shown error messages', async () => {

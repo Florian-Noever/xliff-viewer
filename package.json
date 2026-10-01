@@ -31,6 +31,16 @@
         "translation",
         "localization"
     ],
+    "capabilities": {
+        "untrustedWorkspaces": {
+            "supported": "limited",
+            "description": "In Restricted Mode the workspace's own xliffViewer.baseFile setting is ignored; the user setting still applies.",
+            "restrictedConfigurations": [
+                "xliffViewer.baseFile"
+            ]
+        },
+        "virtualWorkspaces": true
+    },
     "activationEvents": [],
     "main": "./out/extension.js",
     "browser": "./out/web/extension.js",

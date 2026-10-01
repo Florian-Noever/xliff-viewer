@@ -9,12 +9,9 @@ function createNonce(): string {
     return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
-/** Directories the webview may load resources from. */
+/** Directories the webview may load resources from: the bundle, and nothing else. */
 export function localResourceRoots(extensionUri: vscode.Uri): vscode.Uri[] {
-    return [
-        vscode.Uri.joinPath(extensionUri, BUNDLE),
-        vscode.Uri.joinPath(extensionUri, ...TEMPLATE.slice(0, 1)),
-    ];
+    return [vscode.Uri.joinPath(extensionUri, BUNDLE)];
 }
 
 /**

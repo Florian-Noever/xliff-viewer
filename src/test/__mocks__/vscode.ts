@@ -30,6 +30,9 @@ const heldReads = new Map<string, Promise<void>>();
 let fileReads: string[] = [];
 let fileWrites: { path: string; content: string }[] = [];
 let configOverrides: Record<string, unknown> = {};
+let userConfigOverrides: Record<string, unknown> = {};
+let workspaceTrusted = true;
+let trustListeners: (() => void)[] = [];
 let virtualFiles: Record<string, string> = {};
 let messageResult: string | undefined;
 let logLines: string[] = [];
@@ -350,9 +353,26 @@ export const workspace = {
             if (key in configOverrides) {
                 return configOverrides[key] as T;
             }
+            if (full in userConfigOverrides) {
+                return userConfigOverrides[full] as T;
+            }
             return defaultValue;
         },
+        /** `setConfigOverride` values are the workspace's, `setUserConfigOverride` values the user's. */
+        inspect: <T>(key: string): { key: string; globalValue?: T; workspaceValue?: T } => {
+            const full = section === undefined ? key : `${section}.${key}`;
+            return { key: full, globalValue: userConfigOverrides[full] as T | undefined, workspaceValue: configOverrides[full] as T | undefined };
+        },
     }),
+    get isTrusted(): boolean {
+        return workspaceTrusted;
+    },
+    onDidGrantWorkspaceTrust: (listener: () => void): Disposable => {
+        trustListeners.push(listener);
+        return new Disposable(() => {
+            trustListeners = trustListeners.filter(each => each !== listener);
+        });
+    },
     fs: {
         readFile: async (uri: Uri): Promise<Uint8Array> => {
             fileReads.push(uri.path);
@@ -596,6 +616,22 @@ export function setOpenDocument(path: string, text: string): void {
 }
 
 /** Overrides a configuration value, by bare key or fully qualified `section.key`. */
+/** A value from the user's own settings, which Restricted Mode still honours. */
+export function setUserConfigOverride(key: string, value: unknown): void {
+    userConfigOverrides[key] = value;
+}
+
+/** Restricted Mode when false. Granting trust tells the listeners, as the editor does. */
+export function setWorkspaceTrusted(trusted: boolean): void {
+    const granted = trusted && !workspaceTrusted;
+    workspaceTrusted = trusted;
+    if (granted) {
+        for (const listener of [...trustListeners]) {
+            listener();
+        }
+    }
+}
+
 export function setConfigOverride(key: string, value: unknown): void {
     configOverrides[key] = value;
 }
@@ -786,6 +822,9 @@ export function resetMocks(): void {
     fileReads = [];
     fileWrites = [];
     configOverrides = {};
+    userConfigOverrides = {};
+    workspaceTrusted = true;
+    trustListeners = [];
     virtualFiles = {};
     messageResult = undefined;
     configurationListeners = [];

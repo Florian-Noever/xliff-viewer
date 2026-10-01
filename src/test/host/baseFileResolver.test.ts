@@ -11,8 +11,10 @@ import {
     removeVirtualFile,
     resetMocks,
     setConfigOverride,
+    setUserConfigOverride,
     setVirtualFile,
     setWorkspaceRoot,
+    setWorkspaceTrusted,
 } from '../__mocks__/vscode';
 
 /** XLIFF Sync declares a base-file setting; NAB AL Tools declares none, so it has no tests here. */
@@ -212,6 +214,35 @@ describe('XLIFF Sync', () => {
         setConfigOverride('xliffSync.baseFile', 'NotHere.g.xlf');
 
         expect((await resolver.resolve(uri('/w/T/App.de-DE.xlf'), false)).source).toBe(BaseFileSource.sibling);
+    });
+
+    describe('in Restricted Mode', () => {
+        beforeEach(() => {
+            workspaceWith('/w/T/App.de-DE.xlf', '/w/T/App.g.xlf', '/w/T/Workspace Chose This.g.xlf', '/w/T/User Chose This.g.xlf');
+            setWorkspaceTrusted(false);
+        });
+
+        it('ignores the workspace\'s value', async () => {
+            setConfigOverride('xliffSync.baseFile', 'Workspace Chose This.g.xlf');
+
+            expect((await resolver.resolve(uri('/w/T/App.de-DE.xlf'), false)).source).toBe(BaseFileSource.sibling);
+        });
+
+        it('uses the user\'s own value', async () => {
+            setConfigOverride('xliffSync.baseFile', 'Workspace Chose This.g.xlf');
+            setUserConfigOverride('xliffSync.baseFile', 'User Chose This.g.xlf');
+
+            expect((await resolver.resolve(uri('/w/T/App.de-DE.xlf'), false)).uri?.path).toBe('/w/T/User Chose This.g.xlf');
+        });
+
+        it('starts over once the workspace is trusted', async () => {
+            setConfigOverride('xliffSync.baseFile', 'Workspace Chose This.g.xlf');
+            await resolver.resolve(uri('/w/T/App.de-DE.xlf'), false);
+
+            setWorkspaceTrusted(true);
+
+            expect((await resolver.resolve(uri('/w/T/App.de-DE.xlf'), false)).uri?.path).toBe('/w/T/Workspace Chose This.g.xlf');
+        });
     });
 });
 

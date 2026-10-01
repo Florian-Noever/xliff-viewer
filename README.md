@@ -108,6 +108,8 @@ For `<App>.<lang>.xlf`, in order, first hit wins:
 4. Any `*.g.xlf` in the same folder
 5. Any `*.g.xlf` under a `Translations/` folder in the workspace, preferring the one named after this app
 
+In Restricted Mode a workspace's own `xliffViewer.baseFile` and XLIFF Sync's workspace value are ignored; your user settings still count.
+
 Not finding one is a normal state, not an error: the viewer works fully without a base file and the affordances that need one say why they are disabled. NAB AL Tools has no base-file setting to read — it uses the same convention steps 3–5 already implement.
 
 ### How "Go to source" finds the AL source

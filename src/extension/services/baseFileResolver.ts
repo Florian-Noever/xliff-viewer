@@ -53,6 +53,10 @@ export class BaseFileResolver implements vscode.Disposable {
                     this.invalidate();
                 }
             }),
+            // XLIFF Sync's workspace value starts to count.
+            vscode.workspace.onDidGrantWorkspaceTrust(() => {
+                this.invalidate();
+            }),
         );
     }
 
@@ -148,7 +152,7 @@ export class BaseFileResolver implements vscode.Disposable {
      * error — and we never write it back.
      */
     private async fromXliffSync(uri: vscode.Uri): Promise<vscode.Uri | undefined> {
-        const raw: unknown = vscode.workspace.getConfiguration(XLIFF_SYNC_SECTION, uri).get(XLIFF_SYNC_BASE_FILE);
+        const raw = xliffSyncBaseFile(uri);
         if (typeof raw !== 'string' || raw.trim() === '') {
             return undefined;
         }
@@ -168,6 +172,17 @@ export class BaseFileResolver implements vscode.Disposable {
 
         return match === undefined ? undefined : vscode.Uri.joinPath(folder, match);
     }
+}
+
+/**
+ * XLIFF Sync's base-file setting. In Restricted Mode only the user's own value counts: the
+ * manifest can restrict only this extension's settings, not another's.
+ */
+function xliffSyncBaseFile(uri: vscode.Uri): unknown {
+    const configuration = vscode.workspace.getConfiguration(XLIFF_SYNC_SECTION, uri);
+    return vscode.workspace.isTrusted
+        ? configuration.get(XLIFF_SYNC_BASE_FILE)
+        : configuration.inspect(XLIFF_SYNC_BASE_FILE)?.globalValue;
 }
 
 function parentOf(uri: vscode.Uri): vscode.Uri {

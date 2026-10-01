@@ -6,7 +6,7 @@ import { resetMocks, setVirtualFile } from '../__mocks__/vscode';
 
 const EXTENSION_URI = vscode.Uri.file('/ext');
 const TEMPLATE = [
-    '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src %CSP_SOURCE% data:; style-src %CSP_SOURCE% \'unsafe-inline\'; font-src %CSP_SOURCE%; script-src \'nonce-%NONCE%\';" />',
+    '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src %CSP_SOURCE% data:; style-src %CSP_SOURCE%; font-src %CSP_SOURCE%; script-src \'nonce-%NONCE%\';" />',
     '<link rel="stylesheet" href="%CSS_URI%" />',
     '<script nonce="%NONCE%" src="%SCRIPT_URI%"></script>',
 ].join('\n');
@@ -68,8 +68,8 @@ describe('getWebviewHtml', () => {
 });
 
 describe('localResourceRoots', () => {
-    it('covers both public/ and media/', () => {
+    it('is the bundle folder alone: the template is read by the host, not loaded by the webview', () => {
         const roots = localResourceRoots(EXTENSION_URI).map(uri => uri.path);
-        expect(roots).toEqual(['/ext/public', '/ext/media']);
+        expect(roots).toEqual(['/ext/public']);
     });
 });
