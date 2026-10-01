@@ -166,6 +166,7 @@
         "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. ."
     },
     "devDependencies": {
+        "@stylistic/eslint-plugin": "^5.10.0",
         "@tanstack/vue-virtual": "^3.13.39",
         "@types/mocha": "^10.0.10",
         "@types/node": "^26.6.3",

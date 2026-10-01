@@ -1,3 +1,4 @@
+import stylistic from '@stylistic/eslint-plugin';
 import tseslint from 'typescript-eslint';
 import pluginVue from 'eslint-plugin-vue';
 
@@ -27,14 +28,15 @@ export default tseslint.config(
         },
         plugins: {
             '@typescript-eslint': tseslint.plugin,
+            '@stylistic': stylistic,
         },
         rules: {
             // ── Formatting ───────────────────────────────────────────────────
-            indent: ['warn', 4, { SwitchCase: 1 }],
-            quotes: ['warn', 'single', { avoidEscape: true }],
-            semi: 'warn',
-            'brace-style': ['warn', '1tbs'],
-            'linebreak-style': ['warn', 'unix'],
+            '@stylistic/indent': ['warn', 4, { SwitchCase: 1 }],
+            '@stylistic/quotes': ['warn', 'single', { avoidEscape: true }],
+            '@stylistic/semi': 'warn',
+            '@stylistic/brace-style': ['warn', '1tbs'],
+            '@stylistic/linebreak-style': ['warn', 'unix'],
             curly: 'warn',
 
             // ── Core correctness ─────────────────────────────────────────────
