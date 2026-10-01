@@ -1,3 +1,5 @@
+import type { UnitReference } from '../../shared/model';
+
 /** Position within the document, as reported by the XML validator. 1-based. */
 export interface XliffErrorPosition {
     readonly line?: number;
@@ -29,5 +31,18 @@ export class XliffParseError extends Error {
         }
         const column = this.col === undefined ? '' : `, column ${this.col}`;
         return `${this.message} (line ${this.line}${column})`;
+    }
+}
+
+/** Raised when an edit names a unit the document does not have. */
+export class UnknownUnitError extends Error {
+    public override readonly name = 'UnknownUnitError';
+    public readonly fileIndex: number;
+    public readonly unitId: string;
+
+    public constructor(reference: UnitReference) {
+        super(`No <trans-unit> with id "${reference.unitId}" in <file> ${reference.fileIndex + 1}.`);
+        this.fileIndex = reference.fileIndex;
+        this.unitId = reference.unitId;
     }
 }

@@ -9,16 +9,16 @@ import { fileNameOf } from '../services/uriNames';
 import { generatorNote } from '../xliff/names';
 import { containsComment, setState, setTarget } from '../xliff/writer';
 import { ExtensionMessageType, NavigationTarget } from '../../shared/messages';
-import { iterateFileUnits } from '../../shared/model';
+import { findUnit } from '../../shared/model';
 import { XliffState } from '../../shared/state';
 
-import type { DocumentSession, SessionChange, SessionState, UnitReference, XliffDocumentSession } from './documentSession';
+import type { DocumentSession, SessionChange, SessionState, XliffDocumentSession } from './documentSession';
 import type { TextEditRange } from '../xliff/writer';
 import type { AlSourceIndex, AlSourceIndexes } from '../services/alSourceIndex';
 import type { BaseFileIndex } from '../services/baseFileIndex';
 import type { BaseFileResolver } from '../services/baseFileResolver';
 import type { XliffDocumentDto } from '../../shared/dto';
-import type { XliffTransUnit } from '../../shared/model';
+import type { UnitReference } from '../../shared/model';
 import type { ExtensionMessage } from '../../shared/messages';
 
 /**
@@ -129,11 +129,12 @@ export function createDocumentSession(
             }
         },
         updateTarget: (unit, value, state) => write(session, unit, edit => setTarget(edit.model, edit.text, {
+            fileIndex: unit.fileIndex,
             unitId: unit.unitId,
             value,
             state: stateAfterEdit(session, value, state),
         })),
-        updateState: (unit, state) => write(session, unit, edit => setState(edit.model, edit.text, unit.unitId, state)),
+        updateState: (unit, state) => write(session, unit, edit => setState(edit.model, edit.text, unit, state)),
         // Two targets: the unit's own "Go to source", and the raw XML for the error pane,
         // which has no unit to name.
         openSource: (target, unit) => (target === NavigationTarget.source
@@ -242,8 +243,7 @@ async function showSource(
 
     const current = session.current();
     const parsed = current.kind === 'document' ? current : session.lastGoodState();
-    const file = parsed?.model.files[unit.fileIndex];
-    const modelUnit = file === undefined ? undefined : findUnit(iterateFileUnits(file), unit.unitId);
+    const modelUnit = parsed === undefined ? undefined : findUnit(parsed.model, unit);
 
     await goToSource({
         document: session.uri,
@@ -252,15 +252,6 @@ async function showSource(
         generatorNote: modelUnit === undefined ? undefined : generatorNote(modelUnit),
         alObjectTarget: modelUnit?.alObjectTarget,
     }, alSources, baseFiles);
-}
-
-function findUnit(units: Iterable<XliffTransUnit>, unitId: string): XliffTransUnit | undefined {
-    for (const unit of units) {
-        if (unit.id === unitId) {
-            return unit;
-        }
-    }
-    return undefined;
 }
 
 /** Whether the app has AL files at all. Having none is an answer, not a failure. */

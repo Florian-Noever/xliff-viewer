@@ -44,12 +44,12 @@ export interface EditMode {
     readonly reason: ComputedRef<string | undefined>;
     toggle(): void;
     /**
-     * Records that the reader picked a state for this unit, so a later edit to its text
-     * does not quietly replace their choice with `stateOnEdit`.
+     * Records that the reader picked a state for this unit of this `<file>`, so a later edit
+     * to its text does not quietly replace their choice with `stateOnEdit`.
      */
-    rememberState(unitId: string, state: XliffState): void;
+    rememberState(fileIndex: number, unitId: string, state: XliffState): void;
     /** The state they picked for this unit, or undefined to let `stateOnEdit` decide. */
-    chosenState(unitId: string): XliffState | undefined;
+    chosenState(fileIndex: number, unitId: string): XliffState | undefined;
 }
 
 export interface EditModeSource {
@@ -60,8 +60,8 @@ export interface EditModeSource {
 export function useEditMode(source: EditModeSource): EditMode {
     const wanted = ref(false);
 
-    // Keyed by unit and reset when the document changes: unit ids repeat across files, and
-    // a choice made in one document must not follow the reader into the next.
+    // Keyed by `<file>` and unit, since ids repeat across files, and reset when the document
+    // changes: a choice made in one document must not follow the reader into the next.
     const chosen = new Map<string, XliffState>();
     watch(() => source.document.value?.uri, () => {
         chosen.clear();
@@ -99,13 +99,18 @@ export function useEditMode(source: EditModeSource): EditMode {
         }
     }
 
-    function rememberState(unitId: string, state: XliffState): void {
-        chosen.set(unitId, state);
+    function rememberState(fileIndex: number, unitId: string, state: XliffState): void {
+        chosen.set(chosenKey(fileIndex, unitId), state);
     }
 
-    function chosenState(unitId: string): XliffState | undefined {
-        return chosen.get(unitId);
+    function chosenState(fileIndex: number, unitId: string): XliffState | undefined {
+        return chosen.get(chosenKey(fileIndex, unitId));
     }
 
     return { wanted, available, active, refusal, reason, toggle, rememberState, chosenState };
+}
+
+/** Unambiguous, because a file index never contains a colon. */
+function chosenKey(fileIndex: number, unitId: string): string {
+    return `${fileIndex}:${unitId}`;
 }

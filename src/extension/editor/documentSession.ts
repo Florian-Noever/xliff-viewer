@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import { projectDocument, projectUnit } from '../xliff/dto';
-import { iterateUnits } from '../../shared/model';
+import { findUnit } from '../../shared/model';
 import { XliffParseError } from '../xliff/errors';
 import { parseXliff } from '../xliff/parser';
 import { validateStructure } from '../xliff/validate';
@@ -11,7 +11,7 @@ import { fileNameOf } from '../services/uriNames';
 import type { TextEditRange } from '../xliff/writer';
 import type { XliffDocumentDto } from '../../shared/dto';
 import type { ErrorPayload, NavigationTarget } from '../../shared/messages';
-import type { XliffDocument } from '../../shared/model';
+import type { UnitReference, XliffDocument } from '../../shared/model';
 import type { TransUnitDto } from '../../shared/dto';
 import type { XliffState } from '../../shared/state';
 
@@ -28,12 +28,6 @@ const REPARSE_DEBOUNCE_MS = 150;
 
 /** What VS Code calls a UTF-8 file that starts with a byte-order mark. */
 const BOM_ENCODING = 'utf8bom';
-
-/** A unit is identified by its `<file>` **and** its id — XLIFF scopes ids per file. */
-export interface UnitReference {
-    readonly fileIndex: number;
-    readonly unitId: string;
-}
 
 /** What the message handlers need from the open document. An interface, so dispatch is testable without a `TextDocument`. */
 export interface DocumentSession {
@@ -85,12 +79,10 @@ type StateListener = (change: SessionChange) => void;
  * bare boolean: either would swallow an edit that somebody else made in the same tick,
  * which is precisely the event that must not be lost.
  */
-interface PendingEdit {
+interface PendingEdit extends UnitReference {
     readonly rangeOffset: number;
     readonly rangeLength: number;
     readonly text: string;
-    readonly fileIndex: number;
-    readonly unitId: string;
 }
 
 export class XliffDocumentSession {
@@ -259,7 +251,7 @@ export class XliffDocumentSession {
             return false;
         }
 
-        const unit = [...iterateUnits(state.model)].find(each => each.id === pending.unitId);
+        const unit = findUnit(state.model, pending);
         if (unit === undefined) {
             return false;
         }

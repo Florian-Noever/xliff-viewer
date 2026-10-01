@@ -643,6 +643,38 @@ describe('recognising our own edit', () => {
         ]);
     });
 
+    it('edits and patches the unit of the named <file> when another file has the same id', async () => {
+        const twoFiles = `<?xml version="1.0" encoding="utf-8"?>
+<xliff version="1.2">
+  <file source-language="en-US" target-language="de-DE" original="App">
+    <body>
+      <trans-unit id="Table 1 - Property 2">
+        <source>Customer</source>
+        <target state="translated">Kunde</target>
+      </trans-unit>
+    </body>
+  </file>
+  <file source-language="en-US" target-language="fr-FR" original="App">
+    <body>
+      <trans-unit id="Table 1 - Property 2">
+        <source>Customer</source>
+        <target state="translated">Client</target>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
+`;
+        const { document, facade, posted } = edited(twoFiles);
+
+        await facade.updateTarget({ fileIndex: 1, unitId: UNIT.unitId }, 'Acheteur');
+
+        expect(document.getText()).toBe(twoFiles.replace('>Client<', '>Acheteur<'));
+        expect(posted).toEqual([{
+            type: ExtensionMessageType.patchUnits,
+            payload: { fileIndex: 1, units: [expect.objectContaining({ id: UNIT.unitId, target: 'Acheteur' })] },
+        }]);
+    });
+
     it('patches only the unit that changed', async () => {
         const { facade, posted } = edited(LANGUAGE);
 

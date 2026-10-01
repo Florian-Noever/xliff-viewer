@@ -1,8 +1,8 @@
-import { XliffParseError } from './errors';
+import { UnknownUnitError } from './errors';
 import { serialiseXliff } from './serialise';
-import { iterateUnits } from '../../shared/model';
+import { findUnit } from '../../shared/model';
 
-import type { XliffDocument, XliffTransUnit } from '../../shared/model';
+import type { UnitReference, XliffDocument, XliffTransUnit } from '../../shared/model';
 
 /**
  * Model mutation → the smallest text edit that expresses it.
@@ -38,8 +38,7 @@ export interface TextEditRange {
     readonly newText: string;
 }
 
-export interface SetTargetIntent {
-    readonly unitId: string;
+export interface SetTargetIntent extends UnitReference {
     readonly value: string;
     /** Omitted leaves the existing state untouched; on a new target it means no attribute. */
     readonly state?: string;
@@ -89,13 +88,12 @@ export function trimToEdit(currentText: string, nextText: string): TextEditRange
     return { start, end: endCurrent, newText: nextText.slice(start, endNext) };
 }
 
-function findUnit(document: XliffDocument, unitId: string): XliffTransUnit {
-    for (const unit of iterateUnits(document)) {
-        if (unit.id === unitId) {
-            return unit;
-        }
+function requireUnit(document: XliffDocument, reference: UnitReference): XliffTransUnit {
+    const unit = findUnit(document, reference);
+    if (unit === undefined) {
+        throw new UnknownUnitError(reference);
     }
-    throw new XliffParseError(`No <trans-unit> with id "${unitId}" in this document.`);
+    return unit;
 }
 
 /**
@@ -106,14 +104,14 @@ function findUnit(document: XliffDocument, unitId: string): XliffTransUnit {
  * named fields cannot drift apart. A unit with no `<target>` gains one; the serialiser
  * places it after `<source>` and indents it, so there is no insertion point to compute here.
  *
- * @throws {XliffParseError} when no unit has that id.
+ * @throws {UnknownUnitError} when the document has no such unit.
  */
 export function setTarget(
     document: XliffDocument,
     currentText: string,
     intent: SetTargetIntent,
 ): TextEditRange | null {
-    const unit = findUnit(document, intent.unitId);
+    const unit = requireUnit(document, intent);
     const existing = unit.target;
 
     const state = intent.state ?? existing?.state;
@@ -145,9 +143,9 @@ export function setTarget(
 export function setState(
     document: XliffDocument,
     currentText: string,
-    unitId: string,
+    reference: UnitReference,
     state: string,
 ): TextEditRange | null {
-    const unit = findUnit(document, unitId);
-    return setTarget(document, currentText, { unitId, value: unit.target?.value ?? '', state });
+    const unit = requireUnit(document, reference);
+    return setTarget(document, currentText, { fileIndex: reference.fileIndex, unitId: reference.unitId, value: unit.target?.value ?? '', state });
 }

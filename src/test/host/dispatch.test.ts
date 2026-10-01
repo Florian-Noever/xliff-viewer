@@ -16,7 +16,8 @@ import {
 
 import type * as vscode from 'vscode';
 import type { HandlerContext } from '../../extension/handlers/handlerContext';
-import type { DocumentSession, UnitReference } from '../../extension/editor/documentSession';
+import type { DocumentSession } from '../../extension/editor/documentSession';
+import type { UnitReference } from '../../shared/model';
 import type { ExtensionMessage, WebviewMessage } from '../../shared/messages';
 
 interface Recorded {

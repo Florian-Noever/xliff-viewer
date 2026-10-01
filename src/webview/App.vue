@@ -92,6 +92,8 @@ const {
     updateState,
 } = useXliffDocument({ announce: announcer.announce });
 
+const edit = useEditMode({ document, settings });
+
 provideUnitActions({
     open: (target, unitId) => openSource(target, unitId),
     baseFileName: () => {
@@ -102,14 +104,13 @@ provideUnitActions({
     isBaseFile: () => document.value?.isBaseFile === true,
     // A state the reader chose for this unit outranks `stateOnEdit` on a later edit to its
     // text, so it travels with the message rather than being remembered twice.
-    updateTarget: (unitId, value) => updateTarget(unitId, value, edit.chosenState(unitId)),
+    updateTarget: (unitId, value) => updateTarget(unitId, value, edit.chosenState(activeFile.value?.index ?? 0, unitId)),
     updateState: (unitId, state) => {
-        edit.rememberState(unitId, state);
+        edit.rememberState(activeFile.value?.index ?? 0, unitId, state);
         updateState(unitId, state);
     },
 });
 
-const edit = useEditMode({ document, settings });
 const rollup = useRollup({ file: activeFile, unitsById });
 const validation = useValidation({ file: activeFile, settings });
 const search = useSearch({ file: activeFile, unitsById });

@@ -3,11 +3,11 @@ import { fileURLToPath, URL } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { XliffParseError } from '../../extension/xliff/errors';
+import { UnknownUnitError } from '../../extension/xliff/errors';
 import { parseXliff } from '../../extension/xliff/parser';
 import { serialiseXliff } from '../../extension/xliff/serialise';
 import { setState, setTarget, trimToEdit, type TextEditRange } from '../../extension/xliff/writer';
-import { iterateUnits } from '../../shared/model';
+import { iterateFileUnits, iterateUnits } from '../../shared/model';
 
 import type { XliffDocument, XliffTransUnit } from '../../shared/model';
 
@@ -84,7 +84,7 @@ describe('trimToEdit', () => {
 describe('setTarget', () => {
     it('produces an edit covering only the edited <target>', () => {
         const { text, document, units } = load(LARGE_FILE);
-        const edit = required(setTarget(document, text, { unitId: units[1200].id, value: 'NEUER WERT' }), 'an edit');
+        const edit = required(setTarget(document, text, { fileIndex: 0, unitId: units[1200].id, value: 'NEUER WERT' }), 'an edit');
 
         const replaced = text.slice(edit.start, edit.end);
         // The whole document was serialised; the trim narrowed it to one element.
@@ -95,13 +95,13 @@ describe('setTarget', () => {
 
     it('splices back to exactly what the serialiser produced', () => {
         const { text, document, units } = load(LANGUAGE_FILE);
-        const edit = required(setTarget(document, text, { unitId: units[7].id, value: 'Anderer Text' }), 'an edit');
+        const edit = required(setTarget(document, text, { fileIndex: 0, unitId: units[7].id, value: 'Anderer Text' }), 'an edit');
         expect(apply(text, edit)).toBe(serialiseXliff(document));
     });
 
     it('changes exactly one line', () => {
         const { text, document, units } = load(LANGUAGE_FILE);
-        const edit = required(setTarget(document, text, { unitId: units[3].id, value: 'Einzeilig' }), 'an edit');
+        const edit = required(setTarget(document, text, { fileIndex: 0, unitId: units[3].id, value: 'Einzeilig' }), 'an edit');
 
         const before = text.split('\n');
         const after = apply(text, edit).split('\n');
@@ -112,7 +112,7 @@ describe('setTarget', () => {
     it('returns null when the value and state are unchanged', () => {
         const { text, document, units } = load(LANGUAGE_FILE);
         const unit = units[0];
-        expect(setTarget(document, text, { unitId: unit.id, value: unit.target?.value ?? '' })).toBeNull();
+        expect(setTarget(document, text, { fileIndex: 0, unitId: unit.id, value: unit.target?.value ?? '' })).toBeNull();
     });
 
     it('leaves the model untouched when it returns null', () => {
@@ -120,7 +120,7 @@ describe('setTarget', () => {
         const unit = units[0];
         const before = unit.target;
 
-        setTarget(document, text, { unitId: unit.id, value: unit.target?.value ?? '' });
+        setTarget(document, text, { fileIndex: 0, unitId: unit.id, value: unit.target?.value ?? '' });
 
         expect(unit.target).toBe(before);
         expect(serialiseXliff(document)).toBe(text);
@@ -129,7 +129,7 @@ describe('setTarget', () => {
     it('writes the self-closing form when the value is cleared', () => {
         const { text, document, units } = load(LANGUAGE_FILE);
         const edit = required(
-            setTarget(document, text, { unitId: units[0].id, value: '', state: 'needs-translation' }),
+            setTarget(document, text, { fileIndex: 0, unitId: units[0].id, value: '', state: 'needs-translation' }),
             'an edit',
         );
 
@@ -147,7 +147,7 @@ describe('setTarget', () => {
         expect(unit.target).toBeUndefined();
 
         const edit = required(
-            setTarget(document, text, { unitId: unit.id, value: 'Übersetzt', state: 'translated' }),
+            setTarget(document, text, { fileIndex: 0, unitId: unit.id, value: 'Übersetzt', state: 'translated' }),
             'an edit',
         );
         const result = apply(text, edit);
@@ -170,25 +170,25 @@ describe('setTarget', () => {
         unit.target = { ...target, attributes: { ...target.attributes, 'custom-attr': 'keep-me' } };
         const baseline = serialiseXliff(document);
 
-        setTarget(document, baseline, { unitId: unit.id, value: 'Neu' });
+        setTarget(document, baseline, { fileIndex: 0, unitId: unit.id, value: 'Neu' });
 
         expect(serialiseXliff(document)).toContain('custom-attr="keep-me"');
     });
 
     it('throws for an unknown unit id', () => {
         const { text, document } = load(LANGUAGE_FILE);
-        expect(() => setTarget(document, text, { unitId: 'nope', value: 'x' })).toThrow(XliffParseError);
+        expect(() => setTarget(document, text, { fileIndex: 0, unitId: 'nope', value: 'x' })).toThrow(UnknownUnitError);
     });
 
     it('encodes special characters in the written value', () => {
         const { text, document, units } = load(LANGUAGE_FILE);
-        const edit = required(setTarget(document, text, { unitId: units[2].id, value: 'a & b <c>' }), 'an edit');
+        const edit = required(setTarget(document, text, { fileIndex: 0, unitId: units[2].id, value: 'a & b <c>' }), 'an edit');
         expect(edit.newText).toContain('a &amp; b &lt;c&gt;');
     });
 
     it('keeps a whitespace-only value rather than treating it as empty', () => {
         const { text, document, units } = load(LANGUAGE_FILE);
-        const edit = required(setTarget(document, text, { unitId: units[4].id, value: ' ' }), 'an edit');
+        const edit = required(setTarget(document, text, { fileIndex: 0, unitId: units[4].id, value: ' ' }), 'an edit');
 
         const result = apply(text, edit);
         expect(result).toContain('> </target>');
@@ -202,7 +202,7 @@ describe('setState', () => {
         const unit = units[0];
         const value = unit.target?.value;
 
-        const edit = required(setState(document, text, unit.id, 'needs-review-translation'), 'an edit');
+        const edit = required(setState(document, text, { fileIndex: 0, unitId: unit.id }, 'needs-review-translation'), 'an edit');
         const result = apply(text, edit);
 
         expect(unit.target?.value).toBe(value);
@@ -212,14 +212,63 @@ describe('setState', () => {
 
     it('returns null when the state already matches', () => {
         const { text, document, units } = load(LANGUAGE_FILE);
-        expect(setState(document, text, units[0].id, 'translated')).toBeNull();
+        expect(setState(document, text, { fileIndex: 0, unitId: units[0].id }, 'translated')).toBeNull();
+    });
+});
+
+describe('a document with several <file> elements', () => {
+    const TWO_FILES = [
+        '<?xml version="1.0" encoding="utf-8"?>',
+        '<xliff version="1.2">',
+        '  <file source-language="en-US" target-language="de-DE" original="First">',
+        '    <body>',
+        '      <trans-unit id="shared">',
+        '        <source>Hello</source>',
+        '        <target state="translated">Hallo</target>',
+        '      </trans-unit>',
+        '    </body>',
+        '  </file>',
+        '  <file source-language="en-US" target-language="fr-FR" original="Second">',
+        '    <body>',
+        '      <trans-unit id="shared">',
+        '        <source>Hello</source>',
+        '        <target state="translated">Bonjour</target>',
+        '      </trans-unit>',
+        '    </body>',
+        '  </file>',
+        '</xliff>',
+        '',
+    ].join('\n');
+
+    /** Each `<file>`'s one target, as a fresh parse reads it. */
+    const targetsOf = (text: string) => parseXliff(text).files.map(file => [...iterateFileUnits(file)][0]?.target);
+
+    it('writes the target of the named <file> only', () => {
+        const document = parseXliff(TWO_FILES);
+        const edit = required(setTarget(document, TWO_FILES, { fileIndex: 1, unitId: 'shared', value: 'Salut' }), 'an edit');
+
+        expect(targetsOf(apply(TWO_FILES, edit)).map(target => target?.value)).toEqual(['Hallo', 'Salut']);
+    });
+
+    it('changes the state in the named <file> only', () => {
+        const document = parseXliff(TWO_FILES);
+        const edit = required(setState(document, TWO_FILES, { fileIndex: 1, unitId: 'shared' }, 'needs-review-translation'), 'an edit');
+
+        expect(targetsOf(apply(TWO_FILES, edit)).map(target => target?.state)).toEqual(['translated', 'needs-review-translation']);
+    });
+
+    it('names the <file> it could not find the unit in', () => {
+        const document = parseXliff(TWO_FILES);
+
+        expect(() => setTarget(document, TWO_FILES, { fileIndex: 2, unitId: 'shared', value: 'x' }))
+            .toThrow('No <trans-unit> with id "shared" in <file> 3.');
     });
 });
 
 describe('the round-trip stays green after a write', () => {
     it('a written document re-parses and re-serialises to itself', () => {
         const { text, document, units } = load(LANGUAGE_FILE);
-        const edit = required(setTarget(document, text, { unitId: units[10].id, value: 'Runde zwei' }), 'an edit');
+        const edit = required(setTarget(document, text, { fileIndex: 0, unitId: units[10].id, value: 'Runde zwei' }), 'an edit');
         const written = apply(text, edit);
 
         expect(serialiseXliff(parseXliff(written))).toBe(written);
@@ -235,7 +284,7 @@ describe('a line break a translator typed', () => {
 
     it('survives the write, the re-parse and the re-serialise', () => {
         const { text, document, units } = load(LANGUAGE_FILE);
-        const written = apply(text, required(setTarget(document, text, { unitId: units[10].id, value: TYPED }), 'an edit'));
+        const written = apply(text, required(setTarget(document, text, { fileIndex: 0, unitId: units[10].id, value: TYPED }), 'an edit'));
 
         const reparsed = parseXliff(written);
         expect([...iterateUnits(reparsed)].find(unit => unit.id === units[10].id)?.target?.value).toBe(TYPED);
@@ -252,7 +301,7 @@ describe('a line break a translator typed', () => {
         const source = read(MINIMAL_FILE).split('\n').join('\r\n');
         const document = parseXliff(source);
         const units = [...iterateUnits(document)];
-        const written = apply(source, required(setTarget(document, source, { unitId: units[0].id, value: TYPED }), 'an edit'));
+        const written = apply(source, required(setTarget(document, source, { fileIndex: 0, unitId: units[0].id, value: TYPED }), 'an edit'));
 
         // One line more, because the typed break adds one — and it is an LF, so the CRLF
         // count is untouched.
@@ -264,7 +313,7 @@ describe('a line break a translator typed', () => {
         // `Text.\\` is one line to XML and a line break to AL. It is a character like any
         // other here, and nothing in the write path may treat it as an escape.
         const { text, document, units } = load(LANGUAGE_FILE);
-        const written = apply(text, required(setTarget(document, text, { unitId: units[10].id, value: 'Achtung! \\Weiter?' }), 'an edit'));
+        const written = apply(text, required(setTarget(document, text, { fileIndex: 0, unitId: units[10].id, value: 'Achtung! \\Weiter?' }), 'an edit'));
 
         expect(written).toContain('>Achtung! \\Weiter?</target>');
         expect([...iterateUnits(parseXliff(written))].find(unit => unit.id === units[10].id)?.target?.value).toBe('Achtung! \\Weiter?');

@@ -104,6 +104,12 @@ export interface XliffDocument {
     readonly format: DocumentFormat;
 }
 
+/** A unit is identified by its `<file>` **and** its id — XLIFF scopes ids per file. */
+export interface UnitReference {
+    readonly fileIndex: number;
+    readonly unitId: string;
+}
+
 // ── The derived AL view model ────────────────────────────────────────────────
 // Everything above mirrors the XML. What follows is derived from trans-unit ids and
 // is what the GUI renders; the raw model stays the thing that gets written back.
@@ -164,4 +170,18 @@ function* iterateContainerUnits(container: XliffBody | XliffGroup): Generator<Xl
     for (const group of container.groups) {
         yield* iterateContainerUnits(group);
     }
+}
+
+/** The unit `reference` names, or undefined when the document has no such `<file>` or no such id in it. */
+export function findUnit(document: XliffDocument, reference: UnitReference): XliffTransUnit | undefined {
+    const file: XliffFile | undefined = document.files[reference.fileIndex];
+    if (file === undefined) {
+        return undefined;
+    }
+    for (const unit of iterateFileUnits(file)) {
+        if (unit.id === reference.unitId) {
+            return unit;
+        }
+    }
+    return undefined;
 }

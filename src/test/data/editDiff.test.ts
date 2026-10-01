@@ -67,7 +67,7 @@ describe('one edit changes only what was edited', () => {
             const [unit] = [...iterateUnits(document)];
             const hadTarget = unit.target !== undefined;
 
-            const edit = setTarget(document, original, { unitId: unit.id, value: EDITED, state: 'translated' });
+            const edit = setTarget(document, original, { fileIndex: 0, unitId: unit.id, value: EDITED, state: 'translated' });
             expect(edit, `${name}: the edit produced nothing`).not.toBeNull();
 
             const after = apply(original, edit ?? { start: 0, end: 0, newText: '' });
@@ -103,7 +103,7 @@ describe('one edit changes only what was edited', () => {
             const original = read(name);
             const document = parseXliff(original);
             const [unit] = [...iterateUnits(document)];
-            const edit = setTarget(document, original, { unitId: unit.id, value: EDITED, state: 'translated' });
+            const edit = setTarget(document, original, { fileIndex: 0, unitId: unit.id, value: EDITED, state: 'translated' });
             const after = apply(original, edit ?? { start: 0, end: 0, newText: '' });
             // A target that gains or loses lines moves the line-ending count with it — but
             // only in a document whose line ending is the one being counted.
@@ -121,7 +121,7 @@ describe('one edit changes only what was edited', () => {
             const units = [...iterateUnits(document)];
             const target = units[Math.min(3, units.length - 1)];
 
-            const edit = setTarget(document, original, { unitId: target.id, value: EDITED, state: 'translated' });
+            const edit = setTarget(document, original, { fileIndex: 0, unitId: target.id, value: EDITED, state: 'translated' });
             const after = apply(original, edit ?? { start: 0, end: 0, newText: '' });
 
             // Every other unit's id must still appear exactly where and as often as before.
@@ -140,7 +140,7 @@ describe('one edit changes only what was edited', () => {
         const document = parseXliff(original);
         const [unit] = [...iterateUnits(document)];
 
-        const edit = setTarget(document, original, { unitId: unit.id, value: EDITED, state: 'translated' });
+        const edit = setTarget(document, original, { fileIndex: 0, unitId: unit.id, value: EDITED, state: 'translated' });
         expect(edit).not.toBeNull();
 
         const characters = (edit?.end ?? 0) - (edit?.start ?? 0);

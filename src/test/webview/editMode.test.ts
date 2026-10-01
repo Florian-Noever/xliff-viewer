@@ -165,36 +165,47 @@ describe('remembering a state the reader chose', () => {
     it('has nothing to remember until one is chosen', () => {
         const { edit } = editMode();
 
-        expect(edit.chosenState('Table 1 - Property 2')).toBeUndefined();
+        expect(edit.chosenState(0, 'Table 1 - Property 2')).toBeUndefined();
     });
 
     it('remembers per unit, not for the file', () => {
         const { edit } = editMode();
 
-        edit.rememberState('Table 1 - Property 2', XliffState.needsReviewTranslation);
+        edit.rememberState(0, 'Table 1 - Property 2', XliffState.needsReviewTranslation);
 
-        expect(edit.chosenState('Table 1 - Property 2')).toBe(XliffState.needsReviewTranslation);
-        expect(edit.chosenState('Table 1 - Property 3')).toBeUndefined();
+        expect(edit.chosenState(0, 'Table 1 - Property 2')).toBe(XliffState.needsReviewTranslation);
+        expect(edit.chosenState(0, 'Table 1 - Property 3')).toBeUndefined();
+    });
+
+    it('keeps the choices for one id in two <file> elements apart', () => {
+        const { edit } = editMode();
+
+        edit.rememberState(0, 'Table 1 - Property 2', XliffState.signedOff);
+        edit.rememberState(1, 'Table 1 - Property 2', XliffState.needsReviewTranslation);
+
+        expect(edit.chosenState(0, 'Table 1 - Property 2')).toBe(XliffState.signedOff);
+        expect(edit.chosenState(1, 'Table 1 - Property 2')).toBe(XliffState.needsReviewTranslation);
+        expect(edit.chosenState(2, 'Table 1 - Property 2')).toBeUndefined();
     });
 
     it('forgets when a different document arrives', async () => {
         // Unit ids repeat across files, so a choice made in one document must not follow
         // the reader into the next.
         const { edit, wrapper } = editMode();
-        edit.rememberState('Table 1 - Property 2', XliffState.signedOff);
+        edit.rememberState(0, 'Table 1 - Property 2', XliffState.signedOff);
 
         await wrapper.setProps({ document: { ...DOCUMENT, uri: 'file:///w/Other.de-DE.xlf' } });
 
-        expect(edit.chosenState('Table 1 - Property 2')).toBeUndefined();
+        expect(edit.chosenState(0, 'Table 1 - Property 2')).toBeUndefined();
     });
 
     it('keeps the choice across a re-parse of the same document', async () => {
         const { edit, wrapper } = editMode();
-        edit.rememberState('Table 1 - Property 2', XliffState.signedOff);
+        edit.rememberState(0, 'Table 1 - Property 2', XliffState.signedOff);
 
         await wrapper.setProps({ document: { ...DOCUMENT, files: [{ ...FILE, units: [unit({ target: 'Edited' })] }] } });
 
-        expect(edit.chosenState('Table 1 - Property 2')).toBe(XliffState.signedOff);
+        expect(edit.chosenState(0, 'Table 1 - Property 2')).toBe(XliffState.signedOff);
     });
 });
 
