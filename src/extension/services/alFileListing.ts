@@ -23,13 +23,19 @@ export interface AlListing {
     readonly via: AlListingPath;
 }
 
-/** Folders that hold no source of the app's own: dependencies, snapshots, tooling. */
-const SKIPPED = new Set(['node_modules', '.alpackages', '.snapshots', '.git']);
+/** Folders that hold no source of the app's own: dependencies, and any hidden folder. */
+const SKIPPED = new Set(['node_modules']);
 /** A walk stops here rather than reading an unbounded tree. */
 const MAX_ENTRIES = 20000;
 
+/** `.alpackages`, `.snapshots` and `.git` are hidden folders like any other. */
+function isSkippedFolder(name: string): boolean {
+    return name.startsWith('.') || SKIPPED.has(name);
+}
+
+/** Only the folders below the root count, so a root inside a hidden folder still lists. */
 function skipped(path: string, root: vscode.Uri): boolean {
-    return path.slice(root.path.length).split('/').some(segment => SKIPPED.has(segment));
+    return path.slice(root.path.length).split('/').slice(0, -1).some(isSkippedFolder);
 }
 
 export async function listAlFiles(folder: vscode.Uri): Promise<AlListing> {
@@ -74,7 +80,7 @@ export async function walkAlFiles(root: vscode.Uri): Promise<vscode.Uri[]> {
             // A bit set, not a value. A linked folder is not followed — a link back up the tree
             // would be walked until the cap — but a linked file is read like any other.
             if ((type & vscode.FileType.Directory) !== 0) {
-                if ((type & vscode.FileType.SymbolicLink) === 0 && !name.startsWith('.') && !SKIPPED.has(name)) {
+                if ((type & vscode.FileType.SymbolicLink) === 0 && !isSkippedFolder(name)) {
                     pending.push(vscode.Uri.joinPath(folder, name));
                 }
             } else if ((type & vscode.FileType.File) !== 0 && name.toLowerCase().endsWith('.al')) {
