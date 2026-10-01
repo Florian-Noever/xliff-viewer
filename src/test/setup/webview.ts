@@ -19,9 +19,15 @@ export function clearPostedMessages(): void {
  * can write the slot, throw the component away, and read what a fresh mount finds.
  */
 let state: unknown;
+let stateWrites = 0;
 
 export function webviewState(): unknown {
     return state;
+}
+
+/** How many times the webview has written its slot since the test began. */
+export function webviewStateWrites(): number {
+    return stateWrites;
 }
 
 export function setWebviewState(value: unknown): void {
@@ -33,6 +39,7 @@ export function setWebviewState(value: unknown): void {
 // the last test's filter applied.
 beforeEach(() => {
     state = undefined;
+    stateWrites = 0;
     postedMessages.length = 0;
 });
 
@@ -41,6 +48,7 @@ beforeEach(() => {
     getState: () => state,
     setState: (value: unknown) => {
         state = value;
+        stateWrites++;
     },
 });
 

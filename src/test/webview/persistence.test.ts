@@ -5,7 +5,7 @@ import { nextTick } from 'vue';
 import App from '../../webview/App.vue';
 import { DEV_DOCUMENT } from '../../webview/fixtures/devDocument';
 import { stubLayout } from './layoutStub';
-import { setWebviewState, webviewState } from '../setup/webview';
+import { setWebviewState, webviewState, webviewStateWrites } from '../setup/webview';
 
 import type { PersistedView } from '../../webview/composables/usePersistedState';
 
@@ -238,27 +238,19 @@ describe('how often it writes', () => {
         window.postMessage({ type: 'setDocument', payload: DEV_DOCUMENT }, '*');
         await vi.advanceTimersByTimeAsync(20);
         await nextTick();
-
-        const writes: unknown[] = [];
-        const api = (globalThis as Record<string, unknown>).acquireVsCodeApi as () => { setState: (value: unknown) => void };
-        const real = api().setState;
-        (globalThis as Record<string, unknown>).acquireVsCodeApi = () => ({
-            ...api(),
-            setState: (value: unknown) => {
-                writes.push(value);
-                real(value);
-            },
-        });
+        await vi.advanceTimersByTimeAsync(WRITE_THROTTLE_MS + 40);
+        const before = webviewStateWrites();
 
         for (const query of ['s', 'se', 'set', 'setu', 'setup']) {
             await wrapper.get('.search-input').setValue(query);
         }
         await vi.advanceTimersByTimeAsync(WRITE_THROTTLE_MS - 10);
 
-        expect(writes).toHaveLength(0);
+        expect(webviewStateWrites()).toBe(before);
 
         await vi.advanceTimersByTimeAsync(50);
 
+        expect(webviewStateWrites()).toBe(before + 1);
         expect(saved()?.query).toBe('setup');
         wrapper.unmount();
     });
