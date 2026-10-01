@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { indexedObjects } from '../../extension/al/alHeaderIndex';
 import { outlineAl, scanHeaders } from '../../extension/al/alOutline';
@@ -13,7 +13,6 @@ import { projectDocument } from '../../extension/xliff/dto';
 import { parseXliff } from '../../extension/xliff/parser';
 import { serialiseXliff } from '../../extension/xliff/serialise';
 import { validateXml } from '../../extension/xliff/validate';
-import { Logger } from '../../extension/services/logger';
 import { visibleNodes } from '../../webview/ancestorFilter';
 import { buildSearchIndex, toMatcher } from '../../webview/composables/useSearch';
 import { expandableKeys, flattenTree, keysToDepth } from '../../webview/composables/useTreeFlatten';
@@ -183,10 +182,6 @@ describe('performance budgets on the large example file', () => {
             session.dispose();
         })).toBeLessThan(250);
     });
-});
-
-beforeEach(() => {
-    Logger.initialize({ subscriptions: [] } as unknown as vscode.ExtensionContext, 'perf');
 });
 
 describe('performance budgets on the AL source of the large app', () => {

@@ -1,15 +1,11 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { affectsSettings, readSettings, toWebviewSettings } from '../../extension/services/settings';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { XliffState } from '../../shared/state';
-import { resetMocks, setConfigOverride } from '../__mocks__/vscode';
+import { setConfigOverride } from '../__mocks__/vscode';
 
 import type { ConfigurationChangeEvent } from '../__mocks__/vscode';
-
-afterEach(() => {
-    resetMocks();
-});
 
 const changeEvent = (...sections: string[]): ConfigurationChangeEvent => ({
     affectsConfiguration: (section: string) => sections.some(changed => changed === section || changed.startsWith(`${section}.`)),

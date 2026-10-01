@@ -2,7 +2,6 @@ import * as vscode from 'vscode';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { XliffEditorProvider } from '../../extension/editor/xliffEditorProvider';
-import { Logger } from '../../extension/services/logger';
 import { alNameHash } from '../../extension/xliff/alNameHash';
 import { ExtensionMessageType, WebviewMessageType } from '../../shared/messages';
 import {
@@ -114,7 +113,6 @@ const settle = async (): Promise<void> => {
 
 beforeEach(() => {
     vi.useFakeTimers();
-    Logger.initialize({ subscriptions: [] } as unknown as vscode.ExtensionContext, 'test');
     setVirtualFile('/ext/media/webview.html', TEMPLATE);
     flushLogs();
 });
@@ -129,9 +127,9 @@ afterEach(() => {
         emitters: emitterListenerCount(),
         watchers: watcherCount(),
     };
-    vi.clearAllTimers();
-    vi.useRealTimers();
     vi.restoreAllMocks();
+    // Reset before checking: a failed check skips the shared reset that runs after this hook.
+    vi.useRealTimers();
     resetMocks();
     expect(listening, 'something the test opened is still listening').toEqual({ documents: 0, configuration: 0, emitters: 0, watchers: 0 });
 });

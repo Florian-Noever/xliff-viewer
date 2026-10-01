@@ -6,6 +6,7 @@ import vue from '@vitejs/plugin-vue';
 const resolvePath = (relative: string): string => fileURLToPath(new URL(relative, import.meta.url));
 
 const VSCODE_MOCK = resolvePath('./src/test/__mocks__/vscode.ts');
+const HOST_SETUP = resolvePath('./src/test/setup/host.ts');
 const SHARED = resolvePath('./src/shared');
 
 /**
@@ -49,6 +50,7 @@ export default defineConfig({
                     name: 'host',
                     environment: 'node',
                     include: ['src/test/host/**/*.test.ts'],
+                    setupFiles: [HOST_SETUP],
                 },
             },
             {
@@ -61,6 +63,7 @@ export default defineConfig({
                     name: 'perf',
                     environment: 'node',
                     include: ['src/test/perf/**/*.perf.test.ts'],
+                    setupFiles: [HOST_SETUP],
                     fileParallelism: false,
                 },
             },

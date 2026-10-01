@@ -3,13 +3,11 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { BaseFileResolver, BaseFileSource } from '../../extension/services/baseFileResolver';
 import { appNameOf, fileNameOf } from '../../extension/services/uriNames';
-import { Logger } from '../../extension/services/logger';
 import {
     configurationListenerCount,
     fireConfigurationChange,
     flushLogs,
     removeVirtualFile,
-    resetMocks,
     setConfigOverride,
     setUserConfigOverride,
     setVirtualFile,
@@ -33,13 +31,11 @@ function workspaceWith(...paths: string[]): void {
 let resolver: BaseFileResolver;
 
 beforeEach(() => {
-    Logger.initialize({ subscriptions: [] } as unknown as vscode.ExtensionContext, 'test');
     resolver = new BaseFileResolver();
 });
 
 afterEach(() => {
     resolver.dispose();
-    resetMocks();
 });
 
 describe('appNameOf', () => {

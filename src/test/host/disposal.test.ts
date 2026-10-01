@@ -1,8 +1,7 @@
 import * as vscode from 'vscode';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { XliffEditorProvider } from '../../extension/editor/xliffEditorProvider';
-import { Logger } from '../../extension/services/logger';
 import { WebviewMessageType } from '../../shared/messages';
 import {
     configurationListenerCount,
@@ -10,7 +9,6 @@ import {
     emitterListenerCount,
     FakeTextDocument,
     holdFileRead,
-    resetMocks,
     setVirtualFile,
     setWorkspaceRoot,
     watcherCount,
@@ -90,16 +88,11 @@ const document = (name: string): vscode.TextDocument =>
 const settle = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 0));
 
 beforeEach(() => {
-    Logger.initialize({ subscriptions: [] } as unknown as vscode.ExtensionContext, 'test');
     setVirtualFile('/ext/media/webview.html', TEMPLATE);
     // An app with AL source, so every view also subscribes to its AL files.
     setWorkspaceRoot('/w');
     setVirtualFile('/w/app.json', '{}');
     setVirtualFile('/w/src/Customer.Table.al', 'table 50100 Customer { }');
-});
-
-afterEach(() => {
-    resetMocks();
 });
 
 describe('twenty editors', () => {

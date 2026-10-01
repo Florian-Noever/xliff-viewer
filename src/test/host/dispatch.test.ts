@@ -1,13 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { dispatch } from '../../extension/handlers';
-import { Logger } from '../../extension/services/logger';
 import { NavigationTarget, WebviewMessageType } from '../../shared/messages';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { XliffState } from '../../shared/state';
-import { flushErrorMessages, flushLogs, resetMocks } from '../__mocks__/vscode';
+import { flushErrorMessages, flushLogs } from '../__mocks__/vscode';
 
-import type * as vscode from 'vscode';
 import type { HandlerContext } from '../../extension/handlers/handlerContext';
 import type { DocumentView } from '../../extension/editor/documentView';
 import type { UnitReference } from '../../shared/model';
@@ -43,12 +41,7 @@ function fixture(view?: Partial<DocumentView>) {
 }
 
 beforeEach(() => {
-    Logger.initialize({ subscriptions: [] } as unknown as vscode.ExtensionContext, 'test');
     flushLogs();
-});
-
-afterEach(() => {
-    resetMocks();
 });
 
 describe('routing', () => {

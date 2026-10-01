@@ -1,11 +1,7 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import * as vscode from 'vscode';
 
-import { emitterListenerCount, FakeTextDocument, flushAppliedEdits, flushErrorMessages, flushFileReads, holdFileRead, reportEditsInPieces, resetMocks, setApplyEditResult, setConfigOverride, setUserConfigOverride, setVirtualFile, setWorkspaceTrusted } from '../__mocks__/vscode';
-
-afterEach(() => {
-    resetMocks();
-});
+import { emitterListenerCount, FakeTextDocument, flushAppliedEdits, flushErrorMessages, flushFileReads, holdFileRead, reportEditsInPieces, setApplyEditResult, setConfigOverride, setUserConfigOverride, setVirtualFile, setWorkspaceTrusted } from '../__mocks__/vscode';
 
 /** Smoke test for the mock itself: the host tests build on every helper below. */
 describe('vscode mock', () => {

@@ -6,7 +6,6 @@ import { AlListingPath, listAlFiles } from '../../extension/services/alFileListi
 import { goToSource, SourceOutcome } from '../../extension/services/goToSource';
 import { alScopeFor } from '../../extension/services/alScope';
 import { AlSourceIndex, AlSourceIndexes } from '../../extension/services/alSourceIndex';
-import { Logger } from '../../extension/services/logger';
 import { alNameHash } from '../../extension/xliff/alNameHash';
 import {
     fireFileWatcher,
@@ -15,7 +14,6 @@ import {
     flushProgress,
     flushProgressTitles,
     removeVirtualFile,
-    resetMocks,
     setOpenDocument,
     setSearchAvailable,
     setVirtualFile,
@@ -40,13 +38,11 @@ function target(id: string): UnitTarget {
 }
 
 beforeEach(() => {
-    Logger.initialize({ subscriptions: [] } as unknown as vscode.ExtensionContext, 'test');
     setWorkspaceRoot('/w');
 });
 
 afterEach(() => {
     vi.restoreAllMocks();
-    resetMocks();
 });
 
 describe('alScopeFor', () => {

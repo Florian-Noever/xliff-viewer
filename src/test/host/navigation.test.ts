@@ -1,9 +1,8 @@
 import * as vscode from 'vscode';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { findUnitOffset, revealAsText, revealInBaseFile } from '../../extension/services/navigation';
-import { Logger } from '../../extension/services/logger';
-import { FakeTextDocument, flushExecutedCommands, flushLogs, resetMocks, setVirtualFile } from '../__mocks__/vscode';
+import { FakeTextDocument, flushExecutedCommands, flushLogs, setVirtualFile } from '../__mocks__/vscode';
 
 /**
  * There are no offsets in the model, so a unit's line is found by searching the text —
@@ -39,14 +38,6 @@ function lineOf(text: string, unitId: string): number | undefined {
     const offset = findUnitOffset(text, unitId);
     return offset === undefined ? undefined : new FakeTextDocument('/w/lines.xlf', text).positionAt(offset).line;
 }
-
-beforeEach(() => {
-    Logger.initialize({ subscriptions: [] } as unknown as vscode.ExtensionContext, 'test');
-});
-
-afterEach(() => {
-    resetMocks();
-});
 
 describe('findUnitOffset', () => {
     it('finds a unit by its id, at its <trans-unit>', () => {

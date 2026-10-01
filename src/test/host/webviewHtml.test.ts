@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { getWebviewHtml, localResourceRoots } from '../../extension/editor/webviewHtml';
 import { resetMocks, setVirtualFile } from '../__mocks__/vscode';
@@ -21,10 +21,6 @@ function fakeWebview(): vscode.Webview {
 
 beforeEach(() => {
     setVirtualFile('/ext/media/webview.html', TEMPLATE);
-});
-
-afterEach(() => {
-    resetMocks();
 });
 
 describe('getWebviewHtml', () => {

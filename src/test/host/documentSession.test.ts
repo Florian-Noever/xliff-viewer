@@ -6,7 +6,6 @@ import { XliffDocumentSession } from '../../extension/editor/documentSession';
 import { DocumentSessionRegistry } from '../../extension/editor/documentSessionRegistry';
 import { XliffDocumentView } from '../../extension/editor/documentView';
 import { BaseFileResolver } from '../../extension/services/baseFileResolver';
-import { Logger } from '../../extension/services/logger';
 import { ExtensionMessageType } from '../../shared/messages';
 import { XliffState } from '../../shared/state';
 import {
@@ -63,7 +62,6 @@ const documents = (posted: readonly ExtensionMessage[]) =>
     posted.filter(message => message.type === ExtensionMessageType.setDocument);
 
 beforeEach(() => {
-    Logger.initialize({ subscriptions: [] } as unknown as vscode.ExtensionContext, 'test');
     flushLogs();
 });
 
@@ -72,6 +70,7 @@ afterEach(() => {
         disposable.dispose();
     }
     const listening = documentChangeListenerCount();
+    // Reset before checking: a failed check skips the shared reset that runs after this hook.
     vi.useRealTimers();
     resetMocks();
     expect(listening, 'a session the test opened is still listening').toBe(0);

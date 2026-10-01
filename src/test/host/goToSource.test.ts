@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AlSourceIndexes } from '../../extension/services/alSourceIndex';
 import { BaseFileResolver } from '../../extension/services/baseFileResolver';
 import { goToSource, SourceOutcome } from '../../extension/services/goToSource';
-import { Logger } from '../../extension/services/logger';
 import { showTransientNotice } from '../../extension/services/transientNotice';
 import { alNameHash } from '../../extension/xliff/alNameHash';
 import {
@@ -15,7 +14,6 @@ import {
     flushRevealedPositions,
     flushShownDocuments,
     removeVirtualFile,
-    resetMocks,
     setQuickPickResult,
     setVirtualFile,
     setWorkspaceRoot,
@@ -80,7 +78,6 @@ let baseFiles: BaseFileResolver;
 beforeEach(() => {
     // A fallback to the base file starts a notice that closes itself five seconds later.
     vi.useFakeTimers();
-    Logger.initialize({ subscriptions: [] } as unknown as vscode.ExtensionContext, 'test');
     setWorkspaceRoot('/w');
     setVirtualFile(`${APP}/app.json`, '{}');
     setVirtualFile(ORDER_FILE, ORDER);
@@ -93,9 +90,6 @@ beforeEach(() => {
 afterEach(() => {
     alSources.dispose();
     baseFiles.dispose();
-    vi.clearAllTimers();
-    vi.useRealTimers();
-    resetMocks();
 });
 
 describe('goToSource, when the AL source declares the unit', () => {

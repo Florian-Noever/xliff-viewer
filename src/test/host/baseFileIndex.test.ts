@@ -2,8 +2,7 @@ import * as vscode from 'vscode';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { BaseFileIndex, compareToBase } from '../../extension/services/baseFileIndex';
-import { Logger } from '../../extension/services/logger';
-import { flushLogs, resetMocks, setVirtualFile, watcherCount } from '../__mocks__/vscode';
+import { flushLogs, setVirtualFile, watcherCount } from '../__mocks__/vscode';
 
 /**
  * The comparison is exact string equality on source, never trimmed — a trailing space is
@@ -24,13 +23,11 @@ const unit = (id: string, source: string) => ({ id, source });
 let index: BaseFileIndex;
 
 beforeEach(() => {
-    Logger.initialize({ subscriptions: [] } as unknown as vscode.ExtensionContext, 'test');
     index = new BaseFileIndex();
 });
 
 afterEach(() => {
     index.dispose();
-    resetMocks();
 });
 
 describe('BaseFileIndex', () => {

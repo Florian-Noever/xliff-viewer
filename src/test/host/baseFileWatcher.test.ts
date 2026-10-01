@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { BaseFileWatcher } from '../../extension/services/baseFileWatcher';
-import { fireFileWatcher, resetMocks, watcherCount } from '../__mocks__/vscode';
+import { fireFileWatcher, watcherCount } from '../__mocks__/vscode';
 
 let watcher: BaseFileWatcher;
 let told: string[];
@@ -14,7 +14,6 @@ beforeEach(() => {
 
 afterEach(() => {
     watcher.dispose();
-    resetMocks();
 });
 
 describe('BaseFileWatcher', () => {
