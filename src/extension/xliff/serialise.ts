@@ -22,7 +22,7 @@ import type {
 const INDENT = '  ';
 
 /** Text content: AL encodes `>` even where XML makes it optional, so match that. */
-function encodeText(value: string): string {
+export function encodeText(value: string): string {
     return value
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -30,11 +30,12 @@ function encodeText(value: string): string {
 }
 
 /** Attribute values additionally need `"`, since attributes are double-quoted. */
-function encodeAttribute(value: string): string {
+export function encodeAttribute(value: string): string {
     return encodeText(value).replace(/"/g, '&quot;');
 }
 
-function renderAttributes(attributes: XliffAttributes): string {
+/** Each attribute as ` name="value"`, in the order the bag holds them. */
+export function renderAttributes(attributes: XliffAttributes): string {
     return Object.entries(attributes)
         .map(([name, value]) => ` ${name}="${encodeAttribute(value)}"`)
         .join('');

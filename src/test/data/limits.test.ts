@@ -46,19 +46,19 @@ describe('shapes AL never emits but XLIFF allows', () => {
 });
 
 describe('known losses, pinned deliberately', () => {
-    it('DROPS XML comments, which is why a document with one is never written', () => {
-        const text = wrap('      <!-- reviewed by AB -->\n      <trans-unit id="a">\n        <source>s</source>\n      </trans-unit>');
+    it('drops XML comments, so a document with one is read-only', () => {
+        const text = wrap('      <!-- reviewed -->\n      <trans-unit id="a">\n        <source>s</source>\n      </trans-unit>');
 
-        // Content loss, not formatting normalisation, so the write path refuses such a
-        // document. Once comments survive the round-trip, this fails and the guard can go.
-        expect(roundTrip(text)).not.toContain('reviewed by AB');
+        // Once comments survive the round-trip, this fails and the document can be writable.
+        expect(roundTrip(text)).not.toContain('reviewed');
+        expect(parseXliff(text).unsupported).toBe('XML comments');
     });
 
-    it('converts CDATA to escaped text', () => {
+    it('converts CDATA to escaped text, so a document with any is read-only', () => {
         const text = wrap('      <trans-unit id="a">\n        <source><![CDATA[<b>x</b>]]></source>\n      </trans-unit>');
 
-        // Same characters, different encoding: a byte change on the first save, not a meaning change.
         expect(parseXliff(text).files[0].body.units[0].source).toBe('<b>x</b>');
         expect(roundTrip(text)).toContain('<source>&lt;b&gt;x&lt;/b&gt;</source>');
+        expect(parseXliff(text).unsupported).toBe('a CDATA section');
     });
 });

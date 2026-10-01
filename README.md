@@ -57,6 +57,7 @@ Turn editing on with the toolbar toggle, or start every file that way with `xlif
 - The field is as wide as what it holds and grows as you add lines; drag its lower edge for more room
 - Editing a target sets its state to `xliffViewer.stateOnEdit`; clearing one always sets `needs-translation`. Picking a state yourself overrides both
 - A base file (`.g.xlf`) is never editable — it is the generator's output. The GUI says so rather than showing a dead field
+- A file this editor cannot write back without losing something — an XLIFF `<header>`, inline tags such as `<x/>`, comments, CDATA — opens read-only and says why; edit it as text instead
 
 ### Search tips
 

@@ -16,21 +16,6 @@ import type { UnitReference, XliffDocument, XliffTransUnit } from '../../shared/
  * with `document.positionAt`.
  */
 
-/**
- * Whether the text carries an XML comment.
- *
- * The parser discards comments. Reading a file that has one is harmless; **writing it would
- * delete them**, which is why the write path asks first. Preserving them would need ordered
- * children in the model.
- *
- * Outside a comment, `<!--` can only appear inside CDATA, which AL does not emit; in a text
- * node the same characters are entity-escaped. A false positive would refuse an edit, never
- * destroy one, which is the direction to err in.
- */
-export function containsComment(text: string): boolean {
-    return text.includes('<!--');
-}
-
 /** A replacement of `[start, end)` in the current text. Offsets are UTF-16 code units. */
 export interface TextEditRange {
     readonly start: number;

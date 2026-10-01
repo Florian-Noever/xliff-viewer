@@ -93,10 +93,11 @@ describe('the file header', () => {
         expect(wrapper.get('.tag').text()).toBe('base file · read-only');
     });
 
-    it('says only "read-only" for a language file that cannot be written', async () => {
-        const wrapper = mountWithDocument({ ...DOCUMENT, readOnly: true });
+    it('says only "read-only" for a language file that cannot be written, and why on hover', async () => {
+        const wrapper = mountWithDocument({ ...DOCUMENT, readOnly: true, readOnlyReason: 'This file is read-only.' });
         await nextTick();
         expect(wrapper.get('.tag').text()).toBe('read-only');
+        expect(wrapper.get('.tag').attributes('title')).toBe('This file is read-only.');
     });
 
     it('shows the file-level percentage', async () => {

@@ -17,11 +17,14 @@ import type { AlNode, XliffDocument, XliffFile, XliffTransUnit } from '../../sha
 
 const BASE_FILE_SUFFIX = '.g.xlf';
 
+const BASE_FILE_REASON = 'This is the base file, which the AL compiler owns. Edit the language file instead.';
+const READ_ONLY_REASON = 'This file is read-only.';
+
 /** What the editor knows and the model does not. */
 export interface DocumentContext {
     readonly uri: string;
     readonly fileName: string;
-    /** Defaults to `isBaseFile`; pass it to force a document read-only for another reason. */
+    /** True when the file system will not take a write, which the model cannot see. */
     readonly readOnly?: boolean;
     /** `null` when resolution ran and found nothing. Omit while it has not run. */
     readonly baseFile?: BaseFileDto | null;
@@ -30,15 +33,28 @@ export interface DocumentContext {
 export function projectDocument(document: XliffDocument, context: DocumentContext): XliffDocumentDto {
     const files = document.files.map((file, index) => projectFile(file, index));
     const isBaseFile = looksLikeBaseFile(document, context.fileName);
+    const readOnlyReason = whyReadOnly(document, isBaseFile, context.readOnly === true);
 
     return {
         uri: context.uri,
         fileName: context.fileName,
         isBaseFile,
-        readOnly: context.readOnly ?? isBaseFile,
+        readOnly: readOnlyReason !== undefined,
+        readOnlyReason,
         files,
         baseFile: context.baseFile,
     };
+}
+
+/** Why the document cannot be edited, the reason that outlasts the others first, or undefined when it can. */
+function whyReadOnly(document: XliffDocument, isBaseFile: boolean, onReadOnlyFileSystem: boolean): string | undefined {
+    if (isBaseFile) {
+        return BASE_FILE_REASON;
+    }
+    if (document.unsupported !== undefined) {
+        return `This file contains ${document.unsupported}, which this editor cannot write back. Edit it as text instead.`;
+    }
+    return onReadOnlyFileSystem ? READ_ONLY_REASON : undefined;
 }
 
 /**

@@ -249,6 +249,7 @@ describe('isBaseFile and readOnly', () => {
 
         expect(dto.isBaseFile).toBe(true);
         expect(dto.readOnly).toBe(true);
+        expect(dto.readOnlyReason).toContain('AL compiler');
     });
 
     it('does not call a language file a base file just because it translates into its own language', () => {
@@ -257,6 +258,17 @@ describe('isBaseFile and readOnly', () => {
 
         expect(dto.isBaseFile).toBe(false);
         expect(dto.readOnly).toBe(false);
+        expect(dto.readOnlyReason).toBeUndefined();
+    });
+
+    it('makes a document read-only when writing it back would lose something, and says what', () => {
+        const dto = projectXml(`<?xml version="1.0" encoding="utf-8"?>
+<xliff version="1.2"><file source-language="en-US" target-language="de-DE"><header/><body>
+  <trans-unit id="1"><source>a</source><target>b</target></trans-unit>
+</body></file></xliff>`);
+
+        expect(dto.readOnly).toBe(true);
+        expect(dto.readOnlyReason).toBe('This file contains a `<header>` element, which this editor cannot write back. Edit it as text instead.');
     });
 
     it('recognises a targetless same-language file that is not named .g.xlf', () => {
@@ -284,6 +296,7 @@ describe('isBaseFile and readOnly', () => {
 
         expect(dto.isBaseFile).toBe(false);
         expect(dto.readOnly).toBe(true);
+        expect(dto.readOnlyReason).toBe('This file is read-only.');
     });
 
     it('distinguishes an unresolved base file from one that was looked for', () => {

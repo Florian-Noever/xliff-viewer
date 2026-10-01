@@ -577,15 +577,25 @@ describe('what the write path refuses', () => {
         expect(flushInfoMessages()[0]).toContain('until it parses');
     });
 
-    it('refuses a document carrying XML comments rather than deleting them', async () => {
-        // The parser drops comments, so this write would silently take them with it.
+    it('opens a document carrying XML comments read-only, and refuses to write it', async () => {
+        // The parser drops comments, so a write would silently take them with it.
         const document = openDocument('language.xlf', WITH_COMMENT);
-        const { facade } = view(sessionFor(document));
+        const { facade, posted, send } = view(sessionFor(document));
 
+        send();
+        const [opened] = documents(posted);
+        expect(opened.type === ExtensionMessageType.setDocument && opened.payload.readOnly).toBe(true);
+        posted.length = 0;
         await facade.updateTarget({ fileIndex: 0, unitId: 'Table 1 - Property 2' }, 'NewTranslation');
 
+        const reason = 'This file contains XML comments, which this editor cannot write back. Edit it as text instead.';
         expect(flushAppliedEdits()).toEqual([]);
-        expect(flushInfoMessages()[0]).toContain('XML comments');
+        expect(flushInfoMessages()).toEqual([reason]);
+        expect(opened.type === ExtensionMessageType.setDocument && opened.payload.readOnlyReason).toBe(reason);
+        expect(posted).toEqual([{
+            type: ExtensionMessageType.patchUnits,
+            payload: { fileIndex: 0, units: [expect.objectContaining({ id: 'Table 1 - Property 2', target: 'ExampleTranslation' })] },
+        }]);
     });
 
     it('says so when the id is not in the document, and writes nothing', async () => {

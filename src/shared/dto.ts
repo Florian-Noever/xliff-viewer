@@ -123,8 +123,13 @@ export interface XliffDocumentDto {
     readonly fileName: string;
     /** A `.g.xlf`, or a file that has no targets at all and translates into its own language. */
     readonly isBaseFile: boolean;
-    /** Base files are never editable. Edit mode is a separate, per-view toggle. */
+    /**
+     * Base files are never editable, nor is a file this editor could not write back without
+     * losing something. Edit mode is a separate, per-view toggle.
+     */
     readonly readOnly: boolean;
+    /** Why the file cannot be edited, as a sentence for the reader. Set exactly when `readOnly` is. */
+    readonly readOnlyReason?: string;
     /** Length 1 for every AL-generated file. */
     readonly files: readonly XliffFileDto[];
     /** `null` means resolution ran and found nothing; `undefined` means it has not run. */

@@ -128,6 +128,14 @@ describe('whether editing is possible at all', () => {
         expect(edit.reason.value).toBe('This file is read-only.');
     });
 
+    it('gives the host\'s own reason for a file it cannot write back', () => {
+        const readOnlyReason = 'This file contains XML comments, which this editor cannot write back. Edit it as text instead.';
+        const { edit } = editMode({ ...DOCUMENT, readOnly: true, readOnlyReason });
+
+        expect(edit.refusal.value).toBe(EditRefusal.readOnly);
+        expect(edit.reason.value).toBe(readOnlyReason);
+    });
+
     it('cannot be toggled on where the document forbids it', () => {
         const { edit } = editMode({ ...DOCUMENT, readOnly: true });
 
@@ -158,6 +166,14 @@ describe('the toggle in the toolbar', () => {
 
         expect(button.attributes('disabled')).toBeDefined();
         expect(button.attributes('title')).toContain('AL compiler');
+    });
+
+    it('carries the host\'s reason when the file cannot be written back', () => {
+        const readOnlyReason = 'This file contains a CDATA section, which this editor cannot write back. Edit it as text instead.';
+        const { button } = toolbar({ ...DOCUMENT, readOnly: true, readOnlyReason });
+
+        expect(button.attributes('disabled')).toBeDefined();
+        expect(button.attributes('title')).toBe(readOnlyReason);
     });
 });
 

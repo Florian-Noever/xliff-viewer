@@ -102,6 +102,12 @@ export interface XliffDocument {
     /** XLIFF 1.2 allows several; AL emits exactly one. */
     readonly files: readonly XliffFile[];
     readonly format: DocumentFormat;
+    /**
+     * Set when the document holds something the model does not keep, so writing it back
+     * would lose or move it: a phrase naming the first such thing, such as "XML comments".
+     * The serialiser ignores it; the projection makes such a document read-only.
+     */
+    readonly unsupported?: string;
 }
 
 /** A unit is identified by its `<file>` **and** its id — XLIFF scopes ids per file. */

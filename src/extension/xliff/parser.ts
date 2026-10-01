@@ -1,8 +1,11 @@
 import { XMLParser } from 'fast-xml-parser';
 
 import { XliffParseError } from './errors';
+import { attributesOf, elementsNamed, tagOf, textOf } from './fxpTree';
 import { validateXml } from './validate';
+import { unsupportedConstruct } from './writability';
 
+import type { FxpNode } from './fxpTree';
 import type {
     DocumentFormat,
     Eol,
@@ -60,59 +63,7 @@ const PARSER_OPTIONS = {
     alwaysCreateTextNode: true,
 } as const;
 
-const ATTRIBUTES_KEY = ':@';
-const TEXT_KEY = '#text';
-
-/** One node of fast-xml-parser's `preserveOrder` output: a single tag key, plus `:@`. */
-interface FxpNode {
-    readonly [key: string]: unknown;
-}
-
 const parser = new XMLParser(PARSER_OPTIONS);
-
-// ── adapter over the preserveOrder shape ─────────────────────────────────────
-
-function tagOf(node: FxpNode): string | undefined {
-    return Object.keys(node).find(key => key !== ATTRIBUTES_KEY);
-}
-
-function attributesOf(node: FxpNode): XliffAttributes {
-    const raw = node[ATTRIBUTES_KEY];
-    if (raw === undefined || raw === null || typeof raw !== 'object') {
-        return {};
-    }
-    const result: Record<string, string> = {};
-    for (const [name, value] of Object.entries(raw as Record<string, unknown>)) {
-        result[name] = String(value);
-    }
-    return result;
-}
-
-function childrenOf(node: FxpNode): FxpNode[] {
-    const tag = tagOf(node);
-    const value = tag === undefined ? undefined : node[tag];
-    return Array.isArray(value) ? (value as FxpNode[]) : [];
-}
-
-/** Child elements with the given tag, skipping whitespace text nodes. */
-function elementsNamed(node: FxpNode, tag: string): FxpNode[] {
-    return childrenOf(node).filter(child => tagOf(child) === tag);
-}
-
-/**
- * Concatenated text of a leaf element. An empty element parses to `[]` rather than a
- * `#text` node, which is how `<source/>` and `<target …/>` arrive.
- */
-function textOf(node: FxpNode): string {
-    let text = '';
-    for (const child of childrenOf(node)) {
-        const value = child[TEXT_KEY];
-        if (typeof value === 'string') {
-            text += value;
-        }
-    }
-    return text;
-}
 
 function optional(attributes: XliffAttributes, name: string): string | undefined {
     return Object.prototype.hasOwnProperty.call(attributes, name) ? attributes[name] : undefined;
@@ -262,5 +213,6 @@ export function parseXliff(raw: string): XliffDocument {
         xmlns: optional(attributes, 'xmlns'),
         files: elementsNamed(root, 'file').map(toFile),
         format,
+        unsupported: unsupportedConstruct(body, format.declaration, root),
     };
 }

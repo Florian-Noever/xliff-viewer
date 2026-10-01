@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 import { Logger } from '../services/logger';
 import { readSettings } from '../services/settings';
-import { containsComment, rememberTarget } from '../xliff/writer';
+import { rememberTarget } from '../xliff/writer';
 import { XliffState } from '../../shared/state';
 
 import type { SessionState, XliffDocumentSession } from './documentSession';
@@ -52,16 +52,7 @@ export async function writeEdit(
         return;
     }
     if (state.dto.readOnly) {
-        void vscode.window.showInformationMessage(state.dto.isBaseFile
-            ? 'This is the base file, which the AL compiler owns. Edit the language file instead.'
-            : 'This file is read-only.');
-        onRefused();
-        return;
-    }
-    // The parser drops comments, so writing this document would delete them. Refusing
-    // costs an edit; the alternative costs somebody's comment.
-    if (containsComment(state.text)) {
-        void vscode.window.showInformationMessage('This file contains XML comments, which this editor does not preserve. Edit it as text instead.');
+        void vscode.window.showInformationMessage(state.dto.readOnlyReason ?? 'This file is read-only.');
         onRefused();
         return;
     }

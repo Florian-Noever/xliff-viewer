@@ -14,7 +14,7 @@
                     </option>
                 </select>
             </label>
-            <span v-if="document.readOnly" class="tag">{{ document.isBaseFile ? 'base file · read-only' : 'read-only' }}</span>
+            <span v-if="document.readOnly" class="tag" :title="document.readOnlyReason">{{ document.isBaseFile ? 'base file · read-only' : 'read-only' }}</span>
             <ProgressBar class="bar" :summary="summary" />
             <span class="percent">{{ summary.percent }} %</span>
         </div>

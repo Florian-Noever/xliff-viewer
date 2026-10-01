@@ -91,7 +91,14 @@ export function useEditMode(source: EditModeSource): EditMode {
         return wanted.value ? undefined : EditRefusal.off;
     });
 
-    const reason = computed(() => (refusal.value === undefined ? undefined : REASONS[refusal.value]));
+    // The host words why a document cannot be edited; the toggle's reason is the webview's own.
+    const reason = computed(() => {
+        const why = refusal.value;
+        if (why === undefined) {
+            return undefined;
+        }
+        return (why === EditRefusal.off ? undefined : source.document.value?.readOnlyReason) ?? REASONS[why];
+    });
 
     function toggle(): void {
         if (available.value) {
