@@ -76,12 +76,11 @@ const Host = defineComponent({
 function editMode(document?: XliffDocumentDto, settings: WebviewSettings = DEFAULT_WEBVIEW_SETTINGS, withToolbar = false) {
     const wrapper = mount(Host, { props: { document: document ?? DOCUMENT, settings, withToolbar } });
     const edit = (wrapper.vm as unknown as { edit: EditMode }).edit;
-    const settingsRef = {
-        set value(next: WebviewSettings) {
-            void wrapper.setProps({ settings: next });
-        },
+    /** Settings as the host posts them, applied before the next assertion. */
+    const setSettings = async (next: WebviewSettings): Promise<void> => {
+        await wrapper.setProps({ settings: next });
     };
-    return { edit, wrapper, settingsRef };
+    return { edit, wrapper, setSettings };
 }
 
 describe('whether editing is possible at all', () => {
@@ -100,17 +99,21 @@ describe('whether editing is possible at all', () => {
         expect(edit.reason.value).toBeUndefined();
     });
 
-    it('lets the toggle override the setting, and re-seeds when the setting changes', () => {
-        const { edit, settingsRef } = editMode();
+    it('lets the toggle override the setting, and re-seeds when the setting itself changes', async () => {
+        const { edit, setSettings } = editMode();
 
         edit.toggle();
         expect(edit.active.value).toBe(true);
 
-        settingsRef.value = { ...DEFAULT_WEBVIEW_SETTINGS, editMode: false };
+        // Settings arrive again for every configuration change; another one must not undo the toggle.
+        await setSettings({ ...DEFAULT_WEBVIEW_SETTINGS, editMode: false, showGeneratorNotes: true });
         expect(edit.active.value).toBe(true);
 
-        settingsRef.value = { ...DEFAULT_WEBVIEW_SETTINGS, editMode: true };
+        await setSettings({ ...DEFAULT_WEBVIEW_SETTINGS, editMode: true });
         expect(edit.wanted.value).toBe(true);
+
+        await setSettings({ ...DEFAULT_WEBVIEW_SETTINGS, editMode: false });
+        expect(edit.wanted.value).toBe(false);
     });
 
     it('names the base file as the reason, not merely "read-only"', () => {
