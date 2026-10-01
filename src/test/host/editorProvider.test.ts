@@ -26,9 +26,11 @@ import {
     setWorkspaceRoot,
     watcherCount,
 } from '../__mocks__/vscode';
+import { fakeWebviewPanel } from '../support/fakeWebviewPanel';
 
 import type { TransUnitDto } from '../../shared/dto';
 import type { ExtensionMessage } from '../../shared/messages';
+import type { FakeWebviewPanel } from '../support/fakeWebviewPanel';
 
 const EXTENSION_URI = vscode.Uri.file('/ext');
 const TEMPLATE = '<script nonce="%NONCE%" src="%SCRIPT_URI%"></script><link href="%CSS_URI%"><meta content="%CSP_SOURCE%">';
@@ -38,13 +40,6 @@ const FIXTURE = `<?xml version="1.0" encoding="utf-8"?>
   <note from="Xliff Generator">Table Customer - Property Caption</note></trans-unit>
 </body></file></xliff>`;
 
-interface Harness {
-    readonly posted: ExtensionMessage[];
-    readonly panel: vscode.WebviewPanel;
-    send(message: unknown): void;
-    dispose(): void;
-}
-
 /** Every provider and panel a test opens, closed after it so that nothing it started outlives it. */
 const toDispose: { dispose(): void }[] = [];
 
@@ -53,57 +48,12 @@ function track<T extends { dispose(): void }>(disposable: T): T {
     return disposable;
 }
 
-async function openEditor(supplied?: FakeTextDocument): Promise<Harness> {
-    const posted: ExtensionMessage[] = [];
-    const listeners: ((message: unknown) => void)[] = [];
-    const disposeHandlers: (() => void)[] = [];
-    const disposed: boolean[] = [];
-
-    const panel = {
-        webview: {
-            options: {},
-            html: '',
-            cspSource: 'vscode-webview://fake',
-            asWebviewUri: (uri: vscode.Uri) => uri,
-            postMessage: (message: ExtensionMessage) => {
-                posted.push(message);
-                return Promise.resolve(true);
-            },
-            onDidReceiveMessage: (listener: (message: unknown) => void) => {
-                listeners.push(listener);
-                return new vscode.Disposable(() => disposed.push(true));
-            },
-        },
-        onDidDispose: (handler: () => void) => {
-            disposeHandlers.push(handler);
-            return new vscode.Disposable(() => { });
-        },
-    } as unknown as vscode.WebviewPanel;
-
+async function openEditor(supplied?: FakeTextDocument): Promise<FakeWebviewPanel> {
     const document = supplied ?? new FakeTextDocument('/w/App.de-DE.xlf', FIXTURE);
     const provider = track(new XliffEditorProvider(EXTENSION_URI));
-    await provider.resolveCustomTextEditor(document as unknown as vscode.TextDocument, panel, {} as vscode.CancellationToken);
-
-    let closed = false;
-    return track({
-        posted,
-        panel,
-        send: (message: unknown) => {
-            for (const listener of listeners) {
-                listener(message);
-            }
-        },
-        // VS Code disposes a panel once.
-        dispose: () => {
-            if (closed) {
-                return;
-            }
-            closed = true;
-            for (const handler of disposeHandlers) {
-                handler();
-            }
-        },
-    });
+    const harness = track(fakeWebviewPanel());
+    await provider.resolveCustomTextEditor(document as unknown as vscode.TextDocument, harness.panel, {} as vscode.CancellationToken);
+    return harness;
 }
 
 /** The base-file and AL-source announcements are fire-and-forget; let them land. */
@@ -199,30 +149,13 @@ describe('the editor provider', () => {
     it('releases the session when the panel closes while the editor is still resolving', async () => {
         // The template read is awaited before any listener is wired. A panel disposed in
         // that window must still release its session and its change subscription.
-        const disposeHandlers: (() => void)[] = [];
-        const panel = {
-            webview: {
-                options: {},
-                html: '',
-                cspSource: 'x',
-                asWebviewUri: (uri: vscode.Uri) => uri,
-                postMessage: () => Promise.resolve(true),
-                onDidReceiveMessage: () => new vscode.Disposable(() => { }),
-            },
-            onDidDispose: (handler: () => void) => {
-                disposeHandlers.push(handler);
-                return new vscode.Disposable(() => { });
-            },
-        } as unknown as vscode.WebviewPanel;
-
+        const harness = track(fakeWebviewPanel());
         const document = new FakeTextDocument('/w/App.de-DE.xlf', FIXTURE) as unknown as vscode.TextDocument;
         const resolving = track(new XliffEditorProvider(EXTENSION_URI))
-            .resolveCustomTextEditor(document, panel, {} as vscode.CancellationToken);
+            .resolveCustomTextEditor(document, harness.panel, {} as vscode.CancellationToken);
 
         await Promise.resolve();
-        for (const handler of disposeHandlers) {
-            handler();
-        }
+        harness.dispose();
         await resolving;
 
         expect(documentChangeListenerCount()).toBe(0);
@@ -482,7 +415,7 @@ describe('Go to source, from the panel', () => {
     const CUSTOMER = 'table 50100 Customer\n{\n    Caption = \'Customer\';\n}\n';
     const CAPTION = `Table ${alNameHash('Customer')} - Property ${alNameHash('Caption')}`;
 
-    async function openInApp(unitId = 'Table 1 - Property 2'): Promise<Harness> {
+    async function openInApp(unitId = 'Table 1 - Property 2'): Promise<FakeWebviewPanel> {
         setWorkspaceRoot('/w');
         setVirtualFile('/w/app.json', '{}');
         const harness = await openEditor(new FakeTextDocument('/w/Translations/App.de-DE.xlf', FIXTURE.replace('Table 1 - Property 2', unitId)));

@@ -13,8 +13,9 @@ import {
     setWorkspaceRoot,
     watcherCount,
 } from '../__mocks__/vscode';
+import { fakeWebviewPanel } from '../support/fakeWebviewPanel';
 
-import type { ExtensionMessage } from '../../shared/messages';
+import type { FakeWebviewPanel } from '../support/fakeWebviewPanel';
 
 /**
  * Twenty editors opened and closed, because a leak of one listener per editor is invisible
@@ -26,60 +27,6 @@ const FIXTURE = `<?xml version="1.0" encoding="utf-8"?>
 <xliff version="1.2"><file source-language="en-US" target-language="de-DE" original="App"><body>
   <trans-unit id="Table 1 - Property 2"><source>Customer</source><target state="translated">Kunde</target></trans-unit>
 </body></file></xliff>`;
-
-interface Panel {
-    readonly panel: vscode.WebviewPanel;
-    close(): void;
-    ready(): void;
-    /** How many message listeners the panel still holds. */
-    listening(): number;
-    readonly posted: ExtensionMessage[];
-}
-
-function fakePanel(): Panel {
-    const posted: ExtensionMessage[] = [];
-    const listeners: ((message: unknown) => void)[] = [];
-    const disposers: (() => void)[] = [];
-
-    const panel = {
-        webview: {
-            options: {},
-            html: '',
-            cspSource: 'x',
-            asWebviewUri: (uri: vscode.Uri) => uri,
-            postMessage: (message: ExtensionMessage) => {
-                posted.push(message);
-                return Promise.resolve(true);
-            },
-            onDidReceiveMessage: (listener: (message: unknown) => void) => {
-                listeners.push(listener);
-                return new vscode.Disposable(() => {
-                    listeners.splice(listeners.indexOf(listener), 1);
-                });
-            },
-        },
-        onDidDispose: (handler: () => void) => {
-            disposers.push(handler);
-            return new vscode.Disposable(() => { });
-        },
-    } as unknown as vscode.WebviewPanel;
-
-    return {
-        panel,
-        posted,
-        listening: () => listeners.length,
-        ready: () => {
-            for (const listener of listeners) {
-                listener({ type: WebviewMessageType.ready });
-            }
-        },
-        close: () => {
-            for (const handler of disposers) {
-                handler();
-            }
-        },
-    };
-}
 
 const document = (name: string): vscode.TextDocument =>
     new FakeTextDocument(`/w/${name}.xlf`, FIXTURE) as unknown as vscode.TextDocument;
@@ -103,13 +50,13 @@ describe('twenty editors', () => {
         const baseline = configurationListenerCount();
         const baselineEmitters = emitterListenerCount();
         const baselineWatchers = watcherCount();
-        const panels: Panel[] = [];
+        const panels: FakeWebviewPanel[] = [];
 
         for (let index = 0; index < 20; index++) {
-            const panel = fakePanel();
+            const panel = fakeWebviewPanel();
             panels.push(panel);
             await provider.resolveCustomTextEditor(document(`file-${index}`), panel.panel, {} as vscode.CancellationToken);
-            panel.ready();
+            panel.send({ type: WebviewMessageType.ready });
         }
 
         await settle();
@@ -120,7 +67,7 @@ describe('twenty editors', () => {
         expect(watcherCount()).toBe(baselineWatchers + 1);
 
         for (const panel of panels) {
-            panel.close();
+            panel.dispose();
         }
 
         expect(documentChangeListenerCount()).toBe(0);
@@ -140,10 +87,10 @@ describe('twenty editors', () => {
         const provider = new XliffEditorProvider(vscode.Uri.file('/ext'));
         const baseline = configurationListenerCount();
         const shared = document('shared');
-        const panels: Panel[] = [];
+        const panels: FakeWebviewPanel[] = [];
 
         for (let index = 0; index < 20; index++) {
-            const panel = fakePanel();
+            const panel = fakeWebviewPanel();
             panels.push(panel);
             await provider.resolveCustomTextEditor(shared, panel.panel, {} as vscode.CancellationToken);
         }
@@ -154,7 +101,7 @@ describe('twenty editors', () => {
         expect(configurationListenerCount()).toBe(baseline + 20);
 
         for (const panel of panels) {
-            panel.close();
+            panel.dispose();
         }
 
         expect(documentChangeListenerCount()).toBe(0);
@@ -166,10 +113,10 @@ describe('twenty editors', () => {
         const watching = watcherCount();
         // The app is still being looked up when the panel closes.
         const release = holdFileRead('/w/app.json');
-        const panel = fakePanel();
+        const panel = fakeWebviewPanel();
         await provider.resolveCustomTextEditor(document('closed-early'), panel.panel, {} as vscode.CancellationToken);
 
-        panel.close();
+        panel.dispose();
         release();
         await settle();
 
@@ -180,7 +127,7 @@ describe('twenty editors', () => {
     it('are all disposed when the provider itself goes', async () => {
         const provider = new XliffEditorProvider(vscode.Uri.file('/ext'));
         for (let index = 0; index < 20; index++) {
-            await provider.resolveCustomTextEditor(document(`file-${index}`), fakePanel().panel, {} as vscode.CancellationToken);
+            await provider.resolveCustomTextEditor(document(`file-${index}`), fakeWebviewPanel().panel, {} as vscode.CancellationToken);
         }
 
         provider.dispose();
