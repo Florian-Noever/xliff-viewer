@@ -181,10 +181,10 @@ npm run package          # vsce package
 
 Four Vitest projects: `data` (pure, and deliberately *without* a `vscode` alias, so a data test that imports it fails to resolve), `host` (a hand-written `vscode` mock), `webview` (jsdom), and `perf` (the wall-clock budgets, run serially so they measure the code rather than the load).
 
-The XLIFF the tests read is invented. `src/test/fixtures/corpus.ts` generates every file in `src/test/fixtures/xliff/` in the exact shape the AL compiler writes, and a test fails if a committed file drifts from it. After changing the generator, rewrite the files with the command below (in PowerShell, set `$env:UPDATE_FIXTURES = '1'` first instead):
+The XLIFF the tests read is invented. `src/test/fixtures/corpus.ts` generates every file in `src/test/fixtures/xliff/` in the exact shape the AL compiler writes, along with the AL source of its apps in `src/test/fixtures/al/`, and the dev server's documents in `src/webview/fixtures/` are built from the same corpus. A test fails if a committed file drifts from what is generated. After changing a generator, rewrite the files with the command below; the `data` project writes them once, before any of its tests run (in PowerShell, set `$env:UPDATE_FIXTURES = '1'` first and run the command without the prefix):
 
 ```bash
-UPDATE_FIXTURES=1 npx vitest run --project data src/test/data/corpus.test.ts
+UPDATE_FIXTURES=1 npx vitest run --project data
 ```
 
 ### CI & Releases

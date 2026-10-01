@@ -21,7 +21,8 @@ const MAX_WORKERS = Math.max(1, Math.min(availableParallelism(), Math.floor(tota
  *
  *   data    — pure. NO alias for `vscode`, deliberately: a data test that imports it
  *             must fail to resolve. That failure is the standing proof that
- *             src/extension/xliff/ and src/shared/ stay dependency-free.
+ *             src/extension/xliff/ and src/shared/ stay dependency-free. With
+ *             UPDATE_FIXTURES=1 its global setup rewrites the generated fixtures first.
  *   host    — `vscode` aliased to the hand-written mock.
  *   webview — jsdom, the Vue plugin, and an `acquireVsCodeApi` stub.
  *   perf    — the wall-clock budgets, one file at a time and on their own: a timing
@@ -37,6 +38,7 @@ export default defineConfig({
                     name: 'data',
                     environment: 'node',
                     include: ['src/test/data/**/*.test.ts'],
+                    globalSetup: [resolvePath('./src/test/setup/fixtures.ts')],
                 },
             },
             {

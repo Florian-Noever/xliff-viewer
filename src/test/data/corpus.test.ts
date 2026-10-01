@@ -1,5 +1,5 @@
-import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath, URL } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
@@ -10,19 +10,6 @@ const FIXTURES = fileURLToPath(new URL('../fixtures/xliff', import.meta.url));
 const AL_FIXTURES = fileURLToPath(new URL('../fixtures/al', import.meta.url));
 const generated = generateCorpus();
 const generatedAl = generateAlSources();
-
-if (process.env.UPDATE_FIXTURES === '1') {
-    mkdirSync(FIXTURES, { recursive: true });
-    for (const file of generated) {
-        writeFileSync(`${FIXTURES}/${file.name}`, file.text, 'utf8');
-    }
-    // Rewritten whole, so a file the generator no longer writes does not linger.
-    rmSync(AL_FIXTURES, { recursive: true, force: true });
-    for (const file of generatedAl) {
-        mkdirSync(dirname(join(AL_FIXTURES, file.name)), { recursive: true });
-        writeFileSync(join(AL_FIXTURES, file.name), file.text, 'utf8');
-    }
-}
 
 /** Every file below a folder, by its path relative to it, with forward slashes. */
 function filesBelow(folder: string, prefix = ''): string[] {

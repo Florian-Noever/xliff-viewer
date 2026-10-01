@@ -11,7 +11,7 @@ import { assertEqual, assertOk } from './assertions';
  * the only way to know they work is to ask the editor. The mocked host tests cover which
  * edit is produced; this covers what the editor does with it.
  *
- * Writes to a scratch file it creates and deletes, never to a fixture.
+ * Writes only to scratch files in `out/test/scratch/`, which it creates and deletes.
  */
 
 const UNIT = 'Table 1 - Property 2';
@@ -29,10 +29,29 @@ const ORIGINAL = `<?xml version="1.0" encoding="utf-8"?>
 </xliff>
 `;
 
-function scratchUri(name: string): vscode.Uri {
+function scratchFolder(): vscode.Uri {
     const folders = vscode.workspace.workspaceFolders;
     assertOk(folders && folders.length > 0, 'no workspace folder is open');
-    return vscode.Uri.joinPath(folders[0].uri, name);
+    return vscode.Uri.joinPath(folders[0].uri, 'out', 'test', 'scratch');
+}
+
+const scratchUri = (name: string): vscode.Uri => vscode.Uri.joinPath(scratchFolder(), name);
+
+/** A file that is already gone needs no cleaning up; any other failure is the test's. */
+function rethrowUnlessMissing(error: unknown): void {
+    if (!(error instanceof vscode.FileSystemError && error.code === 'FileNotFound')) {
+        throw error;
+    }
+}
+
+/** An empty scratch folder, whatever an interrupted run left in it. */
+async function resetScratch(): Promise<void> {
+    try {
+        await vscode.workspace.fs.delete(scratchFolder(), { recursive: true, useTrash: false });
+    } catch (error) {
+        rethrowUnlessMissing(error);
+    }
+    await vscode.workspace.fs.createDirectory(scratchFolder());
 }
 
 async function openScratch(name: string): Promise<{ uri: vscode.Uri; document: vscode.TextDocument }> {
@@ -47,8 +66,8 @@ async function discard(uri: vscode.Uri): Promise<void> {
     await vscode.commands.executeCommand('workbench.action.closeAllEditors');
     try {
         await vscode.workspace.fs.delete(uri);
-    } catch {
-        // Already gone; nothing to clean up.
+    } catch (error) {
+        rethrowUnlessMissing(error);
     }
 }
 
@@ -57,6 +76,8 @@ const BOM = '﻿';
 const CRLF_WITH_BOM = BOM + ORIGINAL.split('\n').join('\r\n');
 
 suite('what a real host does to a file we did not write by hand', () => {
+    suiteSetup(resetScratch);
+
     test('keeps the CRLF and changes only the target, on a file with a BOM', async () => {
         // `getText()` does not hand back the BOM, so we never see one and never write one.
         // What lands on disk is the editor's business; the next test pins that this host drops it.
@@ -149,6 +170,8 @@ suite('what a real host does to a file we did not write by hand', () => {
 });
 
 suite('editing a target, in a real host', () => {
+    suiteSetup(resetScratch);
+
     test('marks the document dirty and changes only the target', async () => {
         const { uri, document } = await openScratch('edit-dirty.xlf');
         const session = new XliffDocumentSession(document);

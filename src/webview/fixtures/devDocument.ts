@@ -3,7 +3,7 @@
  * The document the Vite dev server renders when there is no extension host.
  *
  * **Generated — do not hand-edit.** It is a projection of the fixture file named by
- * `DEV_FIXTURE_SOURCE`, trimmed to the root objects listed in `src/shared/devFixture.ts`.
+ * `DEV_FIXTURE_SOURCE`, trimmed to the root objects listed in `src/test/fixtures/devFixture.ts`.
  * `src/test/data/devFixture.test.ts` rebuilds it from that file and fails if this one has
  * drifted, so the dev server always shows what the extension would send.
  *

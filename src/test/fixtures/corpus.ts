@@ -6,8 +6,8 @@
  * order and self-closing empty elements — so the round-trip tests still hold the serialiser
  * to AL's formatting.
  *
- * `corpus.test.ts` fails when a committed file differs from this output. Running it with
- * `UPDATE_FIXTURES=1` writes the files instead.
+ * `corpus.test.ts` fails when a committed file differs from this output. A `data` run with
+ * `UPDATE_FIXTURES=1` writes the files first, through `src/test/setup/fixtures.ts`.
  *
  * Ids are hashed with the production `alNameHash`, so every id is the one AL would write for
  * the same names; `alNameHash.test.ts` holds that function to values AL is known to write.

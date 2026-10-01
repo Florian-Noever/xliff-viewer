@@ -3,7 +3,7 @@
  * The namespaced document the Vite dev server renders when its URL asks for `?namespaced`.
  *
  * **Generated — do not hand-edit.** It is the projection of the fixture file named by
- * `DEV_NAMESPACED_SOURCE` in `src/shared/devFixture.ts`, whole.
+ * `DEV_NAMESPACED_SOURCE` in `src/test/fixtures/devFixture.ts`, whole.
  * `src/test/data/devFixture.test.ts` rebuilds it from that file and fails if this one has
  * drifted, so the dev server always shows what the extension would send.
  *
