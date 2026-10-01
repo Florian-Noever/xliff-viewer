@@ -6,8 +6,10 @@ import App from '../../webview/App.vue';
 import { DEV_DOCUMENT } from '../../webview/fixtures/devDocument';
 import { ExtensionMessageType } from '../../shared/messages';
 import { stubLayout } from './layoutStub';
+import { documentDto, fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
+import { XliffState } from '../../shared/state';
 
-import type { AlNodeDto, TransUnitDto, XliffDocumentDto, XliffFileDto } from '../../shared/dto';
+import type { XliffDocumentDto } from '../../shared/dto';
 
 /**
  * AL emits exactly one `<file>`, so a document with several has to be built by hand.
@@ -16,42 +18,24 @@ import type { AlNodeDto, TransUnitDto, XliffDocumentDto, XliffFileDto } from '..
  * and state. An assertion that passed on identical files would prove nothing.
  */
 
-const unit = (id: string, state: TransUnitDto['state'], target?: string): TransUnitDto =>
-    ({ id, source: id, target, state, translate: true, notes: [] });
-
-const node = (key: string, children: AlNodeDto[] = []): AlNodeDto =>
-    ({ key, type: key.split(' ')[0], name: key, children });
-
-const GERMAN: XliffFileDto = {
-    index: 0,
-    sourceLanguage: 'en-US',
-    targetLanguage: 'de-DE',
+const GERMAN = fileDto({
     original: 'Base App',
-    tree: [node('Table 1', [node('Table 1 - Property 2')])],
-    units: [unit('Table 1 - Property 2', 'translated', 'Kunde')],
-    hasAlIds: true,
-};
+    tree: [nodeDto('Table 1', [nodeDto('Table 1 - Property 2')])],
+    units: [unitDto('Table 1 - Property 2', { target: 'Kunde' })],
+});
 
-const FRENCH: XliffFileDto = {
+const FRENCH = fileDto({
     index: 1,
-    sourceLanguage: 'en-US',
     targetLanguage: 'fr-FR',
     original: 'Base App',
-    tree: [node('Page 3', [node('Page 3 - Property 4'), node('Page 3 - Property 5')])],
+    tree: [nodeDto('Page 3', [nodeDto('Page 3 - Property 4'), nodeDto('Page 3 - Property 5')])],
     units: [
-        unit('Page 3 - Property 4', 'translated', 'Client'),
-        unit('Page 3 - Property 5', 'empty', ''),
+        unitDto('Page 3 - Property 4', { target: 'Client' }),
+        unitDto('Page 3 - Property 5', { state: XliffState.empty, target: '' }),
     ],
-    hasAlIds: true,
-};
+});
 
-const TWO_FILES: XliffDocumentDto = {
-    uri: 'file:///w/App.xlf',
-    fileName: 'App.xlf',
-    isBaseFile: false,
-    readOnly: false,
-    files: [GERMAN, FRENCH],
-};
+const TWO_FILES = documentDto([GERMAN, FRENCH], { uri: 'file:///w/App.xlf', fileName: 'App.xlf' });
 
 function open(document: XliffDocumentDto) {
     const wrapper = mount(App);

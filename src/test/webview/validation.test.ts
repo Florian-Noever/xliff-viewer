@@ -11,8 +11,9 @@ import { UNIT_ACTIONS_KEY } from '../../webview/unitActions';
 import { HintKind, hintsFor } from '../../webview/validation';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { XliffState } from '../../shared/state';
+import { exampleUnitDto } from '../support/dtoBuilders';
 
-import type { AlNodeDto, TransUnitDto, XliffFileDto } from '../../shared/dto';
+import type { AlNodeDto, XliffFileDto } from '../../shared/dto';
 import type { WebviewSettings } from '../../shared/settings';
 import type { Hint } from '../../webview/validation';
 
@@ -20,16 +21,6 @@ import type { Hint } from '../../webview/validation';
  * Hints never block an edit or change a value. A hint that fires on a translation a
  * translator meant is worse than no hint at all.
  */
-
-const unit = (over: Partial<TransUnitDto> = {}): TransUnitDto => ({
-    id: 'Table 1 - Property 2',
-    source: 'ExampleSourceText',
-    target: 'ExampleTranslation',
-    state: XliffState.translated,
-    translate: true,
-    notes: [],
-    ...over,
-});
 
 const TRANSLATING = { sourceLanguage: 'en-US', targetLanguage: 'de-DE', sameAsSource: false };
 
@@ -44,13 +35,13 @@ const only = (hints: readonly Hint[], kind: string): Hint => {
 
 describe('what a unit is never checked for', () => {
     it('says nothing about a unit with no target — a base file is nothing else', () => {
-        expect(hintsFor(unit({ target: undefined, state: XliffState.missing, maxwidth: 1, sizeUnit: 'char' }), TRANSLATING)).toEqual([]);
+        expect(hintsFor(exampleUnitDto({ target: undefined, state: XliffState.missing, maxwidth: 1, sizeUnit: 'char' }), TRANSLATING)).toEqual([]);
     });
 
     it('says nothing about a unit the file marks untranslatable', () => {
         const over = { translate: false, source: 'Uses %1', target: 'Uses nothing' };
-        expect(hintsFor(unit(over), TRANSLATING)).toEqual([]);
-        expect(kinds(hintsFor(unit({ ...over, translate: true }), TRANSLATING))).toEqual([HintKind.placeholders]);
+        expect(hintsFor(exampleUnitDto(over), TRANSLATING)).toEqual([]);
+        expect(kinds(hintsFor(exampleUnitDto({ ...over, translate: true }), TRANSLATING))).toEqual([HintKind.placeholders]);
     });
 });
 
@@ -58,8 +49,8 @@ describe('the maxwidth check', () => {
     it('counts characters against what the file allows', () => {
         const over = { maxwidth: 10, sizeUnit: 'char', target: 'elf Zeichen!' };
 
-        expect(only(hintsFor(unit(over), TRANSLATING), HintKind.maxwidth).message).toBe('This target is 12 characters; the file allows 10.');
-        expect(hintsFor(unit({ ...over, target: '0123456789' }), TRANSLATING)).toEqual([]);
+        expect(only(hintsFor(exampleUnitDto(over), TRANSLATING), HintKind.maxwidth).message).toBe('This target is 12 characters; the file allows 10.');
+        expect(hintsFor(exampleUnitDto({ ...over, target: '0123456789' }), TRANSLATING)).toEqual([]);
     });
 
     it('stays quiet when maxwidth is not counting characters', () => {
@@ -67,36 +58,36 @@ describe('the maxwidth check', () => {
         // `char` on every unit, so the check runs where it means something and nowhere else.
         const long = { maxwidth: 2, target: 'far longer than two' };
 
-        expect(hintsFor(unit({ ...long, sizeUnit: undefined }), TRANSLATING)).toEqual([]);
-        expect(hintsFor(unit({ ...long, sizeUnit: 'pixel' }), TRANSLATING)).toEqual([]);
-        expect(kinds(hintsFor(unit({ ...long, sizeUnit: 'char' }), TRANSLATING))).toEqual([HintKind.maxwidth]);
+        expect(hintsFor(exampleUnitDto({ ...long, sizeUnit: undefined }), TRANSLATING)).toEqual([]);
+        expect(hintsFor(exampleUnitDto({ ...long, sizeUnit: 'pixel' }), TRANSLATING)).toEqual([]);
+        expect(kinds(hintsFor(exampleUnitDto({ ...long, sizeUnit: 'char' }), TRANSLATING))).toEqual([HintKind.maxwidth]);
     });
 });
 
 describe('the placeholder check', () => {
     it('names the ones the target dropped', () => {
-        const hints = hintsFor(unit({ source: 'From %1 to %2', target: 'Ab %1' }), TRANSLATING);
+        const hints = hintsFor(exampleUnitDto({ source: 'From %1 to %2', target: 'Ab %1' }), TRANSLATING);
         expect(only(hints, HintKind.placeholders).message).toBe('The source uses %2; the target does not.');
     });
 
     it('names the ones the target invented', () => {
-        const hints = hintsFor(unit({ source: 'VAT Base', target: 'MwSt.-Basis %1' }), TRANSLATING);
+        const hints = hintsFor(exampleUnitDto({ source: 'VAT Base', target: 'MwSt.-Basis %1' }), TRANSLATING);
         expect(only(hints, HintKind.placeholders).message).toBe('The target uses %1; the source does not.');
     });
 
     it('says both when both are true', () => {
-        const hints = hintsFor(unit({ source: 'Uses %1 and %2', target: 'Nutzt #1 und %2' }), TRANSLATING);
+        const hints = hintsFor(exampleUnitDto({ source: 'Uses %1 and %2', target: 'Nutzt #1 und %2' }), TRANSLATING);
         expect(only(hints, HintKind.placeholders).message).toBe('The source uses %1 and the target uses #1 instead.');
     });
 
     it('compares them as sets, so reordering and repeating are not mistakes', () => {
         // A mismatch is a placeholder present on one side only; a translation may use one
         // twice on purpose, which counting would flag.
-        expect(hintsFor(unit({ source: 'Bin: %1 - Max: %2', target: 'Max: %2 %2 - Bin: %1 %1' }), TRANSLATING)).toEqual([]);
+        expect(hintsFor(exampleUnitDto({ source: 'Bin: %1 - Max: %2', target: 'Max: %2 %2 - Bin: %1 %1' }), TRANSLATING)).toEqual([]);
     });
 
     it('reads #1 as a placeholder too', () => {
-        expect(kinds(hintsFor(unit({ source: 'Row #1', target: 'Zeile' }), TRANSLATING))).toEqual([HintKind.placeholders]);
+        expect(kinds(hintsFor(exampleUnitDto({ source: 'Row #1', target: 'Zeile' }), TRANSLATING))).toEqual([HintKind.placeholders]);
     });
 });
 
@@ -105,14 +96,14 @@ describe('the empty-but-finished check', () => {
         const empty = { target: '', state: XliffState.empty };
 
         for (const declared of [XliffState.translated, XliffState.signedOff, XliffState.final]) {
-            expect(kinds(hintsFor(unit({ ...empty, declaredState: declared }), TRANSLATING))).toEqual([HintKind.statedButEmpty]);
+            expect(kinds(hintsFor(exampleUnitDto({ ...empty, declaredState: declared }), TRANSLATING))).toEqual([HintKind.statedButEmpty]);
         }
-        expect(hintsFor(unit({ ...empty, declaredState: XliffState.needsTranslation }), TRANSLATING)).toEqual([]);
-        expect(hintsFor(unit(empty), TRANSLATING)).toEqual([]);
+        expect(hintsFor(exampleUnitDto({ ...empty, declaredState: XliffState.needsTranslation }), TRANSLATING)).toEqual([]);
+        expect(hintsFor(exampleUnitDto(empty), TRANSLATING)).toEqual([]);
     });
 
     it('quotes the state the file declared, which is the whole point of the hint', () => {
-        const hints = hintsFor(unit({ target: '', state: XliffState.empty, declaredState: XliffState.signedOff }), TRANSLATING);
+        const hints = hintsFor(exampleUnitDto({ target: '', state: XliffState.empty, declaredState: XliffState.signedOff }), TRANSLATING);
         expect(only(hints, HintKind.statedButEmpty).message).toBe('This target is empty, but the file declares it signed-off.');
     });
 });
@@ -121,8 +112,8 @@ describe('the same-as-source check', () => {
     const same = { source: 'Contoso', target: 'Contoso' };
 
     it('is off unless it is asked for', () => {
-        expect(hintsFor(unit(same), TRANSLATING)).toEqual([]);
-        expect(kinds(hintsFor(unit(same), { ...TRANSLATING, sameAsSource: true }))).toEqual([HintKind.sameAsSource]);
+        expect(hintsFor(exampleUnitDto(same), TRANSLATING)).toEqual([]);
+        expect(kinds(hintsFor(exampleUnitDto(same), { ...TRANSLATING, sameAsSource: true }))).toEqual([HintKind.sameAsSource]);
     });
 
     it('stays quiet when the file translates a language into itself', () => {
@@ -130,8 +121,8 @@ describe('the same-as-source check', () => {
         // saying so on every unit helps nobody.
         const asked = { sourceLanguage: 'en-US', targetLanguage: 'en-US', sameAsSource: true };
 
-        expect(hintsFor(unit(same), asked)).toEqual([]);
-        expect(hintsFor(unit(same), { ...asked, targetLanguage: undefined })).toEqual([]);
+        expect(hintsFor(exampleUnitDto(same), asked)).toEqual([]);
+        expect(hintsFor(exampleUnitDto(same), { ...asked, targetLanguage: undefined })).toEqual([]);
     });
 });
 
@@ -179,8 +170,8 @@ describe('the example files, which the hints have to be quiet on', () => {
 });
 
 describe('the roll-up and the setting', () => {
-    const flagged = unit({ id: 'Table 1 - Property 2', source: 'Uses %1', target: 'Nutzt nichts' });
-    const clean = unit({ id: 'Table 1 - Property 3', source: 'Plain', target: 'Einfach' });
+    const flagged = exampleUnitDto({ id: 'Table 1 - Property 2', source: 'Uses %1', target: 'Nutzt nichts' });
+    const clean = exampleUnitDto({ id: 'Table 1 - Property 3', source: 'Plain', target: 'Einfach' });
 
     const tree: AlNodeDto[] = [{
         key: 'Table 1',
@@ -206,7 +197,7 @@ describe('the roll-up and the setting', () => {
     });
 
     it('counts units, not hints, all the way up the tree', () => {
-        const both = unit({ id: clean.id, source: 'Uses %1', target: 'x'.repeat(80), maxwidth: 4, sizeUnit: 'char' });
+        const both = exampleUnitDto({ id: clean.id, source: 'Uses %1', target: 'x'.repeat(80), maxwidth: 4, sizeUnit: 'char' });
         const validation = useValidation({
             file: computed(() => ({ ...file, units: [flagged, both] })),
             settings: ref(DEFAULT_WEBVIEW_SETTINGS),
@@ -248,7 +239,7 @@ describe('where a hint appears', () => {
     ];
 
     it('is under the unit it is about, one line each', () => {
-        const wrapper = mount(UnitCard, { props: { unit: unit(), settings: DEFAULT_WEBVIEW_SETTINGS, hints } });
+        const wrapper = mount(UnitCard, { props: { unit: exampleUnitDto(), settings: DEFAULT_WEBVIEW_SETTINGS, hints } });
 
         expect(wrapper.findAll('.hint').map(each => each.text())).toEqual([
             '⚠The source uses %1; the target does not.',
@@ -257,7 +248,7 @@ describe('where a hint appears', () => {
     });
 
     it('is absent, not empty, when the unit has nothing wrong with it', () => {
-        const wrapper = mount(UnitCard, { props: { unit: unit(), settings: DEFAULT_WEBVIEW_SETTINGS, hints: [] } });
+        const wrapper = mount(UnitCard, { props: { unit: exampleUnitDto(), settings: DEFAULT_WEBVIEW_SETTINGS, hints: [] } });
 
         expect(wrapper.find('.hints').exists()).toBe(false);
     });
@@ -298,7 +289,7 @@ describe('where a hint appears', () => {
         // card that has just spelled the same hint out in a sentence.
         const unitRow = {
             key: 'Table 1 - Property 2', type: 'Property', name: 'Caption', depth: 1,
-            hasChildren: false, expanded: false, position: 1, siblings: 1, unit: unit(),
+            hasChildren: false, expanded: false, position: 1, siblings: 1, unit: exampleUnitDto(),
         };
         const wrapper = mount(TreeRow, {
             props: { row: unitRow, focused: false, settings: DEFAULT_WEBVIEW_SETTINGS, hintCount: 1, hints },

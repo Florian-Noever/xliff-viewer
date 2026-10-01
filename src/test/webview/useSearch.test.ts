@@ -5,6 +5,7 @@ import { computed, defineComponent, nextTick, ref } from 'vue';
 import { buildSearchIndex, toMatcher, useSearch } from '../../webview/composables/useSearch';
 import { flattenTree } from '../../webview/composables/useTreeFlatten';
 import { visibleNodes } from '../../webview/ancestorFilter';
+import { fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
 
 import type { AlNodeDto, TransUnitDto, XliffFileDto } from '../../shared/dto';
 import type { Search, SearchSource } from '../../webview/composables/useSearch';
@@ -18,45 +19,20 @@ import type { Search, SearchSource } from '../../webview/composables/useSearch';
  *   Property 6 "Caption"        → Something else / Etwas anderes
  */
 const TREE: AlNodeDto[] = [
-    {
-        key: 'Table 1',
-        type: 'Table',
-        name: 'PTE Contoso Methods Setup',
-        children: [
-            {
-                key: 'Table 1 - Field 2',
-                type: 'Field',
-                name: 'Contoso Method',
-                children: [{ key: 'Table 1 - Field 2 - Property 3', type: 'Property', name: 'Caption', children: [] }],
-            },
-            { key: 'Table 1 - Property 4', type: 'Property', name: 'ToolTip', children: [] },
-        ],
-    },
-    {
-        key: 'Table 5',
-        type: 'Table',
-        name: 'PTE Other',
-        children: [{ key: 'Table 5 - Property 6', type: 'Property', name: 'Caption', children: [] }],
-    },
+    nodeDto('Table 1', [
+        nodeDto('Table 1 - Field 2', [nodeDto('Table 1 - Field 2 - Property 3', [], { name: 'Caption' })], { name: 'Contoso Method' }),
+        nodeDto('Table 1 - Property 4', [], { name: 'ToolTip' }),
+    ], { name: 'PTE Contoso Methods Setup' }),
+    nodeDto('Table 5', [nodeDto('Table 5 - Property 6', [], { name: 'Caption' })], { name: 'PTE Other' }),
 ];
 
-const unit = (id: string, source: string, target: string, notes: { from?: string; value: string }[] = []): TransUnitDto =>
-    ({ id, source, target, state: 'translated', translate: true, notes });
-
 const UNITS = new Map<string, TransUnitDto>([
-    ['Table 1 - Field 2 - Property 3', unit('Table 1 - Field 2 - Property 3', 'Contoso Method Name', 'Contoso Methoden Name', [{ from: 'Developer', value: 'de-DE=Contoso Methoden Name' }])],
-    ['Table 1 - Property 4', unit('Table 1 - Property 4', 'The customer number', 'Die Kundennummer')],
-    ['Table 5 - Property 6', unit('Table 5 - Property 6', 'Something else', 'Etwas anderes')],
+    ['Table 1 - Field 2 - Property 3', unitDto('Table 1 - Field 2 - Property 3', { source: 'Contoso Method Name', target: 'Contoso Methoden Name', notes: [{ from: 'Developer', value: 'de-DE=Contoso Methoden Name' }] })],
+    ['Table 1 - Property 4', unitDto('Table 1 - Property 4', { source: 'The customer number', target: 'Die Kundennummer' })],
+    ['Table 5 - Property 6', unitDto('Table 5 - Property 6', { source: 'Something else', target: 'Etwas anderes' })],
 ]);
 
-const FILE: XliffFileDto = {
-    index: 0,
-    sourceLanguage: 'en-US',
-    targetLanguage: 'de-DE',
-    tree: TREE,
-    units: [...UNITS.values()],
-    hasAlIds: true,
-};
+const FILE = fileDto({ tree: TREE, units: [...UNITS.values()] });
 
 /**
  * Mounts the composable in a throwaway component — `useSearch` holds a `watch`, so it
@@ -163,8 +139,8 @@ describe('the index is built once per document, not per keystroke', () => {
 describe('the seam between two fields', () => {
     // Every field a node can match on is joined into one haystack. The separator is a NUL,
     // which XML text cannot contain and a search box cannot produce, so no query spans two.
-    const seam: AlNodeDto[] = [{ key: 'Table 1 - Property 2', type: 'Property', name: 'Alpha', children: [] }];
-    const seamUnits = new Map([['Table 1 - Property 2', unit('Table 1 - Property 2', 'Beta', 'Gamma')]]);
+    const seam = [nodeDto('Table 1 - Property 2', [], { name: 'Alpha' })];
+    const seamUnits = new Map([['Table 1 - Property 2', unitDto('Table 1 - Property 2', { source: 'Beta', target: 'Gamma' })]]);
     const seamIndex = buildSearchIndex(seam, seamUnits);
     const matches = (query: string) => toMatcher(query)(seamIndex.get('Table 1 - Property 2') ?? '');
 
@@ -261,13 +237,10 @@ describe('toMatcher', () => {
 
 describe('a wildcard query over the tree', () => {
     it('finds a unit one field of which holds the whole match, not one whose fields only share it', () => {
-        const tree: AlNodeDto[] = [
-            { key: 'Table 7 - Field 8', type: 'Field', name: 'Contoso Rate', children: [] },
-            { key: 'Table 7 - Field 9', type: 'Field', name: 'Discount', children: [] },
-        ];
+        const tree = [nodeDto('Table 7 - Field 8', [], { name: 'Contoso Rate' }), nodeDto('Table 7 - Field 9', [], { name: 'Discount' })];
         const units = new Map<string, TransUnitDto>([
-            ['Table 7 - Field 8', unit('Table 7 - Field 8', 'Rate', 'Name of the rate')],
-            ['Table 7 - Field 9', unit('Table 7 - Field 9', 'Discount', 'Contoso Method Name')],
+            ['Table 7 - Field 8', unitDto('Table 7 - Field 8', { source: 'Rate', target: 'Name of the rate' })],
+            ['Table 7 - Field 9', unitDto('Table 7 - Field 9', { source: 'Discount', target: 'Contoso Method Name' })],
         ]);
         const index = buildSearchIndex(tree, units);
 

@@ -8,15 +8,10 @@ import { visibleNodes } from '../../webview/ancestorFilter';
 import { ExtensionMessageType } from '../../shared/messages';
 import { summariseUnits, XliffState } from '../../shared/state';
 import { stubLayout } from './layoutStub';
+import { documentDto, fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
 
-import type { AlNodeDto, TransUnitDto, XliffDocumentDto } from '../../shared/dto';
+import type { AlNodeDto } from '../../shared/dto';
 import type { StateFilter } from '../../webview/composables/useStateFilter';
-
-const unit = (id: string, state: XliffState, source: string, translate = true): TransUnitDto =>
-    ({ id, source, target: state === XliffState.missing ? undefined : source, state, translate, notes: [] });
-
-const node = (key: string, name: string, children: AlNodeDto[] = []): AlNodeDto =>
-    ({ key, type: key.split(' ')[0], name, children });
 
 /**
  * Table 1 "Customer"
@@ -27,24 +22,18 @@ const node = (key: string, name: string, children: AlNodeDto[] = []): AlNodeDto 
  *   Property 6  translated        "Kunde list"
  */
 const TREE: AlNodeDto[] = [
-    node('Table 1', 'Customer', [node('Table 1 - Property 2', 'Caption'), node('Table 1 - Property 3', 'ToolTip')]),
-    node('Table 4', 'Vendor', [node('Table 4 - Property 5', 'Caption'), node('Table 4 - Property 6', 'ToolTip')]),
+    nodeDto('Table 1', [nodeDto('Table 1 - Property 2', [], { name: 'Caption' }), nodeDto('Table 1 - Property 3', [], { name: 'ToolTip' })], { name: 'Customer' }),
+    nodeDto('Table 4', [nodeDto('Table 4 - Property 5', [], { name: 'Caption' }), nodeDto('Table 4 - Property 6', [], { name: 'ToolTip' })], { name: 'Vendor' }),
 ];
 
 const UNITS = [
-    unit('Table 1 - Property 2', XliffState.translated, 'Kunde'),
-    unit('Table 1 - Property 3', XliffState.empty, 'Vendor number'),
-    unit('Table 4 - Property 5', XliffState.needsTranslation, 'Lieferant'),
-    unit('Table 4 - Property 6', XliffState.translated, 'Kunde list'),
+    unitDto('Table 1 - Property 2', { state: XliffState.translated, source: 'Kunde', target: 'Kunde' }),
+    unitDto('Table 1 - Property 3', { state: XliffState.empty, source: 'Vendor number', target: 'Vendor number' }),
+    unitDto('Table 4 - Property 5', { state: XliffState.needsTranslation, source: 'Lieferant', target: 'Lieferant' }),
+    unitDto('Table 4 - Property 6', { state: XliffState.translated, source: 'Kunde list', target: 'Kunde list' }),
 ];
 
-const DOCUMENT: XliffDocumentDto = {
-    uri: 'file:///w/App.de-DE.xlf',
-    fileName: 'App.de-DE.xlf',
-    isBaseFile: false,
-    readOnly: false,
-    files: [{ index: 0, sourceLanguage: 'en-US', targetLanguage: 'de-DE', tree: TREE, units: UNITS, hasAlIds: true }],
-};
+const DOCUMENT = documentDto([fileDto({ tree: TREE, units: UNITS })]);
 
 const unitsById = new Map(UNITS.map(each => [each.id, each]));
 

@@ -3,12 +3,10 @@ import { computed, defineComponent, ref } from 'vue';
 import { mount } from '@vue/test-utils';
 
 import { expandableKeys, flattenTree, keysToDepth, useTreeFlatten } from '../../webview/composables/useTreeFlatten';
+import { fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
 
 import type { AlNodeDto, TransUnitDto, XliffFileDto } from '../../shared/dto';
 import type { TreeView } from '../../webview/composables/useTreeFlatten';
-
-const node = (key: string, type: string, children: AlNodeDto[] = [], name?: string): AlNodeDto =>
-    ({ key, type, name, children });
 
 /**
  * Table 1
@@ -18,23 +16,21 @@ const node = (key: string, type: string, children: AlNodeDto[] = [], name?: stri
  * Table 5
  */
 const TREE: AlNodeDto[] = [
-    node('Table 1', 'Table', [
-        node('Table 1 - Field 2', 'Field', [node('Table 1 - Field 2 - Property 3', 'Property')], 'Code'),
-        node('Table 1 - Property 4', 'Property'),
-    ], 'Customer'),
-    node('Table 5', 'Table', [], 'Vendor'),
+    nodeDto('Table 1', [
+        nodeDto('Table 1 - Field 2', [nodeDto('Table 1 - Field 2 - Property 3')], { name: 'Code' }),
+        nodeDto('Table 1 - Property 4'),
+    ], { name: 'Customer' }),
+    nodeDto('Table 5', [], { name: 'Vendor' }),
 ];
 
-const unit = (id: string): TransUnitDto => ({ id, source: id, state: 'translated', translate: true, notes: [] });
-
 const UNITS = new Map<string, TransUnitDto>([
-    ['Table 1 - Field 2 - Property 3', unit('Table 1 - Field 2 - Property 3')],
-    ['Table 1 - Property 4', unit('Table 1 - Property 4')],
-    ['Table 5', unit('Table 5')],
+    ['Table 1 - Field 2 - Property 3', unitDto('Table 1 - Field 2 - Property 3')],
+    ['Table 1 - Property 4', unitDto('Table 1 - Property 4')],
+    ['Table 5', unitDto('Table 5')],
 ]);
 
 function file(tree: AlNodeDto[], hasAlIds = true, index = 0): XliffFileDto {
-    return { index, sourceLanguage: 'en-US', targetLanguage: 'de-DE', tree, units: [...UNITS.values()], hasAlIds };
+    return fileDto({ index, tree, units: [...UNITS.values()], hasAlIds });
 }
 
 /** `useTreeFlatten` uses `watch`, so it needs a real component scope. */
@@ -320,7 +316,7 @@ describe('an edit does not disturb the tree', () => {
         const opened = tree.rows.value.map(row => row.key);
 
         const edited = new Map(UNITS);
-        edited.set('Table 1 - Property 4', { ...unit('Table 1 - Property 4'), target: 'EditedTranslation' });
+        edited.set('Table 1 - Property 4', unitDto('Table 1 - Property 4', { target: 'EditedTranslation' }));
         active.value = { ...file(TREE), units: [...edited.values()] };
 
         expect(tree.rows.value.map(row => row.key)).toEqual(opened);

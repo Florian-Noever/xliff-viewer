@@ -11,37 +11,15 @@ import { stateLabel } from '../../webview/stateTone';
 import { UNIT_ACTIONS_KEY } from '../../webview/unitActions';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { SPEC_STATES, summariseUnits, XliffState } from '../../shared/state';
+import { documentDto, exampleUnitDto, fileDto } from '../support/dtoBuilders';
 
-import type { TransUnitDto, XliffDocumentDto, XliffFileDto } from '../../shared/dto';
+import type { TransUnitDto, XliffDocumentDto } from '../../shared/dto';
 import type { WebviewSettings } from '../../shared/settings';
 import type { EditMode } from '../../webview/composables/useEditMode';
 
-const unit = (over: Partial<TransUnitDto> = {}): TransUnitDto => ({
-    id: 'Table 1 - Property 2',
-    source: 'ExampleSourceText',
-    target: 'ExampleTranslation',
-    state: XliffState.translated,
-    translate: true,
-    notes: [],
-    ...over,
-});
+const FILE = fileDto({ units: [exampleUnitDto()] });
 
-const FILE: XliffFileDto = {
-    index: 0,
-    sourceLanguage: 'en-US',
-    targetLanguage: 'de-DE',
-    tree: [],
-    units: [unit()],
-    hasAlIds: true,
-};
-
-const DOCUMENT: XliffDocumentDto = {
-    uri: 'file:///w/App.de-DE.xlf',
-    fileName: 'App.de-DE.xlf',
-    isBaseFile: false,
-    readOnly: false,
-    files: [FILE],
-};
+const DOCUMENT = documentDto([FILE]);
 
 /**
  * Mounts `useEditMode` — it holds a `watch`, so it needs a real scope — and optionally a
@@ -221,7 +199,7 @@ describe('remembering a state the reader chose', () => {
         const { edit, wrapper } = editMode();
         edit.rememberState(0, 'Table 1 - Property 2', XliffState.signedOff);
 
-        await wrapper.setProps({ document: { ...DOCUMENT, files: [{ ...FILE, units: [unit({ target: 'Edited' })] }] } });
+        await wrapper.setProps({ document: { ...DOCUMENT, files: [{ ...FILE, units: [exampleUnitDto({ target: 'Edited' })] }] } });
 
         expect(edit.chosenState(0, 'Table 1 - Property 2')).toBe(XliffState.signedOff);
     });
@@ -231,7 +209,7 @@ describe('the card in edit mode', () => {
     function card(over: Partial<TransUnitDto> = {}, editing = true) {
         const calls: { what: string; unitId: string; value: string }[] = [];
         const wrapper = mount(UnitCard, {
-            props: { unit: unit(over), settings: DEFAULT_WEBVIEW_SETTINGS, editing, name: 'Caption' },
+            props: { unit: exampleUnitDto(over), settings: DEFAULT_WEBVIEW_SETTINGS, editing, name: 'Caption' },
             global: {
                 provide: {
                     [UNIT_ACTIONS_KEY as symbol]: {
@@ -276,7 +254,7 @@ describe('the card in edit mode', () => {
         expect(calls).toEqual([{ what: 'target', unitId: 'Table 1 - Property 2', value: 'EditedTranslation' }]);
 
         // What `patchUnits` does when the edit lands.
-        await wrapper.setProps({ unit: unit({ target: 'EditedTranslation' }) });
+        await wrapper.setProps({ unit: exampleUnitDto({ target: 'EditedTranslation' }) });
         await field.trigger('blur');
 
         expect(calls).toHaveLength(1);
@@ -290,7 +268,7 @@ describe('the card in edit mode', () => {
         field.value = 'TypedTranslation';
         state.value = XliffState.signedOff;
 
-        await wrapper.setProps({ unit: unit() });
+        await wrapper.setProps({ unit: exampleUnitDto() });
 
         expect(field.value).toBe('ExampleTranslation');
         expect(state.value).toBe(XliffState.translated);
@@ -336,7 +314,6 @@ describe('the card in edit mode', () => {
 
         expect(wrapper.get('textarea').attributes('rows')).toBe('3');
     });
-
 
     it('starts at least as wide as the source it translates', () => {
         // A floor rather than a width: `field-sizing: content` does the sizing, and it does

@@ -9,19 +9,12 @@ import { loadBearingWhitespace, WhitespaceReason } from '../../webview/whitespac
 import { translationLabel, translations } from '../../webview/translations';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { XliffState } from '../../shared/state';
+import { exampleUnitDto } from '../support/dtoBuilders';
 
 import type { AlNodeDto, TransUnitDto } from '../../shared/dto';
 import type { WebviewSettings } from '../../shared/settings';
 
-const unit = (over: Partial<TransUnitDto> = {}): TransUnitDto => ({
-    id: 'Table 1 - Property 2',
-    source: 'Customer',
-    target: 'Kunde',
-    state: XliffState.translated,
-    translate: true,
-    notes: [],
-    ...over,
-});
+const unit = (over: Partial<TransUnitDto> = {}): TransUnitDto => exampleUnitDto({ source: 'Customer', target: 'Kunde', ...over });
 
 const card = (over: Partial<TransUnitDto> = {}, settings: Partial<WebviewSettings> = {}) =>
     mount(UnitCard, { props: { unit: unit(over), settings: { ...DEFAULT_WEBVIEW_SETTINGS, ...settings } } });

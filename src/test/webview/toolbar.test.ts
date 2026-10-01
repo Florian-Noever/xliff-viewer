@@ -11,39 +11,22 @@ import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { summariseUnits } from '../../shared/state';
 import { ExtensionMessageType } from '../../shared/messages';
 import { stubLayout } from './layoutStub';
+import { documentDto, fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
 
-import type { AlNodeDto, TransUnitDto, XliffDocumentDto } from '../../shared/dto';
-
-const unit = (id: string, source: string, target: string): TransUnitDto =>
-    ({ id, source, target, state: 'translated', translate: true, notes: [] });
-
-const node = (key: string, type: string, name: string, children: AlNodeDto[] = []): AlNodeDto =>
-    ({ key, type, name, children });
-
-const DOCUMENT: XliffDocumentDto = {
-    uri: 'file:///w/App.de-DE.xlf',
-    fileName: 'App.de-DE.xlf',
-    isBaseFile: false,
-    readOnly: false,
-    files: [{
-        index: 0,
-        sourceLanguage: 'en-US',
-        targetLanguage: 'de-DE',
-        hasAlIds: true,
-        tree: [
-            node('Table 1', 'Table', 'Customer', [
-                node('Table 1 - Property 2', 'Property', 'Caption'),
-                node('Table 1 - Property 3', 'Property', 'ToolTip'),
-            ]),
-            node('Table 4', 'Table', 'Vendor', [node('Table 4 - Property 5', 'Property', 'Caption')]),
-        ],
-        units: [
-            unit('Table 1 - Property 2', 'Customer', 'Kunde'),
-            unit('Table 1 - Property 3', 'The customer number', 'Die Kundennummer'),
-            unit('Table 4 - Property 5', 'Vendor', 'Lieferant'),
-        ],
-    }],
-};
+const DOCUMENT = documentDto([fileDto({
+    tree: [
+        nodeDto('Table 1', [
+            nodeDto('Table 1 - Property 2', [], { name: 'Caption' }),
+            nodeDto('Table 1 - Property 3', [], { name: 'ToolTip' }),
+        ], { name: 'Customer' }),
+        nodeDto('Table 4', [nodeDto('Table 4 - Property 5', [], { name: 'Caption' })], { name: 'Vendor' }),
+    ],
+    units: [
+        unitDto('Table 1 - Property 2', { source: 'Customer', target: 'Kunde' }),
+        unitDto('Table 1 - Property 3', { source: 'The customer number', target: 'Die Kundennummer' }),
+        unitDto('Table 4 - Property 5', { source: 'Vendor', target: 'Lieferant' }),
+    ],
+})]);
 
 function open() {
     // Attached to the document so focus assertions mean something.

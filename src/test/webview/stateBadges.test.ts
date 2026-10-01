@@ -7,13 +7,11 @@ import StateBadge from '../../webview/components/StateBadge.vue';
 import { useRollup } from '../../webview/composables/useRollup';
 import { stateLabel, StateTone, stateTone } from '../../webview/stateTone';
 import { SPEC_STATES, summariseUnits, XliffState } from '../../shared/state';
+import { fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
 
-import type { AlNodeDto, TransUnitDto, XliffFileDto } from '../../shared/dto';
+import type { TransUnitDto, XliffFileDto } from '../../shared/dto';
 import type { StateSummary } from '../../shared/state';
 import type { Rollup } from '../../webview/composables/useRollup';
-
-const unit = (id: string, state: XliffState, translate = true): TransUnitDto =>
-    ({ id, source: id, state, translate, notes: [] });
 
 describe('stateTone', () => {
     it('calls the three complete states done', () => {
@@ -92,9 +90,9 @@ describe('ProgressBar', () => {
         const bar = mount(ProgressBar, {
             props: {
                 summary: summary([
-                    unit('a', XliffState.translated),
-                    unit('b', XliffState.translated),
-                    unit('c', XliffState.empty),
+                    unitDto('a', { state: XliffState.translated }),
+                    unitDto('b', { state: XliffState.translated }),
+                    unitDto('c', { state: XliffState.empty }),
                 ]),
             },
         });
@@ -106,7 +104,7 @@ describe('ProgressBar', () => {
 
     it('puts the counts before the bar, so a column of bars lines up', () => {
         // With the bar first, `120/122` and `8/8` would push their bars to different places.
-        const bar = mount(ProgressBar, { props: { summary: summary([unit('a', XliffState.translated)]) } });
+        const bar = mount(ProgressBar, { props: { summary: summary([unitDto('a', { state: XliffState.translated })]) } });
 
         expect([...bar.element.children].map(child => child.className)).toEqual(['counts', 'track']);
     });
@@ -114,10 +112,10 @@ describe('ProgressBar', () => {
     it('takes its colour from the worst descendant, not from the percentage', () => {
         // 2 of 3 either way; what differs is how bad the outstanding one is.
         const pending = mount(ProgressBar, {
-            props: { summary: summary([unit('a', XliffState.translated), unit('b', XliffState.translated), unit('c', XliffState.needsTranslation)]) },
+            props: { summary: summary([unitDto('a', { state: XliffState.translated }), unitDto('b', { state: XliffState.translated }), unitDto('c', { state: XliffState.needsTranslation })]) },
         });
         const absent = mount(ProgressBar, {
-            props: { summary: summary([unit('a', XliffState.translated), unit('b', XliffState.translated), unit('c', XliffState.missing)]) },
+            props: { summary: summary([unitDto('a', { state: XliffState.translated }), unitDto('b', { state: XliffState.translated }), unitDto('c', { state: XliffState.missing })]) },
         });
 
         expect(pending.get('.fill').classes()).toContain('tone-pending');
@@ -126,7 +124,7 @@ describe('ProgressBar', () => {
 
     it('renders nothing when nothing underneath is translatable', () => {
         const bar = mount(ProgressBar, {
-            props: { summary: summary([unit('a', XliffState.missing, false)]) },
+            props: { summary: summary([unitDto('a', { state: XliffState.missing, translate: false })]) },
         });
 
         expect(bar.find('.progress').exists()).toBe(false);
@@ -134,7 +132,7 @@ describe('ProgressBar', () => {
 
     it('says what it is counting, including the units it excluded', () => {
         const bar = mount(ProgressBar, {
-            props: { summary: summary([unit('a', XliffState.translated), unit('b', XliffState.missing, false)]) },
+            props: { summary: summary([unitDto('a', { state: XliffState.translated }), unitDto('b', { state: XliffState.missing, translate: false })]) },
         });
 
         expect(bar.get('.progress').attributes('title')).toBe('2 units, 1 translatable — worst: translated');
@@ -142,23 +140,15 @@ describe('ProgressBar', () => {
 });
 
 describe('useRollup', () => {
-    const tree: AlNodeDto[] = [
-        {
-            key: 'Table 1',
-            type: 'Table',
-            name: 'Customer',
-            children: [
-                { key: 'Table 1 - Property 2', type: 'Property', children: [] },
-                { key: 'Table 1 - Property 3', type: 'Property', children: [] },
-            ],
-        },
-        { key: 'Table 4', type: 'Table', name: 'Vendor', children: [{ key: 'Table 4 - Property 5', type: 'Property', children: [] }] },
+    const tree = [
+        nodeDto('Table 1', [nodeDto('Table 1 - Property 2'), nodeDto('Table 1 - Property 3')], { name: 'Customer' }),
+        nodeDto('Table 4', [nodeDto('Table 4 - Property 5')], { name: 'Vendor' }),
     ];
 
     const units = [
-        unit('Table 1 - Property 2', XliffState.translated),
-        unit('Table 1 - Property 3', XliffState.empty),
-        unit('Table 4 - Property 5', XliffState.translated),
+        unitDto('Table 1 - Property 2', { state: XliffState.translated }),
+        unitDto('Table 1 - Property 3', { state: XliffState.empty }),
+        unitDto('Table 4 - Property 5', { state: XliffState.translated }),
     ];
 
     function rollupOf(file: XliffFileDto | undefined): Rollup {
@@ -179,7 +169,7 @@ describe('useRollup', () => {
         return captured;
     }
 
-    const file: XliffFileDto = { index: 0, sourceLanguage: 'en-US', targetLanguage: 'de-DE', tree, units, hasAlIds: true };
+    const file = fileDto({ tree, units });
 
     it('summarises every node by key', () => {
         const rollup = rollupOf(file);

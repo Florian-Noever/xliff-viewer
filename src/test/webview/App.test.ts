@@ -5,28 +5,18 @@ import { nextTick } from 'vue';
 import App from '../../webview/App.vue';
 import { ExtensionMessageType } from '../../shared/messages';
 import { clearPostedMessages, postedMessages } from '../setup/webview';
+import { documentDto, fileDto, unitDto } from '../support/dtoBuilders';
 
 import type { XliffDocumentDto } from '../../shared/dto';
 import type { ExtensionMessage } from '../../shared/messages';
 
-const DOCUMENT: XliffDocumentDto = {
-    uri: 'file:///w/Contoso-Base.de-DE.xlf',
-    fileName: 'Contoso-Base.de-DE.xlf',
-    isBaseFile: false,
-    readOnly: false,
-    files: [{
-        index: 0,
-        sourceLanguage: 'en-US',
-        targetLanguage: 'de-DE',
-        original: 'Contoso-Base',
-        tree: [],
-        units: [
-            { id: '1', source: 'Customer', target: 'Kunde', state: 'translated', translate: true, notes: [] },
-            { id: '2', source: 'Vendor', target: '', state: 'empty', translate: true, notes: [] },
-        ],
-        hasAlIds: true,
-    }],
-};
+const DOCUMENT = documentDto([fileDto({
+    original: 'Contoso-Base',
+    units: [
+        unitDto('1', { source: 'Customer', target: 'Kunde' }),
+        unitDto('2', { source: 'Vendor', target: '', state: 'empty' }),
+    ],
+})], { uri: 'file:///w/Contoso-Base.de-DE.xlf', fileName: 'Contoso-Base.de-DE.xlf' });
 
 const send = (message: ExtensionMessage): void => {
     window.dispatchEvent(new MessageEvent('message', { data: message }));

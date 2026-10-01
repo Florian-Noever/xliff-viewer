@@ -9,6 +9,7 @@ import { UNIT_ACTIONS_KEY } from '../../webview/unitActions';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { summariseTree } from '../../shared/state';
 import { stubLayout, STUB_ROW_HEIGHT as ROW } from './layoutStub';
+import { exampleUnitDto, fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
 
 import type { AlNodeDto, TransUnitDto, XliffFileDto } from '../../shared/dto';
 import type { WebviewSettings } from '../../shared/settings';
@@ -27,10 +28,10 @@ function bigTree(roots: number, members: number): { tree: AlNodeDto[]; units: Ma
         const key = `Table ${object}`;
         const children = Array.from({ length: members }, (_ignored, member) => {
             const childKey = `${key} - Property ${member}`;
-            units.set(childKey, { id: childKey, source: `source ${member}`, state: 'translated', translate: true, notes: [] });
-            return { key: childKey, type: 'Property', name: `Caption ${member}`, children: [] };
+            units.set(childKey, unitDto(childKey, { source: `source ${member}` }));
+            return nodeDto(childKey, [], { name: `Caption ${member}` });
         });
-        return { key, type: 'Table', name: `Object ${object}`, children };
+        return nodeDto(key, children, { name: `Object ${object}` });
     });
     return { tree, units };
 }
@@ -54,14 +55,7 @@ function mountTree(
     settings?: WebviewSettings,
     editing = false,
 ) {
-    const file = ref<XliffFileDto>({
-        index: 0,
-        sourceLanguage: 'en-US',
-        targetLanguage: 'de-DE',
-        tree,
-        units: [...units.values()],
-        hasAlIds,
-    });
+    const file = ref<XliffFileDto>(fileDto({ tree, units: [...units.values()], hasAlIds }));
     let view: TreeView | undefined;
 
     const wrapper = mount(defineComponent({
@@ -309,14 +303,9 @@ describe('what a row click means', () => {
     /** A node that carries a unit *and* children: an id can be another unit's prefix. */
     function treeWithBoth(): { tree: AlNodeDto[]; units: Map<string, TransUnitDto> } {
         const units = new Map<string, TransUnitDto>();
-        units.set('Table 0', { id: 'Table 0', source: 'Object source', state: 'translated', translate: true, notes: [] });
-        units.set('Table 0 - Property 0', { id: 'Table 0 - Property 0', source: 'Leaf source', state: 'translated', translate: true, notes: [] });
-        const tree: AlNodeDto[] = [{
-            key: 'Table 0',
-            type: 'Table',
-            name: 'Object 0',
-            children: [{ key: 'Table 0 - Property 0', type: 'Property', name: 'Caption 0', children: [] }],
-        }];
+        units.set('Table 0', unitDto('Table 0', { source: 'Object source' }));
+        units.set('Table 0 - Property 0', unitDto('Table 0 - Property 0', { source: 'Leaf source' }));
+        const tree = [nodeDto('Table 0', [nodeDto('Table 0 - Property 0', [], { name: 'Caption 0' })], { name: 'Object 0' })];
         return { tree, units };
     }
 
@@ -412,7 +401,7 @@ describe('what a row click means', () => {
 
 describe('the one navigation action', () => {
     const unit = (over: Partial<TransUnitDto> = {}): TransUnitDto =>
-        ({ id: 'Table 0 - Property 0', source: 'Customer', target: 'Kunde', state: 'translated', translate: true, notes: [], ...over });
+        exampleUnitDto({ id: 'Table 0 - Property 0', source: 'Customer', target: 'Kunde', ...over });
 
     const row = (over: Partial<TransUnitDto> = {}) => ({
         key: 'Table 0 - Property 0',

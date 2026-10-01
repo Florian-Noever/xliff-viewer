@@ -7,39 +7,22 @@ import { ExtensionMessageType, WebviewMessageType } from '../../shared/messages'
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { summariseUnits } from '../../shared/state';
 import { clearPostedMessages, postedMessages } from '../setup/webview';
+import { documentDto, fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
 
-import type { XliffDocumentDto } from '../../shared/dto';
 import type { ExtensionMessage } from '../../shared/messages';
 import type { XliffDocument } from '../../webview/composables/useXliffDocument';
 
-const DOCUMENT: XliffDocumentDto = {
-    uri: 'file:///w/App.de-DE.xlf',
-    fileName: 'App.de-DE.xlf',
-    isBaseFile: false,
-    readOnly: false,
-    files: [
-        {
-            index: 0,
-            sourceLanguage: 'en-US',
-            targetLanguage: 'de-DE',
-            original: 'App',
-            tree: [{ key: 'Table 1', type: 'Table', name: 'Customer', children: [] }],
-            units: [
-                { id: 'Table 1', source: 'Customer', target: 'Kunde', state: 'translated', translate: true, notes: [] },
-                { id: 'Table 2', source: 'Vendor', state: 'missing', translate: true, notes: [] },
-            ],
-            hasAlIds: true,
-        },
-        {
-            index: 1,
-            sourceLanguage: 'en-US',
-            targetLanguage: 'fr-FR',
-            tree: [],
-            units: [{ id: 'Table 1', source: 'Customer', target: 'Client', state: 'translated', translate: true, notes: [] }],
-            hasAlIds: true,
-        },
-    ],
-};
+const DOCUMENT = documentDto([
+    fileDto({
+        original: 'App',
+        tree: [nodeDto('Table 1', [], { name: 'Customer' })],
+        units: [
+            unitDto('Table 1', { source: 'Customer', target: 'Kunde' }),
+            unitDto('Table 2', { source: 'Vendor', state: 'missing' }),
+        ],
+    }),
+    fileDto({ index: 1, targetLanguage: 'fr-FR', units: [unitDto('Table 1', { source: 'Customer', target: 'Client' })] }),
+]);
 
 /**
  * Mounts the composable inside a throwaway component — `onMounted` means it can only run
@@ -303,7 +286,7 @@ describe('patchUnits', () => {
         const state = useIt();
         sendDocument();
 
-        patch(0, [{ id: 'Table 1', source: 'Customer', target: 'Kunde', state: 'translated', translate: true, notes: [], orphaned: true }]);
+        patch(0, [unitDto('Table 1', { source: 'Customer', target: 'Kunde', orphaned: true })]);
 
         expect(state.unitsById.value.get('Table 1')?.orphaned).toBe(true);
         expect(state.unitsById.value.get('Table 2')?.orphaned).toBeUndefined();
@@ -313,7 +296,7 @@ describe('patchUnits', () => {
         const state = useIt();
         sendDocument();
 
-        patch(1, [{ id: 'Table 1', source: 'Customer', target: 'Client', state: 'translated', translate: true, notes: [], orphaned: true }]);
+        patch(1, [unitDto('Table 1', { source: 'Customer', target: 'Client', orphaned: true })]);
 
         expect(state.unitsById.value.get('Table 1')?.orphaned).toBeUndefined();
         state.activeFileIndex.value = 1;
@@ -327,7 +310,7 @@ describe('patchUnits', () => {
         sendDocument();
         const before = summariseUnits(state.activeFile.value?.units ?? []);
 
-        patch(0, [{ id: 'Table 2', source: 'Vendor', target: 'NowTranslated', state: 'translated', translate: true, notes: [] }]);
+        patch(0, [unitDto('Table 2', { source: 'Vendor', target: 'NowTranslated' })]);
 
         const after = summariseUnits(state.activeFile.value?.units ?? []);
         expect(before.percent).toBe(50);
@@ -348,7 +331,7 @@ describe('patchUnits', () => {
     it('ignores a patch that arrives before any document', () => {
         const state = useIt();
 
-        patch(0, [{ id: 'Table 1', source: 'x', state: 'translated', translate: true, notes: [] }]);
+        patch(0, [unitDto('Table 1', { source: 'x' })]);
 
         expect(state.document.value).toBeUndefined();
     });
