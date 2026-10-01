@@ -159,6 +159,7 @@
         "test:host": "vitest run --project host",
         "test:webview": "vitest run --project webview",
         "test:repo": "vitest run --project repo",
+        "ci:check": "run-s compile test:data test:host test:webview test:repo",
         "test:perf": "vitest run --project perf",
         "test:integration": "run-s bundle build:webview compile-tests test:integration:desktop test:integration:web",
         "test:integration:desktop": "node ./out/test/runIntegration.js",

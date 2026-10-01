@@ -17,7 +17,7 @@ jobs:
     uses: Florian-Noever/Florian-Noever/.github/workflows/vscode-extension-ci.yml@v1
     with:
       # The perf budgets stay a local gate: shared runners are slower and noisier than the machines they were set on
-      check-command: npm run compile && npm run test:data && npm run test:host && npm run test:webview
+      check-command: npm run ci:check
       test-command: npm run test:integration
       required-files: |
         out/extension.js

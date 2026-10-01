@@ -189,7 +189,7 @@ UPDATE_FIXTURES=1 npx vitest run --project data
 
 ### CI & Releases
 
-CI runs on every push and pull request through the shared workflows of [Florian-Noever/Florian-Noever](https://github.com/Florian-Noever/Florian-Noever/blob/main/.github/CI.md). One job type-checks, lints and runs the `data`, `host` and `webview` tests; a second runs the integration tests in the desktop and the web host; a third packs a preview VSIX. The perf budgets stay out of CI, since shared runners are slower and noisier than the machines the budgets were set on, so run `npm test` locally before a release.
+CI runs on every push and pull request through the shared workflows of [Florian-Noever/Florian-Noever](https://github.com/Florian-Noever/Florian-Noever/blob/main/.github/CI.md). One job runs `npm run ci:check`, which type-checks, lints and builds, then runs the `data`, `host`, `webview` and `repo` tests; a second runs the integration tests in the desktop and the web host; a third packs a preview VSIX. The perf budgets stay out of CI, since shared runners are slower and noisier than the machines the budgets were set on, so run `npm test` locally before a release.
 
 To release, bump the version with `npm version x.y.z --no-git-tag-version` and publish a GitHub release `vx.y.z` from a commit whose CI is green. The publish workflow builds and tests the tag, attaches the VSIX to the release and publishes it to the Visual Studio Marketplace and Open VSX.
 
