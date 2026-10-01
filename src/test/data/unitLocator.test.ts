@@ -307,12 +307,15 @@ describe('candidate tiers', () => {
         expect(textAt(sources, locate(sources, `PageExtension ${h('Contoso Views')} - View ${h('OpenOnes')} - Property ${h('Caption')}`))).toBe('Caption');
     });
 
-    it('finds nothing, and throws nothing, for a segment type that names something every object has', () => {
+    it('finds the object itself, and throws nothing, for a segment type that names something every object has', () => {
         // A member to test the type against is what reaches the kind table.
         const sources = { 'Order.al': 'table 1 Order { Caption = \'Order\'; fields { field(1; Code; Code[10]) { } } }' };
 
         for (const type of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) {
-            expect(() => locate(sources, `Table ${h('Order')} - ${type} ${h('X')} - Property ${h('Caption')}`), type).not.toThrow();
+            const result = locate(sources, `Table ${h('Order')} - ${type} ${h('X')} - Property ${h('Caption')}`);
+
+            expect(result.kind, type).toBe('found');
+            expect(result.kind === 'found' && result.location.precision, type).toBe('object');
         }
     });
 

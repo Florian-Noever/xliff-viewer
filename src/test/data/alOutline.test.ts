@@ -17,7 +17,7 @@ function* walk(declarations: readonly AlDeclaration[]): Generator<AlDeclaration>
 }
 
 const all = (text: string, symbols: readonly string[] = []) => [...walk(outlineAl(text, symbols).objects)];
-const named = (text: string, keyword: string, name: string) => all(text).find(each => each.keyword === keyword && each.name?.text === name);
+const named = (text: string, keyword: string, name: string, symbols: readonly string[] = []) => all(text, symbols).find(each => each.keyword === keyword && each.name?.text === name);
 const slice = (text: string, range: AlRange | undefined) => (range === undefined ? undefined : text.slice(range.start, range.end));
 
 describe('objects', () => {
@@ -220,13 +220,11 @@ describe('what a structural reading most easily gets wrong', () => {
 
 describe('preprocessor directives', () => {
     it('reads the branch the symbols select, and only that one', () => {
-        const clean = named(DIRECTIVES, 'field', 'Code');
-        const legacy = all(DIRECTIVES).find(each => each.keyword === 'field' && each.name?.text === 'Code');
+        const propertiesOf = (symbols?: readonly string[]) => named(DIRECTIVES, 'field', 'Code', symbols)?.properties.map(property => property.name.text);
         const withoutSymbol = outlineAl(DIRECTIVES).objects[0];
 
-        expect(clean).toBeDefined();
-        expect(all(DIRECTIVES, ['CLEAN']).find(each => each.name?.text === 'Code')?.properties.map(property => property.name.text)).toEqual(['Caption']);
-        expect(legacy?.properties.map(property => property.name.text)).toEqual(['ObsoleteState', 'Caption']);
+        expect(propertiesOf(['CLEAN'])).toEqual(['Caption']);
+        expect(propertiesOf()).toEqual(['ObsoleteState', 'Caption']);
         expect(withoutSymbol.children[0].children.map(child => child.name?.text)).toEqual(['Code', 'Kept']);
     });
 });

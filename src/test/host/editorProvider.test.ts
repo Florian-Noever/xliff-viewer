@@ -534,7 +534,6 @@ describe('how the editor is registered', () => {
 
         const [registration] = customEditorRegistrations;
         expect(registration.viewType).toBe('xliff-viewer.editor');
-        expect(JSON.stringify(registration.options)).not.toContain('retainContextWhenHidden');
         expect(registration.options).toEqual({ supportsMultipleEditorsPerDocument: true });
     });
 });

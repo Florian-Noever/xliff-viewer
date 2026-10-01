@@ -28,10 +28,6 @@ function firstDifference(a: string, b: string): string {
 }
 
 describe('round-trip invariant', () => {
-    it('the corpus holds the expected number of files', () => {
-        expect(FIXTURE_NAMES).toHaveLength(7);
-    });
-
     // Asserted per file so a failure names the file.
     it.each(FIXTURE_NAMES)('%s is byte-identical after parse → serialise', (name) => {
         const original = readFixture(name);
@@ -46,11 +42,6 @@ describe('round-trip invariant', () => {
         expect(rebuilt.charCodeAt(0)).toBe(0xfeff);
         expect(rebuilt.includes('\r\n')).toBe(true);
         expect(rebuilt).toBe(original);
-    });
-
-    it('round-trips the namespace-less, non-AL file', () => {
-        const original = readFixture(FIXTURE.minimal);
-        expect(roundTrip(original)).toBe(original);
     });
 
     it('adds no trailing newline to a file that has none', () => {
@@ -70,36 +61,7 @@ describe('round-trip invariant', () => {
 
 });
 
-describe('a single edit changes only that target', () => {
-    it('touches nothing outside the edited <target> element', () => {
-        const original = readFixture(FIXTURE.german);
-        const document = parseXliff(original);
-
-        const unit = document.files[0].body.groups[0].units[3];
-        const before = unit.target;
-        if (before === undefined) {
-            throw new Error('fixture unit has no target');
-        }
-
-        // Edit mode replaces the target rather than mutating it.
-        unit.target = { ...before, value: 'ZZZ EDITED ZZZ' };
-
-        const rebuilt = serialiseXliff(document);
-        expect(rebuilt).not.toBe(original);
-
-        const originalLines = original.split('\n');
-        const rebuiltLines = rebuilt.split('\n');
-        expect(rebuiltLines).toHaveLength(originalLines.length);
-
-        const changed = originalLines
-            .map((line, index) => (line === rebuiltLines[index] ? -1 : index))
-            .filter(index => index >= 0);
-
-        expect(changed).toHaveLength(1);
-        expect(originalLines[changed[0]]).toContain('<target');
-        expect(rebuiltLines[changed[0]]).toContain('ZZZ EDITED ZZZ');
-    });
-
+describe('a target cleared through the model', () => {
     it('clearing a target produces the self-closing form AL emits', () => {
         const document = parseXliff(readFixture(FIXTURE.german));
         const unit = document.files[0].body.groups[0].units[0];

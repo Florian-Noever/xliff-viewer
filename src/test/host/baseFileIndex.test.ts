@@ -44,9 +44,10 @@ describe('BaseFileIndex', () => {
         setVirtualFile('/w/App.g.xlf', document([['a', 'A']]));
 
         await index.sourcesOf(BASE);
-        flushLogs();
+        const first = flushLogs();
         await index.sourcesOf(BASE);
 
+        expect(first.filter(line => line.includes('Indexed'))).toHaveLength(1);
         expect(flushLogs().filter(line => line.includes('Indexed'))).toHaveLength(0);
     });
 

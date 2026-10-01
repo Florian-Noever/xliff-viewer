@@ -27,7 +27,7 @@ const DOCUMENT = [
     '        <trans-unit id="Codeunit 9 &amp; Friends - NamedType 4">',
     '          <source>Ampersand</source>',
     '        </trans-unit>',
-    '      </body>',
+    '      </group>',
     '    </body>',
     '  </file>',
     '</xliff>',

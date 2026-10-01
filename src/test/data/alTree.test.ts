@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import { buildAlTree, groupRoots, NO_NAMESPACE_GROUP_KEY, OBJECT_TYPE_GROUP_PREFIX } from '../../extension/xliff/alTree';
 import { alNameHash } from '../../extension/xliff/alNameHash';
+import { canonicalSegment, parseUnitId } from '../../extension/xliff/unitId';
+import { SEGMENT_SEPARATOR, splitUnitId } from '../../shared/unitPath';
 import { iterateNodes, iterateUnitNodes } from '../support/alTreeWalk';
 import { AL_FIXTURE_NAMES, FIXTURE, FIXTURE_NAMES, fixtureUnits } from '../support/fixtures';
 import { notedUnit, unit } from '../support/modelBuilders';
@@ -21,8 +23,12 @@ describe('the large corpus file', () => {
     });
 
     it('gives every node a key that is its own id prefix', () => {
+        const canonical = (key: string): string => parseUnitId(key).map(canonicalSegment).join(SEGMENT_SEPARATOR);
         for (const node of iterateNodes(roots)) {
-            expect(node.key.split(' - '), node.key).toHaveLength(node.depth + 1);
+            expect(splitUnitId(node.key), node.key).toHaveLength(node.depth + 1);
+            for (const child of node.children) {
+                expect(canonical(child.key).startsWith(`${canonical(node.key)}${SEGMENT_SEPARATOR}`), child.key).toBe(true);
+            }
         }
     });
 

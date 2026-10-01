@@ -13,6 +13,30 @@ import { listFiles } from '../support/files';
 
 const WEBVIEW = fileURLToPath(new URL('../../webview', import.meta.url));
 
+const MOTION_GUARD = '@media (prefers-reduced-motion: no-preference)';
+
+/** The text with every reduced-motion block taken out, its braces counted so nested rules go too. */
+function outsideMotionGuards(text: string): string {
+    let rest = text;
+    for (let at = rest.indexOf(MOTION_GUARD); at >= 0; at = rest.indexOf(MOTION_GUARD)) {
+        const open = rest.indexOf('{', at);
+        if (open < 0) {
+            return rest;
+        }
+        let depth = 0;
+        let end = open;
+        for (; end < rest.length; end++) {
+            if (rest[end] === '{') {
+                depth++;
+            } else if (rest[end] === '}' && --depth === 0) {
+                break;
+            }
+        }
+        rest = rest.slice(0, at) + rest.slice(end + 1);
+    }
+    return rest;
+}
+
 const styled = (): { path: string; text: string }[] =>
     listFiles(WEBVIEW, /\.(vue|css)$/).map(path => ({ path, text: readFileSync(`${WEBVIEW}/${path}`, 'utf8') }));
 
@@ -27,8 +51,8 @@ describe('what the webview does with motion and with a forced palette', () => {
 
     it('animates nothing outside a reduced-motion guard', () => {
         const unguarded = styled().filter((file) => {
-            const [beforeTheGuard] = file.text.split('@media (prefers-reduced-motion: no-preference)');
-            return beforeTheGuard.includes('animation:') || beforeTheGuard.includes('transition:');
+            const outside = outsideMotionGuards(file.text);
+            return outside.includes('animation:') || outside.includes('transition:');
         });
 
         expect(unguarded.map(file => file.path.split('/').pop())).toEqual([]);

@@ -249,9 +249,10 @@ describe('caching and invalidation', () => {
         const document = uri('/w/T/App.de-DE.xlf');
 
         await resolver.resolve(document, false);
-        flushLogs();
+        const first = flushLogs();
         await resolver.resolve(document, false);
 
+        expect(first.filter(line => line.includes('Base file for'))).toHaveLength(1);
         expect(flushLogs().filter(line => line.includes('Base file for'))).toHaveLength(0);
     });
 

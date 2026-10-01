@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import { FIXTURE, generateAlSources, generateCorpus } from '../fixtures/corpus';
 import { listFiles } from '../support/files';
-import { FIXTURE_FOLDER, readFixture } from '../support/fixtures';
+import { FIXTURE_FOLDER, FIXTURE_NAMES, readFixture } from '../support/fixtures';
 
 const AL_FIXTURES = fileURLToPath(new URL('../fixtures/al', import.meta.url));
 const generated = generateCorpus();
@@ -16,7 +16,8 @@ const generatedAl = generateAlSources();
  * data test depends on: the fixture corpus is reachable and intact.
  */
 describe('fixture corpus', () => {
-    it('holds exactly the files the generator writes', () => {
+    it('holds exactly the files the generator writes, one for each named fixture', () => {
+        expect(generated.map(file => file.name).sort()).toEqual([...FIXTURE_NAMES].sort());
         expect(readdirSync(FIXTURE_FOLDER).sort()).toEqual(generated.map(file => file.name).sort());
     });
 
@@ -31,12 +32,6 @@ describe('fixture corpus', () => {
 
     it.each(generatedAl.map(file => [file.name, file.text] as const))('%s is exactly what the generator writes', (name, text) => {
         expect(readFileSync(join(AL_FIXTURES, name), 'utf8') === text, `${name} was edited; regenerate it with UPDATE_FIXTURES=1`).toBe(true);
-    });
-
-    it('reads the minimal fixture as XLIFF text', () => {
-        const text = readFixture(FIXTURE.minimal);
-        expect(text).toContain('<xliff');
-        expect(text).toContain('<trans-unit id="1">');
     });
 
     it('sees a BOM on the base file and none on the language file', () => {

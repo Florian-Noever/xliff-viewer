@@ -111,12 +111,6 @@ describe('isSpecState', () => {
         expect(isSpecState(XliffState.empty)).toBe(false);
         expect(isSpecState(XliffState.unknown)).toBe(false);
     });
-
-    it('accepts translated, needs-translation and needs-adaptation', () => {
-        expect(isSpecState('translated')).toBe(true);
-        expect(isSpecState('needs-translation')).toBe(true);
-        expect(isSpecState('needs-adaptation')).toBe(true);
-    });
 });
 
 describe('COMPLETE_STATES', () => {

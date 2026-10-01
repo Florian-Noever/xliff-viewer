@@ -18,6 +18,7 @@ describe('the webview does not take trans-unit ids apart', () => {
         const offenders = files.filter(path => /(['"`]) - \1/.test(readFileSync(path, 'utf8')));
 
         expect(files.length).toBeGreaterThan(10);
+        expect(files.some(path => path.endsWith('UnitCard.vue'))).toBe(true);
         expect(offenders).toEqual([]);
     });
 });

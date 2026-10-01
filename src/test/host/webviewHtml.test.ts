@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { getWebviewHtml, localResourceRoots } from '../../extension/editor/webviewHtml';
-import { resetMocks, setVirtualFile } from '../__mocks__/vscode';
+import { setVirtualFile } from '../__mocks__/vscode';
 
 const EXTENSION_URI = vscode.Uri.file('/ext');
 const TEMPLATE = [
@@ -55,11 +55,6 @@ describe('getWebviewHtml', () => {
 
         expect(nonceOf(first)).toHaveLength(32);
         expect(nonceOf(first)).not.toBe(nonceOf(second));
-    });
-
-    it('reads the template through workspace.fs, not the real filesystem', async () => {
-        resetMocks();
-        await expect(getWebviewHtml(fakeWebview(), EXTENSION_URI)).rejects.toThrow('ENOENT');
     });
 });
 

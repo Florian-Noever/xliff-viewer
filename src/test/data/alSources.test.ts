@@ -92,7 +92,7 @@ describe('the committed AL sources cover what real source does', () => {
 
     it('in line endings, keyword case and property case', () => {
         expect(count(/\r\n/)).toBeGreaterThan(0);
-        expect(count(/^(?!.*\r\n)[\s\S]*\n/)).toBeGreaterThan(0);
+        expect(files.filter(file => file.text.includes('\n') && !file.text.includes('\r\n')).length).toBeGreaterThan(0);
         expect(count(/^TABLE |^PAGE |^CODEUNIT /m)).toBeGreaterThan(0);
         expect(count(/^\s+tooltip = /m)).toBeGreaterThan(0);
         expect(count(/trigger on(action|validate)\(\)/)).toBeGreaterThan(0);

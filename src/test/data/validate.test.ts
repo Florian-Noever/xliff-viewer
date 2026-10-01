@@ -50,7 +50,6 @@ const UNQUOTED_ATTRIBUTE = `<?xml version="1.0"?>
 
 describe('validateXml', () => {
     it('accepts every file in the corpus', () => {
-        expect(FIXTURE_NAMES).toHaveLength(7);
         for (const name of FIXTURE_NAMES) {
             expect(() => validateXml(readFixture(name)), name).not.toThrow();
         }

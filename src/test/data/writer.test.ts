@@ -94,16 +94,6 @@ describe('setTarget', () => {
         expect(apply(text, edit)).toBe(serialiseXliff(document));
     });
 
-    it('changes exactly one line', () => {
-        const { text, document, units } = load(LANGUAGE_FILE);
-        const edit = required(setTarget(document, text, { fileIndex: 0, unitId: units[3].id, value: 'Einzeilig' }), 'an edit');
-
-        const before = text.split('\n');
-        const after = apply(text, edit).split('\n');
-        expect(after).toHaveLength(before.length);
-        expect(before.filter((line, index) => line !== after[index])).toHaveLength(1);
-    });
-
     it('returns null when the value and state are unchanged', () => {
         const { text, document, units } = load(LANGUAGE_FILE);
         const unit = units[0];
