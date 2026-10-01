@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { findUnitLine, revealAsText, revealInBaseFile } from '../../extension/services/navigation';
+import { findUnitOffset, revealAsText, revealInBaseFile } from '../../extension/services/navigation';
 import { Logger } from '../../extension/services/logger';
-import { flushExecutedCommands, flushLogs, resetMocks, setVirtualFile } from '../__mocks__/vscode';
+import { FakeTextDocument, flushExecutedCommands, flushLogs, resetMocks, setVirtualFile } from '../__mocks__/vscode';
 
 /**
  * There are no offsets in the model, so a unit's line is found by searching the text —
@@ -34,6 +34,12 @@ const DOCUMENT = [
     '</xliff>',
 ].join('\n');
 
+/** The line the unit starts on, as the document's own `positionAt` reads the offset. */
+function lineOf(text: string, unitId: string): number | undefined {
+    const offset = findUnitOffset(text, unitId);
+    return offset === undefined ? undefined : new FakeTextDocument('/w/lines.xlf', text).positionAt(offset).line;
+}
+
 beforeEach(() => {
     Logger.initialize({ subscriptions: [] } as unknown as vscode.ExtensionContext, 'test');
 });
@@ -42,38 +48,39 @@ afterEach(() => {
     resetMocks();
 });
 
-describe('findUnitLine', () => {
-    it('finds a unit by its id', () => {
-        expect(findUnitLine(DOCUMENT, 'Table 1 - Property 2')).toBe(5);
-        expect(findUnitLine(DOCUMENT, 'Table 1 - Property 3')).toBe(10);
+describe('findUnitOffset', () => {
+    it('finds a unit by its id, at its <trans-unit>', () => {
+        expect(DOCUMENT.startsWith('<trans-unit id="Table 1 - Property 2"', findUnitOffset(DOCUMENT, 'Table 1 - Property 2'))).toBe(true);
+        expect(lineOf(DOCUMENT, 'Table 1 - Property 2')).toBe(5);
+        expect(lineOf(DOCUMENT, 'Table 1 - Property 3')).toBe(10);
     });
 
     it('escapes the id, so one containing & is found where the file wrote it', () => {
         // The file holds `Codeunit 9 &amp; Friends - NamedType 4`; the DTO holds the `&`.
-        expect(findUnitLine(DOCUMENT, 'Codeunit 9 & Friends - NamedType 4')).toBe(14);
+        expect(lineOf(DOCUMENT, 'Codeunit 9 & Friends - NamedType 4')).toBe(14);
     });
 
     it('anchors to the element, so an id quoted inside a note does not win', () => {
         // "Table 1 - Property 2" also appears in the Developer note of the next unit.
-        expect(findUnitLine(DOCUMENT, 'Table 1 - Property 2')).toBe(5);
+        expect(lineOf(DOCUMENT, 'Table 1 - Property 2')).toBe(5);
     });
 
     it('is undefined for a unit the text does not carry', () => {
-        expect(findUnitLine(DOCUMENT, 'Table 9 - Property 9')).toBeUndefined();
+        expect(findUnitOffset(DOCUMENT, 'Table 9 - Property 9')).toBeUndefined();
     });
 
     it('does not match a prefix of a longer id', () => {
-        expect(findUnitLine(DOCUMENT, 'Table 1 - Property')).toBeUndefined();
+        expect(findUnitOffset(DOCUMENT, 'Table 1 - Property')).toBeUndefined();
     });
 
     it('treats regex characters in an id as literal text', () => {
         const text = '<trans-unit id="Table (1) - Property [2]">';
-        expect(findUnitLine(text, 'Table (1) - Property [2]')).toBe(0);
-        expect(findUnitLine(text, 'Table .1. - Property .2.')).toBeUndefined();
+        expect(findUnitOffset(text, 'Table (1) - Property [2]')).toBe(0);
+        expect(findUnitOffset(text, 'Table .1. - Property .2.')).toBeUndefined();
     });
 
-    it('counts lines from zero, whatever the line endings are', () => {
-        expect(findUnitLine('a\r\nb\r\n<trans-unit id="x">', 'x')).toBe(2);
+    it('counts in characters, so a CRLF file leaves the line to positionAt', () => {
+        expect(findUnitOffset('a\r\nb\r\n<trans-unit id="x">', 'x')).toBe(6);
     });
 });
 

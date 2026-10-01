@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import { BaseFileResolver } from '../../extension/services/baseFileResolver';
-import { findUnitLine, revealAsText, revealInBaseFile } from '../../extension/services/navigation';
+import { findUnitOffset, revealAsText, revealInBaseFile } from '../../extension/services/navigation';
 import { idOf } from '../fixtures/corpus';
 
 import { assertEqual, assertOk } from './assertions';
@@ -80,9 +80,9 @@ suite('navigation, in whichever host this is', () => {
         const editor = editorFor(uri);
         assertOk(editor, 'the file did not open as text');
 
-        const line = findUnitLine(editor.document.getText(), KNOWN_UNIT);
-        assertOk(line !== undefined, 'the unit was not found in the text');
-        assertEqual(editor.selection.active.line, line, 'the cursor is not on the unit');
+        const offset = findUnitOffset(editor.document.getText(), KNOWN_UNIT);
+        assertOk(offset !== undefined, 'the unit was not found in the text');
+        assertEqual(editor.selection.active.line, editor.document.positionAt(offset).line, 'the cursor is not on the unit');
 
         await closeEverything();
     });

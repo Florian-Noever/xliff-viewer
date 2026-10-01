@@ -6,7 +6,7 @@ import { alScopeFor } from '../../extension/services/alScope';
 import { AlSourceIndex, AlSourceIndexes } from '../../extension/services/alSourceIndex';
 import { BaseFileResolver } from '../../extension/services/baseFileResolver';
 import { goToSource, SourceOutcome } from '../../extension/services/goToSource';
-import { findUnitLine } from '../../extension/services/navigation';
+import { findUnitOffset } from '../../extension/services/navigation';
 import { appUnits, translationRoot } from '../fixtures/alApp';
 import { renderApp } from '../fixtures/alRender';
 import { AL_APPS, CONTOSO_MANIFEST, contosoApp, fabrikamApp, NORTHWIND_MANIFEST } from '../fixtures/corpus';
@@ -141,7 +141,9 @@ suite('AL source, in whichever host this is', () => {
 
             assertEqual(outcome, SourceOutcome.baseFile, `${unit.id} was not shown in the base file`);
             assertOk(editor, 'the base file did not open as text');
-            assertEqual(editor.selection.active.line, findUnitLine(editor.document.getText(), unit.id), 'the cursor is not on the unit');
+            const offset = findUnitOffset(editor.document.getText(), unit.id);
+            assertOk(offset !== undefined, `${unit.id} is not in the base file`);
+            assertEqual(editor.selection.active.line, editor.document.positionAt(offset).line, 'the cursor is not on the unit');
         } finally {
             baseFiles.dispose();
             await closeEverything();

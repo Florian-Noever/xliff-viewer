@@ -16,28 +16,14 @@ const DEFAULT_EDITOR = 'default';
 const OPEN_WITH_COMMAND = 'vscode.openWith';
 
 /**
- * Where a unit's `<trans-unit>` starts, as a zero-based line, or undefined when the text
- * does not contain it.
+ * Where a unit's `<trans-unit>` starts, as an offset into the text, or undefined when the
+ * text does not contain it.
  *
  * Searches the document text rather than remembering an offset: there are none in the
  * model, and one remembered here would be wrong after the first edit. It is O(document)
  * per call — fine for a click, but never to be called while rendering.
  */
-export function findUnitLine(text: string, unitId: string): number | undefined {
-    const index = indexOfUnit(text, unitId);
-    if (index === undefined) {
-        return undefined;
-    }
-    let line = 0;
-    for (let at = 0; at < index; at++) {
-        if (text.charCodeAt(at) === 10) {
-            line++;
-        }
-    }
-    return line;
-}
-
-function indexOfUnit(text: string, unitId: string): number | undefined {
+export function findUnitOffset(text: string, unitId: string): number | undefined {
     // Anchored to the element: an id also appears inside the Xliff Generator note of other
     // units, and matching one of those would send the reader to the wrong place.
     for (const candidate of [encodeAttribute(unitId), unitId]) {
@@ -72,13 +58,13 @@ export async function revealAsText(uri: vscode.Uri, unitId?: string): Promise<vo
         return;
     }
 
-    const line = findUnitLine(editor.document.getText(), unitId);
-    if (line === undefined) {
+    const offset = findUnitOffset(editor.document.getText(), unitId);
+    if (offset === undefined) {
         Logger.warn(`Unit "${unitId}" was not found in ${uri.path}.`);
         return;
     }
 
-    const position = new vscode.Position(line, 0);
+    const position = new vscode.Position(editor.document.positionAt(offset).line, 0);
     editor.selection = new vscode.Selection(position, position);
     editor.revealRange(new vscode.Range(position, position), vscode.TextEditorRevealType.InCenter);
 }
@@ -99,7 +85,7 @@ export async function revealInBaseFile(baseUri: vscode.Uri, unitId: string): Pro
         return false;
     }
 
-    if (findUnitLine(text, unitId) === undefined) {
+    if (findUnitOffset(text, unitId) === undefined) {
         return false;
     }
 

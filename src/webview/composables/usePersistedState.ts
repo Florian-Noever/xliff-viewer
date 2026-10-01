@@ -95,7 +95,7 @@ export function usePersistedState(source: PersistedStateSource): void {
  * is one reveal at the default expansion, and the alternative is a half-restored view.
  */
 function read(): PersistedView | undefined {
-    const state = getState<unknown>();
+    const state = getState();
     if (state === null || typeof state !== 'object') {
         return undefined;
     }
