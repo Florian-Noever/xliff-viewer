@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
-
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { indexedObjects } from '../../extension/al/alHeaderIndex';

@@ -6,7 +6,6 @@ import TreeRow from '../../webview/components/TreeRow.vue';
 import UnitTree from '../../webview/components/UnitTree.vue';
 import { useTreeFlatten } from '../../webview/composables/useTreeFlatten';
 import { UNIT_ACTIONS_KEY } from '../../webview/unitActions';
-
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { summariseTree } from '../../shared/state';
 import { stubLayout, STUB_ROW_HEIGHT as ROW } from './layoutStub';

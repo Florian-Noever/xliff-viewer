@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
-
 import { describe, expect, it } from 'vitest';
 
 import { alNameHash } from '../../extension/xliff/alNameHash';

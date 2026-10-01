@@ -9,10 +9,9 @@ import { Logger } from '../services/logger';
 import { fileNameOf } from '../services/uriNames';
 
 import type { TextEditRange } from '../xliff/writer';
-import type { XliffDocumentDto } from '../../shared/dto';
+import type { TransUnitDto, XliffDocumentDto } from '../../shared/dto';
 import type { ErrorPayload } from '../../shared/messages';
 import type { UnitReference, XliffDocument } from '../../shared/model';
-import type { TransUnitDto } from '../../shared/dto';
 
 /**
  * One session per open document, owning the parsed model and the payload built from it.

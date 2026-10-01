@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
-
 import { assert, describe, expect, it } from 'vitest';
 
 import { parseXliff } from '../../extension/xliff/parser';

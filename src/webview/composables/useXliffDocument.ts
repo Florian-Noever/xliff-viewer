@@ -4,7 +4,6 @@ import { DEV_DOCUMENT } from '../fixtures/devDocument';
 import { DEV_NAMESPACED_DOCUMENT } from '../fixtures/devNamespacedDocument';
 import { stateLabel } from '../stateTone';
 import { isVscode, postMessage } from '../vscode';
-
 import { ExtensionMessageType, isExtensionMessage, NavigationTarget, WebviewMessageType } from '@shared/messages';
 import { DEFAULT_WEBVIEW_SETTINGS } from '@shared/settings';
 

@@ -1,6 +1,5 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
-
 import { describe, expect, it } from 'vitest';
 
 const REPO = new URL('../../../', import.meta.url);

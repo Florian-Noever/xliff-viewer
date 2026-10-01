@@ -2,7 +2,6 @@ import * as vscode from 'vscode';
 
 import { parseXliff } from '../../extension/xliff/parser';
 import { validateStructure } from '../../extension/xliff/validate';
-
 import { assertArrayEqual, assertContains, assertEqual, assertOk } from './assertions';
 
 const VIEW_TYPE = 'xliff-viewer.editor';

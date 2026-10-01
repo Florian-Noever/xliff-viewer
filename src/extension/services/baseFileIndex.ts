@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 
 import { Logger } from './logger';
-
 import { parseXliff } from '../xliff/parser';
 import { iterateUnits } from '../../shared/model';
 

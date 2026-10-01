@@ -1,4 +1,5 @@
 import stylistic from '@stylistic/eslint-plugin';
+import importX from 'eslint-plugin-import-x';
 import tseslint from 'typescript-eslint';
 import pluginVue from 'eslint-plugin-vue';
 
@@ -29,6 +30,7 @@ export default tseslint.config(
         plugins: {
             '@typescript-eslint': tseslint.plugin,
             '@stylistic': stylistic,
+            'import-x': importX,
         },
         rules: {
             // ── Formatting ───────────────────────────────────────────────────
@@ -60,6 +62,15 @@ export default tseslint.config(
                 fixStyle: 'inline-type-imports',
             }],
             '@typescript-eslint/no-require-imports': 'error',
+            // Three groups: packages, the project's own modules, then type-only imports.
+            'import-x/order': ['warn', {
+                groups: [['builtin', 'external', 'unknown'], ['internal', 'parent', 'sibling', 'index'], 'type'],
+                pathGroups: [{ pattern: '@shared/**', group: 'internal' }],
+                pathGroupsExcludedImportTypes: ['type'],
+                'newlines-between': 'always',
+                alphabetize: { order: 'ignore' },
+            }],
+            'import-x/no-duplicates': 'warn',
 
             // ── Class member conventions ─────────────────────────────────────
             '@typescript-eslint/explicit-member-accessibility': ['error', {

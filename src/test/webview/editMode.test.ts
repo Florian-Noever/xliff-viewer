@@ -9,7 +9,6 @@ import { useSearch } from '../../webview/composables/useSearch';
 import { useStateFilter } from '../../webview/composables/useStateFilter';
 import { stateLabel } from '../../webview/stateTone';
 import { UNIT_ACTIONS_KEY } from '../../webview/unitActions';
-
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { SPEC_STATES, summariseUnits, XliffState } from '../../shared/state';
 

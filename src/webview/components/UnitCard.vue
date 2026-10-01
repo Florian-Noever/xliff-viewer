@@ -95,7 +95,6 @@ import StateBadge from './StateBadge.vue';
 import { stateLabel } from '../stateTone';
 import { translationLabel, translations } from '../translations';
 import { useUnitActions } from '../unitActions';
-
 import { isSpecState, SPEC_STATES } from '@shared/state';
 import { lastSegmentLabel } from '@shared/unitPath';
 import { loadBearingWhitespace, whitespaceExplanation, whitespaceParts, WhitespaceReason } from '../whitespace';

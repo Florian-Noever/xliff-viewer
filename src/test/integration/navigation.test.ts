@@ -3,7 +3,6 @@ import * as vscode from 'vscode';
 import { BaseFileResolver } from '../../extension/services/baseFileResolver';
 import { findUnitOffset, revealAsText, revealInBaseFile } from '../../extension/services/navigation';
 import { idOf } from '../fixtures/corpus';
-
 import { assertEqual, assertOk } from './assertions';
 
 /**

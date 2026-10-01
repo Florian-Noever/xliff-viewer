@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
-
 import { describe, expect, it } from 'vitest';
 
 const TEMPLATE = readFileSync(fileURLToPath(new URL('../../../media/webview.html', import.meta.url)), 'utf8');

@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { XliffDocumentSession } from '../../extension/editor/documentSession';

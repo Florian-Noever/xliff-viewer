@@ -11,7 +11,6 @@ import { appUnits, translationRoot } from '../fixtures/alApp';
 import { renderApp } from '../fixtures/alRender';
 import { AL_APPS, CONTOSO_MANIFEST, contosoApp, fabrikamApp, NORTHWIND_MANIFEST } from '../fixtures/corpus';
 import { NORTHWIND } from '../fixtures/northwind';
-
 import { assertEqual, assertOk } from './assertions';
 
 import type { SourceRequest } from '../../extension/services/goToSource';

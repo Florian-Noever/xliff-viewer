@@ -1,7 +1,7 @@
-import type * as vscode from 'vscode';
-
 import { XliffEditorProvider } from './editor/xliffEditorProvider';
 import { Logger } from './services/logger';
+
+import type * as vscode from 'vscode';
 
 const DISPLAY_NAME = 'XLIFF Viewer';
 

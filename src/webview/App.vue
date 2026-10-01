@@ -68,7 +68,6 @@ import { useTreeFlatten } from './composables/useTreeFlatten';
 import { useValidation } from './composables/useValidation';
 import { useXliffDocument } from './composables/useXliffDocument';
 import { visibleNodes } from './ancestorFilter';
-
 import { isKnownState } from '@shared/state';
 import { provideUnitActions } from './unitActions';
 

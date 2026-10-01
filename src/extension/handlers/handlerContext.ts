@@ -1,5 +1,4 @@
 import type { DocumentView } from '../editor/documentView';
-
 import type { ExtensionMessage } from '../../shared/messages';
 import type { WebviewSettings } from '../../shared/settings';
 

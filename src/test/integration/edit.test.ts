@@ -3,7 +3,6 @@ import * as vscode from 'vscode';
 import { XliffDocumentSession } from '../../extension/editor/documentSession';
 import { XliffDocumentView } from '../../extension/editor/documentView';
 import { ExtensionMessageType } from '../../shared/messages';
-
 import { assertEqual, assertOk } from './assertions';
 
 /**

@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
-
 import { describe, expect, it } from 'vitest';
 
 import { projectDocument } from '../../extension/xliff/dto';

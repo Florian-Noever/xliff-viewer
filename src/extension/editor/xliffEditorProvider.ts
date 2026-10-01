@@ -10,7 +10,6 @@ import { getWebviewHtml, localResourceRoots } from './webviewHtml';
 import { dispatch } from '../handlers';
 import { Logger } from '../services/logger';
 import { affectsSettings, readSettings, toWebviewSettings } from '../services/settings';
-
 import { ExtensionMessageType, isWebviewMessage } from '../../shared/messages';
 
 import type { HandlerContext } from '../handlers/handlerContext';

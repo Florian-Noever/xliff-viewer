@@ -70,7 +70,6 @@ import UnitCard from './UnitCard.vue';
 import { Icon } from '../icons';
 import { sourceAction } from '../sourceAction';
 import { useUnitActions } from '../unitActions';
-
 import { NavigationTarget } from '@shared/messages';
 import { lastSegmentLabel, NAMESPACE_TYPE } from '@shared/unitPath';
 

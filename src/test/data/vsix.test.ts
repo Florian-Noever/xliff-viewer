@@ -1,5 +1,4 @@
 import { existsSync } from 'node:fs';
-
 import { listFiles, PackageManager } from '@vscode/vsce';
 import { beforeAll, describe, expect, it } from 'vitest';
 

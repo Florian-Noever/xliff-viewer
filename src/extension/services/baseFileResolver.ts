@@ -3,7 +3,6 @@ import * as vscode from 'vscode';
 import { Logger } from './logger';
 import { readSettings } from './settings';
 import { appNameOf, fileNameOf } from './uriNames';
-
 import { SETTINGS_SECTION } from '../../shared/settings';
 
 /**

@@ -1,6 +1,5 @@
 import { buildAlTree, groupRoots, isNamespaceNode } from './alTree';
 import { developerHint, developerNote, hasAlStructure } from './names';
-
 import { iterateFileUnits } from '../../shared/model';
 import { NoteFrom } from '../../shared/notes';
 import { effectiveState, isSpecState } from '../../shared/state';

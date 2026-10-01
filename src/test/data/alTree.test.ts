@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
-
 import { describe, expect, it } from 'vitest';
 
 import { buildAlTree, groupRoots, NO_NAMESPACE_GROUP_KEY, OBJECT_TYPE_GROUP_PREFIX } from '../../extension/xliff/alTree';

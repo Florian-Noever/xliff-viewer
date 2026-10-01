@@ -1,5 +1,4 @@
 import type { HandlerContext } from './handlerContext';
-
 import type { WebviewMessage, WebviewMessageType } from '../../shared/messages';
 
 type UpdateTargetMessage = Extract<WebviewMessage, { type: typeof WebviewMessageType.updateTarget }>;

@@ -9,7 +9,6 @@ import UnitCard from '../../webview/components/UnitCard.vue';
 import { useValidation } from '../../webview/composables/useValidation';
 import { UNIT_ACTIONS_KEY } from '../../webview/unitActions';
 import { HintKind, hintsFor } from '../../webview/validation';
-
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { XliffState } from '../../shared/state';
 
