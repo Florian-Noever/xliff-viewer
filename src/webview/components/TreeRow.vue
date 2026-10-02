@@ -303,7 +303,7 @@ const pairing = computed(() => {
     min-width: var(--gap);
 }
 
-/* The state and the one thing to do about it, in that order, on the right of the row. */
+/* The unit's one action, at the right of the row. */
 .unit-side {
     display: flex;
     flex: none;

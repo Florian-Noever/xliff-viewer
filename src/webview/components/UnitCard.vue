@@ -105,18 +105,10 @@ import type { WebviewSettings } from '@shared/settings';
 import type { Hint } from '../validation';
 
 /**
- * One trans-unit.
- *
- * A **labelled box**: the legend names the translated element and carries its state, and
- * the strings inside are label/value pairs, so no line relies on colour alone to say
- * which string it is.
- *
- * A description list, not a table and not a `<fieldset>`: `Original` and `[ de-DE ]` are
- * terms and the strings are their descriptions. `<legend>` belongs to form controls, so
- * the region is labelled with `aria-labelledby` instead.
- *
- * Text renders as text, never as a disabled input: a disabled field says "you could edit
- * this but may not", which is the wrong message in a viewer.
+ * One trans-unit, as a **labelled box**: the legend names the translated element and carries
+ * its state, and the strings are label/value pairs of a description list, so no line relies
+ * on colour alone. `<legend>` belongs to form controls, so the box is labelled with
+ * `aria-labelledby`. Read-only text renders as text, never as a disabled input.
  */
 
 const SPACE_MARK = '␣';
@@ -151,16 +143,9 @@ const targetRows = computed(() => Math.min(8, Math.max(1, (props.unit.target ?? 
 const longestLine = (value: string) => value.split('\n').reduce((widest, line) => Math.max(widest, line.length), 0);
 
 /**
- * Both of these are **floors**, not sizes.
- *
- * Width is `field-sizing: content`'s: the field widens with the word being written until it
- * reaches `--field-max-inline`, and only then wraps. An explicit `inline-size` would defeat
- * that, so the source's width is a minimum instead — a target that is still empty gets room
- * the size of what it has to say, and grows from there.
- *
- * Height has no cap: a translation is worth seeing whole. One line is the floor, and it is
- * what `resize: vertical` may shrink to — the floor is a line rather than the initial height
- * so a long target can be folded away when it is not the one being read.
+ * **Floors**, not sizes: `field-sizing: content` widens the field as it is typed into, up to
+ * `--field-max-inline`, and an `inline-size` would freeze it. Height has no cap; one line is
+ * as far as `resize: vertical` may fold a target.
  */
 const fieldStyle = computed(() => ({
     minInlineSize: `${Math.min(FIELD_MAX_COLUMNS, Math.max(FIELD_MIN_COLUMNS, longestLine(props.unit.source)))}ch`,
@@ -168,21 +153,9 @@ const fieldStyle = computed(() => ({
 }));
 
 /**
- * Fits the field to what it holds.
- *
- * `field-sizing: content` does this on its own here, and is what sizes the width. Height is
- * the axis a translator watches while typing, so it is set rather than left to a feature
- * not every browser engine implements. `blockSize` goes to `auto` first so the field can
- * shrink back as well as grow, and the border is added because `scrollHeight` counts the
- * padding but not the border that `border-box` includes.
- *
- * The spare pixel is not slop. `scrollHeight` is an integer rounding of a height that is
- * not one — a 13px font at `line-height: normal` puts fractions in every line — so fitting
- * to it exactly can leave the text half a pixel taller than the box it is in, which shows
- * as a scrollbar rather than as a missing half pixel. The rounding cannot be measured
- * around: `clientHeight` is rounded the same way, so the overflow is invisible to the DOM
- * even while the browser is drawing a scrollbar for it. Rounding up always covers it, and
- * one pixel of extra height is not visible.
+ * Fits the field's height to what it holds, shrinking as well as growing. `scrollHeight`
+ * leaves out the border that `border-box` counts, and it rounds, so the extra pixel stops
+ * a scrollbar.
  */
 function fit(field: HTMLTextAreaElement): void {
     field.style.blockSize = 'auto';
@@ -205,11 +178,8 @@ function fitOnMount(element: unknown): void {
 }
 
 /**
- * Committed on **blur**, never per keystroke.
- *
- * Every keystroke would be its own `WorkspaceEdit` and therefore its own undo step, which
- * makes Ctrl+Z unusable. The value is taken verbatim: a target that is a single space is
- * the translation, and trimming here would eat it.
+ * Committed on **blur**, never per keystroke, which would make each keystroke an undo step.
+ * The value is taken verbatim: a single space is a translation.
  */
 function commitTarget(event: Event): void {
     const value = (event.target as HTMLTextAreaElement).value;
@@ -275,7 +245,7 @@ const hint = computed(() => {
     margin-block-start: 3px;
 }
 
-/* What follows the box is outside it, and the gap says so — the same air the legend has. */
+/* The same space as under the legend. */
 .box + * {
     margin-block-start: calc(var(--gap) / 2);
 }
@@ -284,12 +254,7 @@ const hint = computed(() => {
     color: var(--vscode-descriptionForeground);
 }
 
-/*
- * Sized to its contents, not to the row, in both modes. `align-self` on a column flex item
- * is fit-content, so a short string gets a short box while a long one still wraps at the
- * width the row has left rather than pushing past it. The field inside carries its own
- * width for the same reason (`fieldStyle`).
- */
+/* Fits its contents, and wraps a long string at the width the row has left. */
 .box {
     align-self: flex-start;
     max-width: 100%;
@@ -303,7 +268,6 @@ const hint = computed(() => {
     display: flex;
     align-items: center;
     gap: var(--gap);
-    /* The header is a header: it needs air under it, not a line's worth of leading. */
     margin: 0 0 calc(var(--gap) / 2);
 }
 
@@ -312,19 +276,14 @@ const hint = computed(() => {
     overflow-wrap: anywhere;
 }
 
-/*
- * Pushed to the end of the legend rather than sitting next to the name. An auto margin
- * rather than `space-between`, so a third thing in the legend — an edit control, say —
- * still lands beside the name instead of being centred between the two.
- */
+/* An auto margin, so anything else in the legend stays beside the name. */
 .legend .state-badge {
     margin-inline-start: auto;
 }
 
 /*
- * Everything below the box repeats the box's own columns rather than nesting inside it, so
- * a note lines up with the string it is about. `NoteList` owns the same grid; the column is
- * a fixed token, which is what lets three separate grids agree.
+ * The box's columns, repeated below it so a note lines up with the string it is about.
+ * `NoteList` has the same grid, and `--label-column` keeps the separate grids in step.
  */
 .strings,
 .aside {
@@ -361,7 +320,7 @@ const hint = computed(() => {
     background: var(--vscode-input-background);
     color: var(--vscode-input-foreground);
     font: inherit;
-    /* A target's own newlines are its own; the field must not add wrapping of its own. */
+    /* Keeps the target's own spaces and line breaks. */
     white-space: pre-wrap;
     resize: vertical;
 }

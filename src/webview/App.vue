@@ -45,7 +45,7 @@
             <p v-else class="placeholder">Waiting for a document…</p>
         </template>
 
-        <!-- Off screen, never empty of purpose: what changed, for a reader who cannot see it. -->
+        <!-- Off screen: what changed, for a reader who cannot see it. -->
         <p class="sr-only" role="status" aria-live="polite">{{ announcer.message.value }}</p>
     </main>
 </template>
@@ -102,7 +102,7 @@ provideUnitActions({
     alSourceAvailable: () => alSourceAvailable.value,
     isBaseFile: () => document.value?.isBaseFile === true,
     // A state the reader chose for this unit outranks `stateOnEdit` on a later edit to its
-    // text, so it travels with the message rather than being remembered twice.
+    // text, so it travels with the message.
     updateTarget: (unitId, value) => updateTarget(unitId, value, edit.chosenState(activeFile.value?.index ?? 0, unitId)),
     updateState: (unitId, state) => {
         edit.rememberState(activeFile.value?.index ?? 0, unitId, state);
@@ -119,10 +119,7 @@ const filter = useStateFilter({
     scope: computed(() => `${document.value?.uri ?? ''}#${activeFileIndex.value}`),
 });
 
-/**
- * Search and the state filter narrow to the intersection. They compose as predicates
- * rather than as two finished sets — `ancestorFilter.ts` explains why.
- */
+/** Search and the state filter narrow to the intersection: one predicate each, applied per node. */
 const filtered = computed(() => visibleNodes(
     activeFile.value?.tree ?? [],
     [search.predicate.value, filter.predicate.value].filter(each => each !== undefined),
@@ -138,11 +135,8 @@ const tree = useTreeFlatten({
 
 /**
  * A hidden tab's webview is destroyed, so the view state is saved and put back when it is
- * rebuilt.
- *
- * The shape lives here rather than in the composable because this is where the pieces are:
- * `usePersistedState` owns the slot, the throttle and the guard, and knows nothing about
- * what a tree or a filter is.
+ * rebuilt. `usePersistedState` owns the slot, the throttle and the guard; what goes in it
+ * is decided here.
  */
 const unitTree = useTemplateRef<{ scrollToRow: (row: number) => void }>('unitTree');
 const firstVisibleRow = ref(0);

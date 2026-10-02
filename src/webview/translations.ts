@@ -1,18 +1,7 @@
 import type { TransUnitDto } from '@shared/dto';
 import type { XliffState } from '@shared/state';
 
-/**
- * The translations a unit carries, as a list.
- *
- * **There is exactly one, and that is the format's doing, not an oversight.** XLIFF 1.2
- * allows a single `<target>` per `<trans-unit>`; its construct for alternatives,
- * `<alt-trans>`, is not modelled. Several languages means several *files*.
- *
- * So this returns a one-element list on purpose: it is the seam for showing several
- * languages side by side, and it costs one array — the payload is untouched,
- * `TransUnitDto.target` stays singular, and nothing crosses the wire that XLIFF cannot
- * express.
- */
+/** One translation of a unit, as a card's row shows it. */
 export interface Translation {
     /** The `<file>`'s target language, or undefined when it declares none. */
     readonly language?: string;
@@ -21,6 +10,10 @@ export interface Translation {
     readonly state: XliffState;
 }
 
+/**
+ * The translations a unit carries, one entry each. In XLIFF 1.2 a `<trans-unit>` has at most
+ * one `<target>`, so there is one entry.
+ */
 export function translations(unit: TransUnitDto, targetLanguage?: string): readonly Translation[] {
     return [{ language: targetLanguage, value: unit.target, state: unit.state }];
 }

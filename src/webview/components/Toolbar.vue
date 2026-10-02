@@ -65,8 +65,7 @@ import type { StateFilter } from '../composables/useStateFilter';
  * Search, the state chips, and expand/collapse.
  *
  * The edit toggle carries its own refusal: disabled when the document cannot be edited at
- * all, and its tooltip says which reason applies rather than leaving the reader to guess
- * why nothing happens.
+ * all, with a tooltip that says why.
  */
 
 const props = defineProps<{

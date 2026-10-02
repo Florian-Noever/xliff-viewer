@@ -1,7 +1,7 @@
 /**
- * Single source of truth for every number shared between TypeScript logic and CSS.
- * `useDesignTokens()` injects these as CSS custom properties. Values with no TypeScript
- * consumer, such as radii, live in global.css.
+ * The numbers the webview's code works with, defined once. `useDesignTokens()` injects the
+ * ones its CSS needs as custom properties; values only CSS uses, such as radii, live in
+ * global.css.
  */
 
 // --- Layout ---

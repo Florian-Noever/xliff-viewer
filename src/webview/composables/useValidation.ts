@@ -10,10 +10,8 @@ import type { ComputedRef, Ref } from 'vue';
 /**
  * The validation hints, per unit and rolled up the tree.
  *
- * Both maps are `computed`, so a keystroke costs nothing: they are rebuilt when the file,
- * its units or the two validation settings change, and not otherwise. That matters — an
- * edit patches one unit yet recomputes the whole document's hints, which must happen once
- * per change rather than once per render.
+ * Both maps are `computed`: rebuilt when the file, its units or the two validation settings
+ * change, once per change rather than per render.
  *
  * The roll-up counts **units carrying at least one hint**, not hints: a container saying
  * "3" should mean three translations to look at, not one translation with three problems.

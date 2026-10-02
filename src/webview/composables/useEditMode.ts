@@ -8,11 +8,9 @@ import type { ComputedRef, Ref } from 'vue';
 /**
  * Whether the user is editing, and when not, why not.
  *
- * **Read-only is the default and editing is opt-in.** Two separate questions live here and
- * are deliberately not collapsed into one boolean: whether the document *can* be edited,
- * which the host decides, and whether the user has asked to, which the toggle decides. A
- * single flag would leave the GUI able to refuse but unable to say which of the two is
- * stopping it.
+ * **Read-only is the default and editing is opt-in.** Whether the document *can* be edited
+ * is the host's to say, whether the user has asked to is the toggle's, and a refusal says
+ * which of the two stopped it.
  */
 
 export const EditRefusal = {

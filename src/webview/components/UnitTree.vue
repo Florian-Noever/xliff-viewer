@@ -111,10 +111,7 @@ const props = defineProps<{
     editing?: boolean;
 }>();
 
-/**
- * Rebuilt per rendered row rather than per unit: `showGeneratorNotes` is off by default,
- * and only the rows on screen — some thirty of them — ever need it.
- */
+/** Rebuilt per rendered row: only the rows on screen need it. */
 function generatorNoteFor(row: Row): string | undefined {
     if (props.settings?.showGeneratorNotes !== true || row.unit === undefined) {
         return undefined;
@@ -141,8 +138,7 @@ const offset = computed(() => virtualItems.value[0]?.start ?? 0);
 /**
  * Where the tree is scrolled to, as the **first rendered row** rather than a pixel offset.
  *
- * Emitted when that row changes, not on every scroll event: a pixel of movement is not a
- * change worth persisting, and `usePersistedState` throttles on top of this.
+ * Emitted when that row changes, not on every scroll event.
  */
 const firstVisibleRow = computed(() => virtualItems.value[0]?.index ?? 0);
 watch(firstVisibleRow, row => emit('scrolled', row));
@@ -150,10 +146,8 @@ watch(firstVisibleRow, row => emit('scrolled', row));
 /**
  * Puts a saved scroll position back.
  *
- * `scrollToIndex` rather than a `scrollTop`, because row heights are measured lazily as
- * rows render: a restored pixel offset lands wherever the estimates happened to put it,
- * while an index is exact whatever has been measured so far. Deferred a tick so the rows
- * the caller just restored the expansion for exist to scroll among.
+ * By index, since row heights are measured lazily as rows render, and a tick later, so the
+ * rows the caller just reopened exist.
  */
 async function scrollToRow(index: number): Promise<void> {
     await nextTick();
@@ -168,10 +162,9 @@ defineExpose({ scrollToRow });
  * `aria-activedescendant` names an element, so every row needs an id — by **position**
  * rather than by key, because a node key is an XLIFF id full of spaces and dots.
  *
- * Set only while the row it names is **rendered**. The focused row can be scrolled out of
- * the virtualiser's window, and an attribute pointing at an element that is not in the
- * document is worse than an absent one: a screen reader is told there is a current item and
- * then cannot find it.
+ * Set only while the row it names is **rendered**: the focused row can be scrolled out of
+ * the virtualiser's window, and a screen reader told of a current item it cannot find is
+ * worse off than one told of none.
  */
 const treeId = useId();
 const rowId = (index: number): string => `${treeId}-row-${index}`;

@@ -10,8 +10,7 @@ import type { ComputedRef, Ref } from 'vue';
 /**
  * Narrowing the tree to the states that still need work.
  *
- * The chips are driven by the roll-up's own `byState`, not by a second count of the same
- * units — a chip that disagreed with the header would be worse than no chip.
+ * The chips count from the roll-up's own `byState`, so a chip always agrees with the header.
  */
 
 export interface StateChip {

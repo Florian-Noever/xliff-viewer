@@ -29,8 +29,8 @@ import type { ErrorPayload } from '@shared/messages';
  * The document-level loading and failure surface.
  *
  * `pane` blocks the view and is for a document that has never parsed. `banner` sits above
- * a document that is still displayable — a file broken by an edit in progress keeps its
- * last good tree, and an error that hid it would be worse than the error itself.
+ * a document that is still displayable: a file broken by an edit in progress keeps its
+ * last good tree.
  */
 
 const props = defineProps<{

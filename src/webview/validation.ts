@@ -6,8 +6,7 @@ import type { TransUnitDto } from '@shared/dto';
  * The validation checks: what a translation is probably getting wrong.
  *
  * **Every one of these is advisory.** None blocks an edit, none changes a value, and none
- * is an error — a translator who meant it is right and the hint is wrong. That is why they
- * are computed here rather than in the host: nothing downstream of them may act on them.
+ * is an error — a translator who meant it is right and the hint is wrong.
  *
  * Two exclusions, both to keep the hints worth reading:
  *
@@ -16,10 +15,8 @@ import type { TransUnitDto } from '@shared/dto';
  * - a `translate="no"` unit is not checked, for the same reason the roll-up excludes it:
  *   the file has said this one is not a translation.
  *
- * Leading and trailing whitespace differing from the source is not checked here.
- * `whitespace.ts` already marks that case in the target itself and explains why, and it
- * does so **unconditionally**: the marks are not a hint, and leaving them behind when
- * `validation.enabled` is off would leave glyphs on screen with nothing to explain them.
+ * Edge whitespace that differs from the source is not checked here: `whitespace.ts` marks it
+ * in the target itself, whatever the settings.
  */
 
 export const HintKind = {
@@ -66,9 +63,7 @@ export function hintsFor(unit: TransUnitDto, options: HintOptions): readonly Hin
     }
 
     if (target === '') {
-        // The only thing worth saying about an empty target is that the file calls it done.
-        // Everything else — no placeholders, no overrun — is a restatement of "untranslated",
-        // which the state already says.
+        // An empty target is worth a hint only when the file calls it done.
         return unit.declaredState !== undefined && isCompleteState(unit.declaredState)
             ? [{ kind: HintKind.statedButEmpty, message: `This target is empty, but the file declares it ${unit.declaredState}.` }]
             : [];
@@ -95,9 +90,8 @@ export function hintsFor(unit: TransUnitDto, options: HintOptions): readonly Hin
 }
 
 /**
- * Compared as **sets**: present in source but missing from target, or vice versa. Counting
- * them instead would flag a target that deliberately uses a placeholder twice, which is not
- * a mistake.
+ * Compared as **sets**, so a target may use a placeholder twice: present in the source but
+ * missing from the target, or the other way round.
  */
 function comparePlaceholders(source: string, target: string): string | undefined {
     const inSource = new Set(source.match(PLACEHOLDER) ?? []);

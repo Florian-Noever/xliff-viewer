@@ -12,11 +12,8 @@ export interface IndexedNode {
 export type NodeIndex = ReadonlyMap<string, IndexedNode>;
 
 /**
- * Rebuilds the `Xliff Generator` note the payload does not carry.
- *
- * The payload drops it because its whole content is the symbol path, and the names in that
- * path are already on the tree nodes. `xliffViewer.showGeneratorNotes` reconstructs it
- * instead — walking from the unit's node up to its object, each node's type beside its name:
+ * Rebuilds the `Xliff Generator` note, which the payload does not carry, from the tree:
+ * walking from the unit's node up to its object, each node's type beside its name.
  *
  * ```text
  * nodes  Table / Sales Setup  ›  Field / Quote Nos.  ›  Property / Caption
@@ -27,8 +24,7 @@ export type NodeIndex = ReadonlyMap<string, IndexedNode>;
  * compiler writes it. Exact for every unit whose names are known — except one the compiler
  * files under another object than the one that declares it, an extension's element filed
  * under the object it extends: the file's note names the extension, this one the object.
- * Returns `undefined` rather than guessing where a name is missing — the caller shows the
- * raw id instead.
+ * Returns `undefined` where a name is missing; the caller shows the raw id instead.
  */
 export function reconstructGeneratorNote(unitId: string, index: NodeIndex): string | undefined {
     const parts: string[] = [];

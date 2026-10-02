@@ -5,11 +5,8 @@ import type { XliffState } from '@shared/state';
 import type { InjectionKey } from 'vue';
 
 /**
- * What a unit card can ask the host to do.
- *
- * Provided once by `App.vue` and injected where it is needed, rather than passed down
- * through `UnitTree` and `TreeRow` as a prop neither of them uses. Those two carry the
- * tree; navigation is not their business.
+ * What a unit card can ask the host to do. Provided once by `App.vue` and injected where it
+ * is needed, past `UnitTree` and `TreeRow`, which do not use it.
  */
 
 export interface UnitActions {

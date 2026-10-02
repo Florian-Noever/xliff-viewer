@@ -7,14 +7,8 @@ import type { StateSummary } from '@shared/state';
 import type { ComputedRef } from 'vue';
 
 /**
- * The state roll-up, computed here in the webview.
- *
- * It is a thin composable on purpose: the arithmetic lives once in `src/shared/state.ts`, and
- * this feeds it the active file.
- *
- * `TransUnitDto` satisfies `UnitState` structurally — it carries `state` and `translate` —
- * so the DTO's own unit index is the roll-up's input with no conversion in between. That
- * is why the DTO carries `state` rather than the host shipping summaries.
+ * The state roll-up of the active file, by `src/shared/state.ts`. `TransUnitDto` is
+ * structurally a `UnitState`, so the file's own unit index is its input.
  */
 
 export interface Rollup {

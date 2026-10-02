@@ -4,8 +4,7 @@
  * The host decides at click time: the AL declaration when the source has one, else the unit
  * in the base file — or, in a base file, in the file itself. So the button is on whenever
  * one of those can work, and its title says which. It is off only when neither can, and
- * then the title says why: "not yet", "there is none" and "the base file dropped this unit"
- * are different answers, and the reader deserves to know which.
+ * then the title says why: not yet, there is none, or the base file dropped this unit.
  */
 
 export interface SourceContext {

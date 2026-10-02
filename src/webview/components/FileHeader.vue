@@ -55,11 +55,8 @@ function selectFile(event: Event): void {
 const unitCount = computed(() => (props.summary.total === 1 ? '1 unit' : `${props.summary.total} units`));
 
 /**
- * The app the translation belongs to, which is what a translator is working on — the file
- * name is where it happens to live, and goes in the smaller line beneath.
- *
- * `original` is optional in XLIFF, so a file that does not declare one keeps its name as
- * the title rather than showing a blank heading.
+ * The app the translation belongs to, with the file name in the smaller line beneath.
+ * `original` is optional in XLIFF, so a file that declares none is titled by its name.
  */
 const title = computed(() => props.file.original ?? props.document.fileName);
 const subtitle = computed(() => (props.file.original === undefined ? undefined : props.document.fileName));

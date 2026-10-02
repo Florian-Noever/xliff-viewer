@@ -5,27 +5,15 @@ import { getState, setState } from '../vscode';
 import type { ComputedRef } from 'vue';
 
 /**
- * The view state kept across a hidden tab, through `vscode.setState`.
- *
- * The webview is not created with `retainContextWhenHidden`, so a hidden tab's webview is
- * destroyed and rebuilt from the host's cached parse on reveal — at `defaultExpandDepth`,
- * scrolled to the top, with nothing focused. That is what this puts back.
- *
- * The composable is deliberately ignorant of *what* it is saving. It owns the slot, the
- * timing and the guard; `App.vue` owns the shape, because App is where the pieces are.
+ * The view state kept across a hidden tab, through `vscode.setState`: a hidden tab's webview
+ * is destroyed and rebuilt on reveal. This owns the slot, the timing and the guard; `App.vue`
+ * decides what goes in it.
  */
 
 /** Long enough that dragging a scrollbar writes once, short enough to survive a fast close. */
 const WRITE_THROTTLE_MS = 250;
 
-/**
- * The scroll position is a **row index**, not an offset.
- *
- * Pixels only mean something once the virtualiser has measured the rows above, which it
- * does lazily as they render — so a restored offset lands wherever the estimates happened
- * to put it. An index is exact whatever the measurement state, and it stays right across a
- * re-parse: the rows are rebuilt in document order under the expansion we restore first.
- */
+/** The scroll position is a **row index**: rows are measured lazily, so only an index restores exactly. */
 export interface PersistedView {
     /** Whose state this is. A slot restored against another document is discarded. */
     readonly uri: string;
@@ -55,9 +43,8 @@ export function usePersistedState(source: PersistedStateSource): void {
     const saved = read();
     let timer: ReturnType<typeof setTimeout> | undefined;
 
-    // Restored when the document it belongs to arrives, which for a custom editor happens
-    // exactly once: the webview is per document, and a re-parse posts the same URI, so the
-    // watcher does not fire again and cannot drag the reader back to where they started.
+    // Restored once, when its document arrives: a re-parse posts the same URI, so the
+    // watcher does not fire again.
     watch(source.uri, (uri) => {
         if (uri !== undefined && saved?.uri === uri) {
             source.restore(saved);
@@ -77,8 +64,7 @@ export function usePersistedState(source: PersistedStateSource): void {
         }, WRITE_THROTTLE_MS);
     }, { deep: true });
 
-    // A pending write would otherwise be lost exactly when it matters — the tab being
-    // hidden is what unmounts the webview, and is the write this whole composable is for.
+    // Hiding the tab unmounts the webview, so a pending write is made now.
     onUnmounted(() => {
         if (timer !== undefined) {
             clearTimeout(timer);
@@ -88,11 +74,9 @@ export function usePersistedState(source: PersistedStateSource): void {
 }
 
 /**
- * Whatever is in the slot, believed only as far as its shape allows.
- *
- * It may have been written by an older build of this extension, so every field is checked
- * before it is used. A slot that fails any of it is dropped rather than repaired: the cost
- * is one reveal at the default expansion, and the alternative is a half-restored view.
+ * Whatever is in the slot, believed only as far as its shape allows: an older build may have
+ * written it. A slot without a URI and a file index is dropped; any other field that is not
+ * what it should be falls back to its default.
  */
 function read(): PersistedView | undefined {
     const state = getState();

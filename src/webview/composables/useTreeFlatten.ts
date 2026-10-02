@@ -7,12 +7,9 @@ import type { AlNodeDto, TransUnitDto, XliffFileDto } from '@shared/dto';
 import type { ComputedRef, WritableComputedRef } from 'vue';
 
 /**
- * The tree, flattened to the rows that are actually visible.
- *
- * Virtualisation needs a flat array, and the array changes on every expansion, so
- * `flattenTree` is a pure function of its inputs and the composable holds it in a
- * `computed` — Vue then recomputes it only when the tree, the expansion set or the unit
- * index actually change.
+ * The tree, flattened to the rows that are visible, for the virtualiser. `flattenTree` is
+ * pure, held in a `computed` that recomputes when the tree, the expansion set or the unit
+ * index change.
  *
  * Expansion keys off the **node key**, which is the trans-unit id prefix and is stable
  * across a re-parse. That is what lets an external edit rebuild the tree without
@@ -64,11 +61,8 @@ export interface TreeView {
     /** What each `<file>` has open and what it was focused on, in a form that can be persisted. */
     snapshot(): TreeSnapshot;
     /**
-     * Puts a saved expansion back.
-     *
-     * A key that no longer names a node is kept rather than dropped: the set is consulted by
-     * lookup, so a stale key opens nothing, and dropping it would lose a branch a re-parse
-     * is about to bring back. What must not happen is a throw.
+     * Puts a saved expansion back. A key that names no node is kept: it opens nothing, and a
+     * re-parse may bring its branch back.
      */
     restore(snapshot: TreeSnapshot): void;
 }
@@ -192,9 +186,7 @@ export function useTreeFlatten(source: TreeSource): TreeView {
     // already seen keeps what was open — expansion keys are id prefixes, which survive it —
     // and so does switching away and back.
     //
-    // A different *document* starts over. Its file indices collide with this one's while
-    // meaning nothing to each other, so keeping the state would silently show a collapsed
-    // tree whose expansion set names nodes that no longer exist.
+    // A different *document* starts over: its file indices mean nothing to this one's.
     watch(
         () => [source.documentUri.value, fileIndex.value, tree.value] as const,
         ([uri, index, nodes]) => {

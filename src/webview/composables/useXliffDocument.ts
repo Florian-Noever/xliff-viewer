@@ -14,16 +14,12 @@ import type { XliffState } from '@shared/state';
 import type { ComputedRef, Ref } from 'vue';
 
 /**
- * The document the webview is showing, and everything derived from it.
+ * The document the webview is showing, and everything derived from it: the one place that
+ * handles the host's messages, and knows their order.
  *
- * All of the message handling lives here rather than in `App.vue`: components render, they
- * do not decide. It is also the one place that knows the host's message order, which is
- * load-bearing — see `document` below.
- *
- * **Nothing here survives being unmounted, and nothing needs to.** The webview re-posts
- * `ready` on every mount and the host answers from its parse cache, so remounting costs one
- * message. View state that must outlive a hidden tab is `usePersistedState`'s, through
- * `vscode.setState`.
+ * **Nothing here survives being unmounted**: the webview posts `ready` on every mount, and
+ * the host answers from its parse cache. View state that outlives a hidden tab is
+ * `usePersistedState`'s.
  */
 
 export interface XliffDocumentOptions {

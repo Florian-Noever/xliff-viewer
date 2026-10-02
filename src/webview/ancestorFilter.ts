@@ -1,15 +1,11 @@
 import type { AlNodeDto } from '@shared/dto';
 
 /**
- * The one ancestor rule, shared by search and by the state filter.
+ * The ancestor rule search and the state filter share: a matching node shows its ancestors.
  *
- * "A matching leaf forces its ancestors visible" is easy to write twice and get subtly
- * different twice, so it is written once and both callers hand it a predicate.
- *
- * Predicates compose with **and**, at the node rather than at the result: a unit is shown
- * when it satisfies every active filter. Intersecting two finished visible-sets instead
- * would keep a container that matched the search while none of its units matched the
- * state — visible, and empty, for no reason a user could see.
+ * Predicates compose with **and** at the node: a unit shows when it satisfies every active
+ * filter, and a container only on the way to one. A container that matched the search, with
+ * no unit in the chosen states, stays hidden.
  */
 
 export type NodePredicate = (node: AlNodeDto) => boolean;

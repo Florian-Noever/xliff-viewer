@@ -30,8 +30,7 @@ import type { XliffNoteDto } from '@shared/dto';
  * the tree when `showGeneratorNotes` is on.
  *
  * A description list on the unit card's own label column, so a note lines up with the
- * strings it is about. The column is a fixed token rather than content-derived, which is
- * what lets three separate grids agree without one wrapping the others.
+ * strings it is about.
  */
 
 const props = defineProps<{
