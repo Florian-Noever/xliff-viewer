@@ -1,19 +1,12 @@
 /**
- * The raw XLIFF 1.2 model — a faithful mirror of the XML, not a convenience view. The AL
- * tree is derived from it; the DTOs are projected from it. There are **no offsets**
- * anywhere: the document is read whole, edited as a model, and written whole.
+ * The raw XLIFF 1.2 model: a mirror of the XML, from which the AL tree is derived and the
+ * DTOs are projected. It has **no offsets**: the document is read whole, edited as a model,
+ * and written whole.
  *
- * ## Why every element carries an `attributes` bag
- *
- * The serialiser reproduces a file byte-for-byte, and unknown attributes must survive a
- * round-trip untouched. The named fields below cannot do that on their own: AL puts
- * `xmlns:xsi` and `xsi:schemaLocation` on `<xliff>`, and neither is a named field. Storing
- * only what we name would silently drop them and fail the round-trip on every
- * AL-generated file.
- *
- * So `attributes` is the source of truth for serialisation — verbatim, decoded, in
- * document order — and the named fields are conveniences the parser derives from it.
- * **When writing, update `attributes`.** When reading, use the named field.
+ * Each element's `attributes` holds every attribute it has, decoded and in document order,
+ * so the serialiser writes back the ones no field names — AL puts `xmlns:xsi` and
+ * `xsi:schemaLocation` on `<xliff>`. The named fields are read from it. **When writing,
+ * update `attributes`.** When reading, use the named field.
  */
 
 /** Attribute name → decoded value, in document order. */
@@ -133,11 +126,7 @@ export interface AlSegment {
     readonly name?: string;
 }
 
-/**
- * A node of the object → member → unit hierarchy.
- *
- * No `summary`: the roll-up runs in the webview, so this carries structure only.
- */
+/** A node of the object → member → unit hierarchy. */
 export interface AlNode {
     /**
      * Stable identity for expansion state. A node carrying a unit is keyed by that unit's

@@ -1,11 +1,7 @@
 /**
- * The translation-state domain and its roll-up.
+ * The translation states, their severity order, and the roll-up that applies it.
  *
- * The roll-up is pure, so it sits here beside the severity order it applies. The webview
- * runs it, which spares the DTO a summary per node.
- *
- * An `as const` object rather than a TypeScript `enum`: this crosses the `postMessage`
- * boundary and is serialised to JSON.
+ * `XliffState` is an `as const` object: it crosses the `postMessage` boundary as JSON.
  */
 
 import type { XliffTransUnit } from './model';
@@ -32,10 +28,7 @@ export const XliffState = {
 
 export type XliffState = typeof XliffState[keyof typeof XliffState];
 
-/**
- * Worst first. **The single source of truth for roll-up, sorting and colour** — getting
- * this order wrong silently corrupts every roll-up, so the tests assert it entry by entry.
- */
+/** Worst first: the order every roll-up, sort and colour follows. */
 export const STATE_SEVERITY = [
     XliffState.missing,
     XliffState.empty,
@@ -109,17 +102,9 @@ export function worstState(a: XliffState, b: XliffState): XliffState {
 // ── Roll-up ──────────────────────────────────────────────────────────────────
 
 /**
- * The effective state of one unit.
- *
- * The declared `state` is the least of the three signals. A unit with no `<target>` is
- * `missing` whatever it declares, and an **empty target is `empty` even when it declares
- * `translated`** — it is the emptiness a translator needs to see.
- *
- * Empty means exactly `''`. A target holding a single space is a translation, not an
- * empty one.
- *
- * A target that holds text but declares **no** state is `unknown`, not `translated`: the
- * file never claimed the unit was done, so it must not look done.
+ * The effective state of one unit: `missing` without a `<target>`, and `empty` when the
+ * target is exactly `''`, **whatever it declares**. Otherwise the declared state, or
+ * `unknown` when it declares none the spec defines. A single space is a translation.
  */
 export function effectiveState(unit: XliffTransUnit): XliffState {
     if (unit.target === undefined) {
@@ -139,18 +124,15 @@ export interface UnitState {
 }
 
 /**
- * The structure a roll-up walks. Both `AlNode` and `AlNodeDto` satisfy it.
- *
- * A node carries a unit exactly when its `key` is that unit's id — the tree is built from
- * the ids, so the node a unit lands on has the whole id as its key. That is why the lookup
- * below needs no separate `unitId` field, and why the DTO does not ship one.
+ * The structure a roll-up walks; `AlNode` and `AlNodeDto` both satisfy it. A node carries a
+ * unit exactly when its `key` is that unit's id.
  */
 export interface SummaryNode {
     readonly key: string;
     readonly children: readonly SummaryNode[];
 }
 
-/** Every node carries one, including the file root. */
+/** The roll-up of a node, or of a whole file. */
 export interface StateSummary {
     /** Every descendant unit, translatable or not. */
     readonly total: number;
@@ -247,9 +229,8 @@ export function summariseUnits(units: Iterable<UnitState>): StateSummary {
  * A node whose key is not in `states` contributes nothing of its own, which is what makes
  * the same function usable over a filtered view.
  *
- * Returns a `key → summary` map rather than writing onto the nodes: `AlNode` is readonly,
- * so the result is computed once per load and cached beside the tree. Keys are stable, so
- * the map survives re-renders.
+ * Returns a `key → summary` map, kept beside the readonly tree. Keys are stable, so the map
+ * survives re-renders.
  */
 export function summariseTree(nodes: readonly SummaryNode[], states: ReadonlyMap<string, UnitState>): ReadonlyMap<string, StateSummary> {
     const summaries = new Map<string, StateSummary>();

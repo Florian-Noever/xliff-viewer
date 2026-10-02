@@ -1,20 +1,8 @@
 /**
- * The payload the webview receives.
+ * The payload the webview receives: a projection of the model, holding what the webview shows.
  *
- * A projection, not the model: no `attributes` bags, no `format` record, no offsets, and
- * nothing a webview cannot use. The tree references units by id instead of embedding them,
- * so every unit is serialised exactly once, and nodes carry **no `StateSummary`** — the
- * webview rolls up, so per-node summaries would only inflate the payload.
- *
- * ## Why units live on the file, not the document
- *
- * XLIFF 1.2 scopes a `trans-unit` id to its `<file>`, which is exactly what
- * `validateStructure` enforces. A document-wide collection would let two files' identical
- * ids collide and silently drop units; per-file units also make `XliffFileDto`
- * self-contained.
- *
- * They are an **array in document order**, not a record: a record would repeat every id as
- * a key, and need a parallel array to keep the order.
+ * The tree names units by id. The units themselves live on their `<file>`, in document
+ * order, because XLIFF 1.2 scopes a `trans-unit` id to its `<file>`.
  */
 
 import type { XliffState } from './state';
@@ -35,22 +23,13 @@ export interface TransUnitDto {
     /** Only when the file declared a `state` the spec does not define, so the GUI can show what it said. */
     readonly rawState?: string;
     /**
-     * What the file declared, when that is not what the unit means.
-     *
-     * `state` is resolved: an empty target is `empty` however finished it claims to be. That
-     * resolution is right for the roll-up and loses the file's own words, which the GUI shows
-     * and the validation hints need — "empty target whose state claims translated" is not a
-     * question `state` can answer. Absent wherever the two agree.
+     * The state the file declared, when `state` resolved it to something else: an empty
+     * target is `empty` whatever it declares. Absent wherever the two agree.
      */
     readonly declaredState?: XliffState;
     readonly translate: boolean;
     readonly maxwidth?: number;
-    /**
-     * What `maxwidth` counts. Present whenever the file says so — `char` on every AL unit.
-     *
-     * Shipped rather than assumed: XLIFF 1.2's own default is `pixel`, so guessing `char`
-     * from AL's habit would make the width check silently wrong on a non-AL file.
-     */
+    /** What `maxwidth` counts, when the file says: `char` on every AL unit. XLIFF 1.2's default is `pixel`. */
     readonly sizeUnit?: string;
     readonly alObjectTarget?: string;
     /** The `Xliff Generator` note is **not** here — its content is already the node names. */
@@ -70,13 +49,10 @@ export interface TransUnitDto {
 }
 
 /**
- * One node of the AL hierarchy, compacted.
+ * One node of the AL hierarchy. **A node carries a unit exactly when its `key` is that
+ * unit's id**; the segment's hash is part of the key.
  *
- * `hash`, `depth` and `unitId` are all dropped as derivable: the hash is inside `key`,
- * depth is known from the walk, and **a node carries a unit exactly when its `key` is that
- * unit's id** — the tree is built from the ids, so the two are the same string.
- *
- * Structurally satisfies `SummaryNode`, so `summariseTree` runs on it unchanged.
+ * Structurally a `SummaryNode`, so `summariseTree` runs on it unchanged.
  */
 export interface AlNodeDto {
     readonly key: string;
@@ -85,12 +61,7 @@ export interface AlNodeDto {
     readonly children: readonly AlNodeDto[];
     /**
      * Set on the levels the tree adds above the objects — object-type groups and
-     * "(no namespace)" — and only there.
-     *
-     * A flag rather than a key-prefix test on the far side: the key's namespace exists to
-     * stop collisions, and making the webview read meaning out of it would turn a private
-     * format into a cross-runtime contract. Absent on every real node, so it costs the
-     * payload nothing but the handful of groups.
+     * "(no namespace)" — and only there. The webview reads this flag, never the key's format.
      */
     readonly group?: true;
 }

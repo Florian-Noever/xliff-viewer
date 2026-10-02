@@ -1,15 +1,11 @@
 /**
- * The `postMessage` contract, defined once and imported by both runtimes. There is nothing
- * to keep in sync: one union per direction, one guard each.
+ * The `postMessage` contract both runtimes import: one union per direction, one guard each.
  *
- * Everything crossing this boundary is an `as const` object, never a TypeScript `enum` —
- * enums are neither JSON-safe nor esbuild-safe across files.
+ * Everything crossing this boundary is an `as const` object, never a TypeScript `enum`,
+ * which is neither JSON-safe nor esbuild-safe across files.
  *
- * `patchUnits`, and every message naming a unit, carries the file index: XLIFF scopes a
- * trans-unit id to its `<file>`, so an id alone does not identify a unit.
- *
- * `settings` is a message of its own: folding the settings into `setDocument` would mean
- * re-sending the whole document to toggle a checkbox.
+ * Every message naming a unit carries its file index: XLIFF scopes a trans-unit id to its
+ * `<file>`, so an id alone does not identify a unit.
  */
 
 import { isSpecState } from './state';
@@ -124,12 +120,7 @@ function isUnitReference(message: Record<string, unknown>): boolean {
         && typeof message.unitId === 'string';
 }
 
-/**
- * Per-variant field checks, not just a known discriminant.
- *
- * These values reach a `WorkspaceEdit`: a message claiming to be an `updateTarget` without
- * a `value` must be rejected at the boundary, not discovered inside the writer.
- */
+/** Each variant's fields, checked here because they reach a `WorkspaceEdit`. */
 const WEBVIEW_MESSAGE_GUARDS: { readonly [K in WebviewMessage['type']]: (message: Record<string, unknown>) => boolean } = {
     ready: () => true,
     updateTarget: message => isUnitReference(message)
@@ -149,11 +140,8 @@ export function isWebviewMessage(value: unknown): value is WebviewMessage {
 }
 
 /**
- * Checks the envelope only.
- *
- * A webview receives messages it did not ask for — VS Code posts its own — so the guard
- * exists to ignore those. It does not re-validate a `XliffDocumentDto` the host built from
- * a document it just parsed; the asymmetry with `isWebviewMessage` is deliberate.
+ * Checks the envelope only: a webview also receives the messages VS Code posts, which this
+ * tells apart. The payloads are the host's own projections.
  */
 export function isExtensionMessage(value: unknown): value is ExtensionMessage {
     const message = asRecord(value);

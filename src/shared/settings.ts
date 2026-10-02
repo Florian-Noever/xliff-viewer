@@ -23,23 +23,14 @@ export const SettingKey = {
 } as const;
 export type SettingKey = typeof SettingKey[keyof typeof SettingKey];
 
-/**
- * The subset the webview is told about.
- *
- * `baseFile` and `stateOnEdit` are absent on purpose: resolution and write-back both
- * happen in the host, and shipping them would invite the webview to act on them.
- */
+/** The settings the webview uses. `baseFile` and `stateOnEdit` are the host's alone. */
 export interface WebviewSettings {
     readonly editMode: boolean;
     readonly showDeveloperNotes: boolean;
     readonly showGeneratorNotes: boolean;
     readonly defaultExpandDepth: number;
     readonly validationEnabled: boolean;
-    /**
-     * Its own key rather than a case of `validationEnabled`, because this hint is weak and
-     * off by default: a target equal to its source is often a proper noun or identifier a
-     * translator left alone on purpose.
-     */
+    /** Off by default: a target equal to its source is often a name a translator kept on purpose. */
     readonly validationSameAsSource: boolean;
 }
 
