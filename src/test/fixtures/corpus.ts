@@ -682,6 +682,8 @@ export interface CorpusFacts {
     readonly translated: number;
     /** Written with an empty `needs-translation` target. */
     readonly untranslated: number;
+    /** Written with a German target that repeats its source word for word. */
+    readonly repeatsSource: number;
     readonly withObjectTarget: number;
     /** The distinct roots of the hashed ids. */
     readonly rootObjects: number;
@@ -693,6 +695,7 @@ function factsOf(units: readonly Unit[]): CorpusFacts {
         units: units.length,
         translated: units.filter(unit => unit.translated && (unit.state ?? 'translated') === 'translated').length,
         untranslated: units.filter(unit => !unit.translated).length,
+        repeatsSource: units.filter(unit => unit.translated && unit.german !== '' && unit.german === unit.source).length,
         withObjectTarget: units.filter(unit => unit.alObjectTarget !== undefined).length,
         rootObjects: new Set(units.map(unit => hashedIdOf(unit.path.slice(0, 1)))).size,
         objectTypes: new Set(units.map(unit => unit.path[0].type)).size,

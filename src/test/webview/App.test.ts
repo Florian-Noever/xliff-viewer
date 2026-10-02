@@ -21,7 +21,6 @@ describe('before a document arrives', () => {
     });
 
     it('posts exactly one ready on mount', () => {
-        clearPostedMessages();
         mountApp();
         expect(postedMessages).toEqual([{ type: 'ready' }]);
     });

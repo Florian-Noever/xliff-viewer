@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { useXliffDocument } from '../../webview/composables/useXliffDocument';
 import { ExtensionMessageType, WebviewMessageType } from '../../shared/messages';
@@ -9,7 +9,7 @@ import { documentDto, fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
 import { receive } from './support/mountApp';
 import { withSetup } from './support/withSetup';
 
-import type { ExtensionMessage } from '../../shared/messages';
+import type { TransUnitDto } from '../../shared/dto';
 import type { XliffDocument } from '../../webview/composables/useXliffDocument';
 
 const DOCUMENT = documentDto([
@@ -29,14 +29,6 @@ const useIt = (): XliffDocument => withSetup(useXliffDocument).result;
 const sendDocument = (): void => {
     receive({ type: ExtensionMessageType.setDocument, payload: DOCUMENT });
 };
-
-beforeEach(() => {
-    clearPostedMessages();
-});
-
-afterEach(() => {
-    clearPostedMessages();
-});
 
 describe('mounting', () => {
     it('posts exactly one ready', () => {
@@ -255,8 +247,9 @@ describe('openAsText', () => {
 });
 
 describe('patchUnits', () => {
-    const patch = (fileIndex: number, units: unknown[]): void =>
-        receive({ type: ExtensionMessageType.patchUnits, payload: { fileIndex, units } } as ExtensionMessage);
+    const patch = (fileIndex: number, units: TransUnitDto[]): void => {
+        receive({ type: ExtensionMessageType.patchUnits, payload: { fileIndex, units } });
+    };
 
     it('replaces only the units it names, leaving the rest identical', () => {
         const state = useIt();

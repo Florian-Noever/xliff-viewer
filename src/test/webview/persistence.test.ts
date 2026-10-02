@@ -6,6 +6,8 @@ import { DEV_DOCUMENT } from '../../webview/fixtures/devDocument';
 import { stubLayout } from './support/layoutStub';
 import { setWebviewState, webviewState, webviewStateWrites } from '../setup/webview';
 import { ExtensionMessageType } from '../../shared/messages';
+import { XliffState } from '../../shared/state';
+import { buttonNamed, stateChip } from './support/appUi';
 import { mountApp, receive } from './support/mountApp';
 
 import type { PersistedView } from '../../webview/composables/usePersistedState';
@@ -29,9 +31,9 @@ const settle = async (): Promise<void> => {
     await vi.runAllTimersAsync();
 };
 
-/** The toolbar's second action. Collapsing changes the tree whatever depth it opened at. */
+/** Collapsing changes the tree whatever depth it opened at. */
 async function collapseAll(wrapper: Mounted): Promise<void> {
-    await wrapper.findAll('.toolbar .action')[1].trigger('click');
+    await buttonNamed(wrapper, 'Collapse all').trigger('click');
     await nextTick();
 }
 
@@ -62,7 +64,7 @@ describe('what a hidden tab remembers', () => {
         const first = await open();
         await first.get('.search-input').setValue('setup');
         await first.get('.edit-toggle').trigger('click');
-        await first.findAll('.chip')[0].trigger('click');
+        await stateChip(first, XliffState.empty).trigger('click');
         await settle();
         const chips = first.findAll('.chip').filter(chip => chip.attributes('aria-pressed') === 'true').length;
         await hide(first);
@@ -117,7 +119,7 @@ describe('what a hidden tab remembers', () => {
 
         const second = await open();
         const collapsed = second.findAll('[role="treeitem"]').length;
-        await second.findAll('.toolbar .action')[0].trigger('click');
+        await buttonNamed(second, 'Expand all').trigger('click');
         await nextTick();
         const expanded = second.findAll('[role="treeitem"]').length;
 

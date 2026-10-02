@@ -30,15 +30,11 @@ function editMode(document: XliffDocumentDto = DOCUMENT, settings: WebviewSettin
     const documentRef = ref(document);
     const settingsRef = ref(settings);
     const { result, wrapper } = withSetup(() => {
-        const file = ref(FILE);
+        const unitsById = computed(() => new Map<string, TransUnitDto>());
         return {
             edit: useEditMode({ document: computed(() => documentRef.value), settings: computed(() => settingsRef.value) }),
-            search: useSearch({ file: computed(() => file.value), unitsById: computed(() => new Map()) }),
-            filter: useStateFilter({
-                summary: computed(() => summariseUnits(file.value.units)),
-                unitsById: computed(() => new Map()),
-                scope: computed(() => 'one'),
-            }),
+            search: useSearch({ file: computed(() => FILE), unitsById }),
+            filter: useStateFilter({ summary: computed(() => summariseUnits(FILE.units)), unitsById, scope: computed(() => 'one') }),
         };
     }, ({ edit, search, filter }) => (withToolbar ? h(Toolbar, { search, filter, edit }) : null));
     const setSettings = async (next: WebviewSettings): Promise<void> => {

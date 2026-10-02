@@ -8,7 +8,7 @@ import TreeRow from '../../webview/components/TreeRow.vue';
 import UnitCard from '../../webview/components/UnitCard.vue';
 import { useValidation } from '../../webview/composables/useValidation';
 import { HintKind, hintsFor } from '../../webview/validation';
-import { FIXTURE } from '../fixtures/corpus';
+import { corpusFacts, FIXTURE } from '../fixtures/corpus';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { XliffState } from '../../shared/state';
 import { exampleUnitDto } from '../support/dtoBuilders';
@@ -151,13 +151,15 @@ describe('the example files, which the hints have to be quiet on', () => {
             }
         }
 
-        expect(units).toBe(4081);
+        expect(units).toBe(Object.values(files).reduce((sum, text) => sum + text.split('<trans-unit ').length - 1, 0));
         expect(counts.placeholders).toBe(1);
         expect(counts.maxwidth).toBe(0);
         expect(counts.statedButEmpty).toBe(0);
         // Off by default for this reason: many targets are legitimately identical to their
-        // source, and en-US against en-US is not a translation at all.
-        expect(counts.sameAsSource).toBe(132);
+        // source. Only the German files count: en-US against en-US is not a translation at all.
+        const { contoso, large, namespaced } = corpusFacts();
+        expect(counts.sameAsSource).toBe(contoso.repeatsSource + large.repeatsSource + namespaced.repeatsSource);
+        expect(counts.sameAsSource).toBeGreaterThan(0);
     });
 
     it('is quiet on every base file, since none has a target to be wrong about', () => {

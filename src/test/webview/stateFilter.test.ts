@@ -6,7 +6,7 @@ import { visibleNodes } from '../../webview/ancestorFilter';
 import { summariseUnits, XliffState } from '../../shared/state';
 import { stubLayout } from './support/layoutStub';
 import { documentDto, fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
-import { rowNames, search } from './support/appUi';
+import { buttonNamed, rowNames, search, stateChip } from './support/appUi';
 import { mountApp } from './support/mountApp';
 import { withSetup } from './support/withSetup';
 
@@ -119,15 +119,14 @@ describe('the chips in the toolbar', () => {
         const wrapper = mountApp(DOCUMENT);
         await nextTick();
 
-        const chips = wrapper.findAll('.chip');
-        expect(chips).toHaveLength(3);
-        expect(chips[0].attributes('aria-pressed')).toBe('false');
-        expect(chips[0].text()).toContain('empty');
-        expect(chips[0].text()).toContain('1');
+        expect(wrapper.findAll('.chip')).toHaveLength(3);
+        const empty = stateChip(wrapper, XliffState.empty);
+        expect(empty.attributes('aria-pressed')).toBe('false');
+        expect(empty.get('.chip-count').text()).toBe('1');
 
-        await chips[0].trigger('click');
+        await empty.trigger('click');
 
-        expect(wrapper.findAll('.chip')[0].attributes('aria-pressed')).toBe('true');
+        expect(stateChip(wrapper, XliffState.empty).attributes('aria-pressed')).toBe('true');
     });
 
     it('narrows the tree to that state and its ancestors', async () => {
@@ -135,7 +134,7 @@ describe('the chips in the toolbar', () => {
         await nextTick();
         expect(rowNames(wrapper)).toEqual(['Customer', 'Caption', 'ToolTip', 'Vendor', 'Caption', 'ToolTip']);
 
-        await wrapper.findAll('.chip')[0].trigger('click'); // empty
+        await stateChip(wrapper, XliffState.empty).trigger('click');
         await nextTick();
 
         expect(rowNames(wrapper)).toEqual(['Customer', 'ToolTip']);
@@ -146,8 +145,8 @@ describe('the chips in the toolbar', () => {
         const wrapper = mountApp(DOCUMENT);
         await nextTick();
 
-        await wrapper.findAll('.chip')[0].trigger('click');
-        await wrapper.findAll('.chip')[0].trigger('click');
+        await stateChip(wrapper, XliffState.empty).trigger('click');
+        await stateChip(wrapper, XliffState.empty).trigger('click');
         await nextTick();
 
         expect(rowNames(wrapper)).toEqual(['Customer', 'Caption', 'ToolTip', 'Vendor', 'Caption', 'ToolTip']);
@@ -164,14 +163,14 @@ describe('search and filter together', () => {
         await search(wrapper, 'Kunde');
         expect(rowNames(wrapper)).toEqual(['Customer', 'Caption', 'Vendor', 'ToolTip']);
 
-        await wrapper.findAll('.chip').filter(chip => chip.text().includes('translated'))[0].trigger('click');
+        await stateChip(wrapper, XliffState.translated).trigger('click');
         await nextTick();
 
         expect(rowNames(wrapper)).toEqual(['Customer', 'Caption', 'Vendor', 'ToolTip']);
 
         // Now a state that no "Kunde" unit has: the intersection is empty, not the union.
-        await wrapper.findAll('.chip').filter(chip => chip.text().includes('translated'))[0].trigger('click');
-        await wrapper.findAll('.chip')[0].trigger('click'); // empty
+        await stateChip(wrapper, XliffState.translated).trigger('click');
+        await stateChip(wrapper, XliffState.empty).trigger('click');
         await nextTick();
 
         expect(rowNames(wrapper)).toEqual([]);
@@ -184,11 +183,11 @@ describe('expand all and collapse all', () => {
         const wrapper = mountApp(DOCUMENT);
         await nextTick();
 
-        await wrapper.findAll('.action')[1].trigger('click'); // collapse all
+        await buttonNamed(wrapper, 'Collapse all').trigger('click');
         await nextTick();
         expect(rowNames(wrapper)).toEqual(['Customer', 'Vendor']);
 
-        await wrapper.findAll('.action')[0].trigger('click'); // expand all
+        await buttonNamed(wrapper, 'Expand all').trigger('click');
         await nextTick();
         expect(rowNames(wrapper)).toEqual(['Customer', 'Caption', 'ToolTip', 'Vendor', 'Caption', 'ToolTip']);
     });
@@ -196,18 +195,19 @@ describe('expand all and collapse all', () => {
     it('expand-all with a filter running opens only what the filter shows', async () => {
         const wrapper = mountApp(DOCUMENT);
         await nextTick();
-        await wrapper.findAll('.action')[1].trigger('click'); // collapse all first
+        await buttonNamed(wrapper, 'Collapse all').trigger('click');
 
-        await wrapper.findAll('.chip')[0].trigger('click'); // empty — only under "Customer"
+        // The empty unit is only under "Customer".
+        await stateChip(wrapper, XliffState.empty).trigger('click');
         await nextTick();
-        await wrapper.findAll('.action')[0].trigger('click'); // expand all
+        await buttonNamed(wrapper, 'Expand all').trigger('click');
         await nextTick();
 
         // The filter still decides what is on screen…
         expect(rowNames(wrapper)).toEqual(['Customer', 'ToolTip']);
 
         // …and when it clears, only the branch the filter had shown is open.
-        await wrapper.findAll('.chip')[0].trigger('click');
+        await stateChip(wrapper, XliffState.empty).trigger('click');
         await nextTick();
         expect(rowNames(wrapper)).toEqual(['Customer', 'Caption', 'ToolTip', 'Vendor']);
     });

@@ -10,7 +10,7 @@ import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { summariseUnits } from '../../shared/state';
 import { stubLayout } from './support/layoutStub';
 import { documentDto, fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
-import { rowNames, search } from './support/appUi';
+import { buttonNamed, rowNames, search } from './support/appUi';
 import { mountApp } from './support/mountApp';
 
 const DOCUMENT = documentDto([fileDto({
@@ -125,7 +125,7 @@ describe('searching the tree', () => {
     it('restores the tree, and the expansion the user had, when the search is cleared', async () => {
         const wrapper = mountApp(DOCUMENT);
         await nextTick();
-        await wrapper.findAll('.chevron')[0].trigger('click'); // collapse "Customer"
+        await buttonNamed(wrapper, 'Collapse Customer').trigger('click');
         expect(rowNames(wrapper)).toEqual(['Customer', 'Vendor', 'Caption']);
 
         await search(wrapper, 'Kundennummer');
