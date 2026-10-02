@@ -5,6 +5,7 @@
     --font: 13px;
     --row-indent: 16px;
     --row-height: 24px;
+    --field-max-inline: 72ch;
 
     /* CSS-only tokens — no TypeScript consumer, so they live here rather than in constants.ts. */
     /* The label column of a unit's label/value rows. Fixed rather than derived from
