@@ -5,15 +5,11 @@ import { findUnit } from '../../shared/model';
 import type { UnitReference, XliffDocument, XliffTransUnit } from '../../shared/model';
 
 /**
- * Model mutation → the smallest text edit that expresses it.
+ * Model mutation → the smallest text edit that expresses it: mutate the model, serialise the
+ * whole document, then trim. An edit is therefore one the serialiser would produce, and the
+ * round-trip guarantee covers the write path.
  *
- * The order is fixed: **mutate the model, serialise the whole document, then trim.**
- * Serialising everything and narrowing afterwards is what keeps the writer honest — it
- * cannot produce an edit the serialiser would not also produce, so the serialiser's
- * round-trip invariant covers the write path too.
- *
- * No `vscode` import: this returns plain character offsets and the host converts them
- * with `document.positionAt`.
+ * Offsets are plain character offsets, which the host converts with `document.positionAt`.
  */
 
 /** A replacement of `[start, end)` in the current text. Offsets are UTF-16 code units. */
@@ -117,8 +113,7 @@ export function setTarget(
 
     const edit = trimToEdit(currentText, serialiseXliff(document));
     if (edit === null) {
-        // Nothing changed in the text, so leave the model exactly as it was rather than
-        // holding a freshly built but equivalent target object.
+        // An unchanged text leaves the model as it was.
         unit.target = previous;
     }
     return edit;

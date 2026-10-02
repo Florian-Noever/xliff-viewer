@@ -20,33 +20,13 @@ import type {
 } from '../../shared/model';
 
 /**
- * Each option is load-bearing:
- *
- * - `preserveOrder` keeps element **and** attribute order, which is what makes the
- *   byte-faithful serialiser possible.
- * - `trimValues: false` honours `xml:space="preserve"`. A target of `'   '` is three
- *   spaces, not an empty string.
- * - `parseTagValue` / `parseAttributeValue: false` stop `"00123"` becoming a number.
- * - `processEntities` + `htmlEntities` together decode both named entities and numeric
- *   character references — see the note below, which is load-bearing.
- *
- * `attributesGroupName` is *not* set: under `preserveOrder` fast-xml-parser always uses
- * `:@` and ignores that option.
- *
- * ## Why `htmlEntities` is required, not optional
- *
- * `processEntities` alone decodes `&amp;` but leaves `&#233;` verbatim. That makes the
- * model **ambiguous**: `caf&#233;` and `caf&amp;#233;` both produce the text
- * `caf&#233;`, so the serialiser cannot tell an é from the literal characters `&#233;`.
- * It escapes the `&`, and the é is silently corrupted into visible `&#233;`.
- *
- * With `htmlEntities` the two become distinct — `café` and `caf&#233;` — and each
- * serialises correctly. The cost is that a numeric reference is written back as the
- * literal character: valid XML, identical meaning, different bytes. Correctness beats
- * byte-identity here.
- *
- * One gap remains: `&quot;` / `&apos;` in *text* decode and are written literally, so the
- * first save changes those bytes.
+ * - `preserveOrder` keeps element and attribute order, which the serialiser reproduces.
+ *   Under it, attributes always arrive under `:@`, so `attributesGroupName` is not set.
+ * - `trimValues: false` honours `xml:space="preserve"`: a target of three spaces stays three.
+ * - `parseTagValue` and `parseAttributeValue: false` keep `"00123"` a string.
+ * - `htmlEntities` decodes numeric character references too, so `caf&#233;` reads as
+ *   `café` and `caf&amp;#233;` as `caf&#233;`. A save writes the character back, not the
+ *   reference, and `&quot;` or `&apos;` in text as the quote itself.
  */
 const PARSER_OPTIONS = {
     preserveOrder: true,
@@ -103,8 +83,6 @@ function toTarget(node: FxpNode): XliffTarget {
     const attributes = attributesOf(node);
     return {
         attributes,
-        // Kept verbatim: a value the spec does not define is resolved to `unknown` by
-        // the state layer, not rejected here.
         state: optional(attributes, 'state'),
         stateQualifier: optional(attributes, 'state-qualifier'),
         value: textOf(node),
@@ -161,7 +139,6 @@ function toBody(node: FxpNode): XliffBody {
     return {
         attributes: attributesOf(node),
         groups: elementsNamed(node, 'group').map(toGroup),
-        // Units may sit directly in <body> without a group.
         units: elementsNamed(node, 'trans-unit').map(toTransUnit),
     };
 }

@@ -43,10 +43,10 @@ const MAX_STEPS = 256;
 /**
  * Reads the `Xliff Generator` note against the id's segments.
  *
- * Splitting the note on ` - ` is the obvious approach and is **wrong**: AL names can contain
- * that separator (`Report Sales - Quote`). The id's segment types are the anchors instead:
- * each name runs up to ` - <next type> `. Where a name could stop at more than one anchor,
- * the split whose names hash to the id's segments wins — the first split, when none does:
+ * AL names can contain the ` - ` separator (`Report Sales - Quote`), so the id's segment
+ * types are the anchors: each name runs up to ` - <next type> `. Where a name could stop at
+ * more than one anchor, the split whose names hash to the id's segments wins — the first
+ * split, when none does:
  *
  * ```text
  * id    Report 339834252 - Property 2879900210

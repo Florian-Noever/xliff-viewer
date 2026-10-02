@@ -11,13 +11,8 @@ import type {
 } from '../../shared/model';
 
 /**
- * Model → text, byte-faithful.
- *
- * Not `XMLBuilder`: it reformats every line, and with `format: true` it also indents inside
- * `xml:space="preserve"` content.
- *
- * Everything here is driven by the `attributes` bag rather than the named fields — that is
- * what carries `xmlns:xsi`, `xsi:schemaLocation` and anything else we never enumerated.
+ * Model → text, byte-faithful, in AL's layout. Attributes are written from each element's
+ * `attributes`, which also hold the ones no named field covers.
  */
 
 const INDENT = '  ';

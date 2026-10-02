@@ -6,12 +6,9 @@ import { iterateFileUnits } from '../../shared/model';
 import type { XliffDocument } from '../../shared/model';
 
 /**
- * Validation is **mandatory, not advisory**.
- *
- * `XMLParser` recovers silently from malformed input — an unclosed tag, a mismatched
- * closing tag, a truncated document and an unquoted attribute value all parse without
- * complaint. With a whole-file writer that is not a nuisance but data loss: we would
- * rewrite the entire document from a misreading of it.
+ * `XMLParser` recovers silently from an unclosed tag, a mismatched closing tag, a truncated
+ * document and an unquoted attribute value. A whole-file writer would rewrite the document
+ * from that misreading, so every parse is validated first.
  */
 
 /** A leading BOM confuses the validator's declaration check, so it never reaches it. */
@@ -26,8 +23,7 @@ const OPAQUE_MARKUP = /<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<\?[\s\S]*?\?>/g
 const NAMED_ENTITY = /&([A-Za-z_:][\w.:-]*);/g;
 
 /**
- * Asserts the text is well-formed XML. Runs **before** every parse — not behind a
- * setting, not skipped for speed.
+ * Asserts the text is well-formed XML.
  *
  * @throws {XliffParseError} carrying the line and column the validator reported.
  */
@@ -62,12 +58,8 @@ function rejectUndefinedEntities(body: string): void {
 }
 
 /**
- * Asserts the structure the model layer depends on, after a successful parse.
- *
- * Note what is **not** checked here: "exactly one `<source>` and at most one `<target>`"
- * cannot be verified on the model, because `XliffTransUnit` can only hold one of each —
- * a document with two `<source>` elements produces a model that looks correct. That rule
- * belongs to the parser, at the moment it builds the unit.
+ * Asserts the structure the model layer depends on, after a successful parse. A unit's
+ * `<source>` and `<target>` counts are checked by the parser, which a model cannot show.
  *
  * @throws {XliffParseError}
  */

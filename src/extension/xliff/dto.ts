@@ -7,13 +7,7 @@ import { effectiveState, isSpecState } from '../../shared/state';
 import type { AlNodeDto, BaseFileDto, TransUnitDto, XliffDocumentDto, XliffFileDto } from '../../shared/dto';
 import type { AlNode, XliffDocument, XliffFile, XliffTransUnit } from '../../shared/model';
 
-/**
- * Projects the parsed model into the webview payload.
- *
- * Runs in the host, once per load, over a document that has already been through
- * `validateStructure` — which is what guarantees each file's ids are unique and therefore
- * that no unit is lost to a `Record` key collision.
- */
+/** Projects the parsed model into the webview payload, after `validateStructure` has passed it. */
 
 const BASE_FILE_SUFFIX = '.g.xlf';
 
@@ -96,8 +90,7 @@ function projectFile(file: XliffFile, index: number): XliffFileDto {
         targetLanguage: file.targetLanguage,
         original: file.original,
         datatype: file.datatype,
-        // A file with no AL structure has no types to group by, and its flat list is
-        // already the right answer.
+        // Without AL ids there are no types to group by.
         tree: projectNodes(hasAlIds ? groupRoots(roots) : roots),
         units: models.map(unit => projectUnit(unit, file.targetLanguage)),
         hasAlIds,
@@ -105,11 +98,7 @@ function projectFile(file: XliffFile, index: number): XliffFileDto {
     };
 }
 
-/**
- * Exported so an edit can rebuild the one unit that changed rather than re-projecting the
- * whole document. There must be exactly one projection, or a patched unit and its
- * neighbours start disagreeing about what a unit looks like.
- */
+/** One unit's projection, which an edit also uses to rebuild the unit it changed. */
 export function projectUnit(unit: XliffTransUnit, targetLanguage: string | undefined): TransUnitDto {
     const declared = unit.target?.state;
     const state = effectiveState(unit);

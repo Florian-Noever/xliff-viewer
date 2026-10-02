@@ -26,20 +26,14 @@ interface MutableAlNode {
 }
 
 /**
- * Groups units into a tree.
- *
- * Takes **units rather than a document** so the caller chooses the scope: the DTO is
- * per-`<file>`, and XLIFF scopes ids to their `<file>`, so a document-wide tree would
- * merge two files' hierarchies and let identical ids collide.
+ * Groups one `<file>`'s units into a tree; XLIFF scopes ids to their `<file>`.
  *
  * Nodes merge on the **canonical path** — every segment as `<Type> <hash>` — so the readable
  * and the hashed form of one symbol are one node. A container is keyed by that path; a node
- * that carries a unit is keyed by the unit's own id, so a node carries a unit exactly when
- * its key is that unit's id. A second unit on the same canonical path gets its own leaf
- * beside the first rather than disappearing.
+ * that carries a unit is keyed by the unit's own id. A second unit on the same canonical
+ * path gets a leaf of its own beside the first.
  *
- * One pass, O(units × depth). Children keep first-appearance order — file order is
- * meaningful and is never re-sorted here.
+ * One pass, O(units × depth). Children keep the order they first appear in.
  */
 export function buildAlTree(units: Iterable<XliffTransUnit>): AlNode[] {
     const roots: MutableAlNode[] = [];
@@ -243,8 +237,7 @@ function groupByType(nodes: readonly AlNode[], keyPrefix: string): AlNode[] {
     return order.map((entry): AlNode => ('members' in entry
         ? {
             key: entry.key,
-            // The count is of **objects**, not units: the progress bar already carries the
-            // unit counts, and "Tables (12)" answers a different question.
+            // Counts objects; the progress bar beside it counts units.
             segment: { type: entry.type, hash: '', name: `${entry.type}s (${entry.members.length})` },
             depth: 0,
             children: entry.members,
