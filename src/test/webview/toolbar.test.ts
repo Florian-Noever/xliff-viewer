@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, defineComponent, nextTick } from 'vue';
 
 import Toolbar from '../../webview/components/Toolbar.vue';
@@ -8,8 +8,9 @@ import { useSearch } from '../../webview/composables/useSearch';
 import { useStateFilter } from '../../webview/composables/useStateFilter';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { summariseUnits } from '../../shared/state';
-import { stubLayout } from './layoutStub';
+import { stubLayout } from './support/layoutStub';
 import { documentDto, fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
+import { rowNames, search } from './support/appUi';
 import { mountApp } from './support/mountApp';
 
 const DOCUMENT = documentDto([fileDto({
@@ -27,25 +28,10 @@ const DOCUMENT = documentDto([fileDto({
     ],
 })]);
 
-async function search(wrapper: ReturnType<typeof mountApp>, query: string): Promise<void> {
-    await wrapper.get('.search-input').setValue(query);
-    vi.advanceTimersByTime(200);
-    await nextTick();
-}
-
-const rowKeys = (wrapper: ReturnType<typeof mountApp>): string[] =>
-    wrapper.findAll('.tree-row .name, .tree-row .legend-name').map(row => row.text());
-
-let restore: () => void;
+beforeEach(stubLayout);
 
 beforeEach(() => {
-    restore = stubLayout();
     vi.useFakeTimers();
-});
-
-afterEach(() => {
-    vi.useRealTimers();
-    restore();
 });
 
 describe('the toolbar', () => {
@@ -115,11 +101,11 @@ describe('searching the tree', () => {
     it('shows the matches and their ancestors, and nothing else', async () => {
         const wrapper = mountApp(DOCUMENT);
         await nextTick();
-        expect(rowKeys(wrapper)).toEqual(['Customer', 'Caption', 'ToolTip', 'Vendor', 'Caption']);
+        expect(rowNames(wrapper)).toEqual(['Customer', 'Caption', 'ToolTip', 'Vendor', 'Caption']);
 
         await search(wrapper, 'Kundennummer');
 
-        expect(rowKeys(wrapper)).toEqual(['Customer', 'ToolTip']);
+        expect(rowNames(wrapper)).toEqual(['Customer', 'ToolTip']);
     });
 
     it('reaches a match through a collapsed ancestor', async () => {
@@ -129,27 +115,27 @@ describe('searching the tree', () => {
         for (const chevron of wrapper.findAll('.chevron')) {
             await chevron.trigger('click');
         }
-        expect(rowKeys(wrapper)).toEqual(['Customer', 'Vendor']);
+        expect(rowNames(wrapper)).toEqual(['Customer', 'Vendor']);
 
         await search(wrapper, 'Lieferant');
 
-        expect(rowKeys(wrapper)).toEqual(['Vendor', 'Caption']);
+        expect(rowNames(wrapper)).toEqual(['Vendor', 'Caption']);
     });
 
     it('restores the tree, and the expansion the user had, when the search is cleared', async () => {
         const wrapper = mountApp(DOCUMENT);
         await nextTick();
         await wrapper.findAll('.chevron')[0].trigger('click'); // collapse "Customer"
-        expect(rowKeys(wrapper)).toEqual(['Customer', 'Vendor', 'Caption']);
+        expect(rowNames(wrapper)).toEqual(['Customer', 'Vendor', 'Caption']);
 
         await search(wrapper, 'Kundennummer');
-        expect(rowKeys(wrapper)).toEqual(['Customer', 'ToolTip']);
+        expect(rowNames(wrapper)).toEqual(['Customer', 'ToolTip']);
 
         await wrapper.get('.search-input').trigger('keydown', { key: 'Escape' });
         await nextTick();
 
         // Exactly what it was before the search — the filter never touched the user's set.
-        expect(rowKeys(wrapper)).toEqual(['Customer', 'Vendor', 'Caption']);
+        expect(rowNames(wrapper)).toEqual(['Customer', 'Vendor', 'Caption']);
         expect((wrapper.get('.search-input').element as HTMLInputElement).value).toBe('');
     });
 
@@ -159,6 +145,6 @@ describe('searching the tree', () => {
 
         await search(wrapper, 'zzzz');
 
-        expect(rowKeys(wrapper)).toEqual([]);
+        expect(rowNames(wrapper)).toEqual([]);
     });
 });

@@ -7,12 +7,12 @@ import { parseXliff } from '../../extension/xliff/parser';
 import TreeRow from '../../webview/components/TreeRow.vue';
 import UnitCard from '../../webview/components/UnitCard.vue';
 import { useValidation } from '../../webview/composables/useValidation';
-import { UNIT_ACTIONS_KEY } from '../../webview/unitActions';
 import { HintKind, hintsFor } from '../../webview/validation';
 import { FIXTURE } from '../fixtures/corpus';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { XliffState } from '../../shared/state';
 import { exampleUnitDto } from '../support/dtoBuilders';
+import { provideActions } from './support/unitActions';
 
 import type { AlNodeDto, XliffFileDto } from '../../shared/dto';
 import type { WebviewSettings } from '../../shared/settings';
@@ -262,7 +262,7 @@ describe('where a hint appears', () => {
         const row = { key: 'Table 1', type: 'Table', name: 'Object', depth: 0, hasChildren: true, expanded: false, position: 1, siblings: 1 };
         const wrapper = mount(TreeRow, {
             props: { row, focused: false, hintCount: 3 },
-            global: { provide: { [UNIT_ACTIONS_KEY as symbol]: { open: () => { }, baseFileName: () => undefined, alSourceAvailable: () => undefined, isBaseFile: () => false } } },
+            global: provideActions(),
         });
 
         expect(wrapper.get('.hint-count').text()).toBe('⚠3');
@@ -273,7 +273,7 @@ describe('where a hint appears', () => {
         const row = { key: 'Table 1', type: 'Table', name: 'Object', depth: 0, hasChildren: true, expanded: false, position: 1, siblings: 1 };
         const wrapper = mount(TreeRow, {
             props: { row, focused: false, hintCount: 1 },
-            global: { provide: { [UNIT_ACTIONS_KEY as symbol]: { open: () => { }, baseFileName: () => undefined, alSourceAvailable: () => undefined, isBaseFile: () => false } } },
+            global: provideActions(),
         });
 
         expect(wrapper.get('.hint-count').attributes('title')).toBe('1 translation below this one has something worth checking.');
@@ -283,7 +283,7 @@ describe('where a hint appears', () => {
         const row = { key: 'Table 1', type: 'Table', name: 'Object', depth: 0, hasChildren: true, expanded: false, position: 1, siblings: 1 };
         const wrapper = mount(TreeRow, {
             props: { row, focused: false },
-            global: { provide: { [UNIT_ACTIONS_KEY as symbol]: { open: () => { }, baseFileName: () => undefined, alSourceAvailable: () => undefined, isBaseFile: () => false } } },
+            global: provideActions(),
         });
 
         expect(wrapper.find('.hint-count').exists()).toBe(false);
@@ -298,7 +298,7 @@ describe('where a hint appears', () => {
         };
         const wrapper = mount(TreeRow, {
             props: { row: unitRow, focused: false, settings: DEFAULT_WEBVIEW_SETTINGS, hintCount: 1, hints },
-            global: { provide: { [UNIT_ACTIONS_KEY as symbol]: { open: () => { }, baseFileName: () => undefined, alSourceAvailable: () => undefined, isBaseFile: () => false } } },
+            global: provideActions(),
         });
 
         expect(wrapper.find('.hint-count').exists()).toBe(false);

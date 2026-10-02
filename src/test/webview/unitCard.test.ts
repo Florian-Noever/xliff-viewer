@@ -10,7 +10,7 @@ import { translationLabel, translations } from '../../webview/translations';
 import { stateLabel } from '../../webview/stateTone';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { XliffState } from '../../shared/state';
-import { exampleUnitDto } from '../support/dtoBuilders';
+import { exampleUnitDto, groupKey } from '../support/dtoBuilders';
 
 import type { AlNodeDto, TransUnitDto } from '../../shared/dto';
 import type { WebviewSettings } from '../../shared/settings';
@@ -257,7 +257,7 @@ describe('the reconstructed generator note', () => {
             type: 'Namespace',
             name: 'Contoso.Sales',
             children: [{
-                key: 'type:Namespace 1/Report',
+                key: groupKey('Report', 'Namespace 1'),
                 type: 'Report',
                 name: 'Reports (1)',
                 group: true,

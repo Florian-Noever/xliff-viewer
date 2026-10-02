@@ -7,7 +7,7 @@
  */
 
 import { enableAutoUnmount } from '@vue/test-utils';
-import { afterEach, beforeEach } from 'vitest';
+import { afterEach, beforeEach, vi } from 'vitest';
 
 export const postedMessages: unknown[] = [];
 
@@ -46,6 +46,10 @@ beforeEach(() => {
 
 // A mounted app keeps listening for messages, so one left behind answers the next test's.
 enableAutoUnmount(afterEach);
+
+afterEach(() => {
+    vi.useRealTimers();
+});
 
 (globalThis as Record<string, unknown>).acquireVsCodeApi = () => ({
     postMessage: (message: unknown) => postedMessages.push(message),

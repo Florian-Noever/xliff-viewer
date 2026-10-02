@@ -9,11 +9,15 @@
  */
 
 export const VIEWPORT_HEIGHT = 600;
+export const VIEWPORT_WIDTH = 800;
 export const STUB_ROW_HEIGHT = 24;
 
 const SIZED = ['offsetHeight', 'offsetWidth', 'clientHeight', 'clientWidth'] as const;
 
-/** Returns the function that puts jsdom back as it was. */
+/**
+ * Returns the function that puts jsdom back as it was. `beforeEach(stubLayout)` stubs every
+ * test of a file, and Vitest calls what a `beforeEach` returns once the test is over.
+ */
 export function stubLayout(): () => void {
     const rect = Element.prototype.getBoundingClientRect;
     const saved = new Map<string, PropertyDescriptor | undefined>();
@@ -25,13 +29,13 @@ export function stubLayout(): () => void {
         Object.defineProperty(HTMLElement.prototype, property, {
             configurable: true,
             get(this: HTMLElement) {
-                return property.endsWith('Width') ? 800 : heightOf(this);
+                return property.endsWith('Width') ? VIEWPORT_WIDTH : heightOf(this);
             },
         });
     }
 
     Element.prototype.getBoundingClientRect = function fake(this: Element): DOMRect {
-        return new DOMRect(0, 0, 800, heightOf(this));
+        return new DOMRect(0, 0, VIEWPORT_WIDTH, heightOf(this));
     };
 
     return () => {

@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { nextTick } from 'vue';
 
 import { DEV_DOCUMENT } from '../../webview/fixtures/devDocument';
-import { stubLayout } from './layoutStub';
+import { stubLayout } from './support/layoutStub';
 import { documentDto, fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
 import { XliffState } from '../../shared/state';
 import { mountApp } from './support/mountApp';
@@ -33,15 +33,7 @@ const FRENCH = fileDto({
 
 const TWO_FILES = documentDto([GERMAN, FRENCH], { uri: 'file:///w/App.xlf', fileName: 'App.xlf' });
 
-let restore: () => void;
-
-beforeEach(() => {
-    restore = stubLayout();
-});
-
-afterEach(() => {
-    restore();
-});
+beforeEach(stubLayout);
 
 describe('a document with one <file>', () => {
     it('renders no switcher at all — which is every AL-generated file', async () => {

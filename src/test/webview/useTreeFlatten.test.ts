@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { computed, ref } from 'vue';
 
 import { expandableKeys, flattenTree, keysToDepth, useTreeFlatten } from '../../webview/composables/useTreeFlatten';
-import { fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
+import { NO_NAMESPACE_GROUP_KEY } from '../../extension/xliff/alTree';
+import { fileDto, groupKey, nodeDto, unitDto } from '../support/dtoBuilders';
 import { withSetup } from './support/withSetup';
 
 import type { AlNodeDto, TransUnitDto, XliffFileDto } from '../../shared/dto';
@@ -230,7 +231,8 @@ describe('expansion', () => {
 });
 
 describe('the object-type level', () => {
-    const GROUPED: AlNodeDto[] = [{ key: 'type:Table', type: 'Table', name: 'Tables (2)', group: true, children: TREE }];
+    const GROUP_KEY = groupKey('Table');
+    const GROUPED: AlNodeDto[] = [{ key: GROUP_KEY, type: 'Table', name: 'Tables (2)', group: true, children: TREE }];
 
     it('opens the same rows as an ungrouped tree, with the group above them', () => {
         // Depth 1 opens the objects and shows their members; the group level above them
@@ -238,7 +240,7 @@ describe('the object-type level', () => {
         const plain = view(file(TREE), 1).tree;
         const grouped = view(file(GROUPED), 1).tree;
 
-        const opened = grouped.rows.value.map(row => row.key).filter(key => key !== 'type:Table');
+        const opened = grouped.rows.value.map(row => row.key).filter(key => key !== GROUP_KEY);
         expect(opened).toEqual(plain.rows.value.map(row => row.key));
     });
 
@@ -248,7 +250,7 @@ describe('the object-type level', () => {
         const grouped = view(file(GROUPED), 0).tree;
         const plain = view(file(TREE), 0).tree;
 
-        expect(grouped.rows.value.map(row => row.key)).toEqual(['type:Table', ...plain.rows.value.map(row => row.key)]);
+        expect(grouped.rows.value.map(row => row.key)).toEqual([GROUP_KEY, ...plain.rows.value.map(row => row.key)]);
     });
 
     it('carries the flag through to the row, so the row can render a label not a symbol', () => {
@@ -266,15 +268,15 @@ describe('the object-type level', () => {
 });
 
 describe('the namespace level', () => {
-    const GROUPED: AlNodeDto[] = [{ key: 'type:Table', type: 'Table', name: 'Tables (2)', group: true, children: TREE }];
-    const NAMESPACED: AlNodeDto[] = [{ key: 'Namespace 9', type: 'Namespace', name: 'Contoso.Sales', children: GROUPED }];
+    const tablesIn = (namespaceKey: string): AlNodeDto => ({ key: groupKey('Table', namespaceKey), type: 'Table', name: 'Tables (2)', group: true, children: TREE });
+    const NAMESPACED: AlNodeDto[] = [{ key: 'Namespace 9', type: 'Namespace', name: 'Contoso.Sales', children: [tablesIn('Namespace 9')] }];
     const namespaced = (tree: AlNodeDto[]): XliffFileDto => ({ ...file(tree), namespaced: true });
 
     it('opens the same objects as a file without namespaces, with the namespace and group above them', () => {
         const plain = view(file(TREE), 1).tree;
         const withNamespaces = view(namespaced(NAMESPACED), 1).tree;
 
-        const opened = withNamespaces.rows.value.map(row => row.key).filter(key => key !== 'Namespace 9' && key !== 'type:Table');
+        const opened = withNamespaces.rows.value.map(row => row.key).filter(key => key !== 'Namespace 9' && key !== groupKey('Table', 'Namespace 9'));
         expect(opened).toEqual(plain.rows.value.map(row => row.key));
     });
 
@@ -282,14 +284,14 @@ describe('the namespace level', () => {
         const plain = view(file(TREE), 0).tree;
         const withNamespaces = view(namespaced(NAMESPACED), 0).tree;
 
-        expect(withNamespaces.rows.value.map(row => row.key)).toEqual(['Namespace 9', 'type:Table', ...plain.rows.value.map(row => row.key)]);
+        expect(withNamespaces.rows.value.map(row => row.key)).toEqual(['Namespace 9', groupKey('Table', 'Namespace 9'), ...plain.rows.value.map(row => row.key)]);
     });
 
     it('counts both levels even when the only group at the top is "(no namespace)"', () => {
-        const withoutNamespace: AlNodeDto[] = [{ key: 'namespace:', type: 'Namespace', name: '(no namespace)', group: true, children: GROUPED }];
+        const withoutNamespace: AlNodeDto[] = [{ key: NO_NAMESPACE_GROUP_KEY, type: 'Namespace', name: '(no namespace)', group: true, children: [tablesIn(NO_NAMESPACE_GROUP_KEY)] }];
         const withNamespaces = view(namespaced(withoutNamespace), 0).tree;
 
-        expect(withNamespaces.rows.value.map(row => row.key).slice(0, 2)).toEqual(['namespace:', 'type:Table']);
+        expect(withNamespaces.rows.value.map(row => row.key).slice(0, 2)).toEqual([NO_NAMESPACE_GROUP_KEY, groupKey('Table', NO_NAMESPACE_GROUP_KEY)]);
         expect(withNamespaces.rows.value.map(row => row.key)).toContain('Table 5');
     });
 });

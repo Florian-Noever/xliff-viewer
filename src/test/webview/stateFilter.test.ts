@@ -1,11 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, nextTick, ref } from 'vue';
 
 import { useStateFilter } from '../../webview/composables/useStateFilter';
 import { visibleNodes } from '../../webview/ancestorFilter';
 import { summariseUnits, XliffState } from '../../shared/state';
-import { stubLayout } from './layoutStub';
+import { stubLayout } from './support/layoutStub';
 import { documentDto, fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
+import { rowNames, search } from './support/appUi';
 import { mountApp } from './support/mountApp';
 import { withSetup } from './support/withSetup';
 
@@ -46,20 +47,11 @@ function filterOnly(): StateFilter {
     })).result;
 }
 
-const rowNames = (wrapper: ReturnType<typeof mountApp>): string[] =>
-    wrapper.findAll('.tree-row .name, .tree-row .legend-name').map(row => row.text());
-
-let restore: () => void;
+beforeEach(stubLayout);
 
 beforeEach(() => {
     scope.value = 'file:///w/App.de-DE.xlf#0';
-    restore = stubLayout();
     vi.useFakeTimers();
-});
-
-afterEach(() => {
-    vi.useRealTimers();
-    restore();
 });
 
 describe('useStateFilter', () => {
@@ -164,12 +156,6 @@ describe('the chips in the toolbar', () => {
 });
 
 describe('search and filter together', () => {
-    async function search(wrapper: ReturnType<typeof mountApp>, query: string): Promise<void> {
-        await wrapper.get('.search-input').setValue(query);
-        vi.advanceTimersByTime(200);
-        await nextTick();
-    }
-
     it('shows only the units matching both', async () => {
         const wrapper = mountApp(DOCUMENT);
         await nextTick();

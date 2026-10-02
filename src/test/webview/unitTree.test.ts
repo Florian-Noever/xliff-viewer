@@ -1,28 +1,32 @@
 import { mount } from '@vue/test-utils';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { computed, h, nextTick, ref } from 'vue';
 
 import TreeRow from '../../webview/components/TreeRow.vue';
 import UnitTree from '../../webview/components/UnitTree.vue';
 import { useTreeFlatten } from '../../webview/composables/useTreeFlatten';
-import { UNIT_ACTIONS_KEY } from '../../webview/unitActions';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { summariseTree } from '../../shared/state';
-import { stubLayout, STUB_ROW_HEIGHT as ROW } from './layoutStub';
-import { exampleUnitDto, fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
+import { stubLayout, STUB_ROW_HEIGHT as ROW, VIEWPORT_HEIGHT } from './support/layoutStub';
+import { exampleUnitDto, fileDto, groupKey, nodeDto, unitDto } from '../support/dtoBuilders';
+import { provideActions } from './support/unitActions';
 import { withSetup } from './support/withSetup';
 
 import type { AlNodeDto, TransUnitDto, XliffFileDto } from '../../shared/dto';
 import type { WebviewSettings } from '../../shared/settings';
 import type { StateSummary } from '../../shared/state';
-import type { UnitActions } from '../../webview/unitActions';
 
 /** The large fixture's scale: 230 objects and about 2500 units. */
 const LARGE_ROOTS = 230;
 const LARGE_MEMBERS = 11;
 
+interface TreeData {
+    readonly tree: AlNodeDto[];
+    readonly units: Map<string, TransUnitDto>;
+}
+
 /** `roots` objects, each with `members` children. */
-function bigTree(roots: number, members: number): { tree: AlNodeDto[]; units: Map<string, TransUnitDto> } {
+function bigTree(roots: number, members: number): TreeData {
     const units = new Map<string, TransUnitDto>();
     const tree = Array.from({ length: roots }, (_unused, object) => {
         const key = `Table ${object}`;
@@ -36,25 +40,15 @@ function bigTree(roots: number, members: number): { tree: AlNodeDto[]; units: Ma
     return { tree, units };
 }
 
-/** The card asks for these through `provide`; no tree test is about what they do. */
-const NO_ACTIONS: UnitActions = {
-    open: () => { },
-    baseFileName: () => undefined,
-    alSourceAvailable: () => undefined,
-    isBaseFile: () => false,
-    updateTarget: () => { },
-    updateState: () => { },
-};
+interface TreeOptions {
+    readonly depth?: number;
+    readonly hasAlIds?: boolean;
+    readonly summaries?: ReadonlyMap<string, StateSummary>;
+    readonly settings?: WebviewSettings;
+    readonly editing?: boolean;
+}
 
-function mountTree(
-    tree: AlNodeDto[],
-    units: Map<string, TransUnitDto>,
-    depth = 1,
-    hasAlIds = true,
-    summaries?: ReadonlyMap<string, StateSummary>,
-    settings?: WebviewSettings,
-    editing = false,
-) {
+function mountTree({ tree, units }: TreeData, { depth = 1, hasAlIds = true, summaries, settings, editing = false }: TreeOptions = {}) {
     const file = ref<XliffFileDto>(fileDto({ tree, units: [...units.values()], hasAlIds }));
     const { result: view, wrapper } = withSetup(() => useTreeFlatten({
         file: computed(() => file.value),
@@ -63,36 +57,29 @@ function mountTree(
         documentUri: computed(() => 'file:///w/one.xlf'),
     }), rows => h(UnitTree, { tree: rows, summaries, settings, editing }), {
         attachTo: document.body,
-        global: { provide: { [UNIT_ACTIONS_KEY as symbol]: NO_ACTIONS } },
+        global: provideActions(),
     });
     return { wrapper, view, file };
 }
 
-let restore: () => void;
-
-beforeEach(() => {
-    restore = stubLayout();
-});
-
-afterEach(() => {
-    restore();
-});
+beforeEach(stubLayout);
 
 describe('virtualisation', () => {
     it('renders a window over thousands of rows, not all of them', async () => {
-        const { wrapper, view } = mountTree(...Object.values(bigTree(LARGE_ROOTS, LARGE_MEMBERS)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        const { wrapper, view } = mountTree(bigTree(LARGE_ROOTS, LARGE_MEMBERS));
         await nextTick();
 
         expect(view.rows.value.length).toBe(LARGE_ROOTS + LARGE_ROOTS * LARGE_MEMBERS);
 
+        const fit = VIEWPORT_HEIGHT / ROW;
         const rendered = wrapper.findAll('.tree-row').length;
-        expect(rendered).toBeGreaterThan(0);
-        // A viewport of 600px over 24px rows is 25 rows, plus overscan at both edges.
-        expect(rendered).toBeLessThan(60);
+        expect(rendered).toBeGreaterThanOrEqual(fit);
+        // The rows that fit, plus an overscan at each edge of fewer than half as many.
+        expect(rendered).toBeLessThan(2 * fit);
     });
 
     it('reserves the full scroll height, so the scrollbar tells the truth', async () => {
-        const { wrapper, view } = mountTree(...Object.values(bigTree(LARGE_ROOTS, LARGE_MEMBERS)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        const { wrapper, view } = mountTree(bigTree(LARGE_ROOTS, LARGE_MEMBERS));
         await nextTick();
 
         const height = Number.parseInt(wrapper.get('.spacer').attributes('style')?.match(/height:\s*(\d+)/)?.[1] ?? '0', 10);
@@ -101,9 +88,9 @@ describe('virtualisation', () => {
     });
 
     it('grows the rendered window no further when the tree grows', async () => {
-        const small = mountTree(...Object.values(bigTree(10, 4)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        const small = mountTree(bigTree(10, 4));
         await nextTick();
-        const large = mountTree(...Object.values(bigTree(LARGE_ROOTS, LARGE_MEMBERS)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        const large = mountTree(bigTree(LARGE_ROOTS, LARGE_MEMBERS));
         await nextTick();
 
         expect(large.wrapper.findAll('.tree-row').length)
@@ -113,7 +100,7 @@ describe('virtualisation', () => {
 
 describe('the rows it renders', () => {
     it('is a real ARIA tree', async () => {
-        const { wrapper } = mountTree(...Object.values(bigTree(3, 2)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        const { wrapper } = mountTree(bigTree(3, 2));
         await nextTick();
 
         expect(wrapper.get('[role="tree"]').attributes('aria-label')).toBe('Translation units');
@@ -126,7 +113,7 @@ describe('the rows it renders', () => {
     });
 
     it('gives a child the level below its parent, and no aria-expanded of its own', async () => {
-        const { wrapper } = mountTree(...Object.values(bigTree(2, 2)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        const { wrapper } = mountTree(bigTree(2, 2));
         await nextTick();
 
         const child = wrapper.findAll('[role="treeitem"]')[1];
@@ -136,7 +123,7 @@ describe('the rows it renders', () => {
     });
 
     it('shows the type and the name on a container row', async () => {
-        const { wrapper } = mountTree(...Object.values(bigTree(1, 1)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        const { wrapper } = mountTree(bigTree(1, 1));
         await nextTick();
 
         expect(wrapper.get('.tree-row .type').text()).toBe('Table');
@@ -145,14 +132,14 @@ describe('the rows it renders', () => {
     });
 
     it('leaves a unit row without a card until it is given settings to render one with', async () => {
-        const { wrapper } = mountTree(...Object.values(bigTree(1, 1)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        const { wrapper } = mountTree(bigTree(1, 1));
         await nextTick();
 
         expect(wrapper.findAll('.tree-row')[1].find('.unit-card').exists()).toBe(false);
     });
 
     it('offers a chevron only where there is something to open', async () => {
-        const { wrapper } = mountTree(...Object.values(bigTree(1, 1)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        const { wrapper } = mountTree(bigTree(1, 1));
         await nextTick();
 
         const rows = wrapper.findAll('.tree-row');
@@ -163,7 +150,7 @@ describe('the rows it renders', () => {
     });
 
     it('collapses when its chevron is pressed', async () => {
-        const { wrapper } = mountTree(...Object.values(bigTree(2, 3)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        const { wrapper } = mountTree(bigTree(2, 3));
         await nextTick();
         expect(wrapper.findAll('.tree-row').length).toBe(8);
 
@@ -182,7 +169,7 @@ describe('keyboard', () => {
     }
 
     it('moves down and up', async () => {
-        const { wrapper } = mountTree(...Object.values(bigTree(2, 2)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        const { wrapper } = mountTree(bigTree(2, 2));
         const tree = wrapper.get('[role="tree"]');
 
         await tree.trigger('keydown', { key: 'ArrowDown' });
@@ -196,7 +183,7 @@ describe('keyboard', () => {
     });
 
     it('opens with →, closes with ←, and steps out of a leaf', async () => {
-        const { wrapper, view } = mountTree(...Object.values(bigTree(2, 2)) as [AlNodeDto[], Map<string, TransUnitDto>], 0);
+        const { wrapper, view } = mountTree(bigTree(2, 2), { depth: 0 });
         const tree = wrapper.get('[role="tree"]');
 
         await tree.trigger('keydown', { key: 'ArrowDown' });
@@ -214,7 +201,7 @@ describe('keyboard', () => {
     });
 
     it('toggles with Enter', async () => {
-        const { wrapper, view } = mountTree(...Object.values(bigTree(2, 2)) as [AlNodeDto[], Map<string, TransUnitDto>], 0);
+        const { wrapper, view } = mountTree(bigTree(2, 2), { depth: 0 });
         const tree = wrapper.get('[role="tree"]');
 
         await tree.trigger('keydown', { key: 'ArrowDown' });
@@ -224,7 +211,7 @@ describe('keyboard', () => {
     });
 
     it('jumps to both ends', async () => {
-        const { wrapper } = mountTree(...Object.values(bigTree(3, 1)) as [AlNodeDto[], Map<string, TransUnitDto>], 0);
+        const { wrapper } = mountTree(bigTree(3, 1), { depth: 0 });
         const tree = wrapper.get('[role="tree"]');
 
         await tree.trigger('keydown', { key: 'End' });
@@ -235,7 +222,7 @@ describe('keyboard', () => {
     });
 
     it('leaves keys it does not own alone', async () => {
-        const { wrapper } = mountTree(...Object.values(bigTree(2, 2)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        const { wrapper } = mountTree(bigTree(2, 2));
 
         await wrapper.get('[role="tree"]').trigger('keydown', { key: 'a' });
 
@@ -246,8 +233,7 @@ describe('keyboard', () => {
 describe('a key typed into a field belongs to the field', () => {
     /** One object, one unit, editing on — the shape that puts a textarea inside the tree. */
     async function editableTree() {
-        const { tree, units } = bigTree(1, 1);
-        const mounted = mountTree(tree, units, 2, true, undefined, DEFAULT_WEBVIEW_SETTINGS, true);
+        const mounted = mountTree(bigTree(1, 1), { depth: 2, settings: DEFAULT_WEBVIEW_SETTINGS, editing: true });
         await nextTick();
         return mounted;
     }
@@ -287,17 +273,16 @@ describe('a key typed into a field belongs to the field', () => {
 
 describe('the generator note on a unit\'s card', () => {
     const NOTE = 'Table Object 0 - Property Caption 0';
-    const tree = (): [AlNodeDto[], Map<string, TransUnitDto>] => Object.values(bigTree(1, 1)) as [AlNodeDto[], Map<string, TransUnitDto>];
 
     it('is rebuilt from the tree when the setting is on', async () => {
-        const { wrapper } = mountTree(...tree(), 1, true, undefined, { ...DEFAULT_WEBVIEW_SETTINGS, showGeneratorNotes: true });
+        const { wrapper } = mountTree(bigTree(1, 1), { settings: { ...DEFAULT_WEBVIEW_SETTINGS, showGeneratorNotes: true } });
         await nextTick();
 
         expect(wrapper.text()).toContain(NOTE);
     });
 
     it('is not rebuilt at all when the setting is off', async () => {
-        const { wrapper } = mountTree(...tree(), 1, true, undefined, { ...DEFAULT_WEBVIEW_SETTINGS, showGeneratorNotes: false });
+        const { wrapper } = mountTree(bigTree(1, 1), { settings: { ...DEFAULT_WEBVIEW_SETTINGS, showGeneratorNotes: false } });
         await nextTick();
 
         expect(wrapper.text()).not.toContain(NOTE);
@@ -307,7 +292,7 @@ describe('the generator note on a unit\'s card', () => {
 
 describe('what a row click means', () => {
     /** A node that carries a unit *and* children: an id can be another unit's prefix. */
-    function treeWithBoth(): { tree: AlNodeDto[]; units: Map<string, TransUnitDto> } {
+    function treeWithBoth(): TreeData {
         const units = new Map<string, TransUnitDto>();
         units.set('Table 0', unitDto('Table 0', { source: 'Object source' }));
         units.set('Table 0 - Property 0', unitDto('Table 0 - Property 0', { source: 'Leaf source' }));
@@ -316,7 +301,7 @@ describe('what a row click means', () => {
     }
 
     it('marks only the rows that have something to open', async () => {
-        const { wrapper } = mountTree(...Object.values(bigTree(1, 1)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        const { wrapper } = mountTree(bigTree(1, 1));
         await nextTick();
 
         const rows = wrapper.findAll('.tree-row');
@@ -326,7 +311,7 @@ describe('what a row click means', () => {
     });
 
     it('collapses a container when the row itself is clicked, not only its chevron', async () => {
-        const { wrapper } = mountTree(...Object.values(bigTree(2, 3)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        const { wrapper } = mountTree(bigTree(2, 3));
         await nextTick();
         expect(wrapper.findAll('.tree-row').length).toBe(8);
 
@@ -336,7 +321,7 @@ describe('what a row click means', () => {
     });
 
     it('expands it again on the next click', async () => {
-        const { wrapper } = mountTree(...Object.values(bigTree(1, 3)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        const { wrapper } = mountTree(bigTree(1, 3));
         await nextTick();
 
         await wrapper.findAll('.tree-row')[0].trigger('click');
@@ -347,7 +332,7 @@ describe('what a row click means', () => {
     });
 
     it('leaves the keyboard where the mouse put it, so the arrow keys carry on from there', async () => {
-        const { wrapper, view } = mountTree(...Object.values(bigTree(3, 1)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        const { wrapper, view } = mountTree(bigTree(3, 1));
         await nextTick();
 
         await wrapper.findAll('.tree-row')[2].trigger('click');
@@ -360,7 +345,7 @@ describe('what a row click means', () => {
     });
 
     it('does nothing at all when a unit row is clicked', async () => {
-        const { wrapper, view } = mountTree(...Object.values(bigTree(1, 2)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        const { wrapper, view } = mountTree(bigTree(1, 2));
         await nextTick();
         const before = wrapper.findAll('.tree-row').length;
 
@@ -373,7 +358,7 @@ describe('what a row click means', () => {
     it('toggles once when the chevron is pressed, not twice', async () => {
         // The chevron sits inside the row it toggles; without `.stop` the row handler runs too
         // and puts it straight back.
-        const { wrapper } = mountTree(...Object.values(bigTree(1, 3)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        const { wrapper } = mountTree(bigTree(1, 3));
         await nextTick();
 
         await wrapper.get('.chevron').trigger('click');
@@ -382,8 +367,7 @@ describe('what a row click means', () => {
     });
 
     it('does not fold a row because the reader clicked inside its unit card', async () => {
-        const { tree, units } = treeWithBoth();
-        const { wrapper } = mountTree(tree, units, 1, true, undefined, DEFAULT_WEBVIEW_SETTINGS);
+        const { wrapper } = mountTree(treeWithBoth(), { settings: DEFAULT_WEBVIEW_SETTINGS });
         await nextTick();
         expect(wrapper.findAll('.tree-row').length).toBe(2);
 
@@ -393,7 +377,7 @@ describe('what a row click means', () => {
     });
 
     it('does not fold a row at the end of a drag that selected text', async () => {
-        const { wrapper } = mountTree(...Object.values(bigTree(1, 3)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        const { wrapper } = mountTree(bigTree(1, 3));
         await nextTick();
 
         const range = document.createRange();
@@ -437,16 +421,12 @@ describe('the one navigation action', () => {
         const alSource = ref(answers.alSource);
         const wrapper = mount(TreeRow, {
             props: { row: row(over), focused: false, settings: DEFAULT_WEBVIEW_SETTINGS },
-            global: {
-                provide: {
-                    [UNIT_ACTIONS_KEY as symbol]: {
-                        open: (target: string, unitId: string) => calls.push({ target, unitId }),
-                        baseFileName: () => answers.baseFile,
-                        alSourceAvailable: () => alSource.value,
-                        isBaseFile: () => answers.isBaseFile === true,
-                    },
-                },
-            },
+            global: provideActions({
+                open: (target, unitId) => calls.push({ target, unitId }),
+                baseFileName: () => answers.baseFile,
+                alSourceAvailable: () => alSource.value,
+                isBaseFile: () => answers.isBaseFile === true,
+            }),
         });
         return { wrapper, calls, alSource, button: wrapper.get('.action') };
     }
@@ -551,16 +531,11 @@ describe('the one navigation action', () => {
                 focused: false,
                 settings: DEFAULT_WEBVIEW_SETTINGS,
             },
-            global: {
-                provide: {
-                    [UNIT_ACTIONS_KEY as symbol]: {
-                        open: (target: string, unitId: string) => calls.push({ target, unitId }),
-                        baseFileName: () => 'App.g.xlf',
-                        alSourceAvailable: () => true,
-                        isBaseFile: () => false,
-                    },
-                },
-            },
+            global: provideActions({
+                open: (target, unitId) => calls.push({ target, unitId }),
+                baseFileName: () => 'App.g.xlf',
+                alSourceAvailable: () => true,
+            }),
         });
 
         await wrapper.get('.action').trigger('click');
@@ -572,7 +547,7 @@ describe('the one navigation action', () => {
     it('shows a group row as a label, with no symbol-type badge', () => {
         const wrapper = mount(TreeRow, {
             props: {
-                row: { key: 'type:Table', type: 'Table', name: 'Tables (12)', group: true, depth: 0, hasChildren: true, expanded: true, position: 1, siblings: 1 },
+                row: { key: groupKey('Table'), type: 'Table', name: 'Tables (12)', group: true, depth: 0, hasChildren: true, expanded: true, position: 1, siblings: 1 },
                 focused: false,
             },
         });
@@ -599,8 +574,7 @@ describe('the one navigation action', () => {
 describe('state on the rows', () => {
     it('shows a unit its own state and a container its roll-up', async () => {
         const { tree, units } = bigTree(1, 2);
-        const summaries = summariseTree(tree, units);
-        const { wrapper } = mountTree(tree, units, 1, true, summaries, DEFAULT_WEBVIEW_SETTINGS);
+        const { wrapper } = mountTree({ tree, units }, { summaries: summariseTree(tree, units), settings: DEFAULT_WEBVIEW_SETTINGS });
         await nextTick();
 
         const rows = wrapper.findAll('.tree-row');
@@ -613,8 +587,7 @@ describe('state on the rows', () => {
     });
 
     it('shows no bar on a container until its summary arrives', async () => {
-        const { tree, units } = bigTree(1, 2);
-        const { wrapper } = mountTree(tree, units);
+        const { wrapper } = mountTree(bigTree(1, 2));
         await nextTick();
 
         expect(wrapper.find('.progress').exists()).toBe(false);
@@ -623,7 +596,7 @@ describe('state on the rows', () => {
 
 describe('the flat-list note', () => {
     it('explains why there is no tree, and goes away when dismissed', async () => {
-        const { wrapper } = mountTree(...Object.values(bigTree(2, 0)) as [AlNodeDto[], Map<string, TransUnitDto>], 1, false);
+        const { wrapper } = mountTree(bigTree(2, 0), { hasAlIds: false });
         await nextTick();
 
         expect(wrapper.get('[role="note"]').text()).toContain('no AL object structure');
@@ -635,7 +608,7 @@ describe('the flat-list note', () => {
     });
 
     it('stays away for an AL file', async () => {
-        const { wrapper } = mountTree(...Object.values(bigTree(2, 1)) as [AlNodeDto[], Map<string, TransUnitDto>]);
+        const { wrapper } = mountTree(bigTree(2, 1));
         await nextTick();
 
         expect(wrapper.find('[role="note"]').exists()).toBe(false);

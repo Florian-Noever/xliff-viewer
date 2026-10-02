@@ -92,6 +92,7 @@ import { computed, useId } from 'vue';
 import MetaChips from './MetaChips.vue';
 import NoteList from './NoteList.vue';
 import StateBadge from './StateBadge.vue';
+import { FIELD_MAX_COLUMNS, FIELD_MIN_COLUMNS } from '../constants';
 import { stateLabel } from '../stateTone';
 import { translationLabel, translations } from '../translations';
 import { useUnitActions } from '../unitActions';
@@ -119,11 +120,6 @@ import type { Hint } from '../validation';
  */
 
 const SPACE_MARK = '␣';
-
-/** Narrow enough that a one-word caption gets a small field, wide enough to type into. */
-const FIELD_MIN_COLUMNS = 24;
-/** The cap the field's own width may not pass; `--field-max-inline` holds the same number. */
-const FIELD_MAX_COLUMNS = 72;
 
 const props = defineProps<{
     unit: TransUnitDto;
@@ -352,8 +348,6 @@ const hint = computed(() => {
 .target-input {
     /* The padding and border below, which `min-block-size` and `fit` allow for. */
     --field-chrome: 8px;
-    /* `FIELD_MAX_COLUMNS`, which floors the same field from the other side. */
-    --field-max-inline: 72ch;
 
     display: block;
     box-sizing: border-box;

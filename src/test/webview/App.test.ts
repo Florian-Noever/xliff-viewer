@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { nextTick } from 'vue';
 
+import { FIELD_MAX_COLUMNS, GAP, ROW_HEIGHT } from '../../webview/constants';
 import { ExtensionMessageType } from '../../shared/messages';
 import { clearPostedMessages, postedMessages } from '../setup/webview';
 import { documentDto, fileDto, unitDto } from '../support/dtoBuilders';
@@ -27,8 +28,9 @@ describe('before a document arrives', () => {
 
     it('injects the design tokens onto the document element', () => {
         mountApp();
-        expect(document.documentElement.style.getPropertyValue('--gap')).toBe('12px');
-        expect(document.documentElement.style.getPropertyValue('--row-height')).toBe('24px');
+        expect(document.documentElement.style.getPropertyValue('--gap')).toBe(`${GAP}px`);
+        expect(document.documentElement.style.getPropertyValue('--row-height')).toBe(`${ROW_HEIGHT}px`);
+        expect(document.documentElement.style.getPropertyValue('--field-max-inline')).toBe(`${FIELD_MAX_COLUMNS}ch`);
     });
 });
 

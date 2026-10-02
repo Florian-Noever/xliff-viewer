@@ -3,6 +3,7 @@
  * requires, so a test spells out only what it is about.
  */
 
+import { OBJECT_TYPE_GROUP_PREFIX } from '../../extension/xliff/alTree';
 import { XliffState } from '../../shared/state';
 import { splitUnitId } from '../../shared/unitPath';
 
@@ -25,6 +26,11 @@ export function exampleUnitDto(fields: Partial<TransUnitDto> = {}): TransUnitDto
 export function nodeDto(key: string, children: readonly AlNodeDto[] = [], fields: NodeFields = {}): AlNodeDto {
     const [type] = (splitUnitId(key).at(-1) ?? key).split(' ');
     return { key, type, children, ...fields };
+}
+
+/** The host's key for the group of `type` objects, inside the namespace node `namespaceKey` if there is one. */
+export function groupKey(type: string, namespaceKey?: string): string {
+    return namespaceKey === undefined ? `${OBJECT_TYPE_GROUP_PREFIX}${type}` : `${OBJECT_TYPE_GROUP_PREFIX}${namespaceKey}/${type}`;
 }
 
 /** File 0 of a document, `en-US` into `de-DE`, with AL ids. */

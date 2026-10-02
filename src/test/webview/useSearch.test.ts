@@ -1,10 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, nextTick, ref } from 'vue';
 
 import { buildSearchIndex, toMatcher, useSearch } from '../../webview/composables/useSearch';
 import { flattenTree } from '../../webview/composables/useTreeFlatten';
 import { visibleNodes } from '../../webview/ancestorFilter';
-import { fileDto, nodeDto, unitDto } from '../support/dtoBuilders';
+import { fileDto, groupKey, nodeDto, unitDto } from '../support/dtoBuilders';
 import { withSetup } from './support/withSetup';
 
 import type { AlNodeDto, TransUnitDto, XliffFileDto } from '../../shared/dto';
@@ -50,9 +50,7 @@ function searchIn(file: XliffFileDto = FILE): Search {
 /** The query path is debounced; tests want the result, not the wait. */
 async function type(search: Search, query: string): Promise<void> {
     search.query.value = query;
-    await nextTick();
-    vi.advanceTimersByTime(200);
-    await nextTick();
+    await vi.runAllTimersAsync();
 }
 
 const keysFor = (visible: ReadonlySet<string> | undefined): string[] =>
@@ -70,10 +68,6 @@ const searchResult = (search: Search) => visibleNodes(
 
 beforeEach(() => {
     vi.useFakeTimers();
-});
-
-afterEach(() => {
-    vi.useRealTimers();
 });
 
 describe('the index is built once per document, not per keystroke', () => {
@@ -144,8 +138,9 @@ describe('the seam between two fields', () => {
 });
 
 describe('the object-type level', () => {
+    const GROUP_KEY = groupKey('Table');
     const GROUPED: AlNodeDto[] = [{
-        key: 'type:Table',
+        key: GROUP_KEY,
         type: 'Table',
         name: 'Tables (2)',
         group: true,
@@ -157,8 +152,8 @@ describe('the object-type level', () => {
     it('never matches a group on its own label', () => {
         // A group that matched alone would render with every child filtered away — a row
         // that opens onto nothing. It rides in as an ancestor instead.
-        expect(groupedIndex.get('type:Table')).toBe('');
-        expect(toMatcher('tables')(groupedIndex.get('type:Table') ?? '')).toBe(false);
+        expect(groupedIndex.get(GROUP_KEY)).toBe('');
+        expect(toMatcher('tables')(groupedIndex.get(GROUP_KEY) ?? '')).toBe(false);
     });
 
     it('still indexes everything underneath it', () => {
@@ -169,7 +164,7 @@ describe('the object-type level', () => {
     it('shows the group when a unit under it matches, so the path is reachable', () => {
         const result = visibleNodes(GROUPED, [node => toMatcher('kundennummer')(groupedIndex.get(node.key) ?? '')]);
 
-        expect(result?.visible.has('type:Table')).toBe(true);
+        expect(result?.visible.has(GROUP_KEY)).toBe(true);
         expect(result?.visible.has('Table 1')).toBe(true);
         expect(result?.visible.has('Table 1 - Property 4')).toBe(true);
         // The group is an ancestor, not a match: it is not what the count is counting.
@@ -180,7 +175,7 @@ describe('the object-type level', () => {
         const result = visibleNodes(GROUPED, [node => toMatcher('kundennummer')(groupedIndex.get(node.key) ?? '')]);
         const rows = flattenTree(GROUPED, new Set(), UNITS, result?.visible);
 
-        expect(rows.map(row => row.key)).toEqual(['type:Table', 'Table 1', 'Table 1 - Property 4']);
+        expect(rows.map(row => row.key)).toEqual([GROUP_KEY, 'Table 1', 'Table 1 - Property 4']);
         expect(rows[0].expanded).toBe(true);
     });
 
@@ -189,7 +184,7 @@ describe('the object-type level', () => {
         const result = visibleNodes(GROUPED, [node => toMatcher('table')(groupedIndex.get(node.key) ?? '')]);
 
         expect(result?.visible.has('Table 1')).toBe(true);
-        expect(result?.visible.has('type:Table')).toBe(true);
+        expect(result?.visible.has(GROUP_KEY)).toBe(true);
     });
 });
 
@@ -329,8 +324,7 @@ describe('useSearch', () => {
         await nextTick();
         expect(search.predicate.value).toBeUndefined();
 
-        vi.advanceTimersByTime(200);
-        await nextTick();
+        await vi.runAllTimersAsync();
         expect(searchResult(search)?.visible.size).toBe(2);
     });
 
@@ -340,12 +334,10 @@ describe('useSearch', () => {
         for (const query of ['K', 'Ku', 'Kun', 'Kunden']) {
             search.query.value = query;
             await nextTick();
-            vi.advanceTimersByTime(20);
         }
         expect(search.predicate.value).toBeUndefined();
 
-        vi.advanceTimersByTime(200);
-        await nextTick();
+        await vi.runAllTimersAsync();
         expect(search.applied.value).toBe('Kunden');
     });
 

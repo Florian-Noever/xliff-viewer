@@ -1,9 +1,9 @@
 import { flushPromises } from '@vue/test-utils';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 
 import { DEV_DOCUMENT } from '../../webview/fixtures/devDocument';
-import { stubLayout } from './layoutStub';
+import { stubLayout } from './support/layoutStub';
 import { setWebviewState, webviewState, webviewStateWrites } from '../setup/webview';
 import { ExtensionMessageType } from '../../shared/messages';
 import { mountApp, receive } from './support/mountApp';
@@ -15,8 +15,6 @@ import type { PersistedView } from '../../webview/composables/usePersistedState'
  * test here **unmounts** the app before checking.
  */
 
-const WRITE_THROTTLE_MS = 250;
-
 type Mounted = ReturnType<typeof mountApp>;
 
 /** Mounts the app with the fixture, and waits until it has rendered. */
@@ -26,9 +24,9 @@ async function open(): Promise<Mounted> {
     return wrapper;
 }
 
-/** Waits out the write throttle. */
+/** Runs every timer the app has pending, the write throttle among them. */
 const settle = async (): Promise<void> => {
-    await vi.advanceTimersByTimeAsync(WRITE_THROTTLE_MS + 40);
+    await vi.runAllTimersAsync();
 };
 
 /** The toolbar's second action. Collapsing changes the tree whatever depth it opened at. */
@@ -45,17 +43,10 @@ async function hide(wrapper: Mounted): Promise<void> {
 
 const saved = (): PersistedView | undefined => webviewState() as PersistedView | undefined;
 
-let restore: () => void;
+beforeEach(stubLayout);
 
 beforeEach(() => {
     vi.useFakeTimers();
-    restore = stubLayout();
-    setWebviewState(undefined);
-});
-
-afterEach(() => {
-    restore();
-    vi.useRealTimers();
 });
 
 describe('what a hidden tab remembers', () => {
@@ -234,11 +225,10 @@ describe('how often it writes', () => {
         for (const query of ['s', 'se', 'set', 'setu', 'setup']) {
             await wrapper.get('.search-input').setValue(query);
         }
-        await vi.advanceTimersByTimeAsync(WRITE_THROTTLE_MS - 10);
 
         expect(webviewStateWrites()).toBe(before);
 
-        await vi.advanceTimersByTimeAsync(50);
+        await settle();
 
         expect(webviewStateWrites()).toBe(before + 1);
         expect(saved()?.query).toBe('setup');

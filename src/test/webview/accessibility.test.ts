@@ -1,11 +1,11 @@
 import { flushPromises } from '@vue/test-utils';
 import { computeAccessibleName } from 'dom-accessibility-api';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { nextTick } from 'vue';
 
 import { useAnnouncer } from '../../webview/composables/useAnnouncer';
 import { DEV_DOCUMENT } from '../../webview/fixtures/devDocument';
-import { stubLayout } from './layoutStub';
+import { stubLayout } from './support/layoutStub';
 import { ExtensionMessageType } from '../../shared/messages';
 import { mountApp, receive } from './support/mountApp';
 
@@ -21,15 +21,7 @@ async function app(): Promise<ReturnType<typeof mountApp>> {
     return wrapper;
 }
 
-let restore: () => void;
-
-beforeEach(() => {
-    restore = stubLayout();
-});
-
-afterEach(() => {
-    restore();
-});
+beforeEach(stubLayout);
 
 describe('what a screen reader is told', () => {
     it('gives every interactive element a name, icon-only ones included', async () => {

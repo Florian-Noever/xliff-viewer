@@ -8,10 +8,11 @@ import { EditRefusal, useEditMode } from '../../webview/composables/useEditMode'
 import { useSearch } from '../../webview/composables/useSearch';
 import { useStateFilter } from '../../webview/composables/useStateFilter';
 import { stateLabel } from '../../webview/stateTone';
-import { UNIT_ACTIONS_KEY } from '../../webview/unitActions';
+import { FIELD_MAX_COLUMNS, FIELD_MIN_COLUMNS } from '../../webview/constants';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { SPEC_STATES, summariseUnits, XliffState } from '../../shared/state';
 import { documentDto, exampleUnitDto, fileDto } from '../support/dtoBuilders';
+import { provideActions } from './support/unitActions';
 import { withSetup } from './support/withSetup';
 
 import type { TransUnitDto, XliffDocumentDto } from '../../shared/dto';
@@ -201,16 +202,11 @@ describe('the card in edit mode', () => {
         const calls: { what: string; unitId: string; value: string }[] = [];
         const wrapper = mount(UnitCard, {
             props: { unit: exampleUnitDto(over), settings: DEFAULT_WEBVIEW_SETTINGS, editing, name: 'Caption' },
-            global: {
-                provide: {
-                    [UNIT_ACTIONS_KEY as symbol]: {
-                        open: () => { },
-                        baseFileName: () => 'App.g.xlf',
-                        updateTarget: (unitId: string, value: string) => calls.push({ what: 'target', unitId, value }),
-                        updateState: (unitId: string, value: string) => calls.push({ what: 'state', unitId, value }),
-                    },
-                },
-            },
+            global: provideActions({
+                baseFileName: () => 'App.g.xlf',
+                updateTarget: (unitId, value) => calls.push({ what: 'target', unitId, value }),
+                updateState: (unitId, value) => calls.push({ what: 'state', unitId, value }),
+            }),
         });
         return { wrapper, calls };
     }
@@ -312,7 +308,7 @@ describe('the card in edit mode', () => {
         const short = card({ source: 'Ab', target: 'Cd' });
         const long = card({ source: 'A'.repeat(40), target: 'Cd' });
 
-        expect(short.wrapper.get('textarea').attributes('style')).toContain('min-inline-size: 24ch');
+        expect(short.wrapper.get('textarea').attributes('style')).toContain(`min-inline-size: ${FIELD_MIN_COLUMNS}ch`);
         expect(long.wrapper.get('textarea').attributes('style')).toContain('min-inline-size: 40ch');
         // A width, rather than a floor, is what would freeze the field at its old value.
         expect((short.wrapper.get('textarea').element as HTMLTextAreaElement).style.inlineSize).toBe('');
@@ -327,7 +323,7 @@ describe('the card in edit mode', () => {
     it('stops widening rather than becoming a wall of text', () => {
         const { wrapper } = card({ source: 'A'.repeat(400) });
 
-        expect(wrapper.get('textarea').attributes('style')).toContain('min-inline-size: 72ch');
+        expect(wrapper.get('textarea').attributes('style')).toContain(`min-inline-size: ${FIELD_MAX_COLUMNS}ch`);
     });
 
     it('can be folded down to one line, and no further', () => {
