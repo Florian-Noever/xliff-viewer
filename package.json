@@ -14,7 +14,7 @@
     },
     "homepage": "https://github.com/Florian-Noever/xliff-viewer",
     "qna": "https://github.com/Florian-Noever/xliff-viewer/issues",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "engines": {
         "vscode": "^1.134.0"
     },
