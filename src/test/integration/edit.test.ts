@@ -2,8 +2,12 @@ import * as vscode from 'vscode';
 
 import { XliffDocumentSession } from '../../extension/editor/documentSession';
 import { XliffDocumentView } from '../../extension/editor/documentView';
+import { XliffEditorProvider } from '../../extension/editor/xliffEditorProvider';
+import { parseXliff } from '../../extension/xliff/parser';
+import { iterateUnits } from '../../shared/model';
 import { ExtensionMessageType } from '../../shared/messages';
 import { assertEqual, assertOk } from './assertions';
+import { discard, openScratch, resetScratch, scratchUri } from './workspace';
 
 /**
  * Dirty state, undo and what lands on disk all come from VS Code rather than from us, so
@@ -28,50 +32,9 @@ const ORIGINAL = `<?xml version="1.0" encoding="utf-8"?>
 </xliff>
 `;
 
-function scratchFolder(): vscode.Uri {
-    const folders = vscode.workspace.workspaceFolders;
-    assertOk(folders && folders.length > 0, 'no workspace folder is open');
-    return vscode.Uri.joinPath(folders[0].uri, 'out', 'test', 'scratch');
-}
 
-const scratchUri = (name: string): vscode.Uri => vscode.Uri.joinPath(scratchFolder(), name);
-
-/** A file that is already gone needs no cleaning up; any other failure is the test's. */
-function rethrowUnlessMissing(error: unknown): void {
-    if (!(error instanceof vscode.FileSystemError && error.code === 'FileNotFound')) {
-        throw error;
-    }
-}
-
-/** An empty scratch folder, whatever an interrupted run left in it. */
-async function resetScratch(): Promise<void> {
-    try {
-        await vscode.workspace.fs.delete(scratchFolder(), { recursive: true, useTrash: false });
-    } catch (error) {
-        rethrowUnlessMissing(error);
-    }
-    await vscode.workspace.fs.createDirectory(scratchFolder());
-}
-
-async function openScratch(name: string): Promise<{ uri: vscode.Uri; document: vscode.TextDocument }> {
-    const uri = scratchUri(name);
-    await vscode.workspace.fs.writeFile(uri, new TextEncoder().encode(ORIGINAL));
-    const document = await vscode.workspace.openTextDocument(uri);
-    await vscode.window.showTextDocument(document, { preview: false });
-    return { uri, document };
-}
-
-async function discard(uri: vscode.Uri): Promise<void> {
-    await vscode.commands.executeCommand('workbench.action.closeAllEditors');
-    try {
-        await vscode.workspace.fs.delete(uri);
-    } catch (error) {
-        rethrowUnlessMissing(error);
-    }
-}
-
-/** A file with a BOM, CRLF throughout, and a target to edit. */
 const BOM = '\uFEFF';
+/** A file with a BOM, CRLF throughout, and a target to edit. */
 const CRLF_WITH_BOM = BOM + ORIGINAL.split('\n').join('\r\n');
 
 suite('what a real host does to a file we did not write by hand', () => {
@@ -118,35 +81,36 @@ suite('what a real host does to a file we did not write by hand', () => {
             const raw = new vscode.WorkspaceEdit();
             raw.replace(uri, new vscode.Range(document.positionAt(at), document.positionAt(at + 1)), 'X');
             await vscode.workspace.applyEdit(raw);
-            await document.save();
+            assertEqual(await document.save(), true, 'the document did not save');
 
             const saved = new TextDecoder().decode(await vscode.workspace.fs.readFile(uri));
-            assertEqual(saved.startsWith(BOM), false, 'the host now keeps the BOM, so the BOM warning on edit can be revisited');
+            assertEqual(saved.startsWith(BOM), false, 'the host kept the BOM on save');
         } finally {
             await discard(uri);
         }
     });
 
     test('writes a target needing re-encoding without mangling it', async () => {
-        const { uri, document } = await openScratch('edit-entities.xlf');
+        const typed = 'A & B < C > D "quoted"';
+        const { uri, document } = await openScratch('edit-entities.xlf', ORIGINAL);
         const session = new XliffDocumentSession(document);
         try {
-            await new XliffDocumentView(session, () => { }).updateTarget({ fileIndex: 0, unitId: UNIT }, 'A & B < C > D "quoted"');
+            await new XliffDocumentView(session, () => { }).updateTarget({ fileIndex: 0, unitId: UNIT }, typed);
             assertEqual(await document.save(), true, 'the document did not save');
 
             const saved = new TextDecoder().decode(await vscode.workspace.fs.readFile(uri));
             assertOk(saved.includes('<target state="translated">A &amp; B &lt; C &gt; D "quoted"</target>'), `unexpected: ${saved}`);
 
-            // And it survives being read back: the round trip is what makes it safe.
-            const reopened = await vscode.workspace.openTextDocument(uri);
-            assertOk(reopened.getText().includes('&amp;'), 'the entity did not survive');
+            // And it reads back as what was typed: the round trip is what makes it safe.
+            const [unit] = [...iterateUnits(parseXliff(saved))];
+            assertEqual(unit.target?.value, typed, 'the saved target does not read back as typed');
         } finally {
             session.dispose();
             await discard(uri);
         }
     });
 
-    test('leaves a file alone that is opened and closed without an edit', async () => {
+    test('leaves a file alone that is opened in this editor and closed without an edit', async () => {
         // A file whose formatting is not ours must not be reformatted merely by being
         // looked at.
         const odd = '<?xml version="1.0"?>\n<xliff version=\'1.2\'><file source-language=\'en-US\' '
@@ -154,12 +118,15 @@ suite('what a real host does to a file we did not write by hand', () => {
             + '<target state="translated">T</target></trans-unit></body></file></xliff>';
         const uri = scratchUri('edit-untouched.xlf');
         await vscode.workspace.fs.writeFile(uri, new TextEncoder().encode(odd));
+        await vscode.commands.executeCommand('vscode.openWith', uri, XliffEditorProvider.viewType);
         const document = await vscode.workspace.openTextDocument(uri);
         const session = new XliffDocumentSession(document);
 
         try {
             session.current();
-            assertEqual(document.isDirty, false, 'merely parsing a file must not dirty it');
+            await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+
+            assertEqual(document.isDirty, false, 'opening and parsing a file must not dirty it');
             assertEqual(new TextDecoder().decode(await vscode.workspace.fs.readFile(uri)), odd, 'the file changed on disk');
         } finally {
             session.dispose();
@@ -172,7 +139,7 @@ suite('editing a target, in a real host', () => {
     suiteSetup(resetScratch);
 
     test('marks the document dirty and changes only the target', async () => {
-        const { uri, document } = await openScratch('edit-dirty.xlf');
+        const { uri, document } = await openScratch('edit-dirty.xlf', ORIGINAL);
         const session = new XliffDocumentSession(document);
         try {
             await new XliffDocumentView(session, () => { }).updateTarget({ fileIndex: 0, unitId: UNIT }, 'EditedTranslation');
@@ -218,10 +185,12 @@ suite('editing a target, in a real host', () => {
     });
 
     test('undo restores the previous text exactly', async () => {
-        const { uri, document } = await openScratch('edit-undo.xlf');
+        const { uri, document } = await openScratch('edit-undo.xlf', ORIGINAL);
         const session = new XliffDocumentSession(document);
         try {
             await new XliffDocumentView(session, () => { }).updateTarget({ fileIndex: 0, unitId: UNIT }, 'EditedTranslation');
+            // Undo acts on the editor in front, so the document's is put there first.
+            await vscode.window.showTextDocument(document);
             await vscode.commands.executeCommand('undo');
 
             assertEqual(document.getText(), ORIGINAL, 'undo did not restore the original text');
@@ -232,7 +201,7 @@ suite('editing a target, in a real host', () => {
     });
 
     test('saving writes bytes that differ only inside the target', async () => {
-        const { uri, document } = await openScratch('edit-save.xlf');
+        const { uri, document } = await openScratch('edit-save.xlf', ORIGINAL);
         const session = new XliffDocumentSession(document);
         try {
             await new XliffDocumentView(session, () => { }).updateTarget({ fileIndex: 0, unitId: UNIT }, 'EditedTranslation');
@@ -247,7 +216,7 @@ suite('editing a target, in a real host', () => {
     });
 
     test('setting a target to what it already says leaves the document clean', async () => {
-        const { uri, document } = await openScratch('edit-noop.xlf');
+        const { uri, document } = await openScratch('edit-noop.xlf', ORIGINAL);
         const session = new XliffDocumentSession(document);
         try {
             await new XliffDocumentView(session, () => { }).updateTarget({ fileIndex: 0, unitId: UNIT }, 'ExampleTranslation');

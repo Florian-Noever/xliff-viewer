@@ -1,10 +1,9 @@
-import * as vscode from 'vscode';
-
 import { hashedIdOf } from '../fixtures/alApp';
 import { FIXTURE } from '../fixtures/corpus';
 import { BaseFileResolver } from '../../extension/services/baseFileResolver';
 import { findUnitOffset, revealAsText, revealInBaseFile } from '../../extension/services/navigation';
 import { assertEqual, assertOk } from './assertions';
+import { closeEverything, editorFor, fixtureUri } from './workspace';
 
 /**
  * Navigation against a workspace that **lacks** what it needs.
@@ -18,26 +17,11 @@ import { assertEqual, assertOk } from './assertions';
 
 const KNOWN_UNIT = hashedIdOf([{ type: 'Table', name: 'Contoso Setup' }, { type: 'Property', name: 'Caption' }]);
 
-function workspaceUri(...segments: string[]): vscode.Uri {
-    const folders = vscode.workspace.workspaceFolders;
-    assertOk(folders && folders.length > 0, 'no workspace folder is open');
-    return vscode.Uri.joinPath(folders[0].uri, ...segments);
-}
-
-function editorFor(uri: vscode.Uri): vscode.TextEditor | undefined {
-    const wanted = uri.toString();
-    return vscode.window.visibleTextEditors.find(editor => editor.document.uri.toString() === wanted);
-}
-
-async function closeEverything(): Promise<void> {
-    await vscode.commands.executeCommand('workbench.action.closeAllEditors');
-}
-
 suite('navigation, in whichever host this is', () => {
     test('resolves a sibling base file through workspace.fs', async () => {
         const resolver = new BaseFileResolver();
         try {
-            const resolved = await resolver.resolve(workspaceUri('src', 'test', 'fixtures', 'xliff', FIXTURE.german), false);
+            const resolved = await resolver.resolve(fixtureUri(FIXTURE.german), false);
 
             assertOk(resolved.uri, 'no base file resolved for Contoso App.de-DE.xlf');
             assertEqual(resolved.source, 'sibling .g.xlf', 'resolved by the wrong step');
@@ -50,7 +34,7 @@ suite('navigation, in whichever host this is', () => {
     test('a base file resolves to nothing rather than to itself', async () => {
         const resolver = new BaseFileResolver();
         try {
-            const resolved = await resolver.resolve(workspaceUri('src', 'test', 'fixtures', 'xliff', FIXTURE.base), true);
+            const resolved = await resolver.resolve(fixtureUri(FIXTURE.base), true);
             assertEqual(resolved.uri, undefined, 'a base file must not resolve a base file');
         } finally {
             resolver.dispose();
@@ -58,7 +42,7 @@ suite('navigation, in whichever host this is', () => {
     });
 
     test('reveals a unit in the base file, and says no for one it does not carry', async () => {
-        const base = workspaceUri('src', 'test', 'fixtures', 'xliff', FIXTURE.base);
+        const base = fixtureUri(FIXTURE.base);
 
         assertEqual(await revealInBaseFile(base, KNOWN_UNIT), true, 'the base file should carry this unit');
         assertEqual(await revealInBaseFile(base, 'Table 1 - Property 1'), false, 'an absent unit must report absent');
@@ -67,16 +51,14 @@ suite('navigation, in whichever host this is', () => {
     });
 
     test('says no, rather than throwing, for a base file that is not there', async () => {
-        const missing = workspaceUri('src', 'test', 'fixtures', 'xliff', 'Nothing.g.xlf');
+        const missing = fixtureUri('Nothing.g.xlf');
         assertEqual(await revealInBaseFile(missing, KNOWN_UNIT), false, 'a missing base file must be a "no"');
     });
 
-    test('opens the raw XML with the built-in editor, for every unit', async () => {
-        const uri = workspaceUri('src', 'test', 'fixtures', 'xliff', FIXTURE.german);
+    test('opens the raw XML with the built-in editor, at the unit\'s line', async () => {
+        const uri = fixtureUri(FIXTURE.german);
         await revealAsText(uri, KNOWN_UNIT);
 
-        // `toString()`, not `path`: on Windows the drive letter's case differs between a
-        // joined URI and the one the host hands back, and only `toString()` normalises it.
         const editor = editorFor(uri);
         assertOk(editor, 'the file did not open as text');
 
@@ -88,7 +70,7 @@ suite('navigation, in whichever host this is', () => {
     });
 
     test('opens the document itself when no unit is named — the error pane\'s escape hatch', async () => {
-        const uri = workspaceUri('src', 'test', 'fixtures', 'xliff', FIXTURE.minimal);
+        const uri = fixtureUri(FIXTURE.minimal);
         await revealAsText(uri);
 
         assertOk(editorFor(uri), 'the file did not open as text');

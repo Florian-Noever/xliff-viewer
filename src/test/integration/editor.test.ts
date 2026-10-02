@@ -4,6 +4,7 @@ import { FIXTURE } from '../fixtures/corpus';
 import { parseXliff } from '../../extension/xliff/parser';
 import { validateStructure } from '../../extension/xliff/validate';
 import { assertArrayEqual, assertContains, assertEqual, assertOk } from './assertions';
+import { fixtureUri, workspaceUri, XLIFF_FIXTURE_FOLDER } from './workspace';
 
 const VIEW_TYPE = 'xliff-viewer.editor';
 const EXTENSION_NAME = 'xliff-viewer';
@@ -22,17 +23,10 @@ function findExtension(): vscode.Extension<unknown> {
     return extension;
 }
 
-function fixtureFolder(): vscode.Uri {
-    const folders = vscode.workspace.workspaceFolders;
-    assertOk(folders && folders.length > 0, 'no workspace folder is open');
-    return vscode.Uri.joinPath(folders[0].uri, 'src', 'test', 'fixtures', 'xliff');
-}
-
-const fixtureUri = (name: string): vscode.Uri => vscode.Uri.joinPath(fixtureFolder(), name);
 
 /** Every fixture in the folder, so a new one is opened without being listed here. */
 async function fixtureNames(): Promise<string[]> {
-    const entries = await vscode.workspace.fs.readDirectory(fixtureFolder());
+    const entries = await vscode.workspace.fs.readDirectory(workspaceUri(...XLIFF_FIXTURE_FOLDER));
     const names = entries.filter(([name, type]) => type === vscode.FileType.File && name.endsWith('.xlf')).map(([name]) => name);
     assertOk(names.includes(FIXTURE.minimal), 'the fixture folder did not list its files');
     return names.sort();

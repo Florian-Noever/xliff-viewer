@@ -12,6 +12,7 @@ import { renderApp } from '../fixtures/alRender';
 import { AL_APPS, CONTOSO_MANIFEST, contosoApp, fabrikamApp, FIXTURE, NORTHWIND_MANIFEST } from '../fixtures/corpus';
 import { NORTHWIND } from '../fixtures/northwind';
 import { assertEqual, assertOk } from './assertions';
+import { closeEverything, editorFor, fixtureUri, workspaceUri } from './workspace';
 
 import type { SourceRequest } from '../../extension/services/goToSource';
 import type { AlApp, AppUnit } from '../fixtures/alApp';
@@ -25,14 +26,8 @@ import type { AppManifest } from '../fixtures/alRender';
  * AL sources committed under `src/test/fixtures/al/`.
  */
 
-function workspaceUri(...segments: string[]): vscode.Uri {
-    const folders = vscode.workspace.workspaceFolders;
-    assertOk(folders && folders.length > 0, 'no workspace folder is open');
-    return vscode.Uri.joinPath(folders[0].uri, ...segments);
-}
 
 const AL = ['src', 'test', 'fixtures', 'al'];
-const XLIFF = ['src', 'test', 'fixtures', 'xliff'];
 const alFilesOf = (app: AlApp, manifest: AppManifest) => renderApp(app, manifest).files.filter(file => file.path.endsWith('.al'));
 
 /** Locates a unit in its app's committed source and checks the place against the rendering. */
@@ -56,7 +51,7 @@ async function assertLocated(folderName: string, app: AlApp, manifest: AppManife
 
 function requestFor(fileName: string, unit: AppUnit): SourceRequest {
     return {
-        document: workspaceUri(...XLIFF, fileName),
+        document: fixtureUri(fileName),
         isBaseFile: false,
         unitId: unit.id,
         generatorNote: unit.generatorNote,
@@ -64,14 +59,6 @@ function requestFor(fileName: string, unit: AppUnit): SourceRequest {
     };
 }
 
-function editorFor(uri: vscode.Uri): vscode.TextEditor | undefined {
-    const wanted = uri.toString();
-    return vscode.window.visibleTextEditors.find(editor => editor.document.uri.toString() === wanted);
-}
-
-async function closeEverything(): Promise<void> {
-    await vscode.commands.executeCommand('workbench.action.closeAllEditors');
-}
 
 suite('AL source, in whichever host this is', () => {
     test('lists every committed AL file, by search or by walking', async () => {
@@ -136,7 +123,7 @@ suite('AL source, in whichever host this is', () => {
         const baseFiles = new BaseFileResolver();
         try {
             const outcome = await goToSource(requestFor(FIXTURE.german, unit), undefined, baseFiles);
-            const editor = editorFor(workspaceUri(...XLIFF, FIXTURE.base));
+            const editor = editorFor(fixtureUri(FIXTURE.base));
 
             assertEqual(outcome, SourceOutcome.baseFile, `${unit.id} was not shown in the base file`);
             assertOk(editor, 'the base file did not open as text');
@@ -154,8 +141,10 @@ suite('AL source, in whichever host this is', () => {
         const [unit] = appUnits(fabrikamApp());
         const alSources = new AlSourceIndexes();
         const baseFiles = new BaseFileResolver();
+        await closeEverything();
         try {
             assertEqual(await goToSource(requestFor(FIXTURE.large, unit), alSources, baseFiles), SourceOutcome.nowhere, `${unit.id} was found somewhere`);
+            assertEqual(vscode.window.visibleTextEditors.length, 0, 'something was opened');
         } finally {
             alSources.dispose();
             baseFiles.dispose();
