@@ -1,5 +1,8 @@
 /** How long one integration test may take, the same on both hosts. */
-export const TEST_TIMEOUT_MS = 20_000;
+const TEST_TIMEOUT_MS = 20_000;
+
+/** What both hosts configure Mocha with; each adds only what its own build needs. */
+export const MOCHA_OPTIONS = { ui: 'tdd', timeout: TEST_TIMEOUT_MS } as const;
 
 interface Runnable {
     run(callback: (failures: number) => void): unknown;
