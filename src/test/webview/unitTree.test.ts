@@ -331,8 +331,12 @@ describe('what a row click means', () => {
         await nextTick();
 
         await wrapper.findAll('.tree-row')[2].trigger('click');
-
         expect(view.focusedKey.value).toBe('Table 1');
+
+        await wrapper.get('[role="tree"]').trigger('keydown', { key: 'ArrowDown' });
+
+        // The click also closed Table 1, so the next row down is the next object.
+        expect(view.focusedKey.value).toBe('Table 2');
     });
 
     it('does nothing at all when a unit row is clicked', async () => {

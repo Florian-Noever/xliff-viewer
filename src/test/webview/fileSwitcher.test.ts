@@ -23,7 +23,7 @@ const GERMAN = fileDto({
 const FRENCH = fileDto({
     index: 1,
     targetLanguage: 'fr-FR',
-    original: 'Base App',
+    original: 'Extension App',
     tree: [nodeDto('Page 3', [nodeDto('Page 3 - Property 4'), nodeDto('Page 3 - Property 5')])],
     units: [
         unitDto('Page 3 - Property 4', { target: 'Client' }),
@@ -70,7 +70,7 @@ describe('a document with several', () => {
 
         expect(options.map(option => option.text())).toEqual([
             'Base App · en-US → de-DE',
-            'Base App · en-US → fr-FR',
+            'Extension App · en-US → fr-FR',
         ]);
     });
 
@@ -98,12 +98,14 @@ describe('a document with several', () => {
     it('changes the header, the summary and the tree when switched', async () => {
         const wrapper = mountApp(TWO_FILES);
         await nextTick();
+        expect(wrapper.get('.app-name').text()).toBe('Base App');
         expect(wrapper.get('.percent').text()).toBe('100 %');
         expect(wrapper.findAll('.tree-row')).toHaveLength(2);
 
         await wrapper.get('select').setValue('1');
         await nextTick();
 
+        expect(wrapper.get('.app-name').text()).toBe('Extension App');
         expect(wrapper.get('.languages').text()).toBe('en-US → fr-FR');
         expect(wrapper.get('.percent').text()).toBe('50 %');
         expect(wrapper.text()).toContain('2 units');

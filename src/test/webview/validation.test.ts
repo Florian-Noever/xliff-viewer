@@ -9,6 +9,7 @@ import UnitCard from '../../webview/components/UnitCard.vue';
 import { useValidation } from '../../webview/composables/useValidation';
 import { UNIT_ACTIONS_KEY } from '../../webview/unitActions';
 import { HintKind, hintsFor } from '../../webview/validation';
+import { FIXTURE } from '../fixtures/corpus';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { XliffState } from '../../shared/state';
 import { exampleUnitDto } from '../support/dtoBuilders';
@@ -159,13 +160,17 @@ describe('the example files, which the hints have to be quiet on', () => {
         expect(counts.sameAsSource).toBe(132);
     });
 
-    it('is quiet on a base file, which has no targets to be wrong about', () => {
-        const text = files[Object.keys(files).find(path => path.endsWith('.g.xlf')) ?? ''];
-        const dto = projectDocument(parseXliff(text), { uri: 'file:///base.g.xlf', fileName: 'base.g.xlf' });
+    it('is quiet on every base file, since none has a target to be wrong about', () => {
+        const bases = Object.entries(files).filter(([path]) => path.endsWith('.g.xlf'));
 
-        const flagged = dto.files.flatMap(file => file.units).filter(unitDto => hintsFor(unitDto, { ...TRANSLATING, sameAsSource: true }).length > 0);
+        expect(bases.map(([path]) => path.split('/').pop()).sort()).toEqual([FIXTURE.base, FIXTURE.namespacedBase].sort());
+        for (const [path, text] of bases) {
+            const name = path.split('/').pop() ?? path;
+            const dto = projectDocument(parseXliff(text), { uri: `file:///${name}`, fileName: name });
+            const flagged = dto.files.flatMap(file => file.units).filter(unitDto => hintsFor(unitDto, { ...TRANSLATING, sameAsSource: true }).length > 0);
 
-        expect(flagged).toEqual([]);
+            expect(flagged, name).toEqual([]);
+        }
     });
 });
 

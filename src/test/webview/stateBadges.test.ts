@@ -15,14 +15,19 @@ import type { StateSummary } from '../../shared/state';
 import type { Rollup } from '../../webview/composables/useRollup';
 
 describe('stateTone', () => {
+    const DONE: readonly XliffState[] = [XliffState.translated, XliffState.signedOff, XliffState.final];
+
     it('calls the three complete states done', () => {
-        for (const state of [XliffState.translated, XliffState.signedOff, XliffState.final]) {
+        for (const state of DONE) {
             expect(stateTone(state), state).toBe(StateTone.done);
         }
     });
 
-    it('calls everything the spec expects work on pending', () => {
-        for (const state of SPEC_STATES.filter(each => stateTone(each) !== StateTone.done)) {
+    it('calls everything else the spec defines pending', () => {
+        const pending = SPEC_STATES.filter(state => !DONE.includes(state));
+
+        expect(pending).toHaveLength(SPEC_STATES.length - DONE.length);
+        for (const state of pending) {
             expect(stateTone(state), state).toBe(StateTone.pending);
         }
     });

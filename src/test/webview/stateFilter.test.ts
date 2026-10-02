@@ -27,7 +27,7 @@ const TREE: AlNodeDto[] = [
 
 const UNITS = [
     unitDto('Table 1 - Property 2', { state: XliffState.translated, source: 'Kunde', target: 'Kunde' }),
-    unitDto('Table 1 - Property 3', { state: XliffState.empty, source: 'Vendor number', target: 'Vendor number' }),
+    unitDto('Table 1 - Property 3', { state: XliffState.empty, source: 'Vendor number', target: '' }),
     unitDto('Table 4 - Property 5', { state: XliffState.needsTranslation, source: 'Lieferant', target: 'Lieferant' }),
     unitDto('Table 4 - Property 6', { state: XliffState.translated, source: 'Kunde list', target: 'Kunde list' }),
 ];
@@ -36,6 +36,8 @@ const DOCUMENT = documentDto([fileDto({ tree: TREE, units: UNITS })]);
 
 const unitsById = new Map(UNITS.map(each => [each.id, each]));
 
+const scope = ref('file:///w/App.de-DE.xlf#0');
+
 function filterOnly(): StateFilter {
     return withSetup(() => useStateFilter({
         summary: computed(() => summariseUnits(UNITS)),
@@ -43,8 +45,6 @@ function filterOnly(): StateFilter {
         scope: computed(() => scope.value),
     })).result;
 }
-
-const scope = ref('file:///w/App.de-DE.xlf#0');
 
 const rowNames = (wrapper: ReturnType<typeof mountApp>): string[] =>
     wrapper.findAll('.tree-row .name, .tree-row .legend-name').map(row => row.text());

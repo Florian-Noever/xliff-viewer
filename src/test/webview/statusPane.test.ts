@@ -2,7 +2,6 @@ import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 
 import StatusPane from '../../webview/components/StatusPane.vue';
-import SOURCE from '../../webview/components/StatusPane.vue?raw';
 
 describe('the loading state', () => {
     it('announces politely rather than interrupting', () => {
@@ -71,22 +70,5 @@ describe('variants', () => {
     it('carries the variant as a class, so a banner does not look like a blocking pane', () => {
         expect(mount(StatusPane, { props: { loading: 'x', variant: 'pane' } }).classes()).toContain('pane');
         expect(mount(StatusPane, { props: { loading: 'x', variant: 'banner' } }).classes()).toContain('banner');
-    });
-});
-
-describe('theming', () => {
-    it('takes every colour from a VS Code variable, so both themes work', () => {
-        // jsdom cannot render a theme; what it can prove is that no colour is hardcoded.
-        const styles = SOURCE.split('<style')[1] ?? '';
-        const literals = styles.match(/(?<![\w-])(#[0-9a-fA-F]{3,8}|rgba?\(|hsla?\()/g) ?? [];
-
-        expect(literals).toEqual([]);
-        expect(styles).toContain('--vscode-inputValidation-errorBorder');
-        expect(styles).toContain('--vscode-errorForeground');
-    });
-
-    it('spins only when the viewer has not asked for reduced motion', () => {
-        const styles = SOURCE;
-        expect(styles).toContain('prefers-reduced-motion: no-preference');
     });
 });

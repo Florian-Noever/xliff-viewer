@@ -56,7 +56,7 @@ describe('what a screen reader is told', () => {
         }
     });
 
-    it('takes no element out of the tab order and puts none ahead of it', async () => {
+    it('makes the tree one tab stop, and puts nothing ahead of the natural order', async () => {
         const wrapper = await app();
         const values = [...wrapper.element.querySelectorAll('[tabindex]')].map(each => Number(each.getAttribute('tabindex')));
 
@@ -75,6 +75,12 @@ describe('what a screen reader is told', () => {
 
         expect(region.text()).toBe('');
         expect(region.classes()).toContain('sr-only');
+
+        const [edited] = DEV_DOCUMENT.files[0].units;
+        receive({ type: ExtensionMessageType.patchUnits, payload: { fileIndex: 0, units: [{ ...edited, target: 'EditedTranslation', state: 'needs-review-translation' }] } });
+        await flushPromises();
+
+        expect(region.text()).toBe('Target saved. State: needs review translation.');
     });
 });
 
@@ -97,14 +103,17 @@ describe('the tree, as ARIA sees it', () => {
         // The virtualiser renders a screenful. `aria-setsize` must still be the logical
         // count, or a reader is told "3 of 30" for a branch that has eight children.
         const wrapper = await app();
+        const tree = DEV_DOCUMENT.files[0].tree;
+        // Open by default: every type group, and every object in it. Below an object, its
+        // rows come in tree order, each one of a set of all that object's children.
+        const memberSets = tree.flatMap(group => group.children.flatMap(object => object.children.map(() => object.children.length)));
+        const openRows = tree.length + tree.reduce((sum, group) => sum + group.children.length, 0) + memberSets.length;
         const items = wrapper.findAll('[role="treeitem"]');
-        const rendered = items.length;
-
         const deepest = items.filter(item => item.attributes('aria-level') === '3');
-        const sets = new Set(deepest.map(item => item.attributes('aria-setsize')));
 
-        expect(sets.has(String(rendered))).toBe(false);
-        expect([...sets].every(size => Number(size) > 0)).toBe(true);
+        expect(items.length).toBeLessThan(openRows);
+        expect(deepest.length).toBeGreaterThan(0);
+        expect(deepest.map(item => Number(item.attributes('aria-setsize')))).toEqual(memberSets.slice(0, deepest.length));
     });
 
     it('marks a container open or closed, and says nothing of the sort about a leaf', async () => {

@@ -38,8 +38,7 @@ describe('the file header', () => {
         await nextTick();
 
         expect(wrapper.text()).toContain('Contoso-Base.de-DE.xlf');
-        expect(wrapper.text()).toContain('en-US');
-        expect(wrapper.text()).toContain('de-DE');
+        expect(wrapper.get('.languages').text()).toBe('en-US → de-DE');
         expect(wrapper.text()).toContain('2 units');
     });
 

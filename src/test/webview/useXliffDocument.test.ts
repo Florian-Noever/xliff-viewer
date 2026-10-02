@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { nextTick } from 'vue';
 
 import { useXliffDocument } from '../../webview/composables/useXliffDocument';
 import { ExtensionMessageType, WebviewMessageType } from '../../shared/messages';
@@ -53,14 +52,13 @@ describe('mounting', () => {
         expect(state.settings.value).toEqual(DEFAULT_WEBVIEW_SETTINGS);
     });
 
-    it('stops listening once unmounted', async () => {
-        const { wrapper } = withSetup(useXliffDocument, state => state.document.value?.fileName ?? '');
+    it('stops listening once unmounted', () => {
+        const { result: state, wrapper } = withSetup(useXliffDocument);
 
         wrapper.unmount();
         sendDocument();
-        await nextTick();
 
-        expect(wrapper.text()).toBe('');
+        expect(state.document.value).toBeUndefined();
     });
 });
 
