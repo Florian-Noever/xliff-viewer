@@ -46,7 +46,7 @@ export class BaseFileResolver implements vscode.Disposable {
                     this.invalidate();
                 }
             }),
-            // XLIFF Sync's workspace value starts to count.
+            // Trust lets XLIFF Sync's workspace value count.
             vscode.workspace.onDidGrantWorkspaceTrust(() => {
                 this.invalidate();
             }),
@@ -105,8 +105,6 @@ export class BaseFileResolver implements vscode.Disposable {
             return { uri: fromSync, source: BaseFileSource.xliffSync };
         }
 
-        // NAB AL Tools has no base-file setting to read: it finds the generated file by the
-        // same conventions as the steps below.
         const folder = parentOf(uri);
         const siblings = await readFolder(folder);
 
@@ -136,8 +134,7 @@ export class BaseFileResolver implements vscode.Disposable {
             return direct;
         }
 
-        // Not a path, so treat it as a glob — `Translations/*.g.xlf` is a reasonable thing
-        // for someone to have typed.
+        // Not a path, so a glob such as `Translations/*.g.xlf`.
         return findFirst(configured);
     }
 
@@ -160,7 +157,7 @@ export class BaseFileResolver implements vscode.Disposable {
         }
 
         // Its default is the suffix `.g.xlf`, and it stores a bare file name once the user
-        // answers its prompt. Either way, match it against the folder rather than give up.
+        // answers its prompt. Either way, it is matched against the folder.
         const folder = parentOf(uri);
         const names = await readFolder(folder);
         const match = names.find(name => name === configured)
@@ -201,7 +198,7 @@ async function firstExisting(candidates: readonly vscode.Uri[]): Promise<vscode.
             await vscode.workspace.fs.stat(candidate);
             return candidate;
         } catch {
-            // Not there. The next candidate, or none — either way not a failure.
+            // Not there; the next candidate may be.
         }
     }
     return undefined;

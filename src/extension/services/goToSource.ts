@@ -75,7 +75,7 @@ async function openDeclaration(request: SourceRequest, alSources: AlSourceIndexe
                 return undefined;
         }
     } catch (error: unknown) {
-        // The AL source is the better answer, not the only one: the base file still is.
+        // A failed search still leaves the base file to fall back on.
         Logger.warn(`Looking for the AL source of ${request.unitId} failed: ${error instanceof Error ? error.message : 'unknown error'}`);
         return undefined;
     } finally {

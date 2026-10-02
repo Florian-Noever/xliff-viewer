@@ -19,9 +19,8 @@ const OPEN_WITH_COMMAND = 'vscode.openWith';
  * Where a unit's `<trans-unit>` starts, as an offset into the text, or undefined when the
  * text does not contain it.
  *
- * Searches the document text rather than remembering an offset: there are none in the
- * model, and one remembered here would be wrong after the first edit. It is O(document)
- * per call — fine for a click, but never to be called while rendering.
+ * Searches the document text, since the model holds no offsets. O(document) per call: for a
+ * click, never while rendering.
  */
 export function findUnitOffset(text: string, unitId: string): number | undefined {
     // Anchored to the element: an id also appears inside the Xliff Generator note of other
@@ -52,8 +51,7 @@ export async function revealAsText(uri: vscode.Uri, unitId?: string): Promise<vo
 
     const editor = editorFor(uri);
     if (editor === undefined) {
-        // The file is open, which is most of what was asked for. Not being able to scroll
-        // it is not worth an error the user has to dismiss.
+        // The file is open; failing to scroll to the unit is not worth an error.
         Logger.warn(`Opened ${uri.path} as text but could not find its editor to reveal ${unitId}.`);
         return;
     }
@@ -70,11 +68,8 @@ export async function revealAsText(uri: vscode.Uri, unitId?: string): Promise<vo
 }
 
 /**
- * Opens the resolved base file at the same unit.
- *
- * As text, not in this viewer: revealing a unit inside our own tree needs a message the
- * protocol does not have, and this escape hatch is meant to reach the XML anyway.
- * Returns false when the base file does not contain the id, so the caller can say so.
+ * Opens the resolved base file as text, at the same unit. Returns false when the base file
+ * does not contain the id, so the caller can say so.
  */
 export async function revealInBaseFile(baseUri: vscode.Uri, unitId: string): Promise<boolean> {
     let text: string;
