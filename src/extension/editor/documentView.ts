@@ -38,10 +38,8 @@ export interface DocumentServices {
 
 /**
  * One webview's view of a document session: the same parsed document, posted to one panel.
- *
- * Separate from the session because the two answer different questions. The session knows
- * *what the document is*; a view knows *what this panel has already been told*, which is
- * what decides whether a message needs to carry the document again.
+ * The session knows what the document is; a view knows what its panel has already been told,
+ * which decides whether a message carries the document again.
  */
 export class XliffDocumentView implements DocumentView, vscode.Disposable {
     private readonly session: XliffDocumentSession;
@@ -63,9 +61,8 @@ export class XliffDocumentView implements DocumentView, vscode.Disposable {
             ? undefined
             : new BasePairing(session, post, services.baseFiles, services.baseIndex);
 
-        // Whether there is AL source to go to is a fact about the app, not the document: it is
-        // told once per `ready`, and again only when the app's AL files come or go. Holding the
-        // lease keeps the app's index alive while this panel is open.
+        // AL source is a fact about the app: told once per `ready`, and again when its AL files
+        // come or go. The lease keeps the app's index alive while this panel is open.
         this.alLease = services.alSources?.acquire(session.uri);
         void this.alLease?.then((lease) => {
             if (lease === undefined) {
@@ -103,9 +100,8 @@ export class XliffDocumentView implements DocumentView, vscode.Disposable {
     /**
      * What the panel is told when the document changes.
      *
-     * A re-parse re-announces the base file and the pairing markers too, because a
-     * `setDocument` replaces the payload they were attached to, and the view would otherwise
-     * lose its base file on the first keystroke. Our own edit is one unit and says only that.
+     * A re-parse re-announces the base file and the pairing markers, since `setDocument`
+     * replaces the payload they were attached to. Our own edit is one unit and says only that.
      */
     public apply(change: SessionChange): void {
         if (change.kind === 'patched') {
@@ -243,11 +239,8 @@ function postInitialState(state: SessionState, session: XliffDocumentSession, po
 }
 
 /**
- * A later state, for a panel that is already showing this document.
- *
- * **A failure sends only the failure.** Re-sending the last good document here would put
- * the whole document on the wire for every keystroke that leaves the file unparseable, to
- * redeliver what the panel is already displaying.
+ * A later state, for a panel that is already showing this document. **A failure sends only
+ * the failure**: the panel already shows the last good document.
  */
 function postUpdate(state: SessionState, post: (message: ExtensionMessage) => void): void {
     post(state.kind === 'document'

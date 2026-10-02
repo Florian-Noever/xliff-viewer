@@ -3,11 +3,8 @@ import { XliffDocumentSession } from './documentSession';
 import type * as vscode from 'vscode';
 
 /**
- * One session per document URI, shared by every editor showing it.
- *
- * Reference-counted rather than keyed on the view: two editors on the same
- * `TextDocument` must not parse it twice per change, and the session must outlive the
- * first of them being closed.
+ * One session per document URI, shared by every editor showing it. Reference-counted, so the
+ * session outlives the first of those editors to close.
  */
 export class DocumentSessionRegistry {
     private readonly sessions = new Map<string, { readonly session: XliffDocumentSession; views: number }>();

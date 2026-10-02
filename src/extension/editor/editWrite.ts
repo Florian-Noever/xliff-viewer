@@ -34,9 +34,8 @@ export function stateAfterEdit(session: XliffDocumentSession, value: string, cho
 /**
  * The one path that changes a file.
  *
- * Every refusal says why, leaves the model as the file is, and calls `onRefused`, whose job
- * is to put the saved value back on screen: a viewer that silently keeps what was typed is
- * worse than one that explains itself.
+ * Every refusal says why, leaves the model as the file is, and calls `onRefused`, which puts
+ * the saved value back on screen.
  */
 export async function writeEdit(
     session: XliffDocumentSession,
@@ -88,8 +87,7 @@ export async function writeEdit(
         return;
     }
 
-    // Said after the first edit rather than on open: a reader who never edits has nothing
-    // to be warned about, and this is only true of a file that gets saved.
+    // Only an edited file is saved, so the warning waits for the first edit.
     if (session.claimBomWarning()) {
         void vscode.window.showWarningMessage(
             'This file begins with a UTF-8 byte-order mark, which VS Code does not write back when it saves. '

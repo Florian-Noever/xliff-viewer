@@ -46,8 +46,7 @@ export class BasePairing implements vscode.Disposable {
         this.baseFiles = baseFiles;
         this.baseIndex = baseIndex;
 
-        // The base file is somebody else's artefact: the AL compiler rewrites it while this
-        // document stays untouched, and the markers on screen were computed from the old one.
+        // The compiler rewrites the base file while this document stays as it is.
         this.subscription = baseIndex?.onDidChange(() => {
             this.announce();
         });
@@ -106,8 +105,7 @@ export class BasePairing implements vscode.Disposable {
                 : { uri: resolved.uri.toString(), fileName: fileNameOf(resolved.uri) },
         });
 
-        // No base file is an answer too: whatever was marked against the old one is no longer
-        // something we can claim, so the markers come off.
+        // With no base file, the markers set against the old one come off.
         const sources = resolved.uri === undefined || this.baseIndex === undefined
             ? new Map<string, string>()
             : await this.baseIndex.sourcesOf(resolved.uri);
@@ -120,16 +118,11 @@ export class BasePairing implements vscode.Disposable {
     }
 
     /**
-     * Marks the units the base file no longer agrees with, and unmarks the ones it now does.
+     * Marks the units the base file no longer agrees with, and unmarks the ones it now does,
+     * in a `patchUnits` of only the units that changed.
      *
-     * Sent as `patchUnits` rather than a fresh `setDocument`: a language file in step with its
-     * base produces nothing at all, and one that has drifted produces only the units that
-     * drifted.
-     *
-     * An **empty** `sources` map means there is nothing to compare against — no base file, or
-     * one that could not be read. That unmarks rather than freezing what was marked before:
-     * `compareToBase` against nothing would call every unit orphaned, which is the one wrong
-     * answer worth guarding against.
+     * An **empty** `sources` map — no base file, or one that could not be read — unmarks
+     * everything: against nothing, every unit would look orphaned.
      */
     private announceStaleUnits(sources: ReadonlyMap<string, string>, dto: XliffDocumentDto): void {
         for (const file of dto.files) {

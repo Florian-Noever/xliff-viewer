@@ -15,10 +15,8 @@ import type { UnitReference, XliffDocument } from '../../shared/model';
 
 /**
  * One session per open document, owning the parsed model and the payload built from it.
- *
- * Per **document**, not per editor: VS Code allows two editors on one `TextDocument`, and
- * a session each would parse the same text twice on every keystroke. Views attach and
- * detach; the last one out disposes the session.
+ * Two editors on one `TextDocument` share it: views attach and detach, and the last one out
+ * disposes the session.
  */
 
 /** Long enough to swallow a burst of typing, short enough that a paste feels immediate. */
@@ -33,25 +31,16 @@ export type SessionState =
         readonly model: XliffDocument;
         readonly dto: XliffDocumentDto;
         /**
-         * The exact text the model was parsed from.
-         *
-         * Carried with the model rather than fetched separately, because the writer trims
-         * its edit against whatever text it is handed: give it text the model did not come
-         * from and the edit lands at the wrong offsets and eats content. The writer cannot
-         * detect this for itself — a legitimately non-AL-formatted file also fails a "does
-         * this re-serialise to that" check.
+         * The exact text the model was parsed from, which the writer trims its edit against:
+         * any other text puts the edit at the wrong offsets.
          */
         readonly text: string;
     }
     | { readonly kind: 'error'; readonly error: ErrorPayload };
 
 /**
- * What a view is told when the document changes.
- *
- * Two kinds, because the answer to "the user typed in another editor" and "we just wrote
- * the target they were editing" are not the same message. The first is a new document; the
- * second is one unit, and re-sending the document for it is what costs the view its focus,
- * its scroll and its expansion.
+ * What a view is told when the document changes: a new parse after any other change, or the
+ * one unit an edit of this session changed, which keeps the view's focus, scroll and expansion.
  */
 export type SessionChange =
     | { readonly kind: 'parsed'; readonly state: SessionState }
@@ -60,12 +49,9 @@ export type SessionChange =
 type StateListener = (change: SessionChange) => void;
 
 /**
- * An edit this session asked for and has not yet seen come back.
- *
- * Recognised by the **whole text** the document holds once it has landed. Not by the change
- * spans: VS Code may report one replacement as several smaller changes. Never a timer and
- * never a bare boolean: either would swallow an edit that somebody else made in the same
- * tick, which is precisely the event that must not be lost.
+ * An edit this session asked for and has not yet seen come back. Recognised by the **whole
+ * text** the document holds once it has landed: VS Code may report one replacement as
+ * several smaller changes.
  */
 interface PendingEdit extends UnitReference {
     readonly expectedText: string;
@@ -122,9 +108,8 @@ export class XliffDocumentSession {
      * True the first time this document is edited while the editor will drop its BOM, and
      * false ever after.
      *
-     * Per **document** rather than per view, because two editors on one file are one file:
-     * the reader should hear this once, not once each. `TextDocument.encoding` is readonly,
-     * so saying so is the whole of what an extension can do about it.
+     * Per document, so two editors on one file warn once. `TextDocument.encoding` is
+     * readonly, so a warning is all an extension can do.
      */
     public claimBomWarning(): boolean {
         if (this.bomWarned || this.textDocument.encoding !== BOM_ENCODING) {
@@ -137,9 +122,9 @@ export class XliffDocumentSession {
     /**
      * Turns the writer's character range into a `WorkspaceEdit` and applies it.
      *
-     * **Never `workspace.fs`**: going through the editor is what gives the edit dirty
-     * state, undo, redo, save and hot exit for free. `positionAt` reads the document's
-     * current text, so the offsets are converted here and now rather than carried around.
+     * **Never `workspace.fs`**: going through the editor gives the edit dirty state, undo,
+     * redo, save and hot exit. `positionAt` reads the document's current text, so the offsets
+     * are converted here.
      */
     public async applyEdit(edit: TextEditRange, unit: UnitReference): Promise<boolean> {
         // Recorded before the edit is applied, because the change event can arrive during
@@ -207,8 +192,7 @@ export class XliffDocumentSession {
      * Consumes the pending edit when this event **is** that edit, and answers with a patch.
      *
      * The model was already mutated by the writer, so all that is stale is the text it was
-     * parsed from and the one unit in the payload. Both are corrected here rather than by
-     * re-parsing the whole document to learn what we already know.
+     * parsed from and the one unit in the payload, which are both corrected here.
      */
     private absorbOwnEdit(): boolean {
         const pending = this.pending;
