@@ -28,7 +28,6 @@ function firstDifference(a: string, b: string): string {
 }
 
 describe('round-trip invariant', () => {
-    // Asserted per file so a failure names the file.
     it.each(FIXTURE_NAMES)('%s is byte-identical after parse → serialise', (name) => {
         const original = readFixture(name);
         const rebuilt = roundTrip(original);

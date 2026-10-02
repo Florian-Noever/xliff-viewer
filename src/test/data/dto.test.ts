@@ -209,8 +209,7 @@ describe('several <file> elements', () => {
     });
 
     it('does not lose a unit when two files share an id', () => {
-        // XLIFF scopes ids to their <file>; a single document-wide record would drop one
-        // of these silently.
+        // XLIFF scopes ids to their <file>, so both units are kept.
         const dto = projectXml(twoFiles('Table 1 - Property 2'));
         const [first, second] = dto.files;
 
@@ -354,7 +353,6 @@ describe('budget', () => {
     it('serialises the large file inside the payload budget', () => {
         const bytes = Buffer.byteLength(JSON.stringify(fixtureProjection(FIXTURE.large)), 'utf8');
 
-        // A StateSummary on every node, or the generator note, would push the payload past this.
         expect(bytes).toBeLessThan(1250 * 1024);
     });
 

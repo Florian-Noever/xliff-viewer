@@ -236,12 +236,17 @@ describe('the index', () => {
         const index = buildSearchIndex(TREE, UNITS);
         const leaf = index.get('Table 1 - Field 2 - Property 3') ?? '';
 
-        expect(leaf).toContain('table 1 - field 2 - property 3'); // the id
-        expect(leaf).toContain('property'); // the type
-        expect(leaf).toContain('caption'); // the node name
-        expect(leaf).toContain('contoso method name'); // source
-        expect(leaf).toContain('contoso methoden name'); // target
-        expect(leaf).toContain('de-de=contoso methoden name'); // the note
+        const fields = {
+            id: 'table 1 - field 2 - property 3',
+            type: 'property',
+            name: 'caption',
+            source: 'contoso method name',
+            target: 'contoso methoden name',
+            note: 'de-de=contoso methoden name',
+        };
+        for (const [field, text] of Object.entries(fields)) {
+            expect(leaf, field).toContain(text);
+        }
     });
 
     it('indexes containers as well as units', () => {

@@ -340,7 +340,7 @@ export const DIRECTIVES = `table 50110 "Contoso Legacy"
 }
 `;
 
-/** Two objects in one file, lowercase keywords, no namespace. */
+/** Two objects in one file, mixed-case keywords, no namespace. */
 export const TWO_OBJECTS = `TABLE 50111 Plain { fields { FIELD(1; Code; Code[20]) { CAPTION = 'Code'; } } }
 codeunit 50112 Helper { procedure Help() begin end; }
 `;

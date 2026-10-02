@@ -13,8 +13,8 @@ import { NORTHWIND } from '../fixtures/northwind';
 import type { AlNodeDto, TransUnitDto } from '../../shared/dto';
 import type { UnitState } from '../../shared/state';
 
-// Read the way `App.test.ts` reads sources: this project runs under jsdom, where
-// `import.meta.url` is not a file URL and `node:fs` has nothing to resolve against.
+// Read with a glob: under jsdom, `fileURLToPath(new URL(…))` fails on jsdom's own `URL`,
+// and the webview tsconfig has no node types.
 const files: Record<string, string> = import.meta.glob('../fixtures/xliff/Northwind App.de-DE.xlf', { query: '?raw', import: 'default', eager: true });
 const [text] = Object.values(files);
 const [file] = projectDocument(parseXliff(text), { uri: `file:///${FIXTURE.namespacedGerman}`, fileName: FIXTURE.namespacedGerman }).files;

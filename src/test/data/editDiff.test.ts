@@ -22,10 +22,8 @@ function apply(text: string, edit: { start: number; end: number; newText: string
 /**
  * How many lines the edit replaces, and how many it writes in their place.
  *
- * A target is usually one line, but nothing says it has to be: `xml:space="preserve"` makes
- * a line break inside a target legal, and edit mode lets a translator type one. Counting
- * lines against a fixed 1 would make this assertion about the fixture rather than about the
- * writer.
+ * A target is usually one line, but `xml:space="preserve"` makes a line break inside a
+ * target legal, and edit mode lets a translator type one.
  */
 function span(original: string, edit: { start: number; end: number; newText: string }): { at: number; before: number; after: number } {
     const at = original.slice(0, edit.start).split(/\r?\n/).length - 1;

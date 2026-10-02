@@ -43,7 +43,7 @@ beforeAll(async () => {
 }, 60_000);
 
 describe('what the VSIX contains', () => {
-    it('is exactly the eleven files the extension needs, and nothing else', () => {
+    it('is exactly the files the extension needs, and nothing else', () => {
         expect([...files]).toEqual(SHIPS);
     });
 
@@ -57,7 +57,7 @@ describe('what the VSIX contains', () => {
 
     it('carries no source, no fixture and no example file', () => {
         // `src/` would ship the whole project, fixtures included, to every user. `Examples/`
-        // holds files for trying the extension by hand, which are nobody else's business.
+        // is a local, git-ignored folder; nothing in it may ship.
         expect(files.filter(file => file.startsWith('src/'))).toEqual([]);
         expect(files.filter(file => file.startsWith('Examples/'))).toEqual([]);
         expect(files.filter(file => file.startsWith('docs/'))).toEqual([]);

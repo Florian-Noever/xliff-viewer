@@ -6,9 +6,7 @@ import { XliffState } from '../../shared/state';
 import { buildDevDocument, buildDevNamespacedDocument, DEV_FIXTURE_ROOTS } from '../fixtures/devFixture';
 
 describe('the dev-server fixture', () => {
-    it('is exactly what the corpus produces, not invented data', () => {
-        // Without this the fixture decays: someone tweaks it to make a screenshot look
-        // right and the dev server stops showing what the extension actually sends.
+    it('is exactly what the corpus produces, not hand-edited', () => {
         expect(DEV_DOCUMENT).toEqual(buildDevDocument());
     });
 
@@ -54,12 +52,11 @@ describe('the dev-server fixture', () => {
         expect(shared[1].name).toBe(shared[0].name);
     });
 
-    it('is four levels deep somewhere, so nesting is visible', () => {
+    it('is five levels deep somewhere, its object-type level included, so nesting is visible', () => {
         interface Nested { readonly children: readonly Nested[] }
         const depth = (nodes: readonly Nested[], level = 0): number =>
             nodes.length === 0 ? level : Math.max(...nodes.map((node: Nested) => depth(node.children, level + 1)));
 
-        // Five with the object-type level above them.
         expect(depth(DEV_DOCUMENT.files[0].tree)).toBe(5);
     });
 

@@ -85,7 +85,6 @@ describe('the file header', () => {
     });
 
     it('shows the file-level percentage', async () => {
-        // One translated of two translatable is 50 %.
         const wrapper = mountApp(DOCUMENT);
         await nextTick();
         expect(wrapper.get('.percent').text()).toBe('50 %');

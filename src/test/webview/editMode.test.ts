@@ -306,7 +306,6 @@ describe('the card in edit mode', () => {
 
         expect(short.wrapper.get('textarea').attributes('style')).toContain(`min-inline-size: ${FIELD_MIN_COLUMNS}ch`);
         expect(long.wrapper.get('textarea').attributes('style')).toContain('min-inline-size: 40ch');
-        // A width, rather than a floor, is what would freeze the field at its old value.
         expect((short.wrapper.get('textarea').element as HTMLTextAreaElement).style.inlineSize).toBe('');
     });
 

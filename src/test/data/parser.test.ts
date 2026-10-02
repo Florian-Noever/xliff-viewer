@@ -43,7 +43,6 @@ describe('document format', () => {
         expect(format.hasBom).toBe(false);
         expect(format.eol).toBe('\n');
         expect(format.hasTrailingNewline).toBe(false);
-        // The declaration is kept verbatim, including the case of its encoding name.
         expect(format.declaration).toBe('<?xml version="1.0" encoding="UTF-8"?>');
     });
 });

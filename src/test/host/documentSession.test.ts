@@ -180,8 +180,7 @@ describe('a document that will not parse', () => {
 
 describe('what a failing re-parse puts on the wire', () => {
     it('sends only the failure to a view that already has the document', () => {
-        // The panel already displays the last good document; re-sending it would cost a
-        // whole DTO per failing keystroke burst.
+        // The panel already shows the last good document.
         vi.useFakeTimers();
         const document = openDocument(FIXTURE.large);
         const session = sessionFor(document);

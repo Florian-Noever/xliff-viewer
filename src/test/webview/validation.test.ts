@@ -127,12 +127,12 @@ describe('the same-as-source check', () => {
     });
 });
 
-describe('the example files, which the hints have to be quiet on', () => {
-    // Read the way `App.test.ts` reads sources: this project runs under jsdom, where
-    // `import.meta.url` is not a file URL and `node:fs` has nothing to resolve against.
+describe('the fixture files, which the hints have to be quiet on', () => {
+    // Read with a glob: under jsdom, `fileURLToPath(new URL(…))` fails on jsdom's own `URL`,
+    // and the webview tsconfig has no node types.
     const files: Record<string, string> = import.meta.glob('../fixtures/xliff/*.xlf', { query: '?raw', import: 'default', eager: true });
 
-    it('finds exactly one placeholder mistake across the example files, and no false maxwidth', () => {
+    it('finds exactly one placeholder mistake across the fixtures, and no false maxwidth', () => {
         // Run through the real parser and projection, not a regex over the text. The one
         // `maxwidth` in these fixtures has a target that fits inside it.
         const counts: Record<string, number> = { placeholders: 0, maxwidth: 0, sameAsSource: 0, statedButEmpty: 0 };

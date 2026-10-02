@@ -39,7 +39,6 @@ export const DEV_FIXTURE_ROOTS: readonly string[] = [
     'PageExtension 3965510573',
 ];
 
-/** True for a unit the fixture includes. */
 export function isDevFixtureUnit(id: string): boolean {
     return DEV_FIXTURE_ROOTS.includes(splitUnitId(id)[0]);
 }

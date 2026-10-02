@@ -81,7 +81,7 @@ describe.each(Object.keys(CASES))('the AL source of %s', (name) => {
     });
 });
 
-describe('the committed AL sources cover what real source does', () => {
+describe('the committed AL sources mix the forms the scanner has to read', () => {
     const files = [...renderedOf('Contoso App').files, ...renderedOf('Northwind App').files].filter(file => file.path.endsWith('.al'));
     const count = (pattern: RegExp) => files.filter(file => pattern.test(file.text)).length;
     const expectations = [...renderedOf('Contoso App').expected.values(), ...renderedOf('Northwind App').expected.values()];

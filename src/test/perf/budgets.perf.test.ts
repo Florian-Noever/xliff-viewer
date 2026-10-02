@@ -73,7 +73,7 @@ function fastest(attempts: number, run: () => void): number {
     return best;
 }
 
-describe('performance budgets on the large example file', () => {
+describe('performance budgets on the large fixture file', () => {
     it(`validates in under ${BUDGET_MS.validate} ms`, () => {
         expect(fastest(5, () => validateXml(text))).toBeLessThan(BUDGET_MS.validate);
     });

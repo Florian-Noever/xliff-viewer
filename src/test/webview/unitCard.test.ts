@@ -229,8 +229,6 @@ describe('the labelled box', () => {
     });
 
     it('renders one translation row, because XLIFF 1.2 allows one target', () => {
-        // `<target>` is singular in the format, `<alt-trans>` is not modelled, and a second
-        // language is a second file. The list is the seam for showing those files side by side.
         expect(boxed({}, { targetLanguage: 'de-DE' }).findAll('.strings .target')).toHaveLength(1);
     });
 });

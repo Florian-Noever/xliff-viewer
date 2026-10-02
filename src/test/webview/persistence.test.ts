@@ -12,10 +12,7 @@ import { mountApp, receive } from './support/mountApp';
 
 import type { PersistedView } from '../../webview/composables/usePersistedState';
 
-/**
- * Without `retainContextWhenHidden`, hiding a tab destroys the webview, which is why every
- * test here **unmounts** the app before checking.
- */
+/** Hiding a tab destroys the webview, so the tests of what a hidden tab keeps unmount the app first. */
 
 type Mounted = ReturnType<typeof mountApp>;
 

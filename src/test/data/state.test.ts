@@ -192,7 +192,6 @@ describe('the corpus, summarised', () => {
 
         expect(summary.byState[XliffState.needsTranslation]).toBe(1);
         expect(summary.byState[XliffState.needsAdaptation]).toBe(1);
-        // needs-translation outranks needs-adaptation as the worse of the two.
         expect(summary.worst).toBe(XliffState.needsTranslation);
     });
 
