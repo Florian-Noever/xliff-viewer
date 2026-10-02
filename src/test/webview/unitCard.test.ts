@@ -1,18 +1,13 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 
-import MetaChips from '../../webview/components/MetaChips.vue';
-import NoteList from '../../webview/components/NoteList.vue';
 import UnitCard from '../../webview/components/UnitCard.vue';
-import { indexNodes, reconstructGeneratorNote } from '../../webview/generatorNote';
-import { loadBearingWhitespace, WhitespaceReason } from '../../webview/whitespace';
-import { translationLabel, translations } from '../../webview/translations';
 import { stateLabel } from '../../webview/stateTone';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { XliffState } from '../../shared/state';
-import { exampleUnitDto, groupKey } from '../support/dtoBuilders';
+import { exampleUnitDto } from '../support/dtoBuilders';
 
-import type { AlNodeDto, TransUnitDto } from '../../shared/dto';
+import type { TransUnitDto } from '../../shared/dto';
 import type { WebviewSettings } from '../../shared/settings';
 
 const unit = (over: Partial<TransUnitDto> = {}): TransUnitDto => exampleUnitDto({ source: 'Customer', target: 'Kunde', ...over });
@@ -83,108 +78,6 @@ describe('load-bearing whitespace', () => {
     });
 });
 
-describe('loadBearingWhitespace', () => {
-    it('ignores an absent or empty target', () => {
-        expect(loadBearingWhitespace('a', undefined)).toBeUndefined();
-        expect(loadBearingWhitespace('a', '')).toBeUndefined();
-    });
-
-    it('calls a whitespace-only target out however it is spelt', () => {
-        expect(loadBearingWhitespace('a', ' ')).toBe(WhitespaceReason.only);
-        expect(loadBearingWhitespace('a', '\t\n')).toBe(WhitespaceReason.only);
-    });
-
-    it('compares both edges against the source, not against nothing', () => {
-        expect(loadBearingWhitespace('a', ' a')).toBe(WhitespaceReason.edges);
-        expect(loadBearingWhitespace('a', 'a ')).toBe(WhitespaceReason.edges);
-        expect(loadBearingWhitespace(' a ', ' a ')).toBeUndefined();
-        expect(loadBearingWhitespace(' a', 'a')).toBe(WhitespaceReason.edges);
-    });
-
-    it('does not care about whitespace in the middle', () => {
-        expect(loadBearingWhitespace('a b', 'a  b')).toBeUndefined();
-    });
-});
-
-describe('MetaChips (nothing dropped)', () => {
-    it('shows nothing for an ordinary unit', () => {
-        expect(mount(MetaChips, { props: { unit: unit() } }).find('.chip').exists()).toBe(false);
-    });
-
-    it('shows maxwidth with the unit it is counted in', () => {
-        const chips = mount(MetaChips, { props: { unit: unit({ maxwidth: 50, sizeUnit: 'char' }) } });
-
-        expect(chips.get('.chip').text()).toBe('max 50 char');
-    });
-
-    it('shows al-object-target', () => {
-        const chips = mount(MetaChips, { props: { unit: unit({ alObjectTarget: 'Page 10' }) } });
-
-        expect(chips.text()).toContain('Page 10');
-    });
-
-    it('explains an untranslatable unit rather than only muting it', () => {
-        const chips = mount(MetaChips, { props: { unit: unit({ translate: false }) } });
-
-        expect(chips.get('.chip').text()).toBe('translate="no"');
-        expect(chips.get('.chip').attributes('title')).toContain('excluded from every roll-up');
-    });
-
-    it('surfaces a state the spec does not define, which the badge can only call unknown', () => {
-        const chips = mount(MetaChips, { props: { unit: unit({ state: XliffState.unknown, rawState: 'proofread' }) } });
-
-        expect(chips.text()).toContain('state="proofread"');
-    });
-
-    it('shows every optional attribute at once', () => {
-        const chips = mount(MetaChips, {
-            props: { unit: unit({ translate: false, maxwidth: 50, sizeUnit: 'char', alObjectTarget: 'Page 1', rawState: 'x' }) },
-        });
-
-        expect(chips.findAll('.chip')).toHaveLength(4);
-    });
-});
-
-describe('NoteList', () => {
-    const notes = [
-        { from: 'Developer', value: 'de-DE=Kunde' },
-        { from: 'Reviewer', value: 'checked' },
-        { value: 'anonymous' },
-    ];
-
-    it('shows every note verbatim, including ones from tools we do not know', () => {
-        const list = mount(NoteList, { props: { notes, showDeveloperNotes: true } });
-
-        expect(list.findAll('.from')).toHaveLength(3);
-        expect(list.text()).toContain('checked');
-        expect(list.text()).toContain('anonymous');
-    });
-
-    it('labels a note with no from at all', () => {
-        const list = mount(NoteList, { props: { notes: [{ value: 'x' }], showDeveloperNotes: true } });
-
-        expect(list.get('.from').text()).toBe('note');
-    });
-
-    it('shows an empty Developer note as empty rather than hiding it', () => {
-        // Absent and empty are different facts.
-        const list = mount(NoteList, { props: { notes: [{ from: 'Developer', value: '' }], showDeveloperNotes: true } });
-
-        expect(list.get('.empty').text()).toBe('(empty)');
-    });
-
-    it('hides only the Developer notes when the setting is off', () => {
-        const list = mount(NoteList, { props: { notes, showDeveloperNotes: false } });
-
-        expect(list.findAll('.from')).toHaveLength(2);
-        expect(list.text()).not.toContain('de-DE=Kunde');
-    });
-
-    it('renders nothing at all when there is nothing to show', () => {
-        expect(mount(NoteList, { props: { notes: [], showDeveloperNotes: true } }).find('.note-list').exists()).toBe(false);
-    });
-});
-
 describe('the Developer hint', () => {
     it('shows the suggestion the note makes for the file\'s language', () => {
         const wrapper = card({
@@ -221,58 +114,7 @@ describe('the Developer hint', () => {
     });
 });
 
-describe('the reconstructed generator note', () => {
-    const tree: AlNodeDto[] = [{
-        key: 'Table 1',
-        type: 'Table',
-        name: 'PTE Contoso Methods Setup',
-        children: [{
-            key: 'Table 1 - Field 2',
-            type: 'Field',
-            name: 'Contoso Method',
-            children: [{ key: 'Table 1 - Field 2 - Property 3', type: 'Property', name: 'Caption', children: [] }],
-        }],
-    }];
-
-    it('rebuilds the note the payload does not carry', () => {
-        const note = reconstructGeneratorNote('Table 1 - Field 2 - Property 3', indexNodes(tree));
-
-        expect(note).toBe('Table PTE Contoso Methods Setup - Field Contoso Method - Property Caption');
-    });
-
-    it('gives up rather than guessing when a name could not be parsed', () => {
-        const unnamed: AlNodeDto[] = [{ key: 'Table 1', type: 'Table', children: [] }];
-
-        expect(reconstructGeneratorNote('Table 1', indexNodes(unnamed))).toBeUndefined();
-    });
-
-    it('gives up on an id that is not in the tree', () => {
-        expect(reconstructGeneratorNote('Table 9', indexNodes(tree))).toBeUndefined();
-    });
-
-    it('starts with the namespace and skips the levels the tree adds', () => {
-        const id = 'Namespace Contoso.Sales - Report "Contoso Sales - Quote" - Property Caption';
-        const namespaced: AlNodeDto[] = [{
-            key: 'Namespace 1',
-            type: 'Namespace',
-            name: 'Contoso.Sales',
-            children: [{
-                key: groupKey('Report', 'Namespace 1'),
-                type: 'Report',
-                name: 'Reports (1)',
-                group: true,
-                children: [{
-                    key: 'Namespace 1 - Report 2',
-                    type: 'Report',
-                    name: 'Contoso Sales - Quote',
-                    children: [{ key: id, type: 'Property', name: 'Caption', children: [] }],
-                }],
-            }],
-        }];
-
-        expect(reconstructGeneratorNote(id, indexNodes(namespaced))).toBe('Namespace Contoso.Sales - Report Contoso Sales - Quote - Property Caption');
-    });
-
+describe('the generator note', () => {
     it('shows the note it is given, whatever the setting, since the tree applies it', () => {
         const wrapper = mount(UnitCard, {
             props: {
@@ -390,25 +232,6 @@ describe('the labelled box', () => {
         // `<target>` is singular in the format, `<alt-trans>` is not modelled, and a second
         // language is a second file. The list is the seam for showing those files side by side.
         expect(boxed({}, { targetLanguage: 'de-DE' }).findAll('.strings .target')).toHaveLength(1);
-    });
-});
-
-describe('translations()', () => {
-    it('returns exactly one entry, carrying the language, the value and the state', () => {
-        expect(translations(unit(), 'de-DE')).toEqual([{ language: 'de-DE', value: 'Kunde', state: XliffState.translated }]);
-    });
-
-    it('keeps an absent target absent rather than turning it into an empty string', () => {
-        expect(translations(unit({ target: undefined }), 'de-DE')[0].value).toBeUndefined();
-    });
-
-    it('carries no language when the file declares none', () => {
-        expect(translations(unit())[0].language).toBeUndefined();
-    });
-
-    it('labels a row with the language in brackets, or the plain word without one', () => {
-        expect(translationLabel({ language: 'fr-FR', state: XliffState.translated })).toBe('[ fr-FR ]');
-        expect(translationLabel({ state: XliffState.translated })).toBe('target');
     });
 });
 

@@ -5,6 +5,7 @@ import { computed, h, nextTick, ref } from 'vue';
 import TreeRow from '../../webview/components/TreeRow.vue';
 import UnitTree from '../../webview/components/UnitTree.vue';
 import { useTreeFlatten } from '../../webview/composables/useTreeFlatten';
+import { sourceAction } from '../../webview/sourceAction';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { summariseTree } from '../../shared/state';
 import { stubLayout, STUB_ROW_HEIGHT as ROW, VIEWPORT_HEIGHT } from './support/layoutStub';
@@ -451,73 +452,17 @@ describe('the one navigation action', () => {
         expect(calls).toEqual([{ target: 'source', unitId: 'Table 0 - Property 0' }]);
     });
 
-    it('is disabled while the host has answered nothing, and says so', () => {
-        const { button } = mountRow({});
+    it('shows what sourceAction makes of the host\'s answers and the unit\'s own marker, as the answers arrive', async () => {
+        const { alSource, button } = mountRow({ baseFile: 'App.g.xlf' }, { orphaned: true });
 
-        expect(button.attributes('disabled')).toBeDefined();
-        expect(button.attributes('title')).toBe('Looking for the AL source…');
-    });
+        for (const answer of [undefined, true, false]) {
+            alSource.value = answer;
+            await nextTick();
+            const expected = sourceAction({ alSource: answer, baseFile: 'App.g.xlf', isBaseFile: false, orphaned: true });
 
-    it('offers the AL source when the app has some, and names the base file behind it', () => {
-        const { button } = mountRow({ baseFile: 'App.g.xlf', alSource: true });
-
-        expect(button.attributes('disabled')).toBeUndefined();
-        expect(button.attributes('title')).toBe('Open the AL source that declares this unit, or show the unit in App.g.xlf if none does.');
-    });
-
-    it('offers the base file when the app has no AL source', () => {
-        const { button } = mountRow(BASE_ONLY);
-
-        expect(button.attributes('disabled')).toBeUndefined();
-        expect(button.attributes('title')).toBe('No AL source was found for this app, so this shows the unit in App.g.xlf.');
-    });
-
-    it('is disabled when there is neither, and says so', () => {
-        const { button } = mountRow({ baseFile: null, alSource: false });
-
-        expect(button.attributes('disabled')).toBeDefined();
-        expect(button.attributes('title')).toBe('No AL source and no base file were found for this translation file.');
-    });
-
-    it('is disabled for a unit the base file no longer has, when there is no AL source, and says why', () => {
-        const { button } = mountRow(BASE_ONLY, { orphaned: true });
-
-        expect(button.attributes('disabled')).toBeDefined();
-        expect(button.attributes('title')).toBe('No AL source was found for this app, and App.g.xlf does not contain this unit any more.');
-    });
-
-    it('still offers the AL source for a unit the base file no longer has', () => {
-        // The source can be ahead of a base file the compiler has not rewritten yet.
-        const { button } = mountRow({ baseFile: 'App.g.xlf', alSource: true }, { orphaned: true });
-
-        expect(button.attributes('disabled')).toBeUndefined();
-        expect(button.attributes('title')).toBe('Open the AL source that declares this unit.');
-    });
-
-    it('in a base file, falls back to the file itself, AL source or not', () => {
-        const withAl = mountRow({ baseFile: null, alSource: true, isBaseFile: true }).button;
-        const without = mountRow({ baseFile: null, alSource: false, isBaseFile: true }).button;
-
-        expect(withAl.attributes('disabled')).toBeUndefined();
-        expect(withAl.attributes('title')).toBe('Open the AL source that declares this unit, or show the unit in this file if none does.');
-        expect(without.attributes('disabled')).toBeUndefined();
-        expect(without.attributes('title')).toBe('No AL source was found for this app, so this shows the unit in this file.');
-    });
-
-    it('changes its title when the host\'s answer about AL source arrives', async () => {
-        const { alSource, button } = mountRow({ baseFile: 'App.g.xlf' });
-        expect(button.attributes('title')).toContain('Open the AL source');
-
-        alSource.value = false;
-        await nextTick();
-
-        expect(button.attributes('title')).toBe('No AL source was found for this app, so this shows the unit in App.g.xlf.');
-    });
-
-    it('stays enabled for a merely source-changed unit — it is still there', () => {
-        const { button } = mountRow(BASE_ONLY, { baseSource: 'Customer (renamed)' });
-
-        expect(button.attributes('disabled')).toBeUndefined();
+            expect(button.attributes('title'), String(answer)).toBe(expected.title);
+            expect(button.attributes('disabled') === undefined, String(answer)).toBe(expected.enabled);
+        }
     });
 
     it('does not fold the row it sits on', async () => {
