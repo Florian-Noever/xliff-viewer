@@ -21,7 +21,7 @@ Open `.xlf` and `.xliff` translation files as a structured, themed GUI instead o
 - **Validation hints** — a target past its `maxwidth`, a placeholder the translation lost or invented, an empty target the file calls finished. Advisory: they never block an edit or change a value, and a container says how many translations beneath it are worth a look
 - **Load-bearing whitespace** — a target that is only a space, or whose edges differ from the source, is marked and explained; `xml:space="preserve"` means those spaces are the translation
 - **Multi-`<file>` documents** — a switcher, with each file remembering its own expansion
-- **Reopen as XML** — the editor registers at `default` priority, so *Reopen Editor With… → Text Editor* is always there
+- **Reopen as XML** — *Reopen Editor With… → Text Editor* switches to the raw file at any time
 - **Comes back where you left it** — hiding a tab and returning to it keeps the expansion, the focused row, the scroll position, the search, the filter and the edit toggle
 - **Desktop and web** — the same extension runs in VS Code and in `vscode.dev` / `github.dev`
 
