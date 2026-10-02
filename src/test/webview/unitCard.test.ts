@@ -7,6 +7,7 @@ import UnitCard from '../../webview/components/UnitCard.vue';
 import { indexNodes, reconstructGeneratorNote } from '../../webview/generatorNote';
 import { loadBearingWhitespace, WhitespaceReason } from '../../webview/whitespace';
 import { translationLabel, translations } from '../../webview/translations';
+import { stateLabel } from '../../webview/stateTone';
 import { DEFAULT_WEBVIEW_SETTINGS } from '../../shared/settings';
 import { XliffState } from '../../shared/state';
 import { exampleUnitDto } from '../support/dtoBuilders';
@@ -272,7 +273,7 @@ describe('the reconstructed generator note', () => {
         expect(reconstructGeneratorNote(id, indexNodes(namespaced))).toBe('Namespace Contoso.Sales - Report Contoso Sales - Quote - Property Caption');
     });
 
-    it('reaches the card when the setting is on', () => {
+    it('shows the note it is given, whatever the setting, since the tree applies it', () => {
         const wrapper = mount(UnitCard, {
             props: {
                 unit: unit(),
@@ -294,39 +295,42 @@ describe('every DTO field is reachable', () => {
     it('renders something for each one', () => {
         // Nothing the file carries may be dropped. If a field is added to TransUnitDto and
         // nothing here shows it, this fails.
+        // Each field carries a string no other field contains, so none passes for another.
         const full = unit({
-            baseSource: 'Customer (renamed)',
-            target: ' Kunde ',
+            source: 'Alpha source',
+            baseSource: 'Bravo base',
+            target: ' Charlie target ',
             state: XliffState.unknown,
             rawState: 'proofread',
             declaredState: XliffState.signedOff,
             translate: false,
             maxwidth: 50,
-            sizeUnit: 'char',
+            sizeUnit: 'pixel',
             alObjectTarget: 'Page 10',
-            notes: [{ from: 'Developer', value: 'de-DE=Kundin' }],
-            developerHint: 'Kundin',
+            notes: [{ from: 'Developer', value: 'Delta note' }],
+            developerHint: 'Echo hint',
         });
         const wrapper = mount(UnitCard, {
-            props: { unit: full, settings: DEFAULT_WEBVIEW_SETTINGS, generatorNote: 'Table Customer - Property Caption' },
+            props: { unit: full, settings: DEFAULT_WEBVIEW_SETTINGS, generatorNote: 'Table Foxtrot - Property Caption' },
         });
         const text = wrapper.text();
 
         const shown: Record<keyof TransUnitDto, boolean> = {
-            id: true, // the row's key and the reconstructed note; the card shows the path
-            source: text.includes('Customer'),
-            target: text.includes('Kunde'),
-            state: true, // StateBadge, on the row rather than in the card
+            id: true, // the row's key, and the path the generator note spells out
+            source: text.includes('Alpha source'),
+            target: text.includes('Charlie target'),
+            // Muted, since the unit is not translatable: the state moves to the badge's title.
+            state: wrapper.get('.legend .state-badge').attributes('title') === `translate="no" — ${stateLabel(XliffState.unknown)}`,
             rawState: text.includes('proofread'),
             declaredState: text.includes('state="signed-off"'),
             translate: text.includes('translate="no"'),
-            maxwidth: text.includes('max 50 char'),
-            sizeUnit: text.includes('char'),
+            maxwidth: text.includes('max 50'),
+            sizeUnit: text.includes('pixel'),
             alObjectTarget: text.includes('Page 10'),
-            notes: text.includes('de-DE=Kundin'),
-            developerHint: wrapper.find('.aside').exists(),
+            notes: text.includes('Delta note'),
+            developerHint: wrapper.get('.aside').text().includes('Echo hint'),
             orphaned: true, // covered by its own case below; mutually exclusive with baseSource
-            baseSource: text.includes('The base file now says'),
+            baseSource: text.includes('Bravo base'),
         };
 
         expect(Object.entries(shown).filter(([, visible]) => !visible).map(([field]) => field)).toEqual([]);

@@ -285,6 +285,26 @@ describe('a key typed into a field belongs to the field', () => {
     });
 });
 
+describe('the generator note on a unit\'s card', () => {
+    const NOTE = 'Table Object 0 - Property Caption 0';
+    const tree = (): [AlNodeDto[], Map<string, TransUnitDto>] => Object.values(bigTree(1, 1)) as [AlNodeDto[], Map<string, TransUnitDto>];
+
+    it('is rebuilt from the tree when the setting is on', async () => {
+        const { wrapper } = mountTree(...tree(), 1, true, undefined, { ...DEFAULT_WEBVIEW_SETTINGS, showGeneratorNotes: true });
+        await nextTick();
+
+        expect(wrapper.text()).toContain(NOTE);
+    });
+
+    it('is not rebuilt at all when the setting is off', async () => {
+        const { wrapper } = mountTree(...tree(), 1, true, undefined, { ...DEFAULT_WEBVIEW_SETTINGS, showGeneratorNotes: false });
+        await nextTick();
+
+        expect(wrapper.text()).not.toContain(NOTE);
+        expect(wrapper.text()).not.toContain('Xliff Generator');
+    });
+});
+
 describe('what a row click means', () => {
     /** A node that carries a unit *and* children: an id can be another unit's prefix. */
     function treeWithBoth(): { tree: AlNodeDto[]; units: Map<string, TransUnitDto> } {
