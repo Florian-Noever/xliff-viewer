@@ -1,4 +1,4 @@
-# XLIFF Viewer
+# <img src="./assets/icon-light-x48.png" alt="" height="48px"> XLIFF Viewer
 
 Open `.xlf` and `.xliff` translation files as a structured, themed GUI instead of raw XML. Built for Business Central / AL translation files, where a single file holds thousands of units and the trans-unit id already carries the object hierarchy — so the viewer shows objects, members and translated elements rather than one long list of `<trans-unit>` elements.
 
@@ -197,6 +197,9 @@ To release, bump the version with `npm version x.y.z --no-git-tag-version` and p
 
 ## 📜 License
 
-[MIT](LICENSE).
+Licensed under the [MIT License](./LICENSE).
 
-The extension's own icons are in `assets/`. The in-GUI icons are from [`@vscode/codicons`](https://github.com/microsoft/vscode-codicons), licensed [CC BY 4.0](https://github.com/microsoft/vscode-codicons/blob/main/LICENSE).
+<br>
+<br>
+
+[!["Buy me a coffee"](https://raw.githubusercontent.com/Florian-Noever/Florian-Noever/refs/heads/main/_meta/BuyMeACoffee/Buttons%20%26%20Icons/orange-button-x180.png)](https://www.buymeacoffee.com/florian_noever)
