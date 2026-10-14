@@ -197,7 +197,9 @@ To release, bump the version with `npm version x.y.z --no-git-tag-version` and p
 
 ## 📜 License
 
-Licensed under the [MIT License](./LICENSE).
+Licensed under the [MIT](LICENSE) License.
+
+The in-GUI icons are from [`@vscode/codicons`](https://github.com/microsoft/vscode-codicons), licensed under [CC BY 4.0](https://github.com/microsoft/vscode-codicons/blob/main/LICENSE).
 
 <br>
 <br>
